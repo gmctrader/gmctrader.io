@@ -177,18 +177,18 @@ a{color:var(--bronze-bright);}
 .medallion-plate{
   position:absolute;inset:0;border-radius:32px;
   background:
-    radial-gradient(circle at 30% 18%, rgba(134,239,172,0.16), transparent 50%),
-    linear-gradient(155deg, #142823 0%, #0d1815 45%, #0a1210 100%);
-  border:1.5px solid rgba(52,211,153,0.22);
+    radial-gradient(circle at 30% 18%, rgba(255,255,255,0.22), transparent 50%),
+    linear-gradient(155deg, #10b981 0%, #059669 50%, #047857 100%);
+  border:1.5px solid rgba(255,255,255,0.28);
   box-shadow:
-    inset 0 2px 4px rgba(134,239,172,0.14),
-    inset 0 -20px 34px rgba(0,0,0,0.72),
-    0 26px 58px rgba(0,0,0,0.55),
-    0 0 50px rgba(16,185,129,0.16);
+    inset 0 2px 4px rgba(255,255,255,0.28),
+    inset 0 -20px 34px rgba(0,0,0,0.35),
+    0 26px 58px rgba(0,0,0,0.5),
+    0 0 50px rgba(16,185,129,0.32);
   display:flex;align-items:center;justify-content:center;
 }
-.medallion-ring{position:absolute;inset:14px;border-radius:22px;border:1px solid rgba(52,211,153,0.22);pointer-events:none;box-shadow:inset 0 0 20px rgba(0,0,0,0.5);}
-.medallion-ring2{position:absolute;inset:6px;border-radius:26px;border:1px solid rgba(52,211,153,0.1);pointer-events:none;}
+.medallion-ring{position:absolute;inset:14px;border-radius:22px;border:1px solid rgba(255,255,255,0.32);pointer-events:none;box-shadow:inset 0 0 20px rgba(0,0,0,0.28);}
+.medallion-ring2{position:absolute;inset:6px;border-radius:26px;border:1px solid rgba(255,255,255,0.16);pointer-events:none;}
 .medallion-shine{position:absolute;inset:0;border-radius:32px;pointer-events:none;
   background:linear-gradient(115deg, rgba(255,255,255,0.20) 0%, transparent 26%, transparent 74%, rgba(255,255,255,0.05) 100%);
   mix-blend-mode:overlay;}
@@ -351,13 +351,13 @@ a{color:var(--bronze-bright);}
 .side-brand{display:flex;align-items:center;gap:12px;padding:4px 6px 22px;border-bottom:1px solid var(--steel);margin-bottom:16px;}
 .side-brand .mark{
   width:46px;height:46px;border-radius:13px;flex-shrink:0;
-  background:radial-gradient(circle at 30% 22%, rgba(134,239,172,0.22), transparent 55%), linear-gradient(155deg,#142823,#0d1815 55%,#0a1210);
-  border:1.5px solid var(--bronze-dim);
+  background:radial-gradient(circle at 30% 22%, rgba(255,255,255,0.26), transparent 55%), linear-gradient(155deg,#10b981,#059669 55%,#047857);
+  border:1.5px solid rgba(255,255,255,0.3);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 24px rgba(16,185,129,0.2), inset 0 0 16px rgba(0,0,0,0.6);
+  box-shadow:0 0 24px rgba(16,185,129,0.28), inset 0 0 16px rgba(0,0,0,0.22);
   animation:markPulse 4s ease-in-out infinite;
 }
-@keyframes markPulse{ 0%,100%{box-shadow:0 0 24px rgba(16,185,129,0.2), inset 0 0 16px rgba(0,0,0,0.6);} 50%{box-shadow:0 0 34px rgba(16,185,129,0.4), inset 0 0 16px rgba(0,0,0,0.6);} }
+@keyframes markPulse{ 0%,100%{box-shadow:0 0 24px rgba(16,185,129,0.28), inset 0 0 16px rgba(0,0,0,0.22);} 50%{box-shadow:0 0 34px rgba(16,185,129,0.48), inset 0 0 16px rgba(0,0,0,0.22);} }
 .side-brand .mark img{width:72%;height:72%;object-fit:contain;}
 .side-brand h1{font-family:'Fraunces',serif;font-size:17.5px;margin:0;color:var(--platinum);font-weight:650;line-height:1.15;}
 .side-brand span{display:block;font-size:9.5px;color:var(--slate);letter-spacing:0.12em;text-transform:uppercase;margin-top:3px;}
@@ -495,7 +495,7 @@ a{color:var(--bronze-bright);}
 /* ============ SIGNATURE MEDALLION (dashboard seal) ============ */
 .candle-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0 10px;perspective:1100px;}
 .med-small{width:146px;height:146px;position:relative;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.2,.8,.2,1);}
-.med-small .medallion-plate{ box-shadow:inset 0 2px 3px rgba(134,239,172,0.3), inset 0 -14px 24px rgba(0,0,0,0.68), 0 18px 36px rgba(0,0,0,0.46), 0 0 34px rgba(16,185,129,0.2); }
+.med-small .medallion-plate{ box-shadow:inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -14px 24px rgba(0,0,0,0.32), 0 18px 36px rgba(0,0,0,0.46), 0 0 34px rgba(16,185,129,0.28); }
 .med-small .medallion-logo{width:60%;height:60%;}
 .med-badge{
   position:absolute;bottom:-8px;right:-12px;background:linear-gradient(135deg, var(--bronze-bright), var(--bronze));
@@ -836,14 +836,21 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .equity-wrap{
   margin-top:14px;overflow:hidden;border-radius:var(--r-md);position:relative;
   background:
-    radial-gradient(ellipse 500px 260px at 18% 100%, rgba(16,185,129,0.07), transparent 60%),
-    radial-gradient(ellipse 500px 260px at 85% 0%, rgba(184,102,255,0.06), transparent 60%),
+    radial-gradient(ellipse 620px 320px at 14% 105%, rgba(16,185,129,0.10), transparent 62%),
+    radial-gradient(ellipse 560px 320px at 90% -5%, rgba(45,212,191,0.08), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 50% 50%, rgba(255,255,255,0.02), transparent 70%),
     #07090a;
-  border:1px solid rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.07);
+  box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 1px rgba(0,0,0,0.4), 0 30px 60px -24px rgba(0,0,0,0.6);
   padding:4px 2px 0;
 }
+.equity-wrap::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg, rgba(255,255,255,0.055), transparent 26%);
+  mix-blend-mode:screen;
+}
 .equity-wrap::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
   background:radial-gradient(ellipse 120% 100% at 50% 40%, transparent 55%, rgba(0,0,0,0.6) 100%);
 }
 .equity-inner{position:relative;width:100%;}
@@ -853,6 +860,38 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
   100%{opacity:1;transform:translateY(0) scaleY(1);transform-origin:bottom;}
 }
 @media(max-width:600px){.equity-wrap{padding:2px 0 0;}}
+
+/* ============ ANALYTICS "SPIN-UP" FEEL (visual haptic, paired with real vibration) ============ */
+@keyframes gearKick{
+  0%{transform:scale(1) rotate(0deg);}
+  12%{transform:scale(0.992) rotate(-0.4deg);}
+  24%{transform:scale(1.006) rotate(0.5deg);}
+  38%{transform:scale(0.997) rotate(-0.3deg);}
+  52%{transform:scale(1.003) rotate(0.2deg);}
+  68%{transform:scale(0.999) rotate(-0.1deg);}
+  100%{transform:scale(1) rotate(0deg);}
+}
+.gear-kick{animation:gearKick 620ms cubic-bezier(.2,.7,.2,1) both;}
+@keyframes gearFlicker{
+  0%,100%{opacity:1;} 45%{opacity:0.86;} 60%{opacity:1;} 75%{opacity:0.92;}
+}
+.gear-kick .equity-total{animation:gearFlicker 620ms ease-out both, pnlBlaze 3.4s ease-in-out infinite;}
+@media (prefers-reduced-motion: reduce){ .gear-kick{animation:none;} }
+@keyframes eqPulseRing{
+  0%{transform:scale(0.7);opacity:0.5;} 70%{transform:scale(1.9);opacity:0;} 100%{transform:scale(1.9);opacity:0;}
+}
+.eq-pulse-ring{animation:eqPulseRing 2.2s cubic-bezier(.2,.6,.3,1) infinite;transform-box:fill-box;transform-origin:center;}
+.eq-pulse-dot{animation:eqPulseDot 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+@keyframes eqPulseDot{0%,100%{filter:drop-shadow(0 0 2px rgba(255,255,255,0.4));} 50%{filter:drop-shadow(0 0 6px rgba(255,255,255,0.75));}}
+@media (prefers-reduced-motion: reduce){ .eq-pulse-ring, .eq-pulse-dot{animation:none;} }
+
+/* ============ TRADE ATTACHMENTS (screenshot + TradingView link) ============ */
+.trade-shot{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--steel-hi);cursor:zoom-in;flex-shrink:0;transition:transform .15s ease, border-color .15s ease;}
+.trade-shot:hover{transform:scale(1.06);border-color:var(--bronze-bright);}
+.tag-chip.tv-link{background:rgba(13,148,136,0.1);color:var(--neon-cyan);border-color:rgba(13,148,136,0.3);text-decoration:none;cursor:pointer;}
+.tag-chip.tv-link:hover{background:rgba(13,148,136,0.18);}
+#shotOverlay .modal{max-width:min(760px,92vw);padding:14px;background:#07090a;border:1px solid rgba(255,255,255,0.1);}
+#shotOverlay img{width:100%;max-height:78vh;object-fit:contain;border-radius:12px;display:block;}
 
 /* ============ RISK GAUGE (brass instrument dial) ============ */
 .gauge-row{display:flex;gap:22px;flex-wrap:wrap;justify-content:space-around;margin-top:6px;}
@@ -1270,7 +1309,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 
   <div class="mobile-topbar">
     <div class="mbrand">
-      <div class="mark" style="width:34px;height:34px;border-radius:10px;background:radial-gradient(circle at 30% 22%, rgba(134,239,172,0.22), transparent 55%), linear-gradient(155deg,#142823,#0d1815 55%,#0a1210);display:flex;align-items:center;justify-content:center;border:1px solid var(--bronze-dim);"><img src="logo.png" style="width:72%;height:72%;object-fit:contain;"></div>
+      <div class="mark" style="width:34px;height:34px;border-radius:10px;background:radial-gradient(circle at 30% 22%, rgba(255,255,255,0.24), transparent 55%), linear-gradient(155deg,#10b981,#059669 55%,#047857);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.28);"><img src="logo.png" style="width:72%;height:72%;object-fit:contain;"></div>
       <h1>Ghost Discipline</h1>
     </div>
     <button class="hamburger" onclick="toggleSidebar()"><span></span></button>
@@ -1945,9 +1984,34 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
       </div>
     </div>
     <div class="field"><label>Notes</label><textarea id="t_notes" placeholder="Setup, mindset, anything worth remembering."></textarea></div>
+    <div class="row2">
+      <div class="field">
+        <label>Chart screenshot <span class="hint-inline">optional</span></label>
+        <input type="file" id="t_screenshot" accept="image/*" onchange="onTradeScreenshotPicked(event)">
+        <div id="t_screenshotPreviewWrap" style="display:none;margin-top:8px;">
+          <img id="t_screenshotPreview" alt="Chart screenshot preview" style="max-width:100%;max-height:140px;border-radius:10px;border:1px solid var(--steel-hi);display:block;object-fit:cover;">
+          <button type="button" class="side-logout" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="clearTradeScreenshot()">Remove image</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>TradingView link <span class="hint-inline">optional</span></label>
+        <input type="url" id="t_tvlink" placeholder="https://www.tradingview.com/x/XXXXXXXX/" autocapitalize="off" spellcheck="false">
+        <div class="hint" id="t_tvlinkHint" style="display:none;color:var(--loss-bright);">That doesn't look like a link — check it and try again.</div>
+      </div>
+    </div>
     <div class="btn-row">
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal('tradeOverlay')">Cancel</button>
-      <button class="btn btn-primary" style="flex:1" onclick="submitTrade()">Save Trade</button>
+      <button class="btn btn-primary" id="t_saveBtn" style="flex:1" onclick="submitTrade()">Save Trade</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREENSHOT LIGHTBOX -->
+<div class="overlay" id="shotOverlay" onclick="if(event.target===this) closeScreenshotLightbox()">
+  <div class="modal">
+    <img id="shotOverlayImg" src="" alt="Trade chart screenshot">
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="side-logout" style="width:100%;" onclick="closeScreenshotLightbox()">Close</button>
     </div>
   </div>
 </div>
@@ -1979,6 +2043,7 @@ let isDemoMode = false;
 let pendingViolation = false;
 let closingOrderId = null;
 let selectedMood = null;
+let pendingScreenshotFile = null;
 const MOOD_LABELS = { calm:'😌 Calm', confident:'💪 Confident', fomo:'😬 FOMO', revenge:'😡 Revenge', bored:'🥱 Bored', anxious:'😰 Anxious' };
 function selectMood(mood){
   selectedMood = selectedMood===mood ? null : mood;
@@ -3443,7 +3508,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
     if(btn.dataset.view==='calendar') renderCalendar();
-    if(btn.dataset.view==='analytics') { renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); }
+    if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); }
     if(btn.dataset.view==='journal') renderJournal();
     if(btn.dataset.view==='orders') renderOrders();
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
@@ -4242,6 +4307,7 @@ function renderJournal(){
       const typeInfo = STRATEGY_TYPES[t.strategyType];
       return `
       <div class="trade-row">
+        ${t.screenshotUrl ? `<img src="${escapeHtml(t.screenshotUrl)}" class="trade-shot" loading="lazy" alt="Chart screenshot" onclick="openScreenshotLightbox('${t.screenshotUrl.replace(/'/g,"\\'")}')">` : ''}
         <div class="trade-badge ${t.result}">${t.result==='win'?'WIN':'LOSS'}</div>
         <div class="trade-meta">
           <div class="top">${t.date} ${t.time}</div>
@@ -4253,6 +4319,7 @@ function renderJournal(){
             ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
             ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
             ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
+            ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
           </div>
         </div>
         <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
@@ -4593,6 +4660,24 @@ function sampleSegs(segs, perSeg){
   return out;
 }
 
+/* ============ ANALYTICS OPEN "FEEL" ============ */
+// A short real vibration (mobile only) paired with a quick visual settle —
+// like a gauge needle kicking and steadying — on the equity cards, so opening
+// Analytics has a tiny bit of mechanical weight to it.
+function triggerAnalyticsOpenFeel(){
+  try{
+    if(navigator.vibrate) navigator.vibrate([14,16,10,18,8,22,45]);
+  }catch(e){}
+  ['equityChart','equityChartOverview'].forEach(id=>{
+    const inner = document.getElementById(id);
+    const card = inner && (inner.closest('.card') || inner.parentElement);
+    if(!card) return;
+    card.classList.remove('gear-kick');
+    void card.offsetWidth;
+    card.classList.add('gear-kick');
+  });
+}
+
 /* ============ EQUITY RIBBON / CURVE CHART ============ */
 function renderEquityChart(containerId, totalId, subId){
   const container = document.getElementById(containerId);
@@ -4650,11 +4735,15 @@ function renderEquityChart(containerId, totalId, subId){
 
   const NEON_UP = '#10b981', NEON_DOWN = '#f43f5e';
 
-  // subtle floor grid, neon-tinted
+  // subtle floor grid, neon-tinted (horizontal + faint vertical for an instrument-panel feel)
   let floorLines = '';
   for(let g=0; g<=4; g++){
     const gy = padT + plotH*(g/4);
     floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.045)" stroke-width="1"/>`;
+  }
+  for(let g=0; g<=6; g++){
+    const gx = padL + plotW*(g/6);
+    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>`;
   }
 
   // 2D neon line, colored per-segment by local direction (glow green up / blood red down)
@@ -4678,28 +4767,51 @@ function renderEquityChart(containerId, totalId, subId){
     const c = val>=0 ? NEON_UP : NEON_DOWN;
     markers += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${c}" stroke="#07090a" stroke-width="1.4" class="eq-marker" data-i="${i}"/>`;
   });
+  const lastPt = topPts[topPts.length-1];
+  const lastColor = overallUp ? NEON_UP : NEON_DOWN;
+  const endGlow = `
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="16" fill="${lastColor}" opacity="0.18" class="eq-pulse-ring"/>
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="4.2" fill="${lastColor}" stroke="#07090a" stroke-width="1.6" class="eq-pulse-dot"/>`;
+
+  // faint mirrored reflection of the line beneath the baseline, fading out —
+  // gives the panel a glassy, "trading terminal" depth instead of a flat plot.
+  const reflY = 2*baseY;
 
   container.innerHTML = `
     <svg width="100%" viewBox="0 0 ${W} ${H+6}" style="overflow:visible">
       <defs>
         <linearGradient id="areaGrad-${containerId}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${overallUp?'rgba(16,185,129,0.32)':'rgba(244,63,94,0.32)'}"/>
+          <stop offset="0%" stop-color="${overallUp?'rgba(16,185,129,0.38)':'rgba(244,63,94,0.38)'}"/>
+          <stop offset="45%" stop-color="${overallUp?'rgba(16,185,129,0.14)':'rgba(244,63,94,0.14)'}"/>
           <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
         </linearGradient>
+        <radialGradient id="endBloom-${containerId}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="${lastColor}" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="reflFade-${containerId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fff" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="reflMask-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,H+6-baseY)}" fill="url(#reflFade-${containerId})"/></mask>
         <filter id="eqGlow-${containerId}" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="6" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blurWide"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blurTight"/>
+          <feMerge><feMergeNode in="blurWide"/><feMergeNode in="blurTight"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <clipPath id="eqReveal-${containerId}"><rect id="eqRevealRect-${containerId}" x="0" y="0" width="0" height="${H+6}"/></clipPath>
       </defs>
       ${floorLines}
       <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
       <g clip-path="url(#eqReveal-${containerId})">
+        <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.5">${coreSegs}</g>
         <path d="${areaPath}" fill="url(#areaGrad-${containerId})"/>
-        <g filter="url(#eqGlow-${containerId})" opacity="0.85">${glowSegs}</g>
+        <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="30" fill="url(#endBloom-${containerId})"/>
+        <g filter="url(#eqGlow-${containerId})" opacity="0.9">${glowSegs}</g>
         <g>${coreSegs}</g>
         <g opacity="0.9">${hotSegs}</g>
         ${markers}
+        ${endGlow}
       </g>
       <rect id="eqhit-${containerId}" x="${padL}" y="0" width="${plotW}" height="${H+6}" fill="transparent" style="cursor:crosshair"/>
     </svg>`;
@@ -5066,6 +5178,9 @@ function proceedToTrade(){
   populateTradeSelectors();
   updateTradeRiskPreview();
   onStrategyChange();
+  clearTradeScreenshot();
+  document.getElementById('t_tvlink').value='';
+  document.getElementById('t_tvlinkHint').style.display='none';
   document.getElementById('tradeOverlay').classList.add('show');
 }
 function onResultChange(){
@@ -5075,6 +5190,65 @@ function onResultChange(){
   updateTradeRiskPreview();
 }
 
+/* ============ TRADE SCREENSHOT + TRADINGVIEW LINK ============ */
+const MAX_SCREENSHOT_MB = 8;
+function onTradeScreenshotPicked(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    showToast('That file isn\'t an image');
+    e.target.value = '';
+    return;
+  }
+  if(file.size > MAX_SCREENSHOT_MB*1024*1024){
+    showToast(`Image is over ${MAX_SCREENSHOT_MB}MB — pick a smaller one`);
+    e.target.value = '';
+    return;
+  }
+  pendingScreenshotFile = file;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    document.getElementById('t_screenshotPreview').src = reader.result;
+    document.getElementById('t_screenshotPreviewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function clearTradeScreenshot(){
+  pendingScreenshotFile = null;
+  const input = document.getElementById('t_screenshot');
+  if(input) input.value = '';
+  const wrap = document.getElementById('t_screenshotPreviewWrap');
+  if(wrap) wrap.style.display = 'none';
+  const preview = document.getElementById('t_screenshotPreview');
+  if(preview) preview.src = '';
+}
+function isLikelyUrl(str){
+  if(!str) return false;
+  try{ const u = new URL(str); return u.protocol==='http:' || u.protocol==='https:'; }catch(e){ return false; }
+}
+async function uploadTradeScreenshot(file){
+  if(!currentUser) return null;
+  const ext = (file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+  const path = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+  try{
+    const { error: upErr } = await sb.storage.from('trade-screenshots').upload(path, file, { upsert:false, contentType: file.type });
+    if(upErr) throw upErr;
+    const { data } = sb.storage.from('trade-screenshots').getPublicUrl(path);
+    return data ? data.publicUrl : null;
+  }catch(e){
+    showToast('Screenshot upload failed — trade saved without it');
+    return null;
+  }
+}
+function openScreenshotLightbox(url){
+  if(!url) return;
+  document.getElementById('shotOverlayImg').src = url;
+  document.getElementById('shotOverlay').classList.add('show');
+}
+function closeScreenshotLightbox(){
+  document.getElementById('shotOverlay').classList.remove('show');
+  document.getElementById('shotOverlayImg').src = '';
+}
 async function submitTrade(){
   rolloverDayIfNeeded();
   const result = document.getElementById('t_result').value;
@@ -5092,8 +5266,26 @@ async function submitTrade(){
   if(state.rules.minRR!=null && rr!=='' && parseFloat(rr) < state.rules.minRR) brokeRuleThisTrade = true;
   if(result==='loss' && state.rules.maxRiskPerTrade!=null && lossAmount > state.rules.maxRiskPerTrade) brokeRuleThisTrade = true;
 
+  const tvLinkRaw = (document.getElementById('t_tvlink').value || '').trim();
+  const tvHint = document.getElementById('t_tvlinkHint');
+  if(tvLinkRaw && !isLikelyUrl(tvLinkRaw)){
+    if(tvHint) tvHint.style.display = 'block';
+    document.getElementById('t_tvlink').focus();
+    return;
+  }
+  if(tvHint) tvHint.style.display = 'none';
+
+  const saveBtn = document.getElementById('t_saveBtn');
+  let screenshotUrl = null;
+  if(pendingScreenshotFile){
+    if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Uploading image…'; }
+    screenshotUrl = await uploadTradeScreenshot(pendingScreenshotFile);
+    if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Save Trade'; }
+  }
+
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
   state.trades.push({ id: Date.now(), date: todayStr(), time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
+    screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null });
   state.day.tradesCount += 1;
   if(result==='loss'){ state.day.lossUsed += lossAmount; state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); } else { state.consecutiveLosses = 0; }
@@ -5112,6 +5304,8 @@ async function submitTrade(){
     if(result==='win') fireConfetti();
   }
   pendingViolation = false;
+  clearTradeScreenshot();
+  document.getElementById('t_tvlink').value = '';
   closeModal('tradeOverlay');
   await saveState();
   renderAll();
@@ -5224,6 +5418,9 @@ function closeOrder(id, result){
   document.getElementById('t_notes').value = order.notes || '';
   resetMoodChoices(null);
   updateTradeRiskPreview();
+  clearTradeScreenshot();
+  document.getElementById('t_tvlink').value='';
+  document.getElementById('t_tvlinkHint').style.display='none';
   document.getElementById('tradeOverlay').classList.add('show');
 }
 
@@ -5355,6 +5552,7 @@ function showCalDay(iso){
     <div class="trade-list" style="max-height:260px">
       ${trades.map(t=>{ const pnl = pnlOf(t); const typeInfo = STRATEGY_TYPES[t.strategyType]; return `
         <div class="trade-row">
+          ${t.screenshotUrl ? `<img src="${escapeHtml(t.screenshotUrl)}" class="trade-shot" loading="lazy" alt="Chart screenshot" onclick="openScreenshotLightbox('${t.screenshotUrl.replace(/'/g,"\\'")}')">` : ''}
           <div class="trade-badge ${t.result}">${t.result==='win'?'WIN':'LOSS'}</div>
           <div class="trade-meta">
             <div class="top">${t.time}</div>
@@ -5366,6 +5564,7 @@ function showCalDay(iso){
               ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
               ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
               ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
+              ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
             </div>
           </div>
           <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
