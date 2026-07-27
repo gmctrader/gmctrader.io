@@ -260,6 +260,9 @@ a{color:var(--bronze-bright);}
 #r_presetRow.demo-locked{opacity:0.55;position:relative;}
 #r_presetRow.demo-locked button{cursor:not-allowed;}
 #r_presetRow.demo-locked::after{content:'🔒 Presets unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
+#t_dateChartRow.demo-locked{opacity:0.55;position:relative;}
+#t_dateChartRow.demo-locked input{pointer-events:none;}
+#t_dateChartRow.demo-locked::after{content:'🔒 Custom date & calendar chart-link unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
 #rulesConfluencePanel.demo-locked{position:relative;cursor:pointer;}
 #rulesConfluencePanel.demo-locked>*{filter:blur(5px);opacity:0.65;pointer-events:none;user-select:none;}
 #rulesConfluencePanel.demo-locked::after{
@@ -1984,6 +1987,18 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <label>TradingView link <span class="hint-inline">optional</span></label>
         <input type="url" id="t_tvlink" placeholder="https://www.tradingview.com/x/XXXXXXXX/" autocapitalize="off" spellcheck="false">
         <div class="hint" id="t_tvlinkHint" style="display:none;color:var(--loss-bright);">That doesn't look like a link — check it and try again.</div>
+      </div>
+    </div>
+    <div class="row2" id="t_dateChartRow">
+      <div class="field">
+        <label>Trade date</label>
+        <input type="date" id="t_date">
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" id="t_openChartOnCalendar" style="width:16px;height:16px;flex-shrink:0;">
+          Open chart when tapped from calendar
+        </label>
       </div>
     </div>
     <div class="btn-row">
@@ -5168,7 +5183,19 @@ function proceedToTrade(){
   clearTradeScreenshot();
   document.getElementById('t_tvlink').value='';
   document.getElementById('t_tvlinkHint').style.display='none';
+  setupTradeDateChartRow();
   document.getElementById('tradeOverlay').classList.add('show');
+}
+function setupTradeDateChartRow(){
+  const dateEl = document.getElementById('t_date');
+  const chkEl = document.getElementById('t_openChartOnCalendar');
+  const row = document.getElementById('t_dateChartRow');
+  dateEl.value = todayStr();
+  dateEl.max = todayStr();
+  chkEl.checked = false;
+  dateEl.disabled = isDemoMode;
+  chkEl.disabled = isDemoMode;
+  if(row) row.classList.toggle('demo-locked', isDemoMode);
 }
 function onResultChange(){
   const isLoss = document.getElementById('t_result').value==='loss';
@@ -5270,9 +5297,19 @@ async function submitTrade(){
     if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Save Trade'; }
   }
 
+  // Demo users always log as today with no calendar chart-redirect, regardless of
+  // what's in the (disabled) fields — this is enforced here too, not just in the UI.
+  let tradeDate = todayStr();
+  let openChartOnCalendar = false;
+  if(!isDemoMode){
+    const dateVal = document.getElementById('t_date').value;
+    if(dateVal && dateVal <= todayStr()) tradeDate = dateVal;
+    openChartOnCalendar = document.getElementById('t_openChartOnCalendar').checked;
+  }
+
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
-  state.trades.push({ id: Date.now(), date: todayStr(), time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
-    screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null,
+  state.trades.push({ id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
+    screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null });
   state.day.tradesCount += 1;
   if(result==='loss'){ state.day.lossUsed += lossAmount; state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); } else { state.consecutiveLosses = 0; }
@@ -5293,6 +5330,8 @@ async function submitTrade(){
   pendingViolation = false;
   clearTradeScreenshot();
   document.getElementById('t_tvlink').value = '';
+  document.getElementById('t_date').value = todayStr();
+  document.getElementById('t_openChartOnCalendar').checked = false;
   closeModal('tradeOverlay');
   await saveState();
   renderAll();
@@ -5408,6 +5447,7 @@ function closeOrder(id, result){
   clearTradeScreenshot();
   document.getElementById('t_tvlink').value='';
   document.getElementById('t_tvlinkHint').style.display='none';
+  setupTradeDateChartRow();
   document.getElementById('tradeOverlay').classList.add('show');
 }
 
@@ -5519,6 +5559,11 @@ function handleCalDayTap(iso){
     openDemoTease('Day detail is for real accounts', 'The Proving Ground shows your monthly shape, not a trade-by-trade replay of each day — that unlocks the moment you\'re in for real.');
     return;
   }
+  // Real accounts only: if any trade logged that day was flagged to jump straight
+  // to its chart on calendar tap, open it — then still show the day's detail panel.
+  const dayTrades = filteredTrades().filter(t=>t.date===iso);
+  const chartTrade = dayTrades.find(t=>t.openChartOnCalendar && t.tvLink);
+  if(chartTrade) window.open(chartTrade.tvLink, '_blank', 'noopener,noreferrer');
   showCalDay(iso);
 }
 function showCalDay(iso){
