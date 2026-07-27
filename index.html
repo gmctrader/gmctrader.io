@@ -2109,6 +2109,52 @@ function unitsPerStandardLot(pair){
   if(['US30','NAS100','SPX500','GER40','UK100'].includes(p)) return 1; // 1 index CFD unit per lot
   return 100000; // standard FX contract
 }
+// The risk/reward math below is naturally denominated in the pair's QUOTE
+// currency (e.g. EURUSD math comes out in USD, USDJPY math comes out in JPY,
+// USDZAR math comes out in ZAR) — not necessarily the trader's account
+// currency. This is what was missing before: a ZAR account trading EURUSD
+// was having its USD-denominated result shown as if it were already ZAR,
+// off by whatever USD/ZAR happens to be.
+function pairQuoteCurrency(pair){
+  const p = (pair||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(p==='XAUUSD' || p==='XAGUSD' || p==='BTCUSD' || p==='ETHUSD') return 'USD';
+  if(['US30','NAS100','SPX500'].includes(p)) return 'USD';
+  if(p==='GER40') return 'EUR';
+  if(p==='UK100') return 'GBP';
+  if(p.length===6) return p.slice(3); // e.g. EURUSD -> USD, USDZAR -> ZAR, GBPJPY -> JPY
+  return 'USD';
+}
+// Live FX rates, fetched once and cached for a few hours — plenty fresh for
+// position-sizing/planning purposes, and avoids hammering the rate API on
+// every keystroke while entering an order.
+let fxRatesUSD = null, fxRatesFetchedAt = 0, fxRateFetchPromise = null;
+const FX_CACHE_MS = 6*60*60*1000;
+function ensureFxRatesLoaded(){
+  if(fxRatesUSD && (Date.now()-fxRatesFetchedAt) < FX_CACHE_MS) return Promise.resolve(fxRatesUSD);
+  if(fxRateFetchPromise) return fxRateFetchPromise;
+  fxRateFetchPromise = fetch('https://open.er-api.com/v6/latest/USD')
+    .then(r=>r.json())
+    .then(data=>{
+      if(data && data.result==='success' && data.rates){ fxRatesUSD = data.rates; fxRatesFetchedAt = Date.now(); }
+      return fxRatesUSD;
+    })
+    .catch(()=>fxRatesUSD)
+    .finally(()=>{ fxRateFetchPromise = null; onFxRatesReady(); });
+  return fxRateFetchPromise;
+}
+function getCachedFxRate(fromCcy, toCcy){
+  if(fromCcy===toCcy) return 1;
+  if(!fxRatesUSD) return null;
+  const fromPerUsd = fxRatesUSD[fromCcy], toPerUsd = fxRatesUSD[toCcy];
+  if(!fromPerUsd || !toPerUsd) return null;
+  return toPerUsd/fromPerUsd; // amount(fromCcy) * this = amount(toCcy)
+}
+// Once live rates land, refresh the Place Order panel if it's the visible
+// view, so the trader sees the corrected $ figures without touching anything.
+function onFxRatesReady(){
+  const ordersView = document.getElementById('view-orders');
+  if(ordersView && ordersView.classList.contains('active') && typeof updateOrderRRPreview==='function') updateOrderRRPreview();
+}
 // Exact $ risk and $ reward for a given order: price distance x units-per-lot
 // (scaled for account type) x lot size. Returns null if there isn't enough
 // info yet (no entry/SL/TP or no lot).
@@ -2117,10 +2163,25 @@ function computeOrderMoney(entry, sl, tp, pair, lot, accountType){
   if(isNaN(entry) || isNaN(lot) || lot<=0) return null;
   const acct = ACCOUNT_TYPES[accountType] || ACCOUNT_TYPES.standard;
   const units = unitsPerStandardLot(pair) * acct.mult * lot;
-  const risk = !isNaN(sl) ? +(Math.abs(entry-sl) * units).toFixed(2) : null;
-  const reward = !isNaN(tp) ? +(Math.abs(tp-entry) * units).toFixed(2) : null;
-  if(risk==null && reward==null) return null;
-  return { risk, reward };
+  const riskQuote = !isNaN(sl) ? Math.abs(entry-sl) * units : null;
+  const rewardQuote = !isNaN(tp) ? Math.abs(tp-entry) * units : null;
+  if(riskQuote==null && rewardQuote==null) return null;
+
+  // Convert from the pair's quote currency into the trader's actual account
+  // currency. Same-currency pairs (e.g. USD account on EURUSD) skip straight
+  // through at 1:1 — no live lookup needed. Everything else uses a cached
+  // live rate, fetched in the background if it isn't cached yet.
+  const quoteCcy = pairQuoteCurrency(pair);
+  const acctCcy = state.rules.currency || 'USD';
+  let fxRate = 1, fxStatus = 'same';
+  if(quoteCcy !== acctCcy){
+    const cached = getCachedFxRate(quoteCcy, acctCcy);
+    if(cached!=null){ fxRate = cached; fxStatus = 'live'; }
+    else { fxRate = null; fxStatus = 'loading'; ensureFxRatesLoaded(); }
+  }
+  const risk = (riskQuote!=null && fxRate!=null) ? +(riskQuote*fxRate).toFixed(2) : null;
+  const reward = (rewardQuote!=null && fxRate!=null) ? +(rewardQuote*fxRate).toFixed(2) : null;
+  return { risk, reward, quoteCcy, acctCcy, fxRate, fxStatus };
 }
 // Fired the instant either currency dropdown changes, so every $ label and the
 // "at risk per trade" previews reflect the new currency immediately, without
@@ -4209,7 +4270,11 @@ function updateOrderLotAcctHint(){
   const pairEl = document.getElementById('o_pair');
   const pair = pairEl ? pairEl.value : '';
   const perLot = unitsPerStandardLot(pair) * acct.mult;
-  const base = `Using your ${acct.label} account — 1.00 lot = ${perLot.toLocaleString()} units on ${pair ? pair.toUpperCase() : 'this instrument'}.`;
+  const quoteCcy = pairQuoteCurrency(pair);
+  const acctCcy = state.rules.currency || 'USD';
+  if(pair && quoteCcy !== acctCcy) ensureFxRatesLoaded(); // warm the cache before they even type a lot size
+  let base = `Using your ${acct.label} account — 1.00 lot = ${perLot.toLocaleString()} units on ${pair ? pair.toUpperCase() : 'this instrument'}.`;
+  if(pair && quoteCcy !== acctCcy) base += ` This pair settles in ${quoteCcy}, converted live to your ${acctCcy} account.`;
   if(orderAccountIsPropFirm()){
     const bal = propFirmLiveBalance();
     const pf = state.propFirm;
@@ -4269,8 +4334,14 @@ function renderOrderWorthPanel(rr, levels){
   reasons.push(profile.blurb);
 
   let moneyLine = '';
-  if(dollarRisk!=null && dollarReward!=null){
-    const basis = actual ? ` (exact, from your ${lot} lot on ${pair ? pair.toUpperCase() : 'this pair'})` : ` (estimated from your ${riskPct}% risk rule — add a lot size above for the exact figure)`;
+  if(actual && actual.fxStatus === 'loading'){
+    moneyLine = `<div class="hint" style="margin:0 0 4px;">Converting ${actual.quoteCcy} → ${actual.acctCcy} — fetching a live exchange rate for the exact figure, this updates automatically in a moment.</div>`;
+  } else if(dollarRisk!=null && dollarReward!=null){
+    const basis = actual
+      ? (actual.fxStatus==='live'
+          ? ` (exact, from your ${lot} lot on ${pair ? pair.toUpperCase() : 'this pair'}, converted ${actual.quoteCcy}→${actual.acctCcy} at ${actual.fxRate.toFixed(4)})`
+          : ` (exact, from your ${lot} lot on ${pair ? pair.toUpperCase() : 'this pair'})`)
+      : ` (estimated from your ${riskPct}% risk rule — add a lot size above for the exact figure)`;
     moneyLine = `<div class="check-item ${tier}"><span>${tier==='pass'?'&#10003;':tier==='warn'?'!':'&#10005;'}</span>Risking ${curSym()}${dollarRisk} to make ${curSym()}${dollarReward} on this account (${returnPct.toFixed(2)}% of balance) if it hits target${basis}.</div>`;
     if(actual && ruleDollarRisk!=null && actual.risk!=null && ruleDollarRisk>0){
       const diffPct = Math.abs(actual.risk - ruleDollarRisk) / ruleDollarRisk;
