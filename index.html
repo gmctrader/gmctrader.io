@@ -456,6 +456,7 @@ a{color:var(--bronze-bright);}
 @keyframes fadein{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
 .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:18px;}
+@media(max-width:820px){#pfComplianceWrap{position:static !important;}}
 @media(max-width:820px){.grid{grid-template-columns:1fr;}}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;}
 @media(max-width:900px){.grid3{grid-template-columns:1fr;}}
@@ -943,6 +944,22 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .pf-phase-chip{padding:8px 14px;border-radius:12px;border:1px solid var(--steel);font-size:12px;color:var(--slate);cursor:pointer;text-align:center;flex:1;min-width:100px;}
 .pf-phase-chip.active{border-color:var(--bronze);color:var(--bronze-bright);background:rgba(16,185,129,0.08);}
 .pf-empty{padding:20px;text-align:center;color:var(--slate);font-size:13px;}
+.pf-balance-row{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pf-balance-num{font-family:'Fraunces',serif;font-size:36px;font-weight:750;line-height:1;letter-spacing:-0.02em;color:var(--platinum);}
+.pf-balance-sub{font-size:10.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em;margin-top:5px;}
+.pf-balance-delta{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:right;}
+.pf-balance-delta.pos{color:var(--win-bright);}
+.pf-balance-delta.neg{color:var(--loss-bright);}
+.pf-balance-delta span{display:block;font-size:9.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;font-family:'Instrument Sans',sans-serif;margin-top:3px;text-align:right;}
+.pf-group-label{font-size:10px;font-weight:700;color:var(--slate-dim);text-transform:uppercase;letter-spacing:0.1em;margin:18px 0 10px;}
+.pf-group-label:first-of-type{margin-top:4px;}
+.pf-breach-banner{background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.3);border-radius:12px;
+  padding:12px 14px;margin-bottom:18px;font-size:12.5px;color:#9f1239;line-height:1.55;display:flex;gap:9px;align-items:flex-start;}
+.pf-breach-banner b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;color:#be123c;}
+.pf-empty-onboard{padding:26px 22px;text-align:center;}
+.pf-empty-onboard .glyph{font-size:26px;display:block;margin-bottom:10px;opacity:0.6;}
+.pf-empty-onboard h3{font-family:'Fraunces',serif;font-size:16px;font-weight:650;color:var(--platinum);margin:0 0 8px;}
+.pf-empty-onboard p{font-size:12.5px;color:var(--slate);line-height:1.6;margin:0;max-width:280px;margin:0 auto;}
 </style>
 </head>
 <body>
@@ -1701,40 +1718,42 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <div id="pfHeaderBadge" class="pf-badge off">Not configured</div>
       </div>
 
-      <div class="card tilt">
-        <h2>Challenge <span class="accent">Setup</span></h2>
-        <div class="row2">
-          <div class="field"><label>Prop firm name</label><input type="text" id="pf_firmName" placeholder="e.g. FTMO, MFF, Apex"></div>
-          <div class="field"><label>Starting account size (<span class="cur-sym">$</span>)</label><input type="number" id="pf_startingBalance" min="0" step="1"></div>
-        </div>
-        <div class="pf-phase-row" id="pfPhaseRow">
-          <div class="pf-phase-chip" data-phase="challenge" onclick="setPfPhase('challenge')">Challenge</div>
-          <div class="pf-phase-chip" data-phase="verification" onclick="setPfPhase('verification')">Verification</div>
-          <div class="pf-phase-chip" data-phase="funded" onclick="setPfPhase('funded')">Funded</div>
-        </div>
-        <div class="row2" style="margin-top:14px;">
-          <div class="field"><label>Profit target (%)</label><input type="number" id="pf_profitTarget" min="0" step="0.1" placeholder="e.g. 10"></div>
-          <div class="field"><label>Max daily loss (%)</label><input type="number" id="pf_maxDailyLossPct" min="0" step="0.1" placeholder="e.g. 5"></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>Max overall drawdown (%)</label><input type="number" id="pf_maxOverallDrawdownPct" min="0" step="0.1" placeholder="e.g. 10"></div>
-          <div class="field">
-            <label>Drawdown type</label>
-            <select id="pf_drawdownType">
-              <option value="static">Static (from start balance)</option>
-              <option value="trailing">Trailing (from equity peak)</option>
-            </select>
+      <div class="grid">
+        <div class="card tilt">
+          <h2>Challenge <span class="accent">Setup</span></h2>
+          <div class="row2">
+            <div class="field"><label>Prop firm name</label><input type="text" id="pf_firmName" placeholder="e.g. FTMO, MFF, Apex"></div>
+            <div class="field"><label>Starting account size (<span class="cur-sym">$</span>)</label><input type="number" id="pf_startingBalance" min="0" step="1"></div>
           </div>
+          <div class="pf-phase-row" id="pfPhaseRow">
+            <div class="pf-phase-chip" data-phase="challenge" onclick="setPfPhase('challenge')">Challenge</div>
+            <div class="pf-phase-chip" data-phase="verification" onclick="setPfPhase('verification')">Verification</div>
+            <div class="pf-phase-chip" data-phase="funded" onclick="setPfPhase('funded')">Funded</div>
+          </div>
+          <div class="row2" style="margin-top:14px;">
+            <div class="field"><label>Profit target (%)</label><input type="number" id="pf_profitTarget" min="0" step="0.1" placeholder="e.g. 10"></div>
+            <div class="field"><label>Max daily loss (%)</label><input type="number" id="pf_maxDailyLossPct" min="0" step="0.1" placeholder="e.g. 5"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Max overall drawdown (%)</label><input type="number" id="pf_maxOverallDrawdownPct" min="0" step="0.1" placeholder="e.g. 10"></div>
+            <div class="field">
+              <label>Drawdown type</label>
+              <select id="pf_drawdownType">
+                <option value="static">Static (from start balance)</option>
+                <option value="trailing">Trailing (from equity peak)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Minimum trading days</label><input type="number" id="pf_minTradingDays" min="0" step="1" placeholder="e.g. 4"></div>
+            <div class="field"><label>Consistency rule — max % of profit from one day</label><input type="number" id="pf_consistencyRulePct" min="0" step="1" placeholder="e.g. 30"></div>
+          </div>
+          <button class="btn btn-primary" onclick="savePropFirm()">Save Challenge Rules</button>
+          <div class="hint" id="pfSavedHint" style="margin-top:10px"></div>
         </div>
-        <div class="row2">
-          <div class="field"><label>Minimum trading days</label><input type="number" id="pf_minTradingDays" min="0" step="1" placeholder="e.g. 4"></div>
-          <div class="field"><label>Consistency rule — max % of profit from one day</label><input type="number" id="pf_consistencyRulePct" min="0" step="1" placeholder="e.g. 30"></div>
-        </div>
-        <button class="btn btn-primary" onclick="savePropFirm()">Save Challenge Rules</button>
-        <div class="hint" id="pfSavedHint" style="margin-top:10px"></div>
-      </div>
 
-      <div id="pfComplianceWrap" style="margin-top:18px;"></div>
+        <div id="pfComplianceWrap" style="align-self:start;position:sticky;top:20px;"></div>
+      </div>
     </div>
 
     <!-- SESSION -->
@@ -3766,7 +3785,11 @@ function renderPropFirmCompliance(){
   if(!m){
     headerBadge.className = 'pf-badge off';
     headerBadge.textContent = 'Not configured';
-    wrap.innerHTML = `<div class="card tilt"><div class="pf-empty">Set a starting balance above to activate live compliance tracking.</div></div>`;
+    wrap.innerHTML = `<div class="card tilt"><div class="pf-empty-onboard">
+      <span class="glyph">🏛️</span>
+      <h3>No challenge set up yet</h3>
+      <p>Fill in your prop firm's rules on the left — starting balance, profit target, drawdown and loss limits — then save to turn on live pass/fail tracking here.</p>
+    </div></div>`;
     return;
   }
 
@@ -3780,9 +3803,35 @@ function renderPropFirmCompliance(){
   const dailyPct = m.maxDailyLossDollar ? (m.todayLoss / m.maxDailyLossDollar * 100) : 0;
   const daysPct = m.minTradingDays ? (m.tradingDays / m.minTradingDays * 100) : 0;
 
+  // Collect which specific rules are currently breached, for the summary banner.
+  const breaches = [];
+  if(m.overallDrawdownBreached) breaches.push('Overall Drawdown');
+  if(m.dailyLossBreached) breaches.push('Daily Loss Limit');
+  if(pf.consistencyRulePct && m.consistencyBreach) breaches.push('Consistency Rule');
+
+  const balance = propFirmLiveBalance();
+  const delta = balance!=null && pf.startingBalance!=null ? (balance - pf.startingBalance) : null;
+
   wrap.innerHTML = `
     <div class="card tilt">
       <h2>Live <span class="accent">Compliance</span><span class="eyebrow">${escapeHtml(pf.firmName||'your firm')} · ${pf.phase}</span></h2>
+
+      ${balance!=null ? `
+      <div class="pf-balance-row">
+        <div>
+          <div class="pf-balance-num">${fmt(balance)}</div>
+          <div class="pf-balance-sub">Current account balance</div>
+        </div>
+        ${delta!=null ? `<div class="pf-balance-delta ${delta>=0?'pos':'neg'}">${delta>=0?'+':'-'}${curSym()}${Math.abs(delta).toFixed(0)}<span>vs ${fmt(pf.startingBalance)} start</span></div>` : ''}
+      </div>` : ''}
+
+      ${breaches.length ? `
+      <div class="pf-breach-banner">
+        <span>⚠️</span>
+        <div><b>${breaches.length} rule${breaches.length>1?'s':''} breached</b>${breaches.join(', ')} — this account would currently fail the challenge.</div>
+      </div>` : ''}
+
+      <div class="pf-group-label">Financial Rules</div>
 
       <div class="pf-metric">
         <div class="pf-metric-head">
@@ -3800,13 +3849,15 @@ function renderPropFirmCompliance(){
         ${pfBar(ddPct, m.overallDrawdownBreached?'fail':(ddPct>=70?'warn':''))}
       </div>
 
-      <div class="pf-metric">
+      <div class="pf-metric" style="margin-bottom:0;">
         <div class="pf-metric-head">
           <div><div class="pf-metric-title">Daily Loss Limit</div><div class="pf-metric-sub">${fmt(-m.todayLoss)} today of ${m.maxDailyLossDollar!=null?fmt(m.maxDailyLossDollar):'—'} allowed</div></div>
           <div class="pf-badge ${m.dailyLossBreached?'fail':(dailyPct>=70?'warn':'pass')}">${m.dailyLossBreached?'Breached':dailyPct.toFixed(0)+'%'}</div>
         </div>
         ${pfBar(dailyPct, m.dailyLossBreached?'fail':(dailyPct>=70?'warn':''))}
       </div>
+
+      <div class="pf-group-label">Behavioral Rules</div>
 
       <div class="pf-metric">
         <div class="pf-metric-head">
