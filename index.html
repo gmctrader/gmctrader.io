@@ -1230,6 +1230,10 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Overview
       </button>
+      <button class="side-navbtn" data-view="brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        Daily Brief
+      </button>
       <button class="side-navbtn" data-view="analytics">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
         Analytics
@@ -1398,6 +1402,46 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
             <svg width="100%" height="90" viewBox="0 0 200 90"><polyline points="0,50 25,20 50,60 75,15 100,70 125,25 150,80 180,55 200,75" fill="none" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/></svg>
             <div class="cap" style="color:var(--loss)">Impulsive</div>
             <div class="msg">Emotional entries create volatility that erases progress.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAILY BRIEF -->
+    <div class="view" id="view-brief">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Daily Brief</h2>
+          <div class="page-sub">What to do, what got done, and what's moving the market — in one place.</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="card tilt">
+          <h2>Morning <span class="accent">Brief</span><span class="eyebrow" id="briefDateLabel"></span></h2>
+          <div id="briefMorningBody"></div>
+        </div>
+        <div class="card tilt">
+          <h2>Day <span class="accent">Review</span><span class="eyebrow">plan vs actual</span></h2>
+          <div id="briefReviewBody"></div>
+        </div>
+        <div class="card tilt" style="grid-column:1/-1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+            <h2 style="margin:0;">Market <span class="accent">News</span></h2>
+            <button class="side-logout" style="font-size:11px;padding:5px 12px;" onclick="refreshMarketNews(true)">↻ Refresh</button>
+          </div>
+          <div id="briefNewsBody"></div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--steel-hi);">
+            <div class="row2">
+              <div class="field">
+                <label>News API key <span class="hint-inline">free at finnhub.io</span></label>
+                <input type="text" id="brief_apiKey" placeholder="Paste your free Finnhub API key" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
+              </div>
+              <div class="field">
+                <label>Watched pairs <span class="hint-inline">comma separated</span></label>
+                <input type="text" id="brief_watchedPairs" placeholder="EURUSD, GBPUSD, XAUUSD" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
+              </div>
+            </div>
+            <div class="hint">Get a free key at <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer" style="color:var(--gold-bright)">finnhub.io/register</a> — no card required. Your key stays local to your account and is only used to fetch news directly from your browser.</div>
           </div>
         </div>
       </div>
@@ -2037,9 +2081,22 @@ const DEFAULT_STATE = {
   streak:{ count:0, lastGoodDate:null },
   day:{ date:null, tradesCount:0, lossUsed:0, ruleBrokenToday:false },
   consecutiveLosses:0,
-  rulesCompleted:false
+  rulesCompleted:false,
+  brief:{ newsApiKey:'', watchedPairs:'' }
 };
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+// Daily Brief settings (news API key, watched pairs) live in plain localStorage
+// rather than the synced Supabase row — this is a personal browser preference,
+// not trading data, and keeping it local avoids needing a database schema change.
+const BRIEF_SETTINGS_KEY = 'ghostDiscipline_briefSettings';
+function loadBriefSettings(){
+  try{
+    const raw = localStorage.getItem(BRIEF_SETTINGS_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    state.brief = Object.assign({}, DEFAULT_STATE.brief, parsed || {});
+  }catch(e){ state.brief = Object.assign({}, DEFAULT_STATE.brief); }
+}
+loadBriefSettings();
 let currentUser = null;
 let isDemoMode = false;
 let pendingViolation = false;
@@ -4364,6 +4421,157 @@ function renderOrderWorthPanel(rr, levels){
     ${moneyLine}
     ${reasons.map(r=>`<div class="check-item ${tier}"><span>${tier==='pass'?'&#10003;':tier==='warn'?'!':'&#10005;'}</span>${escapeHtml(r)}</div>`).join('')}
   `;
+}
+
+/* ============ DAILY BRIEF ============ */
+let briefNewsCache = { items: null, fetchedAt: 0, forPairs: '', error: null };
+const BRIEF_NEWS_CACHE_MS = 15*60*1000; // 15 minutes is plenty fresh for a headline feed, keeps calls low
+
+function saveBriefSettings(){
+  state.brief = {
+    newsApiKey: document.getElementById('brief_apiKey').value.trim(),
+    watchedPairs: document.getElementById('brief_watchedPairs').value.trim()
+  };
+  try{ localStorage.setItem(BRIEF_SETTINGS_KEY, JSON.stringify(state.brief)); }catch(e){}
+}
+let briefSaveTimer = null;
+function saveBriefSettingsDebounced(){
+  clearTimeout(briefSaveTimer);
+  briefSaveTimer = setTimeout(()=>{ saveBriefSettings(); refreshMarketNews(true); }, 700);
+}
+function watchedPairList(){
+  return (state.brief.watchedPairs||'').split(',').map(p=>p.trim().toUpperCase().replace(/[^A-Z0-9]/g,'')).filter(Boolean);
+}
+function pairCurrencyCodes(pair){
+  const p = (pair||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(p==='XAUUSD') return ['XAU','GOLD','USD'];
+  if(p==='XAGUSD') return ['XAG','SILVER','USD'];
+  if(p==='BTCUSD') return ['BTC','BITCOIN','USD'];
+  if(p==='ETHUSD') return ['ETH','ETHEREUM','USD'];
+  if(p.length===6) return [p.slice(0,3), p.slice(3)];
+  return [p];
+}
+function renderBrief(){
+  const dateEl = document.getElementById('briefDateLabel');
+  if(dateEl) dateEl.textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+  const keyEl = document.getElementById('brief_apiKey');
+  const pairsEl = document.getElementById('brief_watchedPairs');
+  if(keyEl) keyEl.value = state.brief.newsApiKey || '';
+  if(pairsEl) pairsEl.value = state.brief.watchedPairs || '';
+  renderMorningBrief();
+  renderDayReview();
+  refreshMarketNews(false);
+}
+// What to do today: pulls straight from Rule Builder + today's live counters, so
+// it's always in sync with the same numbers the rest of the app enforces.
+function renderMorningBrief(){
+  const body = document.getElementById('briefMorningBody');
+  if(!body) return;
+  const r = state.rules;
+  const lossUsed = state.day.lossUsed || 0;
+  const tradesUsed = state.day.tradesCount || 0;
+  const lossPct = r.maxDailyLoss ? Math.min(100, (lossUsed/r.maxDailyLoss*100)) : null;
+  const tradesPct = r.maxTrades ? Math.min(100, (tradesUsed/r.maxTrades*100)) : null;
+  const pendingOrders = (state.psychology.orders||[]).length;
+  const disc = computeDisciplineScore();
+  const tier = disciplineTier(disc);
+  const items = [];
+  items.push(`<div class="check-item pass"><span>&#10003;</span>Discipline streak: <b>${state.streak.count||0} day${(state.streak.count||0)===1?'':'s'}</b> — today's score <b style="color:${tier.color}">${disc}/100</b></div>`);
+  if(r.maxDailyLoss!=null){
+    items.push(`<div class="check-item ${lossPct>=80?'fail':lossPct>=50?'warn':'pass'}"><span>${lossPct>=80?'&#10005;':'&#10003;'}</span>Daily loss used: <b>${curSym()}${lossUsed.toFixed(0)} / ${curSym()}${r.maxDailyLoss}</b> (${lossPct.toFixed(0)}%)</div>`);
+  }
+  if(r.maxTrades!=null){
+    items.push(`<div class="check-item ${tradesPct>=100?'fail':'pass'}"><span>${tradesPct>=100?'&#10005;':'&#10003;'}</span>Trades taken today: <b>${tradesUsed} / ${r.maxTrades}</b></div>`);
+  }
+  items.push(`<div class="check-item pass"><span>&#10003;</span>Pending orders in book: <b>${pendingOrders}</b></div>`);
+  if(state.day.ruleBrokenToday){
+    items.push(`<div class="check-item fail"><span>&#10005;</span>A rule was already broken today — the streak resets fresh tomorrow.</div>`);
+  }
+  const watched = watchedPairList();
+  items.push(`<div class="hint" style="margin-top:10px;margin-bottom:0;">${watched.length ? `Watching today: <b>${escapeHtml(watched.join(', '))}</b>` : 'Add watched pairs in the Market News card below to tailor this brief.'}</div>`);
+  body.innerHTML = items.join('');
+}
+// What actually got done vs. the plan above — pulled from today's logged trades.
+function renderDayReview(){
+  const body = document.getElementById('briefReviewBody');
+  if(!body) return;
+  const iso = todayStr();
+  const trades = filteredTrades().filter(t=>t.date===iso);
+  if(trades.length===0){
+    body.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>No trades logged yet today — plan is still open.</div>';
+    return;
+  }
+  const wins = trades.filter(t=>t.result==='win').length;
+  const losses = trades.length - wins;
+  const pnl = trades.reduce((s,t)=>s+pnlOf(t),0);
+  const ruleBroken = state.day.ruleBrokenToday;
+  let html = `<div class="check-item ${pnl>=0?'pass':'fail'}"><span>${pnl>=0?'&#10003;':'&#10005;'}</span>${trades.length} trade${trades.length>1?'s':''} today — ${wins}W / ${losses}L, ${pnl>=0?'+':'-'}${curSym()}${Math.abs(pnl).toFixed(0)}</div>`;
+  html += `<div class="check-item ${ruleBroken?'fail':'pass'}"><span>${ruleBroken?'&#10005;':'&#10003;'}</span>${ruleBroken ? 'A rule was broken today — worth reviewing which one and why before tomorrow.' : 'Stayed inside your own rules today.'}</div>`;
+  const moods = trades.map(t=>MOOD_LABELS[t.mood]||t.mood).filter(Boolean);
+  if(moods.length) html += `<div class="hint" style="margin-top:8px;margin-bottom:0;">Mindset while trading: ${escapeHtml(moods.join(', '))}</div>`;
+  body.innerHTML = html;
+}
+// Live forex headlines, via a Finnhub key the trader supplies themselves — no
+// key is bundled with the app, so nothing proprietary ships in the page source.
+// Watched-pair headlines are surfaced first; nothing here predicts price moves,
+// it only surfaces known scheduled/real news so the trader can factor it in.
+async function refreshMarketNews(force){
+  const body = document.getElementById('briefNewsBody');
+  if(!body) return;
+  const key = (state.brief.newsApiKey||'').trim();
+  if(!key){
+    body.innerHTML = '<div class="hint" style="margin:0;">Add a free Finnhub API key below to see live market news here.</div>';
+    return;
+  }
+  const cacheKey = key + '|' + (state.brief.watchedPairs||'');
+  if(!force && briefNewsCache.items && briefNewsCache.forPairs===cacheKey && (Date.now()-briefNewsCache.fetchedAt)<BRIEF_NEWS_CACHE_MS){
+    renderNewsList(briefNewsCache.items);
+    return;
+  }
+  body.innerHTML = '<div class="hint" style="margin:0;">Fetching latest market news…</div>';
+  try{
+    const res = await fetch(`https://finnhub.io/api/v1/news?category=forex&token=${encodeURIComponent(key)}`);
+    if(!res.ok){
+      if(res.status===401 || res.status===403){
+        body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">That API key was rejected — double-check you copied it correctly from finnhub.io.</div>';
+      } else {
+        body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">Could not load news right now — try refreshing in a moment.</div>';
+      }
+      return;
+    }
+    const data = await res.json();
+    const items = Array.isArray(data) ? data.slice(0, 30) : [];
+    briefNewsCache = { items, fetchedAt: Date.now(), forPairs: cacheKey, error: null };
+    renderNewsList(items);
+  }catch(e){
+    body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">Could not reach the news service — check your connection and try again.</div>';
+  }
+}
+function renderNewsList(items){
+  const body = document.getElementById('briefNewsBody');
+  if(!body) return;
+  if(!items || items.length===0){
+    body.innerHTML = '<div class="empty-state"><span class="glyph">📰</span>No headlines returned right now.</div>';
+    return;
+  }
+  const watched = watchedPairList();
+  const watchedCodes = new Set(watched.flatMap(pairCurrencyCodes));
+  let ranked = items.map(it=>{
+    const hay = ((it.headline||'') + ' ' + (it.summary||'')).toUpperCase();
+    const hit = watched.length ? [...watchedCodes].some(c=>hay.includes(c)) : false;
+    return Object.assign({}, it, { _hit: hit });
+  });
+  if(watched.length) ranked.sort((a,b)=>(b._hit - a._hit));
+  ranked = ranked.slice(0, 15);
+  body.innerHTML = ranked.map(it=>{
+    const dt = it.datetime ? new Date(it.datetime*1000).toLocaleString(undefined,{month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+    return `<div class="trade-row" style="align-items:flex-start;">
+      <div class="trade-meta" style="width:100%;">
+        <div class="top">${dt}${it.source?` · ${escapeHtml(it.source)}`:''}${it._hit?' · <span style="color:var(--gold-bright);">watched pair</span>':''}</div>
+        <div class="bottom"><a href="${escapeHtml(it.url||'#')}" target="_blank" rel="noopener noreferrer" style="color:var(--platinum);text-decoration:none;">${escapeHtml(it.headline||'Untitled')}</a></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ============ JOURNAL ============ */
