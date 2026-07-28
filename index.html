@@ -2840,7 +2840,7 @@ function renderDemoStatus(){
 /* ============ DATA LOAD/SAVE ============ */
 async function loadOrCreateTraderData(){
   const { data, error } = await sb.from('trader_data').select('*').eq('user_id', currentUser.id).maybeSingle();
-  if(error){ showToast('Could not load your data'); return; }
+  if(error){ console.error('Ghost Discipline load failed:', error); showToast('Could not load your data: ' + (error.message||error.code||'unknown error')); return; }
   if(!data){
     const { data: created, error: insertErr } = await sb.from('trader_data').insert({
       user_id: currentUser.id,
@@ -2856,7 +2856,7 @@ async function loadOrCreateTraderData(){
       rules_completed: false,
       version: 1
     }).select().single();
-    if(insertErr){ showToast('Could not create your profile'); return; }
+    if(insertErr){ console.error('Ghost Discipline profile creation failed:', insertErr); showToast('Could not create your profile: ' + (insertErr.message||insertErr.code||'unknown error')); return; }
     hydrateState(created);
   } else {
     hydrateState(data);
@@ -2986,6 +2986,9 @@ async function flushPendingSave(){
     clearPendingSave();
     updateSyncIndicator('synced');
   }catch(e){
+    console.error('Ghost Discipline save failed:', e);
+    const msg = (e && (e.message || e.error_description || e.hint || e.details || e.code)) || 'Unknown error';
+    showToast('Save failed: ' + msg);
     updateSyncIndicator('offline');
     scheduleSaveRetry();
   }
