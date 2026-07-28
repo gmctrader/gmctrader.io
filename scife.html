@@ -126,6 +126,25 @@ button{font-family:inherit;}
   box-shadow:0 20px 50px rgba(0,0,0,0.2);}
 .modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;}
 .modal .sub{color:var(--slate);font-size:13px;margin:0 0 18px;}
+
+/* ---- provider picker ---- */
+.provider-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px;}
+.provider-card{border:1px solid var(--steel-hi);border-radius:13px;padding:10px 11px;cursor:pointer;
+  background:var(--void-2);transition:border-color .15s,background .15s,box-shadow .15s;}
+.provider-card:hover{border-color:var(--bronze);}
+.provider-card.active{border-color:var(--bronze);background:rgba(16,185,129,0.08);box-shadow:0 0 0 1px var(--bronze) inset;}
+.pc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;}
+.pc-name{font-weight:650;font-size:13px;line-height:1.3;}
+.pc-badge{font-size:9.5px;font-weight:700;padding:2.5px 7px;border-radius:99px;white-space:nowrap;letter-spacing:.02em;flex:none;}
+.pc-badge.free{background:rgba(22,163,74,0.13);color:var(--win);}
+.pc-badge.freemodels{background:rgba(16,185,129,0.14);color:var(--bronze-dim);}
+.pc-badge.paid{background:rgba(194,118,10,0.13);color:var(--amber);}
+.pc-cost{font-size:11px;color:var(--slate);line-height:1.4;}
+.pc-check{position:absolute;top:8px;right:8px;color:var(--bronze);font-size:12px;font-weight:700;}
+.key-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.key-saved-tag{font-size:11px;color:var(--win);font-weight:650;white-space:nowrap;}
+.key-link{font-size:12px;margin-top:6px;display:inline-block;text-decoration:none;font-weight:600;}
+.key-link:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -148,13 +167,18 @@ button{font-family:inherit;}
     </div>
     <div class="field">
       <label>AI provider</label>
-      <select id="setupProviderSelect" onchange="onProviderChange('setup')"></select>
+      <div class="provider-grid" id="setupProviderGrid"></div>
+      <select id="setupProviderSelect" style="display:none;" onchange="onProviderChange('setup')"></select>
       <div class="hint" id="setupProviderHint"></div>
     </div>
     <div class="field">
-      <label id="setupKeyLabel">API key</label>
-      <input type="password" id="setupKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false">
+      <div class="key-row-top">
+        <label id="setupKeyLabel">API key</label>
+        <span class="key-saved-tag" id="setupKeySaved" style="display:none;">✓ saved</span>
+      </div>
+      <input type="password" id="setupKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false" oninput="onKeyInput('setup')">
       <div class="hint" id="setupKeyHint"></div>
+      <a class="key-link" id="setupKeyLink" href="#" target="_blank" rel="noopener">Get a free API key →</a>
     </div>
     <div class="field">
       <label>Model</label>
@@ -215,13 +239,18 @@ button{font-family:inherit;}
     <div class="sub">Your key and preferences, synced to your account.</div>
     <div class="field">
       <label>AI provider</label>
-      <select id="settingsProviderSelect" onchange="onProviderChange('settings')"></select>
+      <div class="provider-grid" id="settingsProviderGrid"></div>
+      <select id="settingsProviderSelect" style="display:none;" onchange="onProviderChange('settings')"></select>
       <div class="hint" id="settingsProviderHint"></div>
     </div>
     <div class="field">
-      <label id="settingsKeyLabel">API key</label>
-      <input type="password" id="settingsKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false">
+      <div class="key-row-top">
+        <label id="settingsKeyLabel">API key</label>
+        <span class="key-saved-tag" id="settingsKeySaved" style="display:none;">✓ saved</span>
+      </div>
+      <input type="password" id="settingsKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false" oninput="onKeyInput('settings')">
       <div class="hint" id="settingsKeyHint"></div>
+      <a class="key-link" id="settingsKeyLink" href="#" target="_blank" rel="noopener">Get a free API key →</a>
     </div>
     <div class="field">
       <label>Model</label>
@@ -255,21 +284,93 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'openai', apiKey:'', model:'gpt-4o-mini', voiceOn:true, memory:[] };
+let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[] };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
 let speaking = false;
 
 /* ============ PROVIDERS ============
-   Add a new provider here and it shows up in both the setup screen and
-   settings modal automatically — no other UI wiring needed. */
+   Add a new provider here and it shows up as a card in both the setup
+   screen and settings modal automatically — no other UI wiring needed.
+   `compat` tells chatCompletion() which request shape to use:
+     'openai'    → OpenAI-style /chat/completions (works for OpenAI, Groq, OpenRouter, Mistral)
+     'anthropic' → Anthropic /v1/messages shape
+     'gemini'    → Google Generative Language API shape                                    */
 const PROVIDERS = {
+  groq: {
+    label: 'Groq',
+    badge: 'Free', badgeClass:'free',
+    cost: 'Generous free tier · very fast open-source models',
+    keyLabel: 'Groq API key',
+    keyPlaceholder: 'gsk_...',
+    keyHint: 'Free to sign up — no card required for the free tier.',
+    keyLink: 'https://console.groq.com/keys',
+    compat: 'openai',
+    baseURL: 'https://api.groq.com/openai/v1/chat/completions',
+    models: [
+      { value:'llama-3.3-70b-versatile', label:'Llama 3.3 70B — smart & free' },
+      { value:'llama-3.1-8b-instant', label:'Llama 3.1 8B — fastest' },
+      { value:'gemma2-9b-it', label:'Gemma 2 9B — light & free' }
+    ]
+  },
+  google: {
+    label: 'Google Gemini',
+    badge: 'Free tier', badgeClass:'free',
+    cost: 'Free daily quota, then pay-as-you-go',
+    keyLabel: 'Gemini API key',
+    keyPlaceholder: 'AIza...',
+    keyHint: 'Get a key from Google AI Studio — free tier is generous for chat use.',
+    keyLink: 'https://aistudio.google.com/apikey',
+    compat: 'gemini',
+    models: [
+      { value:'gemini-2.5-flash', label:'Gemini 2.5 Flash — fast & free-tier' },
+      { value:'gemini-2.0-flash-lite', label:'Gemini 2.0 Flash-Lite — cheapest' },
+      { value:'gemini-2.5-pro', label:'Gemini 2.5 Pro — most capable' }
+    ]
+  },
+  openrouter: {
+    label: 'OpenRouter',
+    badge: 'Free models', badgeClass:'freemodels',
+    cost: 'Many models tagged :free · pay-as-you-go for the rest',
+    keyLabel: 'OpenRouter API key',
+    keyPlaceholder: 'sk-or-...',
+    keyHint: 'One key, many models — pick a ":free" model below to pay nothing.',
+    keyLink: 'https://openrouter.ai/keys',
+    compat: 'openai',
+    baseURL: 'https://openrouter.ai/api/v1/chat/completions',
+    models: [
+      { value:'meta-llama/llama-3.1-8b-instruct:free', label:'Llama 3.1 8B — free' },
+      { value:'google/gemini-2.0-flash-exp:free', label:'Gemini 2.0 Flash (exp) — free' },
+      { value:'openai/gpt-4o-mini', label:'GPT-4o mini — paid, cheap' }
+    ]
+  },
+  mistral: {
+    label: 'Mistral',
+    badge: 'Free tier', badgeClass:'free',
+    cost: 'Free tier available · paid from ~$0.15 / 1M tokens',
+    keyLabel: 'Mistral API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Free tier keys are available on Mistral La Plateforme.',
+    keyLink: 'https://console.mistral.ai/api-keys',
+    compat: 'openai',
+    baseURL: 'https://api.mistral.ai/v1/chat/completions',
+    models: [
+      { value:'open-mistral-nemo', label:'Mistral Nemo — free-tier friendly' },
+      { value:'mistral-small-latest', label:'Mistral Small — cheap' },
+      { value:'mistral-large-latest', label:'Mistral Large — most capable' }
+    ]
+  },
   openai: {
     label: 'OpenAI',
+    badge: 'Paid', badgeClass:'paid',
+    cost: 'From ~$0.15 / 1M tokens (mini) to ~$10 / 1M (full model)',
     keyLabel: 'OpenAI API key',
     keyPlaceholder: 'sk-...',
-    keyHint: 'Get a key at platform.openai.com/api-keys.',
+    keyHint: 'Pay-as-you-go — add billing to your OpenAI account first.',
+    keyLink: 'https://platform.openai.com/api-keys',
+    compat: 'openai',
+    baseURL: 'https://api.openai.com/v1/chat/completions',
     models: [
       { value:'gpt-4o-mini', label:'gpt-4o-mini — fast & cheap' },
       { value:'gpt-4o', label:'gpt-4o — smarter' }
@@ -277,9 +378,13 @@ const PROVIDERS = {
   },
   anthropic: {
     label: 'Anthropic (Claude)',
+    badge: 'Paid', badgeClass:'paid',
+    cost: 'From ~$0.25 / 1M tokens (Haiku) to ~$15 / 1M (Opus)',
     keyLabel: 'Anthropic API key',
     keyPlaceholder: 'sk-ant-...',
-    keyHint: 'Get a key at console.anthropic.com. This calls Anthropic straight from your browser — some office networks or ad-blockers may need to allow api.anthropic.com.',
+    keyHint: 'Pay-as-you-go. Calls Anthropic straight from your browser — some office networks or ad-blockers may need to allow api.anthropic.com.',
+    keyLink: 'https://console.anthropic.com/settings/keys',
+    compat: 'anthropic',
     models: [
       { value:'claude-sonnet-5', label:'Claude Sonnet 5 — smart & fast' },
       { value:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5 — fastest & cheap' },
@@ -294,23 +399,72 @@ function populateProviderSelects(){
   const settingsSel = document.getElementById('settingsProviderSelect');
   if(setupSel) setupSel.innerHTML = opts;
   if(settingsSel) settingsSel.innerHTML = opts;
+  buildProviderGrid('setup');
+  buildProviderGrid('settings');
 }
 
-/* Rebuilds the key label/placeholder/hint and model list for whichever
-   screen ('setup' or 'settings') the person is looking at. */
+/* Builds the visual provider-card grid for a scope ('setup' or 'settings').
+   Cards drive the hidden native <select> underneath so the rest of the
+   code (which reads sel.value) doesn't need to change. */
+function buildProviderGrid(scope){
+  const grid = document.getElementById(scope+'ProviderGrid');
+  if(!grid) return;
+  const sel = document.getElementById(scope+'ProviderSelect');
+  const active = sel.value || scife.provider;
+  grid.innerHTML = Object.entries(PROVIDERS).map(([key,cfg])=>{
+    const isActive = key === active;
+    const hasSavedKey = !!(scife.apiKeys && scife.apiKeys[key]);
+    return `<div class="provider-card${isActive?' active':''}" data-key="${key}" onclick="selectProvider('${scope}','${key}')">
+      <div class="pc-top"><span class="pc-name">${cfg.label}</span><span class="pc-badge ${cfg.badgeClass}">${cfg.badge}${hasSavedKey?' ✓':''}</span></div>
+      <div class="pc-cost">${cfg.cost}</div>
+    </div>`;
+  }).join('');
+}
+
+/* Called when a provider card is tapped. */
+function selectProvider(scope, key){
+  const sel = document.getElementById(scope+'ProviderSelect');
+  sel.value = key;
+  buildProviderGrid(scope);
+  onProviderChange(scope);
+}
+
+/* Rebuilds the key label/placeholder/hint/link and model list for whichever
+   screen ('setup' or 'settings') the person is looking at, and auto-fills
+   the key field with a previously saved key for that provider so switching
+   providers never requires retyping a key you already saved. */
 function onProviderChange(scope){
   const sel = document.getElementById(scope+'ProviderSelect');
   const cfg = PROVIDERS[sel.value] || PROVIDERS.openai;
   const keyLabel = document.getElementById(scope+'KeyLabel');
   const keyInput = document.getElementById(scope+'KeyInput');
   const keyHint = document.getElementById(scope+'KeyHint');
+  const keyLink = document.getElementById(scope+'KeyLink');
+  const keySaved = document.getElementById(scope+'KeySaved');
   const modelSelect = document.getElementById(scope+'ModelSelect');
   const providerHint = document.getElementById(scope+'ProviderHint');
   if(keyLabel) keyLabel.textContent = cfg.keyLabel;
   if(keyInput) keyInput.placeholder = cfg.keyPlaceholder;
   if(keyHint) keyHint.textContent = cfg.keyHint;
   if(providerHint) providerHint.textContent = cfg.keyHint;
-  if(modelSelect) modelSelect.innerHTML = cfg.models.map(m=>`<option value="${m.value}">${m.label}</option>`).join('');
+  if(keyLink) keyLink.href = cfg.keyLink;
+  const savedKey = (scife.apiKeys && scife.apiKeys[sel.value]) || '';
+  if(keyInput) keyInput.value = savedKey;
+  if(keySaved) keySaved.style.display = savedKey ? 'inline' : 'none';
+  if(modelSelect){
+    modelSelect.innerHTML = cfg.models.map(m=>`<option value="${m.value}">${m.label}</option>`).join('');
+    if(sel.value === scife.provider && scife.model) modelSelect.value = scife.model;
+  }
+}
+
+/* Hides the "✓ saved" tag as soon as the person starts editing the key,
+   since what's on screen no longer matches what's saved. */
+function onKeyInput(scope){
+  const sel = document.getElementById(scope+'ProviderSelect');
+  const keyInput = document.getElementById(scope+'KeyInput');
+  const keySaved = document.getElementById(scope+'KeySaved');
+  const savedKey = (scife.apiKeys && scife.apiKeys[sel.value]) || '';
+  if(keySaved) keySaved.style.display = (keyInput.value && keyInput.value === savedKey) ? 'inline' : 'none';
 }
 
 function showToast(msg){
@@ -327,8 +481,9 @@ function todayStr(){ return new Date().toISOString().slice(0,10); }
   currentUser = data.session.user;
   await loadTraderRow();
   populateProviderSelects();
-  if(!scife.apiKey){
+  if(!activeApiKey()){
     document.getElementById('setupProviderSelect').value = scife.provider;
+    buildProviderGrid('setup');
     onProviderChange('setup');
     document.getElementById('setupScreen').style.display='flex';
   } else {
@@ -341,13 +496,23 @@ async function loadTraderRow(){
   if(error){ showToast('Could not load your journal: ' + (error.message||error.code)); return; }
   traderRow = data || {};
   const s = traderRow.scife || {};
+  const provider = s.provider || 'openai';
+  // apiKeys is the new per-provider map; fall back to migrating an old
+  // single "apiKey" field (from before multi-provider support) if present.
+  const apiKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? { ...s.apiKeys } : {};
+  if(s.apiKey && !apiKeys[provider]) apiKeys[provider] = s.apiKey;
   scife = {
-    provider: s.provider || 'openai',
-    apiKey: s.apiKey || '',
-    model: s.model || (PROVIDERS[s.provider || 'openai'].models[0].value),
+    provider,
+    apiKeys,
+    model: s.model || (PROVIDERS[provider] || PROVIDERS.openai).models[0].value,
     voiceOn: s.voiceOn !== false,
     memory: Array.isArray(s.memory) ? s.memory : []
   };
+}
+
+/* The key currently in effect for chat calls — whatever is saved for the active provider. */
+function activeApiKey(){
+  return (scife.apiKeys && scife.apiKeys[scife.provider]) || '';
 }
 
 async function saveScife(){
@@ -361,7 +526,8 @@ async function saveSetup(){
   const key = document.getElementById('setupKeyInput').value.trim();
   if(!key){ showToast('Paste your API key first'); return; }
   scife.provider = document.getElementById('setupProviderSelect').value;
-  scife.apiKey = key;
+  scife.apiKeys = scife.apiKeys || {};
+  scife.apiKeys[scife.provider] = key;
   scife.model = document.getElementById('setupModelSelect').value;
   scife.voiceOn = document.getElementById('setupVoiceSwitch').classList.contains('on');
   await saveScife();
@@ -371,8 +537,8 @@ async function saveSetup(){
 function openSettings(){
   populateProviderSelects();
   document.getElementById('settingsProviderSelect').value = scife.provider;
+  buildProviderGrid('settings');
   onProviderChange('settings');
-  document.getElementById('settingsKeyInput').value = scife.apiKey;
   document.getElementById('settingsModelSelect').value = scife.model;
   document.getElementById('settingsVoiceSwitch').classList.toggle('on', scife.voiceOn);
   document.getElementById('memoryCountHint').textContent = scife.memory.length + ' notes remembered';
@@ -382,9 +548,10 @@ function closeSettings(){ document.getElementById('settingsOverlay').classList.r
 async function saveSettings(){
   const newProvider = document.getElementById('settingsProviderSelect').value;
   const newKey = document.getElementById('settingsKeyInput').value.trim();
-  if(!newKey){ showToast('Paste your API key first'); return; }
+  if(!newKey){ showToast('Paste an API key for ' + (PROVIDERS[newProvider]?.label || newProvider) + ' first'); return; }
   scife.provider = newProvider;
-  scife.apiKey = newKey;
+  scife.apiKeys = scife.apiKeys || {};
+  scife.apiKeys[newProvider] = newKey;
   scife.model = document.getElementById('settingsModelSelect').value;
   scife.voiceOn = document.getElementById('settingsVoiceSwitch').classList.contains('on');
   await saveScife();
@@ -501,7 +668,7 @@ function sendTyped(){
 }
 
 async function sendMessage(text){
-  if(!scife.apiKey){ showToast('Add your API key in settings first'); openSettings(); return; }
+  if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
   addBubble('user', text);
   history.push({ role:'user', content:text });
   addTyping();
@@ -527,31 +694,37 @@ async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
   const maxTokens = opts.maxTokens || 400;
   const temperature = opts.temperature !== undefined ? opts.temperature : 0.7;
-  if(scife.provider === 'anthropic') return callAnthropic(systemPrompt, turns, maxTokens, temperature);
-  return callOpenAI(systemPrompt, turns, maxTokens, temperature);
+  const cfg = PROVIDERS[scife.provider] || PROVIDERS.openai;
+  const apiKey = activeApiKey();
+  if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
+  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature);
+  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature);
+  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature);
 }
 
-async function callOpenAI(systemPrompt, turns, maxTokens, temperature){
+/* Covers OpenAI, Groq, OpenRouter, and Mistral — they all speak the same
+   /chat/completions shape, just at a different base URL. */
+async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature){
   const messages = [{ role:'system', content: systemPrompt }, ...turns];
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch(cfg.baseURL, {
     method:'POST',
-    headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + scife.apiKey },
+    headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + apiKey },
     body: JSON.stringify({ model: scife.model, messages, temperature, max_tokens:maxTokens })
   });
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
-    throw new Error(err.error?.message || ('OpenAI request failed (' + res.status + ')'));
+    throw new Error(err.error?.message || (cfg.label + ' request failed (' + res.status + ')'));
   }
   const data = await res.json();
   return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "I didn't catch that — try again?";
 }
 
-async function callAnthropic(systemPrompt, turns, maxTokens, temperature){
+async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature){
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers:{
       'Content-Type':'application/json',
-      'x-api-key': scife.apiKey,
+      'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
@@ -570,6 +743,28 @@ async function callAnthropic(systemPrompt, turns, maxTokens, temperature){
   const data = await res.json();
   const block = (data.content||[]).find(c=>c.type==='text');
   return (block && block.text) || "I didn't catch that — try again?";
+}
+
+async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${scife.model}:generateContent?key=${apiKey}`;
+  const contents = turns.map(t=>({ role: t.role === 'assistant' ? 'model' : 'user', parts:[{ text:t.content }] }));
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      contents,
+      systemInstruction: { role:'user', parts:[{ text:systemPrompt }] },
+      generationConfig: { temperature, maxOutputTokens:maxTokens }
+    })
+  });
+  if(!res.ok){
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || ('Gemini request failed (' + res.status + ')'));
+  }
+  const data = await res.json();
+  const cand = data.candidates && data.candidates[0];
+  const text = cand && cand.content && cand.content.parts && cand.content.parts.map(p=>p.text||'').join('');
+  return text || "I didn't catch that — try again?";
 }
 
 /* Roughly every 6 exchanges, distill a one-line memory note so future sessions have context. */
