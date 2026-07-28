@@ -1426,6 +1426,13 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         </div>
         <div class="card tilt" style="grid-column:1/-1;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+            <h2 style="margin:0;">Pair <span class="accent">Watch</span></h2>
+            <span class="hint-inline" id="briefPairWatchUpdatedLabel" style="text-transform:none;"></span>
+          </div>
+          <div id="briefPairWatchBody"></div>
+        </div>
+        <div class="card tilt" style="grid-column:1/-1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
             <h2 style="margin:0;">Market <span class="accent">News</span></h2>
             <div style="display:flex;align-items:center;gap:10px;">
               <span class="hint-inline" id="briefNewsUpdatedLabel" style="text-transform:none;"></span>
@@ -4449,7 +4456,7 @@ async function saveBriefSettings(){
 let briefSaveTimer = null;
 function saveBriefSettingsDebounced(){
   clearTimeout(briefSaveTimer);
-  briefSaveTimer = setTimeout(()=>{ saveBriefSettings().then(()=>refreshMarketNews(true)); }, 700);
+  briefSaveTimer = setTimeout(()=>{ saveBriefSettings().then(()=>{ refreshMarketNews(true); refreshPairWatch(true); }); }, 700);
 }
 // Toggles between the "paste your key" input and a compact "✓ Connected" row —
 // once a key is on file (synced from Supabase or entered locally), there's no
@@ -4491,6 +4498,97 @@ function renderBrief(){
   renderMorningBrief();
   renderDayReview();
   refreshMarketNews(false);
+  refreshPairWatch(false);
+}
+// Maps a watched pair/ticker to a Finnhub quote symbol. Only pairs Finnhub can
+// actually price on the free tier get a live quote — anything else (a bare
+// currency like "USD", an index like "US30") still gets its orderbook + P&L
+// info below, just without a price line.
+function pairFinnhubSymbol(pair){
+  const p = (pair||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(p==='XAUUSD') return 'OANDA:XAU_USD';
+  if(p==='XAGUSD') return 'OANDA:XAG_USD';
+  if(p==='BTCUSD') return 'BINANCE:BTCUSDT';
+  if(p==='ETHUSD') return 'BINANCE:ETHUSDT';
+  if(p.length===6) return `OANDA:${p.slice(0,3)}_${p.slice(3)}`;
+  return null;
+}
+let briefPairWatchCache = { quotes:{}, fetchedAt:0, forKey:'', error:null };
+const BRIEF_PAIRWATCH_CACHE_MS = 5*60*1000; // prices move fast, but no need to hammer the quote endpoint every render
+function renderPairWatchUpdatedLabel(){
+  const el = document.getElementById('briefPairWatchUpdatedLabel');
+  if(!el) return;
+  if(!briefPairWatchCache.fetchedAt){ el.textContent = ''; return; }
+  const mins = Math.floor((Date.now()-briefPairWatchCache.fetchedAt)/60000);
+  el.textContent = mins<1 ? 'Updated just now' : mins===1 ? 'Updated 1m ago' : `Updated ${mins}m ago`;
+}
+async function refreshPairWatch(force){
+  const body = document.getElementById('briefPairWatchBody');
+  if(!body) return;
+  const watched = watchedPairList();
+  if(!watched.length){
+    body.innerHTML = '<div class="hint" style="margin:0;">Add watched pairs below to see price moves, orderbook exposure and today\'s P&L per pair here.</div>';
+    return;
+  }
+  const key = (state.brief.newsApiKey||'').trim();
+  const cacheKey = key + '|' + watched.join(',');
+  const isFresh = briefPairWatchCache.forKey===cacheKey && (Date.now()-briefPairWatchCache.fetchedAt)<BRIEF_PAIRWATCH_CACHE_MS;
+  if(key && (force || !isFresh)){
+    body.innerHTML = '<div class="hint" style="margin:0;">Fetching live prices…</div>';
+    const quotes = {};
+    for(const p of watched){
+      const sym = pairFinnhubSymbol(p);
+      if(!sym) continue;
+      try{
+        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(key)}`);
+        if(res.ok){
+          const q = await res.json();
+          if(q && typeof q.c === 'number' && q.c !== 0) quotes[p] = q;
+        }
+      }catch(e){ /* leave this pair without a price rather than fail the whole brief */ }
+    }
+    briefPairWatchCache = { quotes, fetchedAt: Date.now(), forKey: cacheKey, error: null };
+  }
+  renderPairWatchList(watched, key);
+  renderPairWatchUpdatedLabel();
+}
+function renderPairWatchList(watched, hasKey){
+  const body = document.getElementById('briefPairWatchBody');
+  if(!body) return;
+  const iso = todayStr();
+  const todaysTrades = filteredTrades().filter(t=>t.date===iso);
+  const openOrders = state.psychology.orders||[];
+  body.innerHTML = watched.map(p=>{
+    const q = briefPairWatchCache.quotes ? briefPairWatchCache.quotes[p] : null;
+    let priceLine;
+    if(q){
+      const up = q.dp >= 0;
+      priceLine = `<span class="mono" style="font-weight:700;">${q.c}</span> <span style="color:${up?'var(--win-bright)':'var(--loss-bright)'};font-weight:700;">${up?'▲':'▼'} ${up?'+':''}${q.dp.toFixed(2)}%</span> <span class="hint-inline">today's range ${q.l}–${q.h}</span>`;
+    } else if(!hasKey){
+      priceLine = '<span class="hint-inline">Add a Finnhub API key below for live price moves.</span>';
+    } else {
+      priceLine = '<span class="hint-inline">No live price available for this ticker.</span>';
+    }
+    const pairOrders = openOrders.filter(o=>(o.pair||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===p);
+    const orderLine = pairOrders.length
+      ? `${pairOrders.length} pending order${pairOrders.length>1?'s':''} on the book (${pairOrders.map(o=>o.direction||'?').join(', ')})`
+      : 'No pending orders on this pair';
+    const pairTrades = todaysTrades.filter(t=>(t.pair||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===p);
+    const pairPnl = pairTrades.reduce((s,t)=>s+pnlOf(t),0);
+    let statusLine;
+    if(pairTrades.length===0){
+      statusLine = 'No trades logged on this pair today';
+    } else {
+      const label = pairPnl>0 ? 'in profit' : pairPnl<0 ? 'in drawdown' : 'flat';
+      statusLine = `${pairTrades.length} trade${pairTrades.length>1?'s':''} today, <b style="color:${pairPnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pairPnl>=0?'+':'-'}${curSym()}${Math.abs(pairPnl).toFixed(0)}</b> (${label})`;
+    }
+    return `<div class="trade-row" style="align-items:flex-start;flex-direction:column;gap:4px;">
+      <div class="top" style="display:flex;align-items:center;gap:8px;"><span class="order-pair-badge">${escapeHtml(p)}</span></div>
+      <div class="bottom">${priceLine}</div>
+      <div class="hint" style="margin:2px 0 0;">${escapeHtml(orderLine)}</div>
+      <div class="hint" style="margin:0;">${statusLine}</div>
+    </div>`;
+  }).join('');
 }
 // What to do today: pulls straight from Rule Builder + today's live counters, so
 // it's always in sync with the same numbers the rest of the app enforces.
