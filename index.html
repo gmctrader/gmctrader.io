@@ -1427,7 +1427,10 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <div class="card tilt" style="grid-column:1/-1;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
             <h2 style="margin:0;">Market <span class="accent">News</span></h2>
-            <button class="side-logout" style="font-size:11px;padding:5px 12px;" onclick="refreshMarketNews(true)">↻ Refresh</button>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="hint-inline" id="briefNewsUpdatedLabel" style="text-transform:none;"></span>
+              <button class="side-logout" style="font-size:11px;padding:5px 12px;" onclick="refreshMarketNews(true)">↻ Refresh</button>
+            </div>
           </div>
           <div id="briefNewsBody"></div>
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--steel-hi);">
@@ -2494,7 +2497,7 @@ const DEMO_EMAIL_KEY = 'ghostDiscipline_demoEmail';
 const DEMO_STATE_KEY = 'ghostDiscipline_demoState';
 const DEMO_FP_KEY = 'ghostDiscipline_deviceFp';
 // Rooms that stay locked during the trial — full arsenal is reserved for real access.
-const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','journal','about'];
+const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','journal','about','brief'];
 
 // Lightweight, dependency-free device fingerprint (canvas + WebGL + hardware
 // signals hashed together). This raises the bar against casual repeat-trial
@@ -2737,7 +2740,7 @@ function openDemoTease(title, copy){
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 function showLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', journal:'Journal', about:'About & Reset' };
+  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
   const label = labels[view] || 'This room';
   openDemoTease(`${label} is for real accounts`, `The Proving Ground tests discipline, not the full arsenal — ${label} unlocks the moment you're in for real.`);
 }
@@ -4502,10 +4505,12 @@ function renderMorningBrief(){
   const items = [];
   items.push(`<div class="check-item pass"><span>&#10003;</span>Discipline streak: <b>${state.streak.count||0} day${(state.streak.count||0)===1?'':'s'}</b> — today's score <b style="color:${tier.color}">${disc}/100</b></div>`);
   if(r.maxDailyLoss!=null){
-    items.push(`<div class="check-item ${lossPct>=80?'fail':lossPct>=50?'warn':'pass'}"><span>${lossPct>=80?'&#10005;':'&#10003;'}</span>Daily loss used: <b>${curSym()}${lossUsed.toFixed(0)} / ${curSym()}${r.maxDailyLoss}</b> (${lossPct.toFixed(0)}%)</div>`);
+    const lp = lossPct ?? 0;
+    items.push(`<div class="check-item ${lp>=80?'fail':lp>=50?'warn':'pass'}"><span>${lp>=80?'&#10005;':'&#10003;'}</span>Daily loss used: <b>${curSym()}${lossUsed.toFixed(0)} / ${curSym()}${r.maxDailyLoss}</b> (${lp.toFixed(0)}%)</div>`);
   }
   if(r.maxTrades!=null){
-    items.push(`<div class="check-item ${tradesPct>=100?'fail':'pass'}"><span>${tradesPct>=100?'&#10005;':'&#10003;'}</span>Trades taken today: <b>${tradesUsed} / ${r.maxTrades}</b></div>`);
+    const tp = tradesPct ?? 0;
+    items.push(`<div class="check-item ${tp>=100?'fail':'pass'}"><span>${tp>=100?'&#10005;':'&#10003;'}</span>Trades taken today: <b>${tradesUsed} / ${r.maxTrades}</b></div>`);
   }
   items.push(`<div class="check-item pass"><span>&#10003;</span>Pending orders in book: <b>${pendingOrders}</b></div>`);
   if(state.day.ruleBrokenToday){
@@ -4539,17 +4544,34 @@ function renderDayReview(){
 // key is bundled with the app, so nothing proprietary ships in the page source.
 // Watched-pair headlines are surfaced first; nothing here predicts price moves,
 // it only surfaces known scheduled/real news so the trader can factor it in.
+// Shows when the Finnhub feed was actually last fetched — "just now", "12m ago",
+// etc. — so a trader can tell stale cached headlines from a fresh pull instead
+// of just seeing the same list and wondering if Refresh actually did anything.
+function renderNewsUpdatedLabel(){
+  const el = document.getElementById('briefNewsUpdatedLabel');
+  if(!el) return;
+  if(!briefNewsCache.fetchedAt){ el.textContent = ''; return; }
+  const mins = Math.floor((Date.now()-briefNewsCache.fetchedAt)/60000);
+  el.textContent = mins<1 ? 'Updated just now' : mins===1 ? 'Updated 1m ago' : `Updated ${mins}m ago`;
+}
+setInterval(()=>{
+  const view = document.getElementById('view-brief');
+  if(view && view.classList.contains('active')) renderNewsUpdatedLabel();
+}, 30000);
 async function refreshMarketNews(force){
   const body = document.getElementById('briefNewsBody');
   if(!body) return;
   const key = (state.brief.newsApiKey||'').trim();
   if(!key){
     body.innerHTML = '<div class="hint" style="margin:0;">Add a free Finnhub API key below to see live market news here.</div>';
+    briefNewsCache = { items: null, fetchedAt: 0, forPairs: '', error: null };
+    renderNewsUpdatedLabel();
     return;
   }
   const cacheKey = key + '|' + (state.brief.watchedPairs||'');
   if(!force && briefNewsCache.items && briefNewsCache.forPairs===cacheKey && (Date.now()-briefNewsCache.fetchedAt)<BRIEF_NEWS_CACHE_MS){
     renderNewsList(briefNewsCache.items);
+    renderNewsUpdatedLabel();
     return;
   }
   body.innerHTML = '<div class="hint" style="margin:0;">Fetching latest market news…</div>';
@@ -4558,6 +4580,8 @@ async function refreshMarketNews(force){
     if(!res.ok){
       if(res.status===401 || res.status===403){
         body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">That API key was rejected — double-check you copied it correctly from finnhub.io.</div>';
+      } else if(res.status===429){
+        body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">Rate limited by Finnhub — try refreshing again in a minute.</div>';
       } else {
         body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">Could not load news right now — try refreshing in a moment.</div>';
       }
@@ -4567,6 +4591,7 @@ async function refreshMarketNews(force){
     const items = Array.isArray(data) ? data.slice(0, 30) : [];
     briefNewsCache = { items, fetchedAt: Date.now(), forPairs: cacheKey, error: null };
     renderNewsList(items);
+    renderNewsUpdatedLabel();
   }catch(e){
     body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">Could not reach the news service — check your connection and try again.</div>';
   }
