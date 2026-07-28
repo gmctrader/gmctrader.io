@@ -1432,16 +1432,23 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <div id="briefNewsBody"></div>
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--steel-hi);">
             <div class="row2">
-              <div class="field">
+              <div class="field" id="brief_apiKeyFieldWrap">
                 <label>News API key <span class="hint-inline">free at finnhub.io</span></label>
                 <input type="text" id="brief_apiKey" placeholder="Paste your free Finnhub API key" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
               </div>
+              <div class="field" id="brief_apiKeyConnectedWrap" style="display:none;">
+                <label>News API key</label>
+                <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--steel);border-radius:var(--r-sm);background:#f7f9f8;">
+                  <span style="color:var(--win-bright);font-weight:700;font-size:12.5px;">✓ Connected</span>
+                  <button type="button" class="side-logout" style="margin-left:auto;font-size:10.5px;padding:5px 10px;" onclick="showBriefKeyField()">Use a different key</button>
+                </div>
+              </div>
               <div class="field">
-                <label>Watched pairs <span class="hint-inline">comma separated</span></label>
-                <input type="text" id="brief_watchedPairs" placeholder="EURUSD, GBPUSD, XAUUSD" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
+                <label>Watched pairs, currencies or indices <span class="hint-inline">comma separated</span></label>
+                <input type="text" id="brief_watchedPairs" placeholder="e.g. EURUSD, XAUUSD, USD, US30" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
               </div>
             </div>
-            <div class="hint">Get a free key at <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer" style="color:var(--gold-bright)">finnhub.io/register</a> — no card required. Your key stays local to your account and is only used to fetch news directly from your browser.</div>
+            <div class="hint">Get a free key at <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer" style="color:var(--gold-bright)">finnhub.io/register</a> — no card required. Your key syncs to your account, so it's there the next time you sign in on any device. Enter full pairs (EURUSD), a single currency (USD), or an index/commodity ticker (US30, XAUUSD) — mix and match, separated by commas.</div>
           </div>
         </div>
       </div>
@@ -2085,18 +2092,11 @@ const DEFAULT_STATE = {
   brief:{ newsApiKey:'', watchedPairs:'' }
 };
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-// Daily Brief settings (news API key, watched pairs) live in plain localStorage
-// rather than the synced Supabase row — this is a personal browser preference,
-// not trading data, and keeping it local avoids needing a database schema change.
-const BRIEF_SETTINGS_KEY = 'ghostDiscipline_briefSettings';
-function loadBriefSettings(){
-  try{
-    const raw = localStorage.getItem(BRIEF_SETTINGS_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    state.brief = Object.assign({}, DEFAULT_STATE.brief, parsed || {});
-  }catch(e){ state.brief = Object.assign({}, DEFAULT_STATE.brief); }
-}
-loadBriefSettings();
+// Daily Brief settings (news API key, watched pairs) now sync through the same
+// Supabase row as everything else — see buildSavePayload()/hydrateState() —
+// so a trader's key and watchlist follow them to a new device. Requires the
+// `brief` jsonb column on trader_data:
+//   alter table trader_data add column if not exists brief jsonb not null default '{}'::jsonb;
 let currentUser = null;
 let isDemoMode = false;
 let pendingViolation = false;
@@ -2845,6 +2845,7 @@ async function loadOrCreateTraderData(){
       prop_firm: DEFAULT_STATE.propFirm,
       session: DEFAULT_STATE.session,
       psychology: DEFAULT_STATE.psychology,
+      brief: DEFAULT_STATE.brief,
       trades: DEFAULT_STATE.trades,
       streak: DEFAULT_STATE.streak,
       day: DEFAULT_STATE.day,
@@ -2884,6 +2885,7 @@ function hydrateState(row){
   state.propFirm = Object.assign({}, DEFAULT_STATE.propFirm, row.prop_firm || {});
   state.session = row.session || DEFAULT_STATE.session;
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, row.psychology || {}));
+  state.brief = Object.assign({}, DEFAULT_STATE.brief, row.brief || {});
   state.trades = row.trades || [];
   state.streak = row.streak || DEFAULT_STATE.streak;
   state.day = row.day || DEFAULT_STATE.day;
@@ -2911,6 +2913,7 @@ function buildSavePayload(){
     prop_firm: state.propFirm,
     session: state.session,
     psychology: state.psychology,
+    brief: state.brief,
     trades: state.trades,
     streak: state.streak,
     day: state.day,
@@ -3628,6 +3631,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
     if(btn.dataset.view==='calendar') renderCalendar();
+    if(btn.dataset.view==='brief') renderBrief();
     if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); }
     if(btn.dataset.view==='journal') renderJournal();
     if(btn.dataset.view==='orders') renderOrders();
@@ -3748,6 +3752,7 @@ function renderAll(){
   renderEquityChart('equityChart','equityTotal','equitySub');
   renderOrders(); renderConfluence();
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+  if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
 }
 function renderDashboard(){
   const prevStreak = parseInt(document.getElementById('streakNum').textContent)||0;
@@ -4427,17 +4432,35 @@ function renderOrderWorthPanel(rr, levels){
 let briefNewsCache = { items: null, fetchedAt: 0, forPairs: '', error: null };
 const BRIEF_NEWS_CACHE_MS = 15*60*1000; // 15 minutes is plenty fresh for a headline feed, keeps calls low
 
-function saveBriefSettings(){
+async function saveBriefSettings(){
   state.brief = {
     newsApiKey: document.getElementById('brief_apiKey').value.trim(),
     watchedPairs: document.getElementById('brief_watchedPairs').value.trim()
   };
-  try{ localStorage.setItem(BRIEF_SETTINGS_KEY, JSON.stringify(state.brief)); }catch(e){}
+  await saveState();
+  renderBriefKeyField();
 }
 let briefSaveTimer = null;
 function saveBriefSettingsDebounced(){
   clearTimeout(briefSaveTimer);
-  briefSaveTimer = setTimeout(()=>{ saveBriefSettings(); refreshMarketNews(true); }, 700);
+  briefSaveTimer = setTimeout(()=>{ saveBriefSettings().then(()=>refreshMarketNews(true)); }, 700);
+}
+// Toggles between the "paste your key" input and a compact "✓ Connected" row —
+// once a key is on file (synced from Supabase or entered locally), there's no
+// reason to keep showing the raw input. "Use a different key" reveals it again.
+function renderBriefKeyField(){
+  const fieldWrap = document.getElementById('brief_apiKeyFieldWrap');
+  const connectedWrap = document.getElementById('brief_apiKeyConnectedWrap');
+  if(!fieldWrap || !connectedWrap) return;
+  const hasKey = !!(state.brief.newsApiKey && state.brief.newsApiKey.trim());
+  fieldWrap.style.display = hasKey ? 'none' : 'block';
+  connectedWrap.style.display = hasKey ? 'block' : 'none';
+}
+function showBriefKeyField(){
+  document.getElementById('brief_apiKeyFieldWrap').style.display = 'block';
+  document.getElementById('brief_apiKeyConnectedWrap').style.display = 'none';
+  const keyEl = document.getElementById('brief_apiKey');
+  if(keyEl){ keyEl.value = state.brief.newsApiKey || ''; keyEl.focus(); }
 }
 function watchedPairList(){
   return (state.brief.watchedPairs||'').split(',').map(p=>p.trim().toUpperCase().replace(/[^A-Z0-9]/g,'')).filter(Boolean);
@@ -4458,6 +4481,7 @@ function renderBrief(){
   const pairsEl = document.getElementById('brief_watchedPairs');
   if(keyEl) keyEl.value = state.brief.newsApiKey || '';
   if(pairsEl) pairsEl.value = state.brief.watchedPairs || '';
+  renderBriefKeyField();
   renderMorningBrief();
   renderDayReview();
   refreshMarketNews(false);
