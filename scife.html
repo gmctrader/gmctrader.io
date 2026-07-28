@@ -288,7 +288,8 @@ async function loadTraderRow(){
 }
 
 async function saveScife(){
-  const { error } = await sb.from('trader_data').update({ scife }).eq('user_id', currentUser.id);
+  const { error } = await sb.from('trader_data')
+    .upsert({ user_id: currentUser.id, scife }, { onConflict: 'user_id' });
   if(error) showToast('Could not save SciFe settings: ' + (error.message||error.code));
 }
 
