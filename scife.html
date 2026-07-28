@@ -214,15 +214,18 @@ button{font-family:inherit;}
     <h3 class="serif">SciFe settings</h3>
     <div class="sub">Your key and preferences, synced to your account.</div>
     <div class="field">
-      <label>OpenAI API key</label>
-      <input type="password" id="settingsKeyInput" placeholder="sk-...">
+      <label>AI provider</label>
+      <select id="settingsProviderSelect" onchange="onProviderChange('settings')"></select>
+      <div class="hint" id="settingsProviderHint"></div>
+    </div>
+    <div class="field">
+      <label id="settingsKeyLabel">API key</label>
+      <input type="password" id="settingsKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false">
+      <div class="hint" id="settingsKeyHint"></div>
     </div>
     <div class="field">
       <label>Model</label>
-      <select id="settingsModelSelect">
-        <option value="gpt-4o-mini">gpt-4o-mini — fast &amp; cheap</option>
-        <option value="gpt-4o">gpt-4o — smarter</option>
-      </select>
+      <select id="settingsModelSelect"></select>
     </div>
     <div class="toggle-row">
       <div style="font-weight:600;font-size:13.5px;">Voice replies</div>
@@ -252,11 +255,63 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { apiKey:'', model:'gpt-4o-mini', voiceOn:true, memory:[] };
+let scife = { provider:'openai', apiKey:'', model:'gpt-4o-mini', voiceOn:true, memory:[] };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
 let speaking = false;
+
+/* ============ PROVIDERS ============
+   Add a new provider here and it shows up in both the setup screen and
+   settings modal automatically — no other UI wiring needed. */
+const PROVIDERS = {
+  openai: {
+    label: 'OpenAI',
+    keyLabel: 'OpenAI API key',
+    keyPlaceholder: 'sk-...',
+    keyHint: 'Get a key at platform.openai.com/api-keys.',
+    models: [
+      { value:'gpt-4o-mini', label:'gpt-4o-mini — fast & cheap' },
+      { value:'gpt-4o', label:'gpt-4o — smarter' }
+    ]
+  },
+  anthropic: {
+    label: 'Anthropic (Claude)',
+    keyLabel: 'Anthropic API key',
+    keyPlaceholder: 'sk-ant-...',
+    keyHint: 'Get a key at console.anthropic.com. This calls Anthropic straight from your browser — some office networks or ad-blockers may need to allow api.anthropic.com.',
+    models: [
+      { value:'claude-sonnet-5', label:'Claude Sonnet 5 — smart & fast' },
+      { value:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5 — fastest & cheap' },
+      { value:'claude-opus-4-8', label:'Claude Opus 4.8 — most capable' }
+    ]
+  }
+};
+
+function populateProviderSelects(){
+  const opts = Object.entries(PROVIDERS).map(([key,cfg])=>`<option value="${key}">${cfg.label}</option>`).join('');
+  const setupSel = document.getElementById('setupProviderSelect');
+  const settingsSel = document.getElementById('settingsProviderSelect');
+  if(setupSel) setupSel.innerHTML = opts;
+  if(settingsSel) settingsSel.innerHTML = opts;
+}
+
+/* Rebuilds the key label/placeholder/hint and model list for whichever
+   screen ('setup' or 'settings') the person is looking at. */
+function onProviderChange(scope){
+  const sel = document.getElementById(scope+'ProviderSelect');
+  const cfg = PROVIDERS[sel.value] || PROVIDERS.openai;
+  const keyLabel = document.getElementById(scope+'KeyLabel');
+  const keyInput = document.getElementById(scope+'KeyInput');
+  const keyHint = document.getElementById(scope+'KeyHint');
+  const modelSelect = document.getElementById(scope+'ModelSelect');
+  const providerHint = document.getElementById(scope+'ProviderHint');
+  if(keyLabel) keyLabel.textContent = cfg.keyLabel;
+  if(keyInput) keyInput.placeholder = cfg.keyPlaceholder;
+  if(keyHint) keyHint.textContent = cfg.keyHint;
+  if(providerHint) providerHint.textContent = cfg.keyHint;
+  if(modelSelect) modelSelect.innerHTML = cfg.models.map(m=>`<option value="${m.value}">${m.label}</option>`).join('');
+}
 
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -271,7 +326,10 @@ function todayStr(){ return new Date().toISOString().slice(0,10); }
   if(!data.session){ document.getElementById('authGate').style.display='flex'; return; }
   currentUser = data.session.user;
   await loadTraderRow();
+  populateProviderSelects();
   if(!scife.apiKey){
+    document.getElementById('setupProviderSelect').value = scife.provider;
+    onProviderChange('setup');
     document.getElementById('setupScreen').style.display='flex';
   } else {
     startApp();
@@ -284,8 +342,9 @@ async function loadTraderRow(){
   traderRow = data || {};
   const s = traderRow.scife || {};
   scife = {
+    provider: s.provider || 'openai',
     apiKey: s.apiKey || '',
-    model: s.model || 'gpt-4o-mini',
+    model: s.model || (PROVIDERS[s.provider || 'openai'].models[0].value),
     voiceOn: s.voiceOn !== false,
     memory: Array.isArray(s.memory) ? s.memory : []
   };
@@ -300,7 +359,8 @@ async function saveScife(){
 /* ============ SETUP / SETTINGS ============ */
 async function saveSetup(){
   const key = document.getElementById('setupKeyInput').value.trim();
-  if(!key){ showToast('Paste your OpenAI key first'); return; }
+  if(!key){ showToast('Paste your API key first'); return; }
+  scife.provider = document.getElementById('setupProviderSelect').value;
   scife.apiKey = key;
   scife.model = document.getElementById('setupModelSelect').value;
   scife.voiceOn = document.getElementById('setupVoiceSwitch').classList.contains('on');
@@ -309,6 +369,9 @@ async function saveSetup(){
   startApp();
 }
 function openSettings(){
+  populateProviderSelects();
+  document.getElementById('settingsProviderSelect').value = scife.provider;
+  onProviderChange('settings');
   document.getElementById('settingsKeyInput').value = scife.apiKey;
   document.getElementById('settingsModelSelect').value = scife.model;
   document.getElementById('settingsVoiceSwitch').classList.toggle('on', scife.voiceOn);
@@ -317,12 +380,16 @@ function openSettings(){
 }
 function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('show'); }
 async function saveSettings(){
-  scife.apiKey = document.getElementById('settingsKeyInput').value.trim();
+  const newProvider = document.getElementById('settingsProviderSelect').value;
+  const newKey = document.getElementById('settingsKeyInput').value.trim();
+  if(!newKey){ showToast('Paste your API key first'); return; }
+  scife.provider = newProvider;
+  scife.apiKey = newKey;
   scife.model = document.getElementById('settingsModelSelect').value;
   scife.voiceOn = document.getElementById('settingsVoiceSwitch').classList.contains('on');
   await saveScife();
   closeSettings();
-  showToast('Saved');
+  showToast('Saved — now talking to ' + (PROVIDERS[scife.provider]?.label || scife.provider));
 }
 async function clearMemory(){
   scife.memory = [];
@@ -434,13 +501,13 @@ function sendTyped(){
 }
 
 async function sendMessage(text){
-  if(!scife.apiKey){ showToast('Add your OpenAI key in settings first'); openSettings(); return; }
+  if(!scife.apiKey){ showToast('Add your API key in settings first'); openSettings(); return; }
   addBubble('user', text);
   history.push({ role:'user', content:text });
   addTyping();
   setStage('thinking');
   try{
-    const reply = await callOpenAI();
+    const reply = await chatCompletion(buildSystemPrompt(), history.slice(-12));
     removeTyping();
     addBubble('assistant', reply);
     history.push({ role:'assistant', content:reply });
@@ -453,12 +520,23 @@ async function sendMessage(text){
   }
 }
 
-async function callOpenAI(){
-  const messages = [{ role:'system', content: buildSystemPrompt() }, ...history.slice(-12)];
+/* Generic chat call — dispatches to whichever provider is currently
+   selected in scife.provider. systemPrompt is a plain string;
+   turns is a list of {role:'user'|'assistant', content:string}. */
+async function chatCompletion(systemPrompt, turns, opts){
+  opts = opts || {};
+  const maxTokens = opts.maxTokens || 400;
+  const temperature = opts.temperature !== undefined ? opts.temperature : 0.7;
+  if(scife.provider === 'anthropic') return callAnthropic(systemPrompt, turns, maxTokens, temperature);
+  return callOpenAI(systemPrompt, turns, maxTokens, temperature);
+}
+
+async function callOpenAI(systemPrompt, turns, maxTokens, temperature){
+  const messages = [{ role:'system', content: systemPrompt }, ...turns];
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + scife.apiKey },
-    body: JSON.stringify({ model: scife.model, messages, temperature:0.7, max_tokens:400 })
+    body: JSON.stringify({ model: scife.model, messages, temperature, max_tokens:maxTokens })
   });
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
@@ -468,26 +546,42 @@ async function callOpenAI(){
   return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "I didn't catch that — try again?";
 }
 
+async function callAnthropic(systemPrompt, turns, maxTokens, temperature){
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': scife.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: scife.model,
+      max_tokens: maxTokens,
+      temperature,
+      system: systemPrompt,
+      messages: turns.map(t=>({ role:t.role, content:t.content }))
+    })
+  });
+  if(!res.ok){
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || ('Anthropic request failed (' + res.status + ')'));
+  }
+  const data = await res.json();
+  const block = (data.content||[]).find(c=>c.type==='text');
+  return (block && block.text) || "I didn't catch that — try again?";
+}
+
 /* Roughly every 6 exchanges, distill a one-line memory note so future sessions have context. */
 async function maybeUpdateMemory(){
   const exchanges = history.filter(h=>h.role==='user').length;
   if(exchanges === 0 || exchanges % 6 !== 0) return;
   try{
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + scife.apiKey },
-      body: JSON.stringify({
-        model: scife.model,
-        messages:[
-          { role:'system', content:'Summarize the key trading-psychology takeaway from this conversation in ONE short sentence, for a coach\'s private notes. No preamble.' },
-          ...history.slice(-12)
-        ],
-        temperature:0.3, max_tokens:60
-      })
-    });
-    if(!res.ok) return;
-    const data = await res.json();
-    const note = data.choices?.[0]?.message?.content?.trim();
+    const note = (await chatCompletion(
+      'Summarize the key trading-psychology takeaway from this conversation in ONE short sentence, for a coach\'s private notes. No preamble.',
+      history.slice(-12),
+      { temperature:0.3, maxTokens:60 }
+    ))?.trim();
     if(note){
       scife.memory.push(note);
       if(scife.memory.length > 10) scife.memory = scife.memory.slice(-10);
