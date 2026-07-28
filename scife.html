@@ -144,19 +144,21 @@ button{font-family:inherit;}
   <div class="gate-card" style="text-align:left;">
     <div style="text-align:center;">
       <h1 class="serif">Set up SciFe</h1>
-      <p>Your optional voice companion. Talk through your charts, your emotions, and your journal. It uses your own OpenAI key — nothing routes through us.</p>
+      <p>Your optional voice companion. Talk through your charts, your emotions, and your journal. It uses your own AI provider key — nothing routes through us.</p>
     </div>
     <div class="field">
-      <label>OpenAI API key</label>
-      <input type="password" id="setupKeyInput" placeholder="sk-..." autocomplete="off" spellcheck="false">
-      <div class="hint">Get one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>. Stored on your synced profile, never shared.</div>
+      <label>AI provider</label>
+      <select id="setupProviderSelect" onchange="onProviderChange('setup')"></select>
+      <div class="hint" id="setupProviderHint"></div>
+    </div>
+    <div class="field">
+      <label id="setupKeyLabel">API key</label>
+      <input type="password" id="setupKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false">
+      <div class="hint" id="setupKeyHint"></div>
     </div>
     <div class="field">
       <label>Model</label>
-      <select id="setupModelSelect">
-        <option value="gpt-4o-mini">gpt-4o-mini — fast &amp; cheap (recommended)</option>
-        <option value="gpt-4o">gpt-4o — smarter, costs more</option>
-      </select>
+      <select id="setupModelSelect"></select>
     </div>
     <div class="toggle-row">
       <div>
