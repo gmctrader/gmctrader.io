@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#04070a">
 <title>SciFe — Ghost Discipline</title>
+<script>(function(){try{if(localStorage.getItem('scife_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -279,6 +280,59 @@ button{font-family:inherit;}
 .key-saved-tag{font-size:11px;color:var(--win);font-weight:650;white-space:nowrap;}
 .key-link{font-size:12px;margin-top:6px;display:inline-block;text-decoration:none;font-weight:600;}
 .key-link:hover{text-decoration:underline;}
+
+/* ============ LIGHT THEME ============ */
+html[data-theme="light"]{
+  --steel:rgba(15,60,50,0.10); --steel-hi:rgba(15,60,50,0.18);
+  --panel:rgba(255,255,255,0.72); --panel-solid:#ffffff;
+  --bronze-bright:#0ea37c; --bronze:#0a8f68;
+  --gold:#b8862c; --gold-bright:#a8701f;
+  --platinum:#132922; --slate:#4c635d; --slate-dim:#7c8f89;
+  --win:#178f57; --amber:#c97f1e;
+}
+html[data-theme="light"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(18,185,136,0.08), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(242,169,78,0.09), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(18,185,136,0.06), transparent 60%),
+    #f5f3ec;
+}
+html[data-theme="light"] body::before{
+  background-image:
+    linear-gradient(rgba(15,60,50,0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,60,50,0.10) 1px, transparent 1px);
+}
+html[data-theme="light"] body::after{
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(19,41,34,0.35), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(19,41,34,0.25), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(184,134,44,0.45), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(18,185,136,0.4), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(19,41,34,0.25), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(19,41,34,0.2), transparent);
+}
+html[data-theme="light"] .field input,
+html[data-theme="light"] .field select{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .field select option{background:#ffffff;color:var(--platinum);}
+html[data-theme="light"] .btn-ghost{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .btn-ghost:hover{background:rgba(15,60,50,0.08);}
+html[data-theme="light"] .topbar .back:hover{background:rgba(15,60,50,0.05);}
+html[data-theme="light"] .icon-btn{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .bubble.assistant{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .composer{background:linear-gradient(transparent, #f5f3ec 40%);}
+html[data-theme="light"] .composer-row{background:rgba(255,255,255,0.7);}
+html[data-theme="light"] .provider-card{background:rgba(15,60,50,0.035);}
+html[data-theme="light"] .toast{color:var(--platinum);}
+
+/* ============ MOBILE ============ */
+button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+#app{padding-bottom:calc(16px + env(safe-area-inset-bottom));}
+@media (max-width:640px){
+  /* 16px min font-size on inputs prevents iOS Safari's auto-zoom-on-focus */
+  .field input, .field select, .composer-row input{font-size:16px;}
+  .gate-card{padding:32px 22px;}
+  .modal{padding:22px 18px;}
+}
 </style>
 </head>
 <body>
@@ -383,6 +437,13 @@ button{font-family:inherit;}
   <div class="modal">
     <h3 class="serif">SciFe settings</h3>
     <div class="sub">Your key and preferences, synced to your account.</div>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:13.5px;">Light mode</div>
+        <div class="hint" style="margin-top:2px;">Switch between dark and light appearance</div>
+      </div>
+      <div class="switch" id="settingsThemeSwitch" onclick="this.classList.toggle('on'); applyTheme(this.classList.contains('on') ? 'light' : 'dark');"></div>
+    </div>
     <div class="field">
       <label>AI provider</label>
       <div class="provider-grid" id="settingsProviderGrid"></div>
@@ -442,7 +503,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'' };
+let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', theme:'dark' };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -676,8 +737,20 @@ async function loadTraderRow(){
     voiceOn: s.voiceOn !== false,
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
-    voiceURI: s.voiceURI || ''
+    voiceURI: s.voiceURI || '',
+    theme: s.theme === 'light' ? 'light' : 'dark'
   };
+  applyTheme(scife.theme);
+}
+
+/* Applies (and remembers) the light/dark appearance. Called on load, live
+   while toggling the switch in settings, and on revert if closed unsaved. */
+function applyTheme(theme){
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', t === 'light' ? '#f5f3ec' : '#04070a');
+  try{ localStorage.setItem('scife_theme', t); }catch(e){}
 }
 
 /* The key currently in effect for chat calls — whatever is saved for the active provider. */
