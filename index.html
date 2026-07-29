@@ -4525,6 +4525,40 @@ function pairFinnhubSymbol(pair){
   if(p.length===6) return `OANDA:${p.slice(0,3)}_${p.slice(3)}`;
   return null;
 }
+// Turns a raw Finnhub quote into a plain-English read on how stretched today's
+// move already is — position within today's high/low range, plus the size of
+// the % move — so a trader can see "how far it's running" at a glance instead
+// of doing the range math themselves.
+function pairRunNarrative(q){
+  if(!q || typeof q.h!=='number' || typeof q.l!=='number' || (q.h-q.l)<=0) return null;
+  const range = q.h - q.l;
+  const pos = ((q.c - q.l) / range) * 100;
+  let stretch;
+  if(pos>=80) stretch = "trading near the top of today's range — already stretched to the upside";
+  else if(pos<=20) stretch = "trading near the bottom of today's range — already stretched to the downside";
+  else stretch = "sitting mid-range, no strong extension either way yet";
+  let moveNote = '';
+  if(typeof q.dp === 'number'){
+    const abs = Math.abs(q.dp);
+    if(abs>=1.5) moveNote = ` — a sizeable ${abs.toFixed(1)}% move already, chase carefully`;
+    else if(abs>=0.5) moveNote = ` — a moderate ${abs.toFixed(1)}% move so far`;
+    else moveNote = ` — a quiet ${abs.toFixed(1)}% move so far`;
+  }
+  return stretch + moveNote;
+}
+// Finds the single most relevant cached headline for a given watched pair, by
+// matching its currency codes (reusing pairCurrencyCodes so XAUUSD/BTCUSD/etc.
+// map the same way news ranking already does). Returns null if nothing matches
+// or news hasn't loaded yet.
+function pairNewsForInsight(p){
+  const items = briefNewsCache.items || [];
+  if(!items.length) return null;
+  const codes = pairCurrencyCodes(p);
+  return items.find(it=>{
+    const hay = ((it.headline||'') + ' ' + (it.summary||'')).toUpperCase();
+    return codes.some(c=>hay.includes(c));
+  }) || null;
+}
 let briefPairWatchCache = { quotes:{}, fetchedAt:0, forKey:'', error:null };
 const BRIEF_PAIRWATCH_CACHE_MS = 5*60*1000; // prices move fast, but no need to hammer the quote endpoint every render
 function renderPairWatchUpdatedLabel(){
@@ -4594,11 +4628,27 @@ function renderPairWatchList(watched, hasKey){
       const label = pairPnl>0 ? 'in profit' : pairPnl<0 ? 'in drawdown' : 'flat';
       statusLine = `${pairTrades.length} trade${pairTrades.length>1?'s':''} today, <b style="color:${pairPnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pairPnl>=0?'+':'-'}${curSym()}${Math.abs(pairPnl).toFixed(0)}</b> (${label})`;
     }
+    // Per-pair insight: what's moving it (matched headline) + how far it's
+    // already run (range position + move size), built from data we already
+    // have on hand — no invented commentary, just the pair's own price shape
+    // and any news actually matched to it.
+    const runNote = q ? pairRunNarrative(q) : null;
+    const newsHit = pairNewsForInsight(p);
+    let insightHtml = '';
+    if(runNote || newsHit){
+      const rows = [];
+      if(runNote) rows.push(`<div><span style="color:var(--gold-bright);font-weight:700;">Run —</span> ${escapeHtml(runNote)}</div>`);
+      if(newsHit) rows.push(`<div><span style="color:var(--gold-bright);font-weight:700;">News —</span> <a href="${escapeHtml(newsHit.url||'#')}" target="_blank" rel="noopener noreferrer" style="color:var(--platinum);text-decoration:none;">${escapeHtml(newsHit.headline||'')}</a></div>`);
+      insightHtml = `<div class="hint" style="margin:6px 0 0;line-height:1.55;">${rows.join('')}</div>`;
+    } else if(hasKey){
+      insightHtml = '<div class="hint" style="margin:6px 0 0;">No matching news yet for this pair — check back after the next refresh.</div>';
+    }
     return `<div class="trade-row" style="align-items:flex-start;flex-direction:column;gap:4px;">
       <div class="top" style="display:flex;align-items:center;gap:8px;"><span class="order-pair-badge">${escapeHtml(p)}</span></div>
       <div class="bottom">${priceLine}</div>
       <div class="hint" style="margin:2px 0 0;">${escapeHtml(orderLine)}</div>
       <div class="hint" style="margin:0;">${statusLine}</div>
+      ${insightHtml}
     </div>`;
   }).join('');
 }
@@ -4685,6 +4735,7 @@ async function refreshMarketNews(force){
   if(!force && briefNewsCache.items && briefNewsCache.forPairs===cacheKey && (Date.now()-briefNewsCache.fetchedAt)<BRIEF_NEWS_CACHE_MS){
     renderNewsList(briefNewsCache.items);
     renderNewsUpdatedLabel();
+    refreshPairWatchInsightsOnly();
     return;
   }
   body.innerHTML = '<div class="hint" style="margin:0;">Fetching latest market news…</div>';
@@ -4705,9 +4756,20 @@ async function refreshMarketNews(force){
     briefNewsCache = { items, fetchedAt: Date.now(), forPairs: cacheKey, error: null };
     renderNewsList(items);
     renderNewsUpdatedLabel();
+    refreshPairWatchInsightsOnly();
   }catch(e){
     body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">Could not reach the news service — check your connection and try again.</div>';
   }
+}
+// News and prices are fetched independently, so whichever lands second re-runs
+// this to fold freshly matched headlines into the per-pair Run/News insight
+// without re-fetching prices. Cheap no-op if Pair Watch isn't on screen yet.
+function refreshPairWatchInsightsOnly(){
+  const body = document.getElementById('briefPairWatchBody');
+  if(!body) return;
+  const watched = watchedPairList();
+  if(!watched.length) return;
+  renderPairWatchList(watched, (state.brief.newsApiKey||'').trim());
 }
 function renderNewsList(items){
   const body = document.getElementById('briefNewsBody');
