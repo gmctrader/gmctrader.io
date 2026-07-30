@@ -927,11 +927,14 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 #shotOverlay .modal{max-width:min(760px,92vw);padding:14px;background:#07090a;border:1px solid rgba(255,255,255,0.1);}
 #shotOverlay img{width:100%;max-height:78vh;object-fit:contain;border-radius:12px;display:block;}
 
-/* ============ RISK GAUGE (brass instrument dial) ============ */
-.gauge-row{display:flex;gap:22px;flex-wrap:wrap;justify-content:space-around;margin-top:6px;}
-.gauge-unit{display:flex;flex-direction:column;align-items:center;width:150px;}
-.gauge-svg{filter:drop-shadow(0 10px 18px rgba(0,0,0,0.4));}
-.gauge-val{font-family:'Fraunces',serif;font-weight:650;font-size:21px;letter-spacing:-0.01em;color:var(--platinum);margin-top:-46px;font-feature-settings:"tnum" 1;}
+/* ============ RISK GAUGE (brass instrument dial, speedometer sweep) ============ */
+.gauge-row{display:flex;gap:24px 20px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.gauge-unit{display:flex;flex-direction:column;align-items:center;width:132px;}
+.gauge-dial-wrap{position:relative;width:128px;height:128px;}
+.gauge-svg{position:absolute;top:0;left:0;filter:drop-shadow(0 10px 18px rgba(0,0,0,0.4));}
+.gauge-val{position:relative;z-index:1;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:650;font-size:21px;letter-spacing:-0.01em;color:var(--platinum);
+  font-feature-settings:"tnum" 1;white-space:nowrap;overflow:hidden;text-align:center;pointer-events:none;}
 .gauge-cap{font-size:9px;color:var(--slate);text-transform:uppercase;letter-spacing:0.12em;margin-top:9px;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;}
 
 /* ============ DISCIPLINE SCORE DIAL (3D instrument) ============ */
@@ -1426,6 +1429,17 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
       <div class="card tilt" style="margin-top:18px">
         <h2>Risk <span class="accent">Console</span><span class="eyebrow">live daily gauges</span></h2>
         <div class="gauge-row" id="gaugeRow"></div>
+      </div>
+
+      <div class="card tilt" style="margin-top:18px">
+        <div class="equity-head">
+          <div>
+            <h2 style="margin-bottom:4px">Pending <span class="accent">Orders</span></h2>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();">Order Book →</button>
+        </div>
+        <div class="trade-list" id="ordersListOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
+        <div id="ordersOverviewMore" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--slate);cursor:pointer;font-weight:600;letter-spacing:0.01em;" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();"></div>
       </div>
 
       <div class="card tilt" style="margin-top:18px">
@@ -5633,7 +5647,29 @@ function renderDisciplineScore(){
   }
 }
 
-/* ============ RISK GAUGES (brass instrument dials) ============ */
+/* ============ RISK GAUGES (brass instrument dials, speedometer sweep) ============ */
+function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+// slight overshoot then settle, so the ring "kicks" past its target like a real needle
+function easeOutBack(t){
+  const c1 = 1.25, c3 = c1 + 1;
+  return 1 + c3*Math.pow(t-1, 3) + c1*Math.pow(t-1, 2);
+}
+const gaugeState = {};   // id -> last displayed { pct, raw }, used as the animation's start point
+const gaugeTokens = {};  // id -> bumped on every render so stale animation loops stop themselves
+
+// Shrinks the number/text inside a gauge until it actually fits the dial, instead of overflowing it
+function fitGaugeText(el){
+  const inner = el.firstElementChild;
+  if(!inner) return;
+  const maxWidth = 92;
+  let size = 21;
+  inner.style.fontSize = size + 'px';
+  while(inner.scrollWidth > maxWidth && size > 10){
+    size -= 1;
+    inner.style.fontSize = size + 'px';
+  }
+}
+
 function ringGauge(pct, colorClass, id){
   const r = 46, C = 2*Math.PI*r;
   pct = Math.max(0, Math.min(1, pct));
@@ -5656,48 +5692,126 @@ function ringGauge(pct, colorClass, id){
     </defs>
     <circle cx="64" cy="64" r="58" fill="url(#bezel-${id})" stroke="var(--steel-hi)" stroke-width="1"/>
     <circle cx="64" cy="64" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="9"/>
-    <circle cx="64" cy="64" r="46" fill="none" stroke="url(#ring-${id})" stroke-width="9" stroke-linecap="round"
-      stroke-dasharray="${dash} ${C-dash}" transform="rotate(-90 64 64)" style="transition:stroke-dasharray .7s cubic-bezier(.16,.9,.2,1); filter:drop-shadow(0 0 7px ${glow})"/>
+    <circle id="arc-${id}" cx="64" cy="64" r="46" fill="none" stroke="url(#ring-${id})" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${dash} ${C-dash}" transform="rotate(-90 64 64)" style="filter:drop-shadow(0 0 7px ${glow})"/>
   </svg>`;
 }
+
+// Sweeps the ring + counts the number from wherever it last settled to the new target —
+// this is what gives the speedometer-needle feel instead of an abrupt jump.
+function animateGaugeTo(unit){
+  const arcEl = document.getElementById('arc-'+unit.id);
+  const valEl = document.getElementById('val-'+unit.id);
+  if(!arcEl || !valEl) return;
+
+  // refresh color (gradient + glow) immediately in case the risk tier changed
+  const stops = unit.cls==='bad' ? ['#f9a8b4','#f43f5e']
+    : unit.cls==='warn' ? ['#ffd39a','#f5a623']
+    : ['#34d399','#2dd4bf'];
+  const glow = unit.cls==='bad' ? 'rgba(244,63,94,0.55)' : unit.cls==='warn' ? 'rgba(245,166,35,0.5)' : 'rgba(16,185,129,0.5)';
+  const gradEl = document.getElementById('ring-'+unit.id);
+  if(gradEl){
+    const stopEls = gradEl.querySelectorAll('stop');
+    if(stopEls[0]) stopEls[0].setAttribute('stop-color', stops[0]);
+    if(stopEls[1]) stopEls[1].setAttribute('stop-color', stops[1]);
+  }
+  arcEl.style.filter = `drop-shadow(0 0 7px ${glow})`;
+
+  const r = 46, C = 2*Math.PI*r;
+  const prev = gaugeState[unit.id] || { pct:0, raw:0 };
+  const fromPct = prev.pct, fromRaw = prev.raw;
+  const toPct = Math.max(0, Math.min(1, unit.pct));
+  const toRaw = unit.raw;
+  const token = (gaugeTokens[unit.id] = (gaugeTokens[unit.id]||0) + 1);
+  const start = performance.now();
+  const dur = 850;
+
+  function apply(pct, raw){
+    const dash = C*Math.max(0, Math.min(1, pct));
+    arcEl.setAttribute('stroke-dasharray', `${dash.toFixed(2)} ${(C-dash).toFixed(2)}`);
+    valEl.innerHTML = `<span>${unit.format(raw)}</span>`;
+    fitGaugeText(valEl);
+  }
+  function tick(now){
+    if(gaugeTokens[unit.id] !== token) return; // a newer render superseded this animation
+    const t = Math.min(1, (now-start)/dur);
+    const curPct = fromPct + (toPct-fromPct)*easeOutBack(t);
+    const curRaw = fromRaw + (toRaw-fromRaw)*easeOutCubic(t);
+    apply(curPct, curRaw);
+    gaugeState[unit.id] = { pct: Math.max(0, Math.min(1, curPct)), raw: curRaw };
+    if(t < 1) requestAnimationFrame(tick);
+    else {
+      apply(toPct, toRaw);
+      gaugeState[unit.id] = { pct: toPct, raw: toRaw };
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
 function renderGauges(){
   const row = document.getElementById('gaugeRow');
   if(!row) return;
+  const sym = curSym();
   const units = [];
 
   const maxL = state.rules.maxDailyLoss;
   const lossPct = maxL ? state.day.lossUsed/maxL : 0;
-  units.push({ id:'gLoss', pct:lossPct, cls: lossPct>=1?'bad':(lossPct>=0.7?'warn':'good'),
-    val: maxL ? `${curSym()}${state.day.lossUsed}` : '—', cap:'Daily loss used'+(maxL?` / ${curSym()}${maxL}`:'') });
+  units.push({ id:'gLoss', pct:lossPct, raw: state.day.lossUsed,
+    cls: lossPct>=1?'bad':(lossPct>=0.7?'warn':'good'),
+    format:(v)=> maxL ? `${sym}${v.toFixed(2)}` : '—',
+    cap:'Daily loss used'+(maxL?` / ${sym}${maxL}`:'') });
 
   const maxT = state.rules.maxTrades;
   const tPct = maxT ? state.day.tradesCount/maxT : 0;
-  units.push({ id:'gTrades', pct:tPct, cls: tPct>=1?'bad':(tPct>=0.7?'warn':'good'),
-    val: `${state.day.tradesCount}`+(maxT?` / ${maxT}`:''), cap:'Trades today' });
+  units.push({ id:'gTrades', pct:tPct, raw: state.day.tradesCount,
+    cls: tPct>=1?'bad':(tPct>=0.7?'warn':'good'),
+    format:(v)=> `${Math.round(v)}`+(maxT?` / ${maxT}`:''),
+    cap:'Trades today' });
 
   const maxCL = state.rules.maxConsecLosses;
   const clPct = maxCL ? state.consecutiveLosses/maxCL : 0;
-  units.push({ id:'gCL', pct:clPct, cls: clPct>=1?'bad':(clPct>=0.5?'warn':'good'),
-    val: `${state.consecutiveLosses}`+(maxCL?` / ${maxCL}`:''), cap:'Consecutive losses' });
+  units.push({ id:'gCL', pct:clPct, raw: state.consecutiveLosses,
+    cls: clPct>=1?'bad':(clPct>=0.5?'warn':'good'),
+    format:(v)=> `${Math.round(v)}`+(maxCL?` / ${maxCL}`:''),
+    cap:'Consecutive losses' });
 
   const bal = state.rules.accountBalance;
   const ddPct = bal ? Math.min(1, (state.day.lossUsed/bal)/0.03) : 0;
-  units.push({ id:'gBal', pct:ddPct, cls: ddPct>=1?'bad':(ddPct>=0.6?'warn':'good'),
-    val: bal ? (state.day.lossUsed/bal*100).toFixed(1)+'%' : '—', cap:'Of balance risked today' });
+  const balPctVal = bal ? (state.day.lossUsed/bal*100) : 0;
+  units.push({ id:'gBal', pct:ddPct, raw: balPctVal,
+    cls: ddPct>=1?'bad':(ddPct>=0.6?'warn':'good'),
+    format:(v)=> bal ? `${v.toFixed(1)}%` : '—',
+    cap:'Of balance risked today' });
 
   if(state.rules.coolingOffMinutes!=null){
     const remaining = cooldownMinutesRemaining();
     const cPct = state.rules.coolingOffMinutes ? Math.min(1, remaining/state.rules.coolingOffMinutes) : 0;
-    units.push({ id:'gCool', pct:cPct, cls: cPct>0.5?'bad':(cPct>0?'warn':'good'),
-      val: remaining>0 ? `${formatDuration(remaining)} left` : 'Clear', cap:'Cooling-off after loss' });
+    units.push({ id:'gCool', pct:cPct, raw: remaining,
+      cls: cPct>0.5?'bad':(cPct>0?'warn':'good'),
+      format:(v)=> v>=0.5 ? `${formatDuration(Math.round(v))} left` : 'Clear',
+      cap:'Cooling-off after loss' });
   }
 
-  row.innerHTML = units.map(u=>`
-    <div class="gauge-unit">
-      ${ringGauge(u.pct, u.cls, u.id)}
-      <div class="gauge-val">${u.val}</div>
-      <div class="gauge-cap">${u.cap}</div>
-    </div>`).join('');
+  // Only rebuild the DOM skeleton when the set of gauges actually changes (e.g. the
+  // cooling-off dial appearing/disappearing). Otherwise update in place so the sweep
+  // animation has something to animate from instead of restarting from scratch.
+  const wantIds = units.map(u=>u.id).join(',');
+  if(row.dataset.ids !== wantIds){
+    row.dataset.ids = wantIds;
+    row.innerHTML = units.map(u=>`
+      <div class="gauge-unit">
+        <div class="gauge-dial-wrap">
+          ${ringGauge(0, u.cls, u.id)}
+          <div class="gauge-val" id="val-${u.id}"><span></span></div>
+        </div>
+        <div class="gauge-cap">${u.cap}</div>
+      </div>`).join('');
+  } else {
+    const caps = row.querySelectorAll('.gauge-cap');
+    units.forEach((u,i)=>{ if(caps[i] && caps[i].textContent !== u.cap) caps[i].textContent = u.cap; });
+  }
+
+  units.forEach(u=> animateGaugeTo(u));
 }
 
 /* ============ SESSION CLOCK ============ */
@@ -6078,17 +6192,8 @@ async function placeOrder(){
   await saveState(); renderOrders();
   showToast('Order placed — close it out once you know the result');
 }
-function renderOrders(){
-  const list = document.getElementById('ordersList');
-  const countEl = document.getElementById('ordersCount');
-  if(!list) return;
-  const orders = (state.psychology.orders||[]).filter(o=>activeTraderFilter==='all' || o.trader===activeTraderFilter).slice().reverse();
-  if(countEl) countEl.textContent = orders.length ? `${orders.length} pending` : '';
-  if(orders.length===0){
-    list.innerHTML = '<div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div>';
-    return;
-  }
-  list.innerHTML = orders.map(o=>{
+function buildOrderRowsHTML(orders){
+  return orders.map(o=>{
     const typeInfo = STRATEGY_TYPES[o.strategyType];
     const styleInfo = TRADE_STYLES[o.style];
     const hasLevels = o.entry!=null || o.sl!=null || o.tp!=null;
@@ -6121,6 +6226,37 @@ function renderOrders(){
       </div>
     </div>`;
   }).join('');
+}
+const ORDERS_OVERVIEW_LIMIT = 4;
+function renderOrders(){
+  const list = document.getElementById('ordersList');
+  const countEl = document.getElementById('ordersCount');
+  const orders = (state.psychology.orders||[]).filter(o=>activeTraderFilter==='all' || o.trader===activeTraderFilter).slice().reverse();
+  if(countEl) countEl.textContent = orders.length ? `${orders.length} pending` : '';
+  if(list){
+    list.innerHTML = orders.length
+      ? buildOrderRowsHTML(orders)
+      : '<div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div>';
+  }
+  renderOrdersOverview(orders);
+}
+function renderOrdersOverview(orders){
+  const list = document.getElementById('ordersListOverview');
+  const moreEl = document.getElementById('ordersOverviewMore');
+  if(!list) return;
+  if(!orders) orders = (state.psychology.orders||[]).filter(o=>activeTraderFilter==='all' || o.trader===activeTraderFilter).slice().reverse();
+  if(orders.length===0){
+    list.innerHTML = '<div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div>';
+    if(moreEl) moreEl.style.display = 'none';
+    return;
+  }
+  const shown = orders.slice(0, ORDERS_OVERVIEW_LIMIT);
+  list.innerHTML = buildOrderRowsHTML(shown);
+  const remainder = orders.length - shown.length;
+  if(moreEl){
+    moreEl.style.display = remainder>0 ? 'block' : 'none';
+    moreEl.textContent = remainder>0 ? `+${remainder} more pending — view Order Book →` : '';
+  }
 }
 async function cancelOrder(id){
   state.psychology.orders = state.psychology.orders.filter(o=>o.id!==id);
