@@ -1876,7 +1876,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <h2>Challenge <span class="accent">Setup</span></h2>
           <div class="row2">
             <div class="field"><label>Prop firm name</label><input type="text" id="pf_firmName" placeholder="e.g. FTMO, MFF, Apex"></div>
-            <div class="field"><label>Account currency</label><select id="pf_currency"></select></div>
+            <div class="field"><label>Account currency</label><select id="pf_currency" onchange="onPfCurrencyPreview()"></select></div>
           </div>
           <div class="hint" style="margin:-6px 0 12px;">Your prop firm account can run in a different currency to your personal account — every $ figure in this room uses the currency selected here.</div>
           <div class="row2">
@@ -2329,7 +2329,7 @@ function onFxRatesReady(){
 // Exact $ risk and $ reward for a given order: price distance x units-per-lot
 // (scaled for account type) x lot size. Returns null if there isn't enough
 // info yet (no entry/SL/TP or no lot).
-function computeOrderMoney(entry, sl, tp, pair, lot, accountType){
+function computeOrderMoney(entry, sl, tp, pair, lot, accountType, acctCcy){
   entry = parseFloat(entry); sl = parseFloat(sl); tp = parseFloat(tp); lot = parseFloat(lot);
   if(isNaN(entry) || isNaN(lot) || lot<=0) return null;
   const acct = ACCOUNT_TYPES[accountType] || ACCOUNT_TYPES.standard;
@@ -2338,12 +2338,14 @@ function computeOrderMoney(entry, sl, tp, pair, lot, accountType){
   const rewardQuote = !isNaN(tp) ? Math.abs(tp-entry) * units : null;
   if(riskQuote==null && rewardQuote==null) return null;
 
-  // Convert from the pair's quote currency into the trader's actual account
-  // currency. Same-currency pairs (e.g. USD account on EURUSD) skip straight
-  // through at 1:1 — no live lookup needed. Everything else uses a cached
-  // live rate, fetched in the background if it isn't cached yet.
+  // Convert from the pair's quote currency into the relevant account currency —
+  // the caller passes this in explicitly (personal Rule Builder currency, or the
+  // Prop Firm's own currency when the order is tagged to a prop account), since
+  // those two can legitimately differ. Same-currency pairs skip straight through
+  // at 1:1 — no live lookup needed. Everything else uses a cached live rate,
+  // fetched in the background if it isn't cached yet.
   const quoteCcy = pairQuoteCurrency(pair);
-  const acctCcy = state.rules.currency || 'USD';
+  acctCcy = acctCcy || state.rules.currency || 'USD';
   let fxRate = 1, fxStatus = 'same';
   if(quoteCcy !== acctCcy){
     const cached = getCachedFxRate(quoteCcy, acctCcy);
@@ -4022,6 +4024,15 @@ function renderPfPhaseFields(){
       <div class="field"><label>Consistency rule — max % of profit from one day</label><input type="number" id="pf_consistencyRulePct" min="0" step="1" placeholder="e.g. 30" value="${d.consistencyRulePct ?? ''}"></div>`;
   }
 }
+// Fires the instant the prop-firm currency dropdown changes, so the "Starting
+// account size (X)" label reflects what's actually selected right now — not
+// whatever currency was last saved. Without this, picking a new currency and
+// typing a starting balance before hitting Save showed the wrong symbol.
+function onPfCurrencyPreview(){
+  const curSel = document.getElementById('pf_currency');
+  const startEl = document.getElementById('pfCurSymStart');
+  if(startEl) startEl.textContent = (CURRENCIES[curSel ? curSel.value : ''] || CURRENCIES.USD).symbol;
+}
 function renderPropFirmForm(){
   const pf = state.propFirm;
   const curSel = document.getElementById('pf_currency');
@@ -4497,11 +4508,19 @@ function updateTradeRiskPreview(){
   const opt = sSel.options[sSel.selectedIndex];
   const stratRisk = opt ? parseFloat(opt.dataset.risk) : NaN;
   const pct = !isNaN(stratRisk) ? stratRisk : state.rules.riskPerTrade;
-  const d = riskDollar(state.rules.accountBalance, pct);
+  // If this trade is closing an order placed against the prop firm account,
+  // price the risk preview off that account's balance/currency instead of
+  // the personal one — otherwise the auto-filled loss/win amount silently
+  // reflects the wrong account.
+  const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
+  const isPropFirm = !!(closingOrder && closingOrder.account==='propfirm');
+  const balance = isPropFirm ? propFirmLiveBalance() : state.rules.accountBalance;
+  const sym = isPropFirm ? pfCurSym() : curSym();
+  const d = riskDollar(balance, pct);
   const el = document.getElementById('tradeRiskPreview');
   const rrVal = parseFloat(document.getElementById('t_rr').value) || null;
   if(d!=null){
-    el.textContent = `Planned risk: ${pct}% of ${curSym()}${state.rules.accountBalance} = ${curSym()}${d}`;
+    el.textContent = `Planned risk: ${pct}% of ${sym}${balance} = ${sym}${d}`;
     const lossInput = document.getElementById('t_lossAmount');
     const winInput = document.getElementById('t_winAmount');
     if(document.getElementById('t_result').value==='loss' && !lossInput.dataset.touched){
@@ -4511,7 +4530,9 @@ function updateTradeRiskPreview(){
       winInput.value = rrVal ? +(d*rrVal).toFixed(2) : d;
     }
   } else {
-    el.textContent = 'Set your account balance and risk % in Rule Builder to see a computed risk amount.';
+    el.textContent = isPropFirm
+      ? 'Set a starting balance in Prop Firm Compliance to see a computed risk amount.'
+      : 'Set your account balance and risk % in Rule Builder to see a computed risk amount.';
   }
 }
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -4569,11 +4590,12 @@ function updateOrderLotAcctHint(){
   const pair = pairEl ? pairEl.value : '';
   const perLot = unitsPerStandardLot(pair) * acct.mult;
   const quoteCcy = pairQuoteCurrency(pair);
-  const acctCcy = state.rules.currency || 'USD';
+  const isPropFirm = orderAccountIsPropFirm();
+  const acctCcy = isPropFirm ? (state.propFirm.currency || state.rules.currency || 'USD') : (state.rules.currency || 'USD');
   if(pair && quoteCcy !== acctCcy) ensureFxRatesLoaded(); // warm the cache before they even type a lot size
   let base = `Using your ${acct.label} account — 1.00 lot = ${perLot.toLocaleString()} units on ${pair ? pair.toUpperCase() : 'this instrument'}.`;
   if(pair && quoteCcy !== acctCcy) base += ` This pair settles in ${quoteCcy}, converted live to your ${acctCcy} account.`;
-  if(orderAccountIsPropFirm()){
+  if(isPropFirm){
     const bal = propFirmLiveBalance();
     const pf = state.propFirm;
     hint.textContent = bal!=null
@@ -4594,9 +4616,16 @@ function renderOrderWorthPanel(rr, levels){
   const styleSel = document.getElementById('o_style');
   const style = styleSel ? styleSel.value : 'intraday';
   const profile = TRADE_STYLES[style] || TRADE_STYLES.intraday;
-  const balance = state.rules.accountBalance;
+  // Risk % per trade is a personal discipline rule that applies no matter which
+  // account you're trading, but WHICH balance and WHICH currency it's priced
+  // against must follow the account actually selected in the Order Book —
+  // otherwise a prop-firm order gets silently priced off your personal account.
+  const isPropFirm = orderAccountIsPropFirm();
+  const balance = isPropFirm ? propFirmLiveBalance() : state.rules.accountBalance;
   const riskPct = state.rules.riskPerTrade;
   const minRR = state.rules.minRR;
+  const sym = isPropFirm ? pfCurSym() : curSym();
+  const acctCcy = isPropFirm ? (state.propFirm.currency || state.rules.currency || 'USD') : (state.rules.currency || 'USD');
   if(rr==null || isNaN(rr) || rr<=0){
     panel.style.display = 'none';
     panel.innerHTML = '';
@@ -4608,7 +4637,7 @@ function renderOrderWorthPanel(rr, levels){
   const pair = pairEl ? pairEl.value : '';
   const lot = lotEl ? lotEl.value : '';
   const acctType = state.rules.accountType || 'standard';
-  const actual = (levels && lot!=='') ? computeOrderMoney(levels.entry, levels.sl, levels.tp, pair, lot, acctType) : null;
+  const actual = (levels && lot!=='') ? computeOrderMoney(levels.entry, levels.sl, levels.tp, pair, lot, acctType, acctCcy) : null;
   const ruleDollarRisk = riskDollar(balance, riskPct);
   const ruleDollarReward = ruleDollarRisk!=null ? +(ruleDollarRisk*rr).toFixed(2) : null;
   const dollarRisk = (actual && actual.risk!=null) ? actual.risk : ruleDollarRisk;
@@ -4640,18 +4669,22 @@ function renderOrderWorthPanel(rr, levels){
           ? ` (exact, from your ${lot} lot on ${pair ? pair.toUpperCase() : 'this pair'}, converted ${actual.quoteCcy}→${actual.acctCcy} at ${actual.fxRate.toFixed(4)})`
           : ` (exact, from your ${lot} lot on ${pair ? pair.toUpperCase() : 'this pair'})`)
       : ` (estimated from your ${riskPct}% risk rule — add a lot size above for the exact figure)`;
-    moneyLine = `<div class="check-item ${tier}"><span>${tier==='pass'?'&#10003;':tier==='warn'?'!':'&#10005;'}</span>Risking ${curSym()}${dollarRisk} to make ${curSym()}${dollarReward} on this account (${returnPct.toFixed(2)}% of balance) if it hits target${basis}.</div>`;
+    moneyLine = `<div class="check-item ${tier}"><span>${tier==='pass'?'&#10003;':tier==='warn'?'!':'&#10005;'}</span>Risking ${sym}${dollarRisk} to make ${sym}${dollarReward} on this account (${returnPct.toFixed(2)}% of balance) if it hits target${basis}.</div>`;
     if(actual && ruleDollarRisk!=null && actual.risk!=null && ruleDollarRisk>0){
       const diffPct = Math.abs(actual.risk - ruleDollarRisk) / ruleDollarRisk;
       if(diffPct > 0.15){
         const overUnder = actual.risk > ruleDollarRisk ? 'more than' : 'less than';
-        reasons.push(`Your ${lot} lot actually risks ${curSym()}${actual.risk.toFixed(2)} on this account type — ${overUnder} the ${curSym()}${ruleDollarRisk} your ${riskPct}% risk rule allows. Resize the lot to stay inside your own rule.`);
+        reasons.push(`Your ${lot} lot actually risks ${sym}${actual.risk.toFixed(2)} on this account type — ${overUnder} the ${sym}${ruleDollarRisk} your ${riskPct}% risk rule allows. Resize the lot to stay inside your own rule.`);
       }
     }
   } else if(lot===''){
-    moneyLine = `<div class="hint" style="margin:0 0 4px;">Add a lot size above to see the exact ${curSym()} risked and returned on this trade.</div>`;
+    moneyLine = `<div class="hint" style="margin:0 0 4px;">Add a lot size above to see the exact ${sym} risked and returned on this trade.</div>`;
+  } else if(balance==null){
+    moneyLine = isPropFirm
+      ? `<div class="hint" style="margin:0 0 4px;">Set a starting balance in Prop Firm Compliance to see the actual ${sym} risked and won on this trade.</div>`
+      : `<div class="hint" style="margin:0 0 4px;">Set your account balance and risk % in Rule Builder to see the actual ${sym} risked and won on this trade.</div>`;
   } else {
-    moneyLine = `<div class="hint" style="margin:0 0 4px;">Set your account balance and risk % in Rule Builder to see the actual ${curSym()} risked and won on this trade.</div>`;
+    moneyLine = `<div class="hint" style="margin:0 0 4px;">Enter entry, stop loss and take profit above to see the exact ${sym} risked and won on this trade.</div>`;
   }
 
   panel.innerHTML = `
@@ -6124,7 +6157,8 @@ async function submitTrade(){
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
   state.trades.push({ id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
     screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
-    pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null });
+    pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
+    account: closingOrder ? (closingOrder.account || 'personal') : 'personal' });
   state.day.tradesCount += 1;
   if(result==='loss'){ state.day.lossUsed += lossAmount; state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); } else { state.consecutiveLosses = 0; }
   archiveDisciplineDay(state.day.date, computeDisciplineScore());
@@ -6177,7 +6211,7 @@ async function placeOrder(){
     id:'ord_'+Date.now(), date:todayStr(), time:now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
     trader, strategy, strategyType, style, logics, pair: pair || null, direction,
     entry: entry!=='' ? parseFloat(entry) : null, sl: sl!=='' ? parseFloat(sl) : null, tp: tp!=='' ? parseFloat(tp) : null,
-    rrPlanned: rrPlanned || null, notes, status:'pending'
+    rrPlanned: rrPlanned || null, notes, status:'pending', account: orderAccountIsPropFirm() ? 'propfirm' : 'personal'
   });
   document.getElementById('o_pair').value='';
   document.getElementById('o_entry').value='';
@@ -6215,6 +6249,7 @@ function buildOrderRowsHTML(orders){
       </div>` : ''}
       <div class="trade-tags">
         <span class="tag-chip trader">${escapeHtml(traderName(o.trader))}</span>
+        ${o.account==='propfirm' ? `<span class="tag-chip" style="color:var(--amber)">🏛️ ${escapeHtml(state.propFirm.firmName || 'Prop Firm')}</span>` : ''}
         ${styleInfo ? `<span class="tag-chip" style="color:${styleInfo.color}">${styleInfo.short}</span>` : ''}
         ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
         ${o.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(o.strategy)||'—')}</span>` : ''}
