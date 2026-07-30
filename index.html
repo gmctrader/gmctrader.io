@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
 <title>Ghost Discipline — GMC Traders</title>
+<script>(function(){try{if(localStorage.getItem('gd_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="shortcut icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="logo.png">
@@ -52,6 +53,46 @@
   --gold-ink:#ffffff;
   --r-sm:10px; --r-md:16px; --r-lg:22px;
 }
+/* ============ DARK THEME (light is default) ============ */
+html[data-theme="dark"]{
+  --void:#03050a; --void-2:#0a1119; --graphite:#0e1720; --graphite-hi:#152029;
+  --steel:rgba(240,244,242,0.09); --steel-hi:rgba(240,244,242,0.16);
+  --panel:rgba(14,22,28,0.78); --panel-solid:#0b131a;
+  --bronze-bright:#2dd4a8; --bronze:#12b988; --bronze-dim:#063b2c; --bronze-ink:#03110c;
+  --amber:#f0a94e; --platinum:#eef6f2; --slate:#8fa6a0; --slate-dim:#5e7772;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#2dd4c8; --neon-purple:#8b5cf6; --neon-magenta:#0d9488;
+  --gold-bright:#ffdf9e; --gold:#f2c877; --gold-dim:#8a6b28; --gold-ink:#03110c;
+}
+html[data-theme="dark"] body{
+  background:
+    radial-gradient(ellipse 1000px 620px at 18% -10%, rgba(45,212,168,0.08), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 100% 105%, rgba(242,200,119,0.05), transparent 55%),
+    #03050a;
+}
+html[data-theme="dark"] .bg-video-tint{
+  background:
+    radial-gradient(ellipse 1100px 700px at 20% -8%, rgba(45,212,168,0.07), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 100% 105%, rgba(242,200,119,0.05), transparent 55%),
+    linear-gradient(180deg, rgba(3,5,10,0.72), rgba(3,5,10,0.88) 45%, #03050a 100%);
+}
+html[data-theme="dark"] .auth-video-vignette{
+  background:
+    radial-gradient(ellipse 900px 700px at 50% 40%, transparent 30%, rgba(3,5,10,0.5) 100%),
+    linear-gradient(180deg, rgba(3,5,10,0.4), rgba(3,5,10,0.6) 60%, rgba(3,5,10,0.9) 100%);
+}
+html[data-theme="dark"] #authScreen::before{
+  background-image:linear-gradient(rgba(240,244,242,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(240,244,242,0.04) 1px, transparent 1px);
+}
+/* Floating theme toggle — fixed so it stays reachable while the page scrolls */
+.theme-toggle-fab{position:fixed;bottom:20px;right:20px;z-index:998;width:46px;height:46px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--steel-hi);
+  background:var(--panel-solid);color:var(--platinum);box-shadow:0 10px 24px -8px rgba(0,0,0,0.35);
+  transition:transform .15s ease, background .2s ease;font-size:18px;}
+.theme-toggle-fab:hover{transform:translateY(-2px);}
+.theme-toggle-fab .ico-moon{display:none;}
+html[data-theme="dark"] .theme-toggle-fab .ico-sun{display:none;}
+html[data-theme="dark"] .theme-toggle-fab .ico-moon{display:inline;}
 *{box-sizing:border-box;}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-x:none;scroll-behavior:smooth;}
 html,body{margin:0;padding:0;min-height:100%;width:100%;max-width:100%;overflow-x:hidden;}
@@ -995,6 +1036,9 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 </style>
 </head>
 <body>
+<div class="theme-toggle-fab" id="themeToggleFab" onclick="toggleGdTheme()" title="Toggle dark / light theme">
+  <span class="ico-sun">☀️</span><span class="ico-moon">🌙</span>
+</div>
 <div class="bg-video-layer">
 </div>
 <div class="bg-video-tint"></div>
@@ -1818,19 +1862,11 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <h2>Challenge <span class="accent">Setup</span></h2>
           <div class="row2">
             <div class="field"><label>Prop firm name</label><input type="text" id="pf_firmName" placeholder="e.g. FTMO, MFF, Apex"></div>
-            <div class="field"><label>Starting account size (<span class="cur-sym">$</span>)</label><input type="number" id="pf_startingBalance" min="0" step="1"></div>
+            <div class="field"><label>Account currency</label><select id="pf_currency"></select></div>
           </div>
-          <div class="pf-phase-row" id="pfPhaseRow">
-            <div class="pf-phase-chip" data-phase="challenge" onclick="setPfPhase('challenge')">Challenge</div>
-            <div class="pf-phase-chip" data-phase="verification" onclick="setPfPhase('verification')">Verification</div>
-            <div class="pf-phase-chip" data-phase="funded" onclick="setPfPhase('funded')">Funded</div>
-          </div>
-          <div class="row2" style="margin-top:14px;">
-            <div class="field"><label>Profit target (%)</label><input type="number" id="pf_profitTarget" min="0" step="0.1" placeholder="e.g. 10"></div>
-            <div class="field"><label>Max daily loss (%)</label><input type="number" id="pf_maxDailyLossPct" min="0" step="0.1" placeholder="e.g. 5"></div>
-          </div>
+          <div class="hint" style="margin:-6px 0 12px;">Your prop firm account can run in a different currency to your personal account — every $ figure in this room uses the currency selected here.</div>
           <div class="row2">
-            <div class="field"><label>Max overall drawdown (%)</label><input type="number" id="pf_maxOverallDrawdownPct" min="0" step="0.1" placeholder="e.g. 10"></div>
+            <div class="field"><label>Starting account size (<span id="pfCurSymStart">$</span>)</label><input type="number" id="pf_startingBalance" min="0" step="1"></div>
             <div class="field">
               <label>Drawdown type</label>
               <select id="pf_drawdownType">
@@ -1839,10 +1875,43 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
               </select>
             </div>
           </div>
-          <div class="row2">
-            <div class="field"><label>Minimum trading days</label><input type="number" id="pf_minTradingDays" min="0" step="1" placeholder="e.g. 4"></div>
-            <div class="field"><label>Consistency rule — max % of profit from one day</label><input type="number" id="pf_consistencyRulePct" min="0" step="1" placeholder="e.g. 30"></div>
+          <div class="pf-phase-row" id="pfPhaseRow">
+            <div class="pf-phase-chip" data-phase="challenge" onclick="setPfPhase('challenge')">Challenge</div>
+            <div class="pf-phase-chip" data-phase="verification" onclick="setPfPhase('verification')">Verification</div>
+            <div class="pf-phase-chip" data-phase="funded" onclick="setPfPhase('funded')">Funded</div>
           </div>
+          <div class="hint" id="pfPhaseHint" style="margin:8px 0 4px;"></div>
+
+          <!-- Phase-specific fields: what's asked here changes depending on whether the
+               account is still a Challenge/Verification (profit target driven) or
+               already Funded (payout/split driven — a funded account isn't chasing a
+               profit target anymore). -->
+          <div id="pfPhaseFields"></div>
+
+          <div class="pf-group-label" style="margin-top:16px;">Risk Limits</div>
+          <div class="row2">
+            <div class="field">
+              <label style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span>Max daily loss</span>
+                <select id="pf_maxDailyLossUnit" onchange="renderPropFirmForm()" style="width:auto;padding:3px 8px;border-radius:8px;font-size:11px;">
+                  <option value="pct">%</option>
+                  <option value="currency">currency</option>
+                </select>
+              </label>
+              <input type="number" id="pf_maxDailyLossValue" min="0" step="0.1">
+            </div>
+            <div class="field">
+              <label style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span>Max overall drawdown</span>
+                <select id="pf_maxOverallDrawdownUnit" onchange="renderPropFirmForm()" style="width:auto;padding:3px 8px;border-radius:8px;font-size:11px;">
+                  <option value="pct">%</option>
+                  <option value="currency">currency</option>
+                </select>
+              </label>
+              <input type="number" id="pf_maxOverallDrawdownValue" min="0" step="0.1">
+            </div>
+          </div>
+
           <button class="btn btn-primary" onclick="savePropFirm()">Save Challenge Rules</button>
           <div class="hint" id="pfSavedHint" style="margin-top:10px"></div>
         </div>
@@ -2096,7 +2165,11 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DEFAULT_STATE = {
   rules:{ maxDailyLoss:null, maxTrades:null, riskPerTrade:null, minRR:null, maxConsecLosses:null, accountBalance:null, coolingOffMinutes:null, maxRiskPerTrade:null, currency:'USD', accountType:'standard' },
-  propFirm:{ firmName:'', phase:'challenge', startingBalance:null, profitTarget:null, maxDailyLossPct:null, maxOverallDrawdownPct:null, drawdownType:'static', minTradingDays:null, consistencyRulePct:null },
+  propFirm:{ firmName:'', phase:'challenge', currency:null, startingBalance:null,
+    maxDailyLossValue:null, maxDailyLossUnit:'pct', maxOverallDrawdownValue:null, maxOverallDrawdownUnit:'pct', drawdownType:'static',
+    challenge:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
+    verification:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
+    funded:{ profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } },
   session:{ start:"09:00", end:"11:00", restrict:false },
   psychology:{ why:"", monk:"", strategies:[], traders:[], orders:[], disciplineHistory:[], lastLossAt:null, preTradeCheckins:[], reviewsSeen:{ weekly:null, monthly:null } },
   trades:[],
@@ -2159,6 +2232,11 @@ const CURRENCY_OPTIONS_HTML = Object.entries(CURRENCIES).map(([code,c])=>
   `<option value="${code}">${c.symbol} — ${c.name} (${code})</option>`).join('');
 function curSym(){ return (CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol; }
 function updateCurrencyLabels(){ document.querySelectorAll('.cur-sym').forEach(el=>el.textContent=curSym()); }
+// The prop firm challenge can be denominated in a different currency to the
+// personal account (e.g. a ZAR trader on a USD FTMO challenge), so every
+// Prop Firm Compliance figure uses this instead of the personal curSym().
+// Falls back to the personal account currency until one is explicitly set.
+function pfCurSym(){ const c = state.propFirm && state.propFirm.currency; return (CURRENCIES[c] || CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol; }
 
 /* ============ ACCOUNT TYPE / LOT SIZE MATH ============ */
 // "Standard" is the default and the reference point every other type is
@@ -2902,9 +2980,28 @@ function normalizePsychology(psych){
   if(psych.traders.length===0) psych.traders = [{id:'me', name:'Me'}];
   return psych;
 }
+// Older saved accounts stored one flat profitTarget/maxDailyLossPct/etc for
+// whatever phase they were on at the time, before phases had their own
+// numbers and before daily loss / drawdown could be entered in currency.
+// Fold that legacy shape into the current phase's slot once, on load, so
+// nobody's saved challenge rules silently reset to blank.
+function migratePropFirmShape(pf, raw){
+  if(raw.challenge || raw.verification || raw.funded) return; // already new shape
+  const phase = pf.phase || 'challenge';
+  if(phase==='funded'){
+    if(raw.profitTarget!=null && pf.funded.payoutThresholdPct==null) pf.funded.payoutThresholdPct = raw.profitTarget;
+  } else if(pf[phase]) {
+    if(raw.profitTarget!=null) pf[phase].profitTarget = raw.profitTarget;
+    if(raw.minTradingDays!=null) pf[phase].minTradingDays = raw.minTradingDays;
+    if(raw.consistencyRulePct!=null) pf[phase].consistencyRulePct = raw.consistencyRulePct;
+  }
+  if(raw.maxDailyLossPct!=null && pf.maxDailyLossValue==null){ pf.maxDailyLossValue = raw.maxDailyLossPct; pf.maxDailyLossUnit = 'pct'; }
+  if(raw.maxOverallDrawdownPct!=null && pf.maxOverallDrawdownValue==null){ pf.maxOverallDrawdownValue = raw.maxOverallDrawdownPct; pf.maxOverallDrawdownUnit = 'pct'; }
+}
 function hydrateState(row){
   state.rules = Object.assign({}, DEFAULT_STATE.rules, row.rules || {});
   state.propFirm = Object.assign({}, DEFAULT_STATE.propFirm, row.prop_firm || {});
+  migratePropFirmShape(state.propFirm, row.prop_firm || {});
   state.session = row.session || DEFAULT_STATE.session;
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, row.psychology || {}));
   state.brief = Object.assign({}, DEFAULT_STATE.brief, row.brief || {});
@@ -3864,33 +3961,100 @@ async function saveRules(){
 }
 
 /* ============ PROP FIRM COMPLIANCE ============ */
+// Every field below the phase row changes meaning depending on which stage
+// the account is at: a Challenge/Verification account is chasing a profit
+// target and a minimum number of trading days, while a Funded account isn't
+// chasing a target at all — it cares about its profit split and payout
+// cadence instead. Daily loss and overall drawdown stay in the "Risk Limits"
+// group because firms enforce those identically across every phase.
+const PF_PHASE_LABELS = { challenge:'Challenge', verification:'Verification', funded:'Funded' };
+function pfPhaseData(phase){
+  const pf = state.propFirm;
+  phase = phase || pf.phase || 'challenge';
+  if(!pf[phase]) pf[phase] = phase==='funded' ? { profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } : { profitTarget:null, minTradingDays:null, consistencyRulePct:null };
+  return pf[phase];
+}
 function setPfPhase(phase){
   state.propFirm.phase = phase;
   document.querySelectorAll('#pfPhaseRow .pf-phase-chip').forEach(c=>c.classList.toggle('active', c.dataset.phase===phase));
+  renderPfPhaseFields();
+}
+// Renders the phase-specific inputs. Challenge and Verification each keep
+// their OWN profit target (a firm's verification target is usually lower
+// than its challenge target), so switching phase never overwrites the other
+// phase's number. Funded swaps the whole field set out for payout terms.
+function renderPfPhaseFields(){
+  const wrap = document.getElementById('pfPhaseFields');
+  if(!wrap) return;
+  const phase = state.propFirm.phase || 'challenge';
+  const d = pfPhaseData(phase);
+  const hint = document.getElementById('pfPhaseHint');
+  if(hint) hint.textContent = phase==='funded'
+    ? "Funded accounts don't chase a profit target anymore — track your split and payout terms instead."
+    : `Set the ${PF_PHASE_LABELS[phase].toLowerCase()} profit target — this is tracked separately per phase, so it won't get overwritten when you move to the next one.`;
+  if(phase==='funded'){
+    wrap.innerHTML = `
+      <div class="row2">
+        <div class="field"><label>Profit split (%)</label><input type="number" id="pf_profitSplitPct" min="0" max="100" step="1" placeholder="e.g. 80" value="${d.profitSplitPct ?? ''}"></div>
+        <div class="field"><label>Payout threshold (%)</label><input type="number" id="pf_payoutThresholdPct" min="0" step="0.1" placeholder="e.g. 5" value="${d.payoutThresholdPct ?? ''}"></div>
+      </div>
+      <div class="field"><label>Minimum days before payout</label><input type="number" id="pf_minPayoutDays" min="0" step="1" placeholder="e.g. 14" value="${d.minPayoutDays ?? ''}"></div>`;
+  } else {
+    wrap.innerHTML = `
+      <div class="row2">
+        <div class="field"><label>Profit target (%)</label><input type="number" id="pf_profitTarget" min="0" step="0.1" placeholder="e.g. 10" value="${d.profitTarget ?? ''}"></div>
+        <div class="field"><label>Minimum trading days</label><input type="number" id="pf_minTradingDays" min="0" step="1" placeholder="e.g. 4" value="${d.minTradingDays ?? ''}"></div>
+      </div>
+      <div class="field"><label>Consistency rule — max % of profit from one day</label><input type="number" id="pf_consistencyRulePct" min="0" step="1" placeholder="e.g. 30" value="${d.consistencyRulePct ?? ''}"></div>`;
+  }
 }
 function renderPropFirmForm(){
   const pf = state.propFirm;
+  const curSel = document.getElementById('pf_currency');
+  if(curSel && !curSel.dataset.filled){ curSel.innerHTML = CURRENCY_OPTIONS_HTML; curSel.dataset.filled = '1'; }
   document.getElementById('pf_firmName').value = pf.firmName || '';
+  if(curSel) curSel.value = pf.currency || state.rules.currency || 'USD';
   document.getElementById('pf_startingBalance').value = pf.startingBalance ?? '';
-  document.getElementById('pf_profitTarget').value = pf.profitTarget ?? '';
-  document.getElementById('pf_maxDailyLossPct').value = pf.maxDailyLossPct ?? '';
-  document.getElementById('pf_maxOverallDrawdownPct').value = pf.maxOverallDrawdownPct ?? '';
   document.getElementById('pf_drawdownType').value = pf.drawdownType || 'static';
-  document.getElementById('pf_minTradingDays').value = pf.minTradingDays ?? '';
-  document.getElementById('pf_consistencyRulePct').value = pf.consistencyRulePct ?? '';
+  document.getElementById('pf_maxDailyLossUnit').value = pf.maxDailyLossUnit || 'pct';
+  document.getElementById('pf_maxOverallDrawdownUnit').value = pf.maxOverallDrawdownUnit || 'pct';
+  document.getElementById('pf_maxDailyLossValue').value = pf.maxDailyLossValue ?? '';
+  document.getElementById('pf_maxOverallDrawdownValue').value = pf.maxOverallDrawdownValue ?? '';
+  document.getElementById('pf_maxDailyLossValue').placeholder = (pf.maxDailyLossUnit==='currency') ? 'e.g. 500' : 'e.g. 5';
+  document.getElementById('pf_maxOverallDrawdownValue').placeholder = (pf.maxOverallDrawdownUnit==='currency') ? 'e.g. 1000' : 'e.g. 10';
+  const startEl = document.getElementById('pfCurSymStart');
+  if(startEl) startEl.textContent = (CURRENCIES[pf.currency || state.rules.currency || 'USD']||CURRENCIES.USD).symbol;
   setPfPhase(pf.phase || 'challenge');
 }
 async function savePropFirm(){
+  const phase = state.propFirm.phase || 'challenge';
+  const carried = { challenge: state.propFirm.challenge, verification: state.propFirm.verification, funded: state.propFirm.funded };
+  if(phase==='funded'){
+    carried.funded = {
+      profitSplitPct: numOrNullFrom('pf_profitSplitPct'),
+      payoutThresholdPct: numOrNullFrom('pf_payoutThresholdPct'),
+      minPayoutDays: numOrNullFrom('pf_minPayoutDays'),
+    };
+  } else {
+    carried[phase] = {
+      profitTarget: numOrNullFrom('pf_profitTarget'),
+      minTradingDays: numOrNullFrom('pf_minTradingDays'),
+      consistencyRulePct: numOrNullFrom('pf_consistencyRulePct'),
+    };
+  }
   state.propFirm = {
     firmName: document.getElementById('pf_firmName').value.trim(),
-    phase: state.propFirm.phase || 'challenge',
+    phase,
+    currency: document.getElementById('pf_currency').value || 'USD',
     startingBalance: numOrNullFrom('pf_startingBalance'),
-    profitTarget: numOrNullFrom('pf_profitTarget'),
-    maxDailyLossPct: numOrNullFrom('pf_maxDailyLossPct'),
-    maxOverallDrawdownPct: numOrNullFrom('pf_maxOverallDrawdownPct'),
+    maxDailyLossUnit: document.getElementById('pf_maxDailyLossUnit').value || 'pct',
+    maxDailyLossValue: numOrNullFrom('pf_maxDailyLossValue'),
+    maxOverallDrawdownUnit: document.getElementById('pf_maxOverallDrawdownUnit').value || 'pct',
+    maxOverallDrawdownValue: numOrNullFrom('pf_maxOverallDrawdownValue'),
     drawdownType: document.getElementById('pf_drawdownType').value,
-    minTradingDays: numOrNullFrom('pf_minTradingDays'),
-    consistencyRulePct: numOrNullFrom('pf_consistencyRulePct'),
+    challenge: carried.challenge || DEFAULT_STATE.propFirm.challenge,
+    verification: carried.verification || DEFAULT_STATE.propFirm.verification,
+    funded: carried.funded || DEFAULT_STATE.propFirm.funded,
   };
   await saveState();
   document.getElementById('pfSavedHint').textContent = 'Saved just now.';
@@ -3915,6 +4079,8 @@ function computePropFirmMetrics(){
   const pf = state.propFirm;
   const start = pf.startingBalance;
   if(!start) return null;
+  const phase = pf.phase || 'challenge';
+  const pd = pfPhaseData(phase);
 
   const series = pfDailyPnlSeries();
   let balance = start;
@@ -3931,24 +4097,41 @@ function computePropFirmMetrics(){
 
   const currentBalance = balance;
   const totalProfit = currentBalance - start;
-  const profitTargetDollar = pf.profitTarget ? start * pf.profitTarget/100 : null;
-  const maxOverallDrawdownDollar = pf.maxOverallDrawdownPct ? start * pf.maxOverallDrawdownPct/100 : null;
+
+  // Funded accounts aren't chasing a profit target — they're tracked against
+  // a payout threshold instead, so profitTargetDollar stays null there.
+  const profitTargetPct = phase==='funded' ? null : pd.profitTarget;
+  const profitTargetDollar = profitTargetPct ? start * profitTargetPct/100 : null;
+
+  // Daily loss / overall drawdown can each be entered as a % of starting
+  // balance OR as a flat currency amount — convert whichever was chosen into
+  // a currency figure so the rest of the math (and the bars) stays uniform.
+  const maxDailyLossDollar = pf.maxDailyLossValue!=null
+    ? (pf.maxDailyLossUnit==='currency' ? pf.maxDailyLossValue : start * pf.maxDailyLossValue/100)
+    : null;
+  const maxOverallDrawdownDollar = pf.maxOverallDrawdownValue!=null
+    ? (pf.maxOverallDrawdownUnit==='currency' ? pf.maxOverallDrawdownValue : start * pf.maxOverallDrawdownValue/100)
+    : null;
 
   const todayIso = todayStr();
   const todayPnl = series.find(d=>d.date===todayIso)?.pnl || 0;
   const todayLoss = todayPnl < 0 ? Math.abs(todayPnl) : 0;
-  const maxDailyLossDollar = pf.maxDailyLossPct ? start * pf.maxDailyLossPct/100 : null;
 
   const tradingDays = series.filter(d=>d.pnl !== 0 || true).length; // any day with at least one logged trade
-  const minTradingDays = pf.minTradingDays;
+  const minTradingDays = phase==='funded' ? pd.minPayoutDays : pd.minTradingDays;
+  const consistencyRulePct = phase==='funded' ? null : pd.consistencyRulePct;
 
   let consistencyBreach = false;
   let consistencyPct = 0;
-  if(pf.consistencyRulePct && totalProfit > 0){
+  if(consistencyRulePct && totalProfit > 0){
     const bestDay = Math.max(0, ...series.map(d=>d.pnl));
     consistencyPct = (bestDay / totalProfit) * 100;
-    consistencyBreach = consistencyPct > pf.consistencyRulePct;
+    consistencyBreach = consistencyPct > consistencyRulePct;
   }
+
+  // Funded: progress toward the next payout, using the same profit pool.
+  const payoutThresholdDollar = phase==='funded' && pd.payoutThresholdPct ? start * pd.payoutThresholdPct/100 : null;
+  const payoutThresholdHit = payoutThresholdDollar!=null && totalProfit >= payoutThresholdDollar;
 
   const overallDrawdownBreached = maxOverallDrawdownDollar!=null && maxDrawdownHit >= maxOverallDrawdownDollar;
   const dailyLossBreached = maxDailyLossDollar!=null && todayLoss >= maxDailyLossDollar;
@@ -3961,12 +4144,14 @@ function computePropFirmMetrics(){
   else if(maxDailyLossDollar!=null && todayLoss >= maxDailyLossDollar*0.7) overallStatus = 'warn';
 
   return {
-    start, currentBalance, totalProfit, peak,
-    profitTargetDollar, profitTargetHit,
+    phase, start, currentBalance, totalProfit, peak,
+    profitTargetPct, profitTargetDollar, profitTargetHit,
     maxOverallDrawdownDollar, maxDrawdownHit, overallDrawdownBreached,
     todayLoss, maxDailyLossDollar, dailyLossBreached,
     tradingDays, minTradingDays, tradingDaysMet,
-    consistencyPct, consistencyBreach,
+    consistencyRulePct, consistencyPct, consistencyBreach,
+    profitSplitPct: phase==='funded' ? pd.profitSplitPct : null,
+    payoutThresholdDollar, payoutThresholdHit,
     overallStatus
   };
 }
@@ -4011,9 +4196,12 @@ function renderPropFirmCompliance(){
   headerBadge.className = 'pf-badge ' + m.overallStatus;
   headerBadge.textContent = m.overallStatus==='pass' ? 'On Track' : (m.overallStatus==='warn' ? 'At Risk' : 'Rule Breached');
 
-  const fmt = n => (n<0?'-':'') + curSym() + Math.abs(n).toFixed(0);
+  const sym = pfCurSym();
+  const fmt = n => (n<0?'-':'') + sym + Math.abs(n).toFixed(0);
+  const isFunded = m.phase==='funded';
 
   const profitPct = m.profitTargetDollar ? (m.totalProfit / m.profitTargetDollar * 100) : 0;
+  const payoutPct = m.payoutThresholdDollar ? (m.totalProfit / m.payoutThresholdDollar * 100) : 0;
   const ddPct = m.maxOverallDrawdownDollar ? (m.maxDrawdownHit / m.maxOverallDrawdownDollar * 100) : 0;
   const dailyPct = m.maxDailyLossDollar ? (m.todayLoss / m.maxDailyLossDollar * 100) : 0;
   const daysPct = m.minTradingDays ? (m.tradingDays / m.minTradingDays * 100) : 0;
@@ -4022,14 +4210,14 @@ function renderPropFirmCompliance(){
   const breaches = [];
   if(m.overallDrawdownBreached) breaches.push('Overall Drawdown');
   if(m.dailyLossBreached) breaches.push('Daily Loss Limit');
-  if(pf.consistencyRulePct && m.consistencyBreach) breaches.push('Consistency Rule');
+  if(m.consistencyRulePct && m.consistencyBreach) breaches.push('Consistency Rule');
 
   const balance = propFirmLiveBalance();
   const delta = balance!=null && pf.startingBalance!=null ? (balance - pf.startingBalance) : null;
 
   wrap.innerHTML = `
     <div class="card tilt">
-      <h2>Live <span class="accent">Compliance</span><span class="eyebrow">${escapeHtml(pf.firmName||'your firm')} · ${pf.phase}</span></h2>
+      <h2>Live <span class="accent">Compliance</span><span class="eyebrow">${escapeHtml(pf.firmName||'your firm')} · ${PF_PHASE_LABELS[m.phase]||m.phase} · ${escapeHtml(pf.currency||state.rules.currency||'USD')}</span></h2>
 
       ${balance!=null ? `
       <div class="pf-balance-row">
@@ -4037,7 +4225,7 @@ function renderPropFirmCompliance(){
           <div class="pf-balance-num">${fmt(balance)}</div>
           <div class="pf-balance-sub">Current account balance</div>
         </div>
-        ${delta!=null ? `<div class="pf-balance-delta ${delta>=0?'pos':'neg'}">${delta>=0?'+':'-'}${curSym()}${Math.abs(delta).toFixed(0)}<span>vs ${fmt(pf.startingBalance)} start</span></div>` : ''}
+        ${delta!=null ? `<div class="pf-balance-delta ${delta>=0?'pos':'neg'}">${delta>=0?'+':'-'}${sym}${Math.abs(delta).toFixed(0)}<span>vs ${fmt(pf.startingBalance)} start</span></div>` : ''}
       </div>` : ''}
 
       ${breaches.length ? `
@@ -4048,13 +4236,21 @@ function renderPropFirmCompliance(){
 
       <div class="pf-group-label">Financial Rules</div>
 
+      ${isFunded ? `
+      <div class="pf-metric">
+        <div class="pf-metric-head">
+          <div><div class="pf-metric-title">Payout Progress</div><div class="pf-metric-sub">${fmt(m.totalProfit)} of ${m.payoutThresholdDollar!=null?fmt(m.payoutThresholdDollar):'—'} threshold${m.profitSplitPct?` · ${m.profitSplitPct}% split`:''}</div></div>
+          <div class="pf-badge ${m.payoutThresholdHit?'pass':'off'}">${m.payoutThresholdHit?'Hit':payoutPct.toFixed(0)+'%'}</div>
+        </div>
+        ${pfBar(payoutPct, '')}
+      </div>` : `
       <div class="pf-metric">
         <div class="pf-metric-head">
           <div><div class="pf-metric-title">Profit Target</div><div class="pf-metric-sub">${fmt(m.totalProfit)} of ${m.profitTargetDollar!=null?fmt(m.profitTargetDollar):'—'}</div></div>
           <div class="pf-badge ${m.profitTargetHit?'pass':'off'}">${m.profitTargetHit?'Hit':profitPct.toFixed(0)+'%'}</div>
         </div>
         ${pfBar(profitPct, '')}
-      </div>
+      </div>`}
 
       <div class="pf-metric">
         <div class="pf-metric-head">
@@ -4074,21 +4270,22 @@ function renderPropFirmCompliance(){
 
       <div class="pf-group-label">Behavioral Rules</div>
 
-      <div class="pf-metric">
+      <div class="pf-metric" ${isFunded ? 'style="margin-bottom:0;"' : ''}>
         <div class="pf-metric-head">
-          <div><div class="pf-metric-title">Minimum Trading Days</div><div class="pf-metric-sub">${m.tradingDays} of ${m.minTradingDays ?? '—'} days logged</div></div>
+          <div><div class="pf-metric-title">${isFunded?'Minimum Days Before Payout':'Minimum Trading Days'}</div><div class="pf-metric-sub">${m.tradingDays} of ${m.minTradingDays ?? '—'} days logged</div></div>
           <div class="pf-badge ${m.tradingDaysMet?'pass':'off'}">${m.tradingDaysMet?'Met':daysPct.toFixed(0)+'%'}</div>
         </div>
         ${pfBar(daysPct, '')}
       </div>
 
+      ${!isFunded ? `
       <div class="pf-metric" style="margin-bottom:0;">
         <div class="pf-metric-head">
-          <div><div class="pf-metric-title">Consistency Rule</div><div class="pf-metric-sub">Best single day is ${m.consistencyPct.toFixed(0)}% of total profit${pf.consistencyRulePct?` (limit ${pf.consistencyRulePct}%)`:''}</div></div>
-          <div class="pf-badge ${pf.consistencyRulePct ? (m.consistencyBreach?'fail':'pass') : 'off'}">${pf.consistencyRulePct ? (m.consistencyBreach?'Breached':'OK') : 'No limit set'}</div>
+          <div><div class="pf-metric-title">Consistency Rule</div><div class="pf-metric-sub">Best single day is ${m.consistencyPct.toFixed(0)}% of total profit${m.consistencyRulePct?` (limit ${m.consistencyRulePct}%)`:''}</div></div>
+          <div class="pf-badge ${m.consistencyRulePct ? (m.consistencyBreach?'fail':'pass') : 'off'}">${m.consistencyRulePct ? (m.consistencyBreach?'Breached':'OK') : 'No limit set'}</div>
         </div>
-        ${pf.consistencyRulePct ? pfBar(m.consistencyPct, m.consistencyBreach?'fail':'') : ''}
-      </div>
+        ${m.consistencyRulePct ? pfBar(m.consistencyPct, m.consistencyBreach?'fail':'') : ''}
+      </div>` : ''}
     </div>
   `;
 }
@@ -4366,7 +4563,7 @@ function updateOrderLotAcctHint(){
     const bal = propFirmLiveBalance();
     const pf = state.propFirm;
     hint.textContent = bal!=null
-      ? `${base} Priced against ${pf.firmName || 'your prop firm'}'s account (${curSym()}${bal.toFixed(0)}) — not your personal balance.`
+      ? `${base} Priced against ${pf.firmName || 'your prop firm'}'s account (${pfCurSym()}${bal.toFixed(0)}) — not your personal balance.`
       : `${base} Set a starting balance in Prop Firm Compliance to price this against your challenge account.`;
   } else {
     hint.textContent = `${base} Change account type in Rule Builder.`;
@@ -6149,6 +6346,26 @@ function handleGetApp(){
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
+
+/* ============ THEME (shared with scife.html via 'gd_theme') ============ */
+// Light is the default everywhere. The stored key here is what scife.html
+// reads on its own boot, so flipping the toggle on either page keeps both
+// pages in sync without scife needing its own separate toggle anymore.
+function applyGdTheme(t){
+  document.documentElement.setAttribute('data-theme', t==='dark' ? 'dark' : 'light');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', t==='dark' ? '#03050a' : '#ffffff');
+  try{ localStorage.setItem('gd_theme', t==='dark' ? 'dark' : 'light'); }catch(e){}
+}
+function toggleGdTheme(){
+  const current = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
+  applyGdTheme(current==='dark' ? 'light' : 'dark');
+}
+(function(){
+  let stored = 'light';
+  try{ stored = localStorage.getItem('gd_theme') || 'light'; }catch(e){}
+  applyGdTheme(stored);
+})();
 
 /* ============ BOOT ============ */
 (async function boot(){

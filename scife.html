@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#04070a">
 <title>SciFe — Ghost Discipline</title>
-<script>(function(){try{if(localStorage.getItem('scife_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+<script>(function(){try{document.documentElement.setAttribute('data-theme', localStorage.getItem('gd_theme')==='dark' ? 'dark' : 'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -215,7 +215,7 @@ button{font-family:inherit;}
   border-color:rgba(242,200,119,0.45);box-shadow:0 6px 16px -6px rgba(18,185,136,0.4);transform:translateY(-1px);}
 
 .chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding:4px 2px 12px;min-height:220px;perspective:800px;}
-.bubble{max-width:82%;padding:12px 15px;border-radius:16px;font-size:14.5px;line-height:1.55;
+.bubble{max-width:82%;padding:12px 15px;border-radius:16px;font-size:14.5px;line-height:1.55;white-space:pre-wrap;
   animation:bubbleIn .32s cubic-bezier(.2,.8,.3,1) both;transform-style:preserve-3d;}
 @keyframes bubbleIn{0%{opacity:0;transform:translateY(10px) translateZ(-20px) rotateX(8deg);}100%{opacity:1;transform:translateY(0) translateZ(0) rotateX(0);}}
 .bubble.user{align-self:flex-end;color:#fff9ec;border-bottom-right-radius:5px;
@@ -436,14 +436,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 <div class="overlay" id="settingsOverlay">
   <div class="modal">
     <h3 class="serif">SciFe settings</h3>
-    <div class="sub">Your key and preferences, synced to your account.</div>
-    <div class="toggle-row">
-      <div>
-        <div style="font-weight:600;font-size:13.5px;">Light mode</div>
-        <div class="hint" style="margin-top:2px;">Switch between dark and light appearance</div>
-      </div>
-      <div class="switch" id="settingsThemeSwitch" onclick="this.classList.toggle('on'); applyTheme(this.classList.contains('on') ? 'light' : 'dark');"></div>
-    </div>
+    <div class="sub">Your key and preferences, synced to your account. Appearance follows the theme set on the main app.</div>
     <div class="field">
       <label>AI provider</label>
       <div class="provider-grid" id="settingsProviderGrid"></div>
@@ -503,7 +496,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', theme:'dark' };
+let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'' };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -737,21 +730,23 @@ async function loadTraderRow(){
     voiceOn: s.voiceOn !== false,
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
-    voiceURI: s.voiceURI || '',
-    theme: s.theme === 'light' ? 'light' : 'dark'
+    voiceURI: s.voiceURI || ''
   };
-  applyTheme(scife.theme);
 }
 
-/* Applies (and remembers) the light/dark appearance. Called on load, live
-   while toggling the switch in settings, and on revert if closed unsaved. */
-function applyTheme(theme){
-  const t = theme === 'light' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', t);
+/* Appearance is no longer a SciFe-specific setting — it just mirrors the
+   'gd_theme' key the main Ghost Discipline app writes, so both pages always
+   match and there's only one toggle to find. Applied on boot (inline script
+   in <head>, before paint) and kept live if it's changed in another tab. */
+function applyGdTheme(t){
+  const theme = t === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', t === 'light' ? '#f5f3ec' : '#04070a');
-  try{ localStorage.setItem('scife_theme', t); }catch(e){}
+  if(meta) meta.setAttribute('content', theme === 'light' ? '#f5f3ec' : '#04070a');
 }
+window.addEventListener('storage', (e)=>{ if(e.key==='gd_theme') applyGdTheme(e.newValue); });
+applyGdTheme((function(){ try{ return localStorage.getItem('gd_theme'); }catch(e){ return 'light'; } })());
+
 
 /* The key currently in effect for chat calls — whatever is saved for the active provider. */
 function activeApiKey(){
@@ -835,14 +830,13 @@ function summarizeJournal(){
   const wins = trades.filter(t=>t.result==='win').length;
   const losses = trades.filter(t=>t.result==='loss').length;
   const winRate = trades.length ? Math.round((wins/trades.length)*100) : null;
-  const pnlOf = t => t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0);
   const totalPnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   const todayPnl = todaysTrades.reduce((a,t)=>a+pnlOf(t),0);
   const moodCounts = {};
   trades.forEach(t=>{ if(t.mood) moodCounts[t.mood] = (moodCounts[t.mood]||0)+1; });
   const topMood = Object.entries(moodCounts).sort((a,b)=>b[1]-a[1])[0];
-  const recent = trades.slice(-6).reverse().map(t=>
-    `${t.date||''} ${t.result} ${t.pair||''} rr:${t.rr??'-'} mood:${t.mood||'-'} notes:"${(t.notes||'').slice(0,80)}"`
+  const recent = trades.slice(-8).reverse().map(t=>
+    `id:${t.id} ${t.date||''} ${t.result} ${t.pair||'-'} rr:${t.rr??'-'} pnl:${pnlOf(t).toFixed(0)} account:${t.account||'personal'} mood:${t.mood||'-'} notes:"${(t.notes||'').slice(0,80)}"`
   );
   const day = (traderRow && traderRow.day) || {};
   const streak = (traderRow && traderRow.streak) || {};
@@ -860,14 +854,109 @@ function summarizeJournal(){
   ].filter(Boolean).join('\n');
 }
 
+/* ============ TRADE LOGGING / EDITING (from conversation) ============
+   SciFe can't call a real function-calling API uniformly across every
+   provider (OpenAI/Anthropic/Gemini/Groq/Mistral/OpenRouter all shape tool
+   calls differently), so instead the model is instructed (see
+   buildSystemPrompt) to end its reply with a small JSON action block when
+   the trader hands it a trade to log or edit. We pull that block out of the
+   reply, act on it against the same `trades` array index.html uses, persist
+   it, and strip the block itself out of what's shown/spoken. */
+const ACTION_RE = /<<<ACTION>>>([\s\S]*?)<<<END>>>/;
+function extractTradeAction(replyText){
+  const m = replyText.match(ACTION_RE);
+  if(!m) return { text: replyText.trim(), action: null };
+  const text = replyText.replace(ACTION_RE, '').trim();
+  let action = null;
+  try{ action = JSON.parse(m[1].trim()); }catch(e){ action = null; }
+  return { text, action };
+}
+function pnlOf(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0); }
+async function saveTrades(){
+  if(!currentUser || !traderRow) return false;
+  const { error } = await sb.from('trader_data')
+    .update({ trades: traderRow.trades, updated_at: new Date().toISOString() })
+    .eq('user_id', currentUser.id);
+  if(error){ showToast('Could not save trade: ' + (error.message||error.code)); return false; }
+  return true;
+}
+// Applies a {type:'log_trade'|'edit_trade', ...} action parsed from the
+// model's reply. Returns a short confirmation string to surface to the
+// trader (or an error string, prefixed so it reads clearly either way).
+async function applyTradeAction(action){
+  if(!action || !action.type) return null;
+  traderRow.trades = traderRow.trades || [];
+  if(action.type === 'log_trade'){
+    const pnl = parseFloat(action.pnl);
+    const result = action.result==='win' || action.result==='loss' ? action.result : (isNaN(pnl) ? 'win' : (pnl < 0 ? 'loss' : 'win'));
+    const amount = isNaN(pnl) ? 0 : Math.abs(pnl);
+    const strategies = (traderRow.psychology && traderRow.psychology.strategies) || [];
+    const matchedStrategy = action.strategy ? strategies.find(s=>s.name && s.name.toLowerCase().includes(String(action.strategy).toLowerCase())) : null;
+    const trade = {
+      id: Date.now(),
+      date: (action.date && /^\d{4}-\d{2}-\d{2}$/.test(action.date)) ? action.date : todayStr(),
+      time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+      result, rr: action.rr!=null ? parseFloat(action.rr) : null,
+      notes: action.notes || '',
+      lossAmount: result==='loss' ? amount : 0,
+      winAmount: result==='win' ? amount : 0,
+      trader: 'me',
+      strategy: matchedStrategy ? matchedStrategy.id : null,
+      strategyType: matchedStrategy ? matchedStrategy.type : null,
+      logics: [],
+      mood: ['calm','confident','fomo','revenge','bored','anxious'].includes(action.mood) ? action.mood : null,
+      pair: action.pair || null,
+      account: action.account==='propfirm' ? 'propfirm' : 'personal',
+      screenshotUrl: null, tvLink: null
+    };
+    traderRow.trades.push(trade);
+    const ok = await saveTrades();
+    return ok ? `[Logged: ${trade.result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}]` : '[Could not save that trade — try again in a moment.]';
+  }
+  if(action.type === 'edit_trade'){
+    const id = action.id!=null ? Number(action.id) : null;
+    const idx = id!=null ? traderRow.trades.findIndex(t=>Number(t.id)===id) : -1;
+    if(idx === -1) return '[Could not find that trade to edit.]';
+    const t = traderRow.trades[idx];
+    if(action.result==='win' || action.result==='loss') t.result = action.result;
+    if(action.pnl!=null && !isNaN(parseFloat(action.pnl))){
+      const amt = Math.abs(parseFloat(action.pnl));
+      if(t.result==='win'){ t.winAmount = amt; t.lossAmount = 0; } else { t.lossAmount = amt; t.winAmount = 0; }
+    }
+    if(action.rr!=null) t.rr = parseFloat(action.rr);
+    if(action.notes!=null) t.notes = action.notes;
+    if(action.pair!=null) t.pair = action.pair;
+    if(action.date && /^\d{4}-\d{2}-\d{2}$/.test(action.date)) t.date = action.date;
+    if(action.account==='propfirm' || action.account==='personal') t.account = action.account;
+    if(['calm','confident','fomo','revenge','bored','anxious'].includes(action.mood)) t.mood = action.mood;
+    const ok = await saveTrades();
+    return ok ? `[Updated trade ${t.date} ${t.pair||''}]` : '[Could not save that edit — try again in a moment.]';
+  }
+  return null;
+}
+
 function buildSystemPrompt(){
   const memNotes = scife.memory.length ? scife.memory.map(m=>'- '+m).join('\n') : 'None yet.';
+  const strategies = ((traderRow && traderRow.psychology && traderRow.psychology.strategies) || []).map(s=>s.name).join(', ') || 'none saved';
+  const pf = (traderRow && traderRow.prop_firm) || {};
   return `You are SciFe, a trading journal companion inside the Ghost Discipline app. You talk with the trader about their charts, their emotions while trading, and their journal — like a sharp, honest trading coach who knows them.
 
 Be concise (2-4 sentences unless asked for detail), warm but direct, and never just cheerlead — call out patterns like revenge trading, rule-breaking, or emotional overtrading when the data shows it. Use the journal data below to ground your answers; don't invent numbers that aren't there.
 
 JOURNAL SNAPSHOT:
 ${summarizeJournal()}
+
+Known strategy names: ${strategies}
+Prop firm on file: ${pf.firmName ? pf.firmName+' ('+(pf.phase||'challenge')+')' : 'none configured'}
+Today's date: ${todayStr()}
+
+TRADE LOGGING & EDITING:
+You can log a new trade or edit an existing one directly from conversation — when the trader tells you about a trade they took, or asks you to change/fix/delete a detail on one already in the journal, do it instead of just talking about it.
+To do this, end your reply with a single action block on its own line, using this exact format (no other text on that line):
+<<<ACTION>>>{...json...}<<<END>>>
+For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"propfirm","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
+For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
+Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit an id that actually appears in the JOURNAL SNAPSHOT above. Only include the action block when the trader is actually giving you a trade to log or a real change to make — never for hypothetical or past-tense-recap conversation. The action block is invisible to the trader, so still say in plain words what you just logged/changed before it.
 
 MEMORY FROM PAST SESSIONS:
 ${memNotes}`;
@@ -922,11 +1011,15 @@ async function sendMessage(text){
   addTyping();
   setStage('thinking');
   try{
-    const reply = await chatCompletion(buildSystemPrompt(), history.slice(-12));
+    const rawReply = await chatCompletion(buildSystemPrompt(), history.slice(-12));
+    const { text: cleanReply, action } = extractTradeAction(rawReply);
+    let confirmation = null;
+    if(action) confirmation = await applyTradeAction(action);
+    const displayReply = confirmation ? `${cleanReply}\n\n${confirmation}` : cleanReply;
     removeTyping();
-    addBubble('assistant', reply);
-    history.push({ role:'assistant', content:reply });
-    if(scife.voiceOn) speak(reply);
+    addBubble('assistant', displayReply);
+    history.push({ role:'assistant', content: cleanReply });
+    if(scife.voiceOn) speak(cleanReply);
     maybeUpdateMemory();
   }catch(e){
     removeTyping();
@@ -940,7 +1033,7 @@ async function sendMessage(text){
    turns is a list of {role:'user'|'assistant', content:string}. */
 async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
-  const maxTokens = opts.maxTokens || 400;
+  const maxTokens = opts.maxTokens || 500; // a little headroom for the trailing trade-action JSON block
   const temperature = opts.temperature !== undefined ? opts.temperature : 0.7;
   const cfg = PROVIDERS[scife.provider] || PROVIDERS.openai;
   const apiKey = activeApiKey();
