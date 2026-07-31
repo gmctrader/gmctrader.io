@@ -88,11 +88,15 @@ html[data-theme="dark"] #authScreen::before{
 .theme-toggle-fab{position:fixed;bottom:20px;right:20px;z-index:998;width:46px;height:46px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--steel-hi);
   background:var(--panel-solid);color:var(--platinum);box-shadow:0 10px 24px -8px rgba(0,0,0,0.35);
-  transition:transform .15s ease, background .2s ease;font-size:18px;}
+  transition:transform .15s ease, background .2s ease;}
 .theme-toggle-fab:hover{transform:translateY(-2px);}
-.theme-toggle-fab .ico-moon{display:none;}
-html[data-theme="dark"] .theme-toggle-fab .ico-sun{display:none;}
-html[data-theme="dark"] .theme-toggle-fab .ico-moon{display:inline;}
+.theme-toggle-fab .ico-wrap{position:relative;width:20px;height:20px;}
+.theme-toggle-fab .ico-wrap svg{position:absolute;inset:0;width:20px;height:20px;
+  transition:opacity .45s cubic-bezier(.2,.8,.2,1), transform .55s cubic-bezier(.2,.8,.2,1);}
+.theme-toggle-fab .ico-sun{opacity:1;transform:rotate(0deg) scale(1);color:var(--amber);}
+.theme-toggle-fab .ico-moon{opacity:0;transform:rotate(-70deg) scale(0.4);color:var(--bronze-bright);}
+html[data-theme="dark"] .theme-toggle-fab .ico-sun{opacity:0;transform:rotate(70deg) scale(0.4);}
+html[data-theme="dark"] .theme-toggle-fab .ico-moon{opacity:1;transform:rotate(0deg) scale(1);}
 *{box-sizing:border-box;}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-x:none;scroll-behavior:smooth;}
 html,body{margin:0;padding:0;min-height:100%;width:100%;max-width:100%;overflow-x:hidden;}
@@ -261,7 +265,7 @@ a{color:var(--bronze-bright);}
 .auth-field{margin-bottom:16px;}
 .auth-field label{display:block;font-size:10.5px;color:var(--slate);margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;}
 .auth-field input{
-  width:100%;background:#f7f9f8;border:1px solid var(--steel);color:var(--platinum);
+  width:100%;background:var(--void-2);border:1px solid var(--steel);color:var(--platinum);
   padding:11px 13px;border-radius:var(--r-sm);font-family:'Instrument Sans',sans-serif;font-size:16px;outline:none;
   transition:border-color .15s ease, box-shadow .15s ease;
 }
@@ -377,7 +381,7 @@ a{color:var(--bronze-bright);}
 
 .sidebar{
   width:256px;flex-shrink:0;min-height:100vh;position:sticky;top:0;align-self:flex-start;
-  background:linear-gradient(185deg, rgba(255,255,255,0.95), rgba(247,249,248,0.98));
+  background:linear-gradient(185deg, var(--panel-solid), var(--void-2));
   border-right:1px solid var(--steel);
   display:flex;flex-direction:column;padding:22px 16px;backdrop-filter:blur(18px);
   z-index:40;
@@ -448,7 +452,7 @@ a{color:var(--bronze-bright);}
   .mobile-topbar{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:calc(14px + env(safe-area-inset-top)) 16px 14px;border-bottom:1px solid var(--steel);
-    background:rgba(255,255,255,0.92);backdrop-filter:blur(14px);position:sticky;top:0;z-index:30;
+    background:var(--panel);backdrop-filter:blur(14px);position:sticky;top:0;z-index:30;
   }
   .mobile-topbar .mbrand{display:flex;align-items:center;gap:9px;}
   .mobile-topbar .mbrand h1{font-family:'Fraunces',serif;font-size:15px;margin:0;color:var(--platinum);}
@@ -478,7 +482,7 @@ a{color:var(--bronze-bright);}
 .page-sub{font-size:13.5px;color:var(--slate);margin-top:6px;letter-spacing:0.01em;}
 .topbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .trader-filter{
-  background:#f7f9f8;border:1px solid var(--steel);color:var(--platinum);
+  background:var(--void-2);border:1px solid var(--steel);color:var(--platinum);
   padding:9px 14px;border-radius:100px;font-size:16px;font-family:'Instrument Sans',sans-serif;outline:none;cursor:pointer;
   max-width:100%;
 }
@@ -593,7 +597,7 @@ a{color:var(--bronze-bright);}
 label{display:block;font-size:10.5px;color:var(--slate);margin-bottom:7px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;}
 .field{margin-bottom:17px;}
 input[type=number], input[type=time], input[type=text], textarea, select{
-  width:100%;max-width:100%;background:#f7f9f8;border:1px solid var(--steel);color:var(--platinum);
+  width:100%;max-width:100%;background:var(--void-2);border:1px solid var(--steel);color:var(--platinum);
   padding:11px 13px;border-radius:var(--r-sm);font-family:'IBM Plex Mono',monospace;font-size:16px;
   outline:none;transition:border-color .15s ease, box-shadow .15s ease;
 }
@@ -628,7 +632,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .btn-row{display:flex;gap:10px;margin-top:8px;}
 
 .toggle{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
-.switch{width:42px;height:23px;border-radius:100px;background:#dfe5e3;position:relative;cursor:pointer;
+.switch{width:42px;height:23px;border-radius:100px;background:var(--steel-hi);position:relative;cursor:pointer;
   border:1px solid var(--steel-hi);flex-shrink:0;transition:background .15s ease;}
 .switch::after{content:'';position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
   background:var(--slate);transition:all .18s ease;}
@@ -1036,11 +1040,23 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .pf-empty-onboard .glyph{font-size:26px;display:block;margin-bottom:10px;opacity:0.6;}
 .pf-empty-onboard h3{font-family:'Fraunces',serif;font-size:16px;font-weight:650;color:var(--platinum);margin:0 0 8px;}
 .pf-empty-onboard p{font-size:12.5px;color:var(--slate);line-height:1.6;margin:0;max-width:280px;margin:0 auto;}
+.pf-account-switch{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
+.pf-account-chip{display:flex;align-items:center;gap:8px;background:rgba(139,144,160,0.08);border:1px solid rgba(139,144,160,0.22);
+  border-radius:100px;padding:7px 12px 7px 14px;font-size:12.5px;color:var(--slate);cursor:pointer;transition:border-color .15s ease, color .15s ease;}
+.pf-account-chip:hover{color:var(--platinum);}
+.pf-account-chip.active{border-color:var(--bronze);color:var(--bronze-bright);background:rgba(16,185,129,0.08);font-weight:650;}
+.pf-account-chip button{background:none;border:none;color:var(--slate-dim);cursor:pointer;font-size:12px;padding:0;margin-left:2px;line-height:1;}
+.pf-account-chip button:hover{color:var(--loss);}
+.pf-account-add{display:flex;align-items:center;gap:6px;border:1px dashed var(--steel-hi);border-radius:100px;padding:7px 14px;font-size:12.5px;color:var(--slate);cursor:pointer;background:transparent;}
+.pf-account-add:hover{color:var(--bronze-bright);border-color:var(--bronze-dim);}
 </style>
 </head>
 <body>
 <div class="theme-toggle-fab" id="themeToggleFab" onclick="toggleGdTheme()" title="Toggle dark / light theme">
-  <span class="ico-sun">☀️</span><span class="ico-moon">🌙</span>
+  <span class="ico-wrap">
+    <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>
+    <svg class="ico-moon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.4 14.7A8.4 8.4 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+  </span>
 </div>
 <div class="bg-video-layer">
 </div>
@@ -1511,7 +1527,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
               </div>
               <div class="field" id="brief_apiKeyConnectedWrap" style="display:none;">
                 <label>News API key</label>
-                <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--steel);border-radius:var(--r-sm);background:#f7f9f8;">
+                <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--steel);border-radius:var(--r-sm);background:var(--void-2);">
                   <span style="color:var(--win-bright);font-weight:700;font-size:12.5px;">✓ Connected</span>
                   <button type="button" class="side-logout" style="margin-left:auto;font-size:10.5px;padding:5px 10px;" onclick="showBriefKeyField()">Use a different key</button>
                 </div>
@@ -1871,6 +1887,9 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <div id="pfHeaderBadge" class="pf-badge off">Not configured</div>
       </div>
 
+      <div class="pf-account-switch" id="pfAccountSwitch"></div>
+      <div class="hint" style="margin:0 0 14px;">Run more than one prop firm challenge at once — each account keeps its own name, currency, rules and live compliance tracking, and shows up as its own option in the Order Book's Account selector.</div>
+
       <div class="grid">
         <div class="card tilt">
           <h2>Challenge <span class="accent">Setup</span></h2>
@@ -2179,11 +2198,11 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DEFAULT_STATE = {
   rules:{ maxDailyLoss:null, maxTrades:null, riskPerTrade:null, minRR:null, maxConsecLosses:null, accountBalance:null, coolingOffMinutes:null, maxRiskPerTrade:null, currency:'USD', accountType:'standard' },
-  propFirm:{ firmName:'', phase:'challenge', currency:null, startingBalance:null,
-    maxDailyLossValue:null, maxDailyLossUnit:'pct', maxOverallDrawdownValue:null, maxOverallDrawdownUnit:'pct', drawdownType:'static',
-    challenge:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
-    verification:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
-    funded:{ profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } },
+  // A LIST of prop firm accounts (was a single object) — so a trader can run
+  // FTMO + MFF + Apex etc. all at once, each with its own custom name,
+  // currency, phase, rules and live compliance tracking. See
+  // blankPropFirmAccount() for the shape of each entry.
+  propFirms:[],
   session:{ start:"09:00", end:"11:00", restrict:false },
   psychology:{ why:"", monk:"", strategies:[], traders:[], orders:[], disciplineHistory:[], lastLossAt:null, preTradeCheckins:[], reviewsSeen:{ weekly:null, monthly:null } },
   trades:[],
@@ -2206,6 +2225,41 @@ let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 // column on this same row, so it also follows the trader across devices.
 // Requires:
 //   alter table trader_data add column if not exists scife jsonb not null default '{}'::jsonb;
+// Template for a brand new prop firm account — every account gets its own id
+// so trades/orders can be tagged to one specific firm. `activePfId` tracks
+// which account is currently shown/edited in the Prop Firm Compliance room;
+// it's a plain variable (not part of synced `state`), same pattern as
+// activeTraderFilter below, since it's just a UI selection, not saved data.
+function blankPropFirmAccount(id){
+  return { id: id || ('pf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)), firmName:'', phase:'challenge', currency:null, startingBalance:null,
+    maxDailyLossValue:null, maxDailyLossUnit:'pct', maxOverallDrawdownValue:null, maxOverallDrawdownUnit:'pct', drawdownType:'static',
+    challenge:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
+    verification:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
+    funded:{ profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } };
+}
+let activePfId = null;
+function getPropFirm(id){ return (state.propFirms||[]).find(pf=>pf.id===id) || null; }
+function activePropFirm(){ return getPropFirm(activePfId) || (state.propFirms && state.propFirms[0]) || null; }
+// Makes sure there's always at least one (possibly blank/unconfigured) prop
+// firm account to show in the form, matching the old single-account UX where
+// the form was always present and editable even before anything was saved.
+function ensureAtLeastOnePfAccount(){
+  if(!state.propFirms) state.propFirms = [];
+  if(state.propFirms.length===0){
+    const acc = blankPropFirmAccount();
+    state.propFirms.push(acc);
+    activePfId = acc.id;
+  } else if(!getPropFirm(activePfId)){
+    activePfId = state.propFirms[0].id;
+  }
+}
+// Small badge shown on a trade/order row when it's tagged to a specific prop
+// firm account — falls back gracefully if that account was since removed.
+function accountTagHtml(accountId){
+  if(!accountId || accountId==='personal') return '';
+  const pf = getPropFirm(accountId);
+  return `<span class="tag-chip" style="color:var(--amber)">🏛️ ${escapeHtml(pf ? (pf.firmName||'Unnamed account') : 'Prop Firm (removed)')}</span>`;
+}
 let currentUser = null;
 let isDemoMode = false;
 let pendingViolation = false;
@@ -2250,7 +2304,7 @@ function updateCurrencyLabels(){ document.querySelectorAll('.cur-sym').forEach(e
 // personal account (e.g. a ZAR trader on a USD FTMO challenge), so every
 // Prop Firm Compliance figure uses this instead of the personal curSym().
 // Falls back to the personal account currency until one is explicitly set.
-function pfCurSym(){ const c = state.propFirm && state.propFirm.currency; return (CURRENCIES[c] || CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol; }
+function pfCurSym(pf){ pf = pf || activePropFirm(); const c = pf && pf.currency; return (CURRENCIES[c] || CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol; }
 
 /* ============ ACCOUNT TYPE / LOT SIZE MATH ============ */
 // "Standard" is the default and the reference point every other type is
@@ -2729,6 +2783,8 @@ async function startDemo(){
   try{ const raw = localStorage.getItem(DEMO_STATE_KEY); saved = raw ? JSON.parse(raw) : null; }catch(e){ saved = null; }
   state = saved || JSON.parse(JSON.stringify(DEFAULT_STATE));
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, state.psychology || {}));
+  if(!Array.isArray(state.propFirms)) state.propFirms = [];
+  activePfId = state.propFirms[0] ? state.propFirms[0].id : null;
   currentUser = null;
   isDemoMode = true;
   document.getElementById('authScreen').style.display = 'none';
@@ -2958,7 +3014,7 @@ async function loadOrCreateTraderData(){
     const { data: created, error: insertErr } = await sb.from('trader_data').insert({
       user_id: currentUser.id,
       rules: DEFAULT_STATE.rules,
-      prop_firm: DEFAULT_STATE.propFirm,
+      prop_firm: DEFAULT_STATE.propFirms,
       session: DEFAULT_STATE.session,
       psychology: DEFAULT_STATE.psychology,
       brief: DEFAULT_STATE.brief,
@@ -3014,10 +3070,32 @@ function migratePropFirmShape(pf, raw){
   if(raw.maxDailyLossPct!=null && pf.maxDailyLossValue==null){ pf.maxDailyLossValue = raw.maxDailyLossPct; pf.maxDailyLossUnit = 'pct'; }
   if(raw.maxOverallDrawdownPct!=null && pf.maxOverallDrawdownValue==null){ pf.maxOverallDrawdownValue = raw.maxOverallDrawdownPct; pf.maxOverallDrawdownUnit = 'pct'; }
 }
+// Accepts whatever's saved under the `prop_firm` column and always returns a
+// clean ARRAY of accounts. Handles three shapes: a brand new row (nothing
+// saved yet -> []), the current shape (already an array, one entry per prop
+// firm), and the old pre-multi-account shape (a single flat object) -> that
+// gets wrapped into a one-item array with a stable 'pf_legacy' id, so nobody's
+// existing challenge setup silently disappears the first time they open the
+// updated app.
+function normalizePropFirms(raw){
+  if(Array.isArray(raw)){
+    return raw.map(item=>{
+      const pf = Object.assign(blankPropFirmAccount(item.id), item);
+      migratePropFirmShape(pf, item || {});
+      return pf;
+    });
+  }
+  if(raw && typeof raw==='object' && (raw.firmName || raw.startingBalance!=null || raw.phase)){
+    const pf = Object.assign(blankPropFirmAccount('pf_legacy'), raw);
+    migratePropFirmShape(pf, raw);
+    return [pf];
+  }
+  return [];
+}
 function hydrateState(row){
   state.rules = Object.assign({}, DEFAULT_STATE.rules, row.rules || {});
-  state.propFirm = Object.assign({}, DEFAULT_STATE.propFirm, row.prop_firm || {});
-  migratePropFirmShape(state.propFirm, row.prop_firm || {});
+  state.propFirms = normalizePropFirms(row.prop_firm);
+  activePfId = state.propFirms[0] ? state.propFirms[0].id : null;
   state.session = row.session || DEFAULT_STATE.session;
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, row.psychology || {}));
   state.brief = Object.assign({}, DEFAULT_STATE.brief, row.brief || {});
@@ -3027,6 +3105,13 @@ function hydrateState(row){
   state.consecutiveLosses = row.consecutive_losses || 0;
   state.rulesCompleted = !!row.rules_completed;
   dataVersion = typeof row.version === 'number' ? row.version : 1;
+  // Old trades/orders tagged 'propfirm' (the single account that used to
+  // exist) now need to point at that account's migrated id so daily-loss /
+  // drawdown math still finds them.
+  if(state.propFirms.some(pf=>pf.id==='pf_legacy')){
+    state.trades.forEach(t=>{ if(t.account==='propfirm') t.account = 'pf_legacy'; });
+    (state.psychology.orders||[]).forEach(o=>{ if(o.account==='propfirm') o.account = 'pf_legacy'; });
+  }
 }
 
 /* ============ OFFLINE SAVE QUEUE (with version-based conflict detection) ============ */
@@ -3045,7 +3130,7 @@ function offlineKey(){ return OFFLINE_KEY_PREFIX + (currentUser ? currentUser.id
 function buildSavePayload(){
   return {
     rules: state.rules,
-    prop_firm: state.propFirm,
+    prop_firm: state.propFirms,
     session: state.session,
     psychology: state.psychology,
     brief: state.brief,
@@ -3984,14 +4069,23 @@ async function saveRules(){
 // cadence instead. Daily loss and overall drawdown stay in the "Risk Limits"
 // group because firms enforce those identically across every phase.
 const PF_PHASE_LABELS = { challenge:'Challenge', verification:'Verification', funded:'Funded' };
+// Snapshot version used by computePropFirmMetrics — never mutates the
+// account (a metrics calc shouldn't have side effects), unlike pfPhaseData
+// below which is specifically for the live edit form.
+function pfPhaseSnapshot(pf, phase){
+  phase = phase || pf.phase || 'challenge';
+  return pf[phase] || (phase==='funded' ? { profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } : { profitTarget:null, minTradingDays:null, consistencyRulePct:null });
+}
 function pfPhaseData(phase){
-  const pf = state.propFirm;
+  const pf = activePropFirm();
+  if(!pf) return phase==='funded' ? { profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } : { profitTarget:null, minTradingDays:null, consistencyRulePct:null };
   phase = phase || pf.phase || 'challenge';
   if(!pf[phase]) pf[phase] = phase==='funded' ? { profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null } : { profitTarget:null, minTradingDays:null, consistencyRulePct:null };
   return pf[phase];
 }
 function setPfPhase(phase){
-  state.propFirm.phase = phase;
+  const pf = activePropFirm();
+  if(pf) pf.phase = phase;
   document.querySelectorAll('#pfPhaseRow .pf-phase-chip').forEach(c=>c.classList.toggle('active', c.dataset.phase===phase));
   renderPfPhaseFields();
 }
@@ -4002,7 +4096,8 @@ function setPfPhase(phase){
 function renderPfPhaseFields(){
   const wrap = document.getElementById('pfPhaseFields');
   if(!wrap) return;
-  const phase = state.propFirm.phase || 'challenge';
+  const activePf = activePropFirm();
+  const phase = (activePf && activePf.phase) || 'challenge';
   const d = pfPhaseData(phase);
   const hint = document.getElementById('pfPhaseHint');
   if(hint) hint.textContent = phase==='funded'
@@ -4034,7 +4129,9 @@ function onPfCurrencyPreview(){
   if(startEl) startEl.textContent = (CURRENCIES[curSel ? curSel.value : ''] || CURRENCIES.USD).symbol;
 }
 function renderPropFirmForm(){
-  const pf = state.propFirm;
+  ensureAtLeastOnePfAccount();
+  renderPfAccountSwitch();
+  const pf = activePropFirm();
   const curSel = document.getElementById('pf_currency');
   if(curSel && !curSel.dataset.filled){ curSel.innerHTML = CURRENCY_OPTIONS_HTML; curSel.dataset.filled = '1'; }
   document.getElementById('pf_firmName').value = pf.firmName || '';
@@ -4052,8 +4149,10 @@ function renderPropFirmForm(){
   setPfPhase(pf.phase || 'challenge');
 }
 async function savePropFirm(){
-  const phase = state.propFirm.phase || 'challenge';
-  const carried = { challenge: state.propFirm.challenge, verification: state.propFirm.verification, funded: state.propFirm.funded };
+  ensureAtLeastOnePfAccount();
+  const existing = activePropFirm();
+  const phase = existing.phase || 'challenge';
+  const carried = { challenge: existing.challenge, verification: existing.verification, funded: existing.funded };
   if(phase==='funded'){
     carried.funded = {
       profitSplitPct: numOrNullFrom('pf_profitSplitPct'),
@@ -4067,7 +4166,9 @@ async function savePropFirm(){
       consistencyRulePct: numOrNullFrom('pf_consistencyRulePct'),
     };
   }
-  state.propFirm = {
+  const blank = blankPropFirmAccount();
+  const updated = {
+    id: existing.id,
     firmName: document.getElementById('pf_firmName').value.trim(),
     phase,
     currency: document.getElementById('pf_currency').value || 'USD',
@@ -4077,37 +4178,90 @@ async function savePropFirm(){
     maxOverallDrawdownUnit: document.getElementById('pf_maxOverallDrawdownUnit').value || 'pct',
     maxOverallDrawdownValue: numOrNullFrom('pf_maxOverallDrawdownValue'),
     drawdownType: document.getElementById('pf_drawdownType').value,
-    challenge: carried.challenge || DEFAULT_STATE.propFirm.challenge,
-    verification: carried.verification || DEFAULT_STATE.propFirm.verification,
-    funded: carried.funded || DEFAULT_STATE.propFirm.funded,
+    challenge: carried.challenge || blank.challenge,
+    verification: carried.verification || blank.verification,
+    funded: carried.funded || blank.funded,
   };
+  const idx = state.propFirms.findIndex(p=>p.id===existing.id);
+  if(idx>-1) state.propFirms[idx] = updated; else state.propFirms.push(updated);
   await saveState();
   document.getElementById('pfSavedHint').textContent = 'Saved just now.';
+  renderPfAccountSwitch();
   renderPropFirmCompliance();
   renderOrderAccountOptions();
   updateOrderRRPreview();
   showToast('Prop firm rules saved');
 }
+// ============ MULTIPLE PROP FIRM ACCOUNTS: switcher + CRUD ============
+// Renders one chip per saved prop firm account (custom name + a remove
+// button once there's more than one) plus a "+ Add Account" pill. Clicking a
+// chip swaps which account the Challenge Setup form / Live Compliance card
+// on the right are showing — every other room (Order Book account selector,
+// trade/order tags, daily-loss math) already keys off each trade's own
+// account id, so nothing needs to "know" which one is active except this UI.
+function renderPfAccountSwitch(){
+  const wrap = document.getElementById('pfAccountSwitch');
+  if(!wrap) return;
+  ensureAtLeastOnePfAccount();
+  wrap.innerHTML = state.propFirms.map(pf=>`
+    <div class="pf-account-chip ${pf.id===activePfId?'active':''}" onclick="selectPropFirmAccount('${pf.id}')">
+      <span>🏛️ ${escapeHtml(pf.firmName || 'Unnamed account')}</span>
+      ${state.propFirms.length>1 ? `<button onclick="event.stopPropagation(); removePropFirmAccount('${pf.id}')" title="Remove account">✕</button>` : ''}
+    </div>`).join('') + `<button class="pf-account-add" onclick="addPropFirmAccount()">+ Add Account</button>`;
+}
+function selectPropFirmAccount(id){
+  activePfId = id;
+  renderPfAccountSwitch();
+  renderPropFirmForm();
+  renderPropFirmCompliance();
+}
+async function addPropFirmAccount(){
+  const acc = blankPropFirmAccount();
+  acc.firmName = `Prop Firm ${state.propFirms.length+1}`;
+  state.propFirms.push(acc);
+  activePfId = acc.id;
+  await saveState();
+  renderPfAccountSwitch();
+  renderPropFirmForm();
+  renderPropFirmCompliance();
+  renderOrderAccountOptions();
+  showToast('New prop firm account added — give it a name and save its rules');
+}
+async function removePropFirmAccount(id){
+  const pf = getPropFirm(id);
+  if(!pf) return;
+  if(!confirm(`Remove "${pf.firmName || 'this account'}"? Its saved rules will be deleted — any trades already logged against it stay in your journal, just no longer tracked against a live challenge.`)) return;
+  state.propFirms = state.propFirms.filter(p=>p.id!==id);
+  if(activePfId===id) activePfId = state.propFirms[0] ? state.propFirms[0].id : null;
+  await saveState();
+  renderPfAccountSwitch();
+  renderPropFirmForm();
+  renderPropFirmCompliance();
+  renderOrderAccountOptions();
+  showToast('Prop firm account removed');
+}
 
 // Pulls every trade into per-day P/L buckets, sorted chronologically.
-function pfDailyPnlSeries(){
+function pfDailyPnlSeries(pf){
   const byDay = {};
-  // Only trades placed against the Prop Firm account (Order Book -> Account:
-  // Prop Firm) count toward challenge compliance — personal trades shouldn't
-  // be able to trip (or pad) a prop firm's daily loss / drawdown / profit
-  // target math.
-  filteredTrades().filter(t=>t.account==='propfirm').forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOf(t); });
+  // Only trades placed against THIS SPECIFIC prop firm account (Order Book ->
+  // Account: <that firm's name>) count toward its challenge compliance —
+  // personal trades, and trades logged against a different prop firm account,
+  // shouldn't be able to trip (or pad) this account's daily loss / drawdown /
+  // profit target math.
+  filteredTrades().filter(t=>t.account===pf.id).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOf(t); });
   return Object.keys(byDay).sort().map(date=>({date, pnl: byDay[date]}));
 }
 
-function computePropFirmMetrics(){
-  const pf = state.propFirm;
+function computePropFirmMetrics(pf){
+  pf = pf || activePropFirm();
+  if(!pf) return null;
   const start = pf.startingBalance;
   if(!start) return null;
   const phase = pf.phase || 'challenge';
-  const pd = pfPhaseData(phase);
+  const pd = pfPhaseSnapshot(pf, phase);
 
-  const series = pfDailyPnlSeries();
+  const series = pfDailyPnlSeries(pf);
   let balance = start;
   let peak = start;
   let maxDrawdownHit = 0; // largest $ drawdown observed at any point, from the relevant reference (peak or start)
@@ -4188,10 +4342,10 @@ function computePropFirmMetrics(){
 // Log Trade forms use as "balance" whenever an order/trade is tagged Prop
 // Firm, so the $ figures stay true to the actual challenge account instead
 // of silently reusing the personal Rule Builder balance.
-function propFirmLiveBalance(){
-  const pf = state.propFirm;
+function propFirmLiveBalance(pf){
+  pf = pf || activePropFirm();
   if(!pf || !pf.startingBalance) return null;
-  const m = computePropFirmMetrics();
+  const m = computePropFirmMetrics(pf);
   return m ? m.currentBalance : pf.startingBalance;
 }
 function pfBar(pct, tone){
@@ -4200,12 +4354,13 @@ function pfBar(pct, tone){
 }
 
 function renderPropFirmCompliance(){
+  renderPfAccountSwitch();
   const wrap = document.getElementById('pfComplianceWrap');
   const headerBadge = document.getElementById('pfHeaderBadge');
   if(!wrap || !headerBadge) return;
 
-  const pf = state.propFirm;
-  const m = computePropFirmMetrics();
+  const pf = activePropFirm();
+  const m = pf ? computePropFirmMetrics(pf) : null;
 
   if(!m){
     headerBadge.className = 'pf-badge off';
@@ -4480,22 +4635,30 @@ function renderOrderAccountOptions(){
   const sel = document.getElementById('o_account');
   if(!sel) return;
   const prevVal = sel.value || 'personal';
-  const pf = state.propFirm;
-  const pfLabel = pf && pf.firmName ? `Prop Firm — ${pf.firmName}` : 'Prop Firm';
-  sel.innerHTML = `<option value="personal">Personal</option><option value="propfirm">${escapeHtml(pfLabel)}</option>`;
-  sel.value = (!isDemoMode && prevVal==='propfirm') ? 'propfirm' : 'personal';
+  const opts = ['<option value="personal">Personal</option>']
+    .concat((state.propFirms||[]).map(pf=>`<option value="${pf.id}">Prop Firm — ${escapeHtml(pf.firmName || 'Unnamed account')}</option>`));
+  sel.innerHTML = opts.join('');
+  const stillValid = !isDemoMode && prevVal!=='personal' && !!getPropFirm(prevVal);
+  sel.value = stillValid ? prevVal : 'personal';
   updateOrderLotAcctHint();
 }
-// Fired whenever the trader flips the Order Book between Personal and Prop
-// Firm — every downstream number (lot->units hint, "worth it?" advice, $
-// risk/reward) needs to immediately re-price against the right balance.
+// Fired whenever the trader flips the Order Book between Personal and one of
+// their Prop Firm accounts — every downstream number (lot->units hint,
+// "worth it?" advice, $ risk/reward) needs to immediately re-price against
+// the right balance.
 function onOrderAccountChange(){
   updateOrderLotAcctHint();
   updateOrderRRPreview();
 }
 function orderAccountIsPropFirm(){
   const sel = document.getElementById('o_account');
-  return !!sel && sel.value==='propfirm';
+  return !!sel && !!sel.value && sel.value!=='personal';
+}
+// Which specific prop firm account is currently selected in the Order Book
+// (not necessarily the one being edited in Prop Firm Compliance).
+function orderSelectedPropFirm(){
+  const sel = document.getElementById('o_account');
+  return sel ? getPropFirm(sel.value) : null;
 }
 function onStrategyChange(){
   updateTradeRiskPreview();
@@ -4513,9 +4676,10 @@ function updateTradeRiskPreview(){
   // the personal one — otherwise the auto-filled loss/win amount silently
   // reflects the wrong account.
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
-  const isPropFirm = !!(closingOrder && closingOrder.account==='propfirm');
-  const balance = isPropFirm ? propFirmLiveBalance() : state.rules.accountBalance;
-  const sym = isPropFirm ? pfCurSym() : curSym();
+  const isPropFirm = !!(closingOrder && closingOrder.account && closingOrder.account!=='personal');
+  const closingOrderPf = isPropFirm ? getPropFirm(closingOrder.account) : null;
+  const balance = isPropFirm ? propFirmLiveBalance(closingOrderPf) : state.rules.accountBalance;
+  const sym = isPropFirm ? pfCurSym(closingOrderPf) : curSym();
   const d = riskDollar(balance, pct);
   const el = document.getElementById('tradeRiskPreview');
   const rrVal = parseFloat(document.getElementById('t_rr').value) || null;
@@ -4591,15 +4755,15 @@ function updateOrderLotAcctHint(){
   const perLot = unitsPerStandardLot(pair) * acct.mult;
   const quoteCcy = pairQuoteCurrency(pair);
   const isPropFirm = orderAccountIsPropFirm();
-  const acctCcy = isPropFirm ? (state.propFirm.currency || state.rules.currency || 'USD') : (state.rules.currency || 'USD');
+  const orderPf = isPropFirm ? orderSelectedPropFirm() : null;
+  const acctCcy = isPropFirm ? ((orderPf && orderPf.currency) || state.rules.currency || 'USD') : (state.rules.currency || 'USD');
   if(pair && quoteCcy !== acctCcy) ensureFxRatesLoaded(); // warm the cache before they even type a lot size
   let base = `Using your ${acct.label} account — 1.00 lot = ${perLot.toLocaleString()} units on ${pair ? pair.toUpperCase() : 'this instrument'}.`;
   if(pair && quoteCcy !== acctCcy) base += ` This pair settles in ${quoteCcy}, converted live to your ${acctCcy} account.`;
   if(isPropFirm){
-    const bal = propFirmLiveBalance();
-    const pf = state.propFirm;
+    const bal = orderPf ? propFirmLiveBalance(orderPf) : null;
     hint.textContent = bal!=null
-      ? `${base} Priced against ${pf.firmName || 'your prop firm'}'s account (${pfCurSym()}${bal.toFixed(0)}) — not your personal balance.`
+      ? `${base} Priced against ${(orderPf && orderPf.firmName) || 'your prop firm'}'s account (${pfCurSym(orderPf)}${bal.toFixed(0)}) — not your personal balance.`
       : `${base} Set a starting balance in Prop Firm Compliance to price this against your challenge account.`;
   } else {
     hint.textContent = `${base} Change account type in Rule Builder.`;
@@ -4621,11 +4785,12 @@ function renderOrderWorthPanel(rr, levels){
   // against must follow the account actually selected in the Order Book —
   // otherwise a prop-firm order gets silently priced off your personal account.
   const isPropFirm = orderAccountIsPropFirm();
-  const balance = isPropFirm ? propFirmLiveBalance() : state.rules.accountBalance;
+  const orderPf = isPropFirm ? orderSelectedPropFirm() : null;
+  const balance = isPropFirm ? propFirmLiveBalance(orderPf) : state.rules.accountBalance;
   const riskPct = state.rules.riskPerTrade;
   const minRR = state.rules.minRR;
-  const sym = isPropFirm ? pfCurSym() : curSym();
-  const acctCcy = isPropFirm ? (state.propFirm.currency || state.rules.currency || 'USD') : (state.rules.currency || 'USD');
+  const sym = isPropFirm ? pfCurSym(orderPf) : curSym();
+  const acctCcy = isPropFirm ? ((orderPf && orderPf.currency) || state.rules.currency || 'USD') : (state.rules.currency || 'USD');
   if(rr==null || isNaN(rr) || rr<=0){
     panel.style.display = 'none';
     panel.innerHTML = '';
@@ -5064,6 +5229,7 @@ function renderJournal(){
           <div class="trade-tags">
             ${t.pair ? `<span class="tag-chip pair">${escapeHtml(t.pair)}</span>` : ''}
             <span class="tag-chip trader">${escapeHtml(traderName(t.trader))}</span>
+            ${accountTagHtml(t.account)}
             ${t.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(t.strategy)||'—')}</span>` : ''}
             ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
             ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
@@ -6211,7 +6377,7 @@ async function placeOrder(){
     id:'ord_'+Date.now(), date:todayStr(), time:now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
     trader, strategy, strategyType, style, logics, pair: pair || null, direction,
     entry: entry!=='' ? parseFloat(entry) : null, sl: sl!=='' ? parseFloat(sl) : null, tp: tp!=='' ? parseFloat(tp) : null,
-    rrPlanned: rrPlanned || null, notes, status:'pending', account: orderAccountIsPropFirm() ? 'propfirm' : 'personal'
+    rrPlanned: rrPlanned || null, notes, status:'pending', account: (document.getElementById('o_account').value || 'personal')
   });
   document.getElementById('o_pair').value='';
   document.getElementById('o_entry').value='';
@@ -6249,7 +6415,7 @@ function buildOrderRowsHTML(orders){
       </div>` : ''}
       <div class="trade-tags">
         <span class="tag-chip trader">${escapeHtml(traderName(o.trader))}</span>
-        ${o.account==='propfirm' ? `<span class="tag-chip" style="color:var(--amber)">🏛️ ${escapeHtml(state.propFirm.firmName || 'Prop Firm')}</span>` : ''}
+        ${accountTagHtml(o.account)}
         ${styleInfo ? `<span class="tag-chip" style="color:${styleInfo.color}">${styleInfo.short}</span>` : ''}
         ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
         ${o.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(o.strategy)||'—')}</span>` : ''}
@@ -6463,6 +6629,7 @@ function showCalDay(iso){
             <div class="trade-tags">
               ${t.pair ? `<span class="tag-chip pair">${escapeHtml(t.pair)}</span>` : ''}
               <span class="tag-chip trader">${escapeHtml(traderName(t.trader))}</span>
+              ${accountTagHtml(t.account)}
               ${t.strategy?`<span class="tag-chip">${escapeHtml(strategyName(t.strategy)||'—')}</span>`:''}
               ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
               ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
