@@ -3918,7 +3918,7 @@ function renderDashboard(){
   document.getElementById('statTrades').className = 'stat' + (maxT && state.day.tradesCount>=maxT ? ' bad' : '');
 
   const maxL = state.rules.maxDailyLoss;
-  document.getElementById('statLoss').querySelector('b').textContent = curSym() + state.day.lossUsed;
+  document.getElementById('statLoss').querySelector('b').textContent = curSym() + state.day.lossUsed.toFixed(2).replace(/\.00$/,'');
   document.getElementById('statLoss').className = 'stat' + (maxL && state.day.lossUsed>=maxL ? ' bad' : (maxL && state.day.lossUsed>=maxL*0.7 ? ' warn':''));
 
   const bal = state.rules.accountBalance;
@@ -5936,7 +5936,7 @@ function runPretradeChecks(){
   if(state.rules.maxDailyLoss!=null){
     const fail = state.day.lossUsed >= state.rules.maxDailyLoss;
     if(fail) violated = true;
-    checks.push({label:`Daily loss limit (${curSym()}${state.day.lossUsed}/${curSym()}${state.rules.maxDailyLoss})`, fail});
+    checks.push({label:`Daily loss limit (${curSym()}${state.day.lossUsed.toFixed(2).replace(/\.00$/,'')}/${curSym()}${state.rules.maxDailyLoss})`, fail});
   }
   if(state.rules.maxConsecLosses!=null){
     const fail = state.consecutiveLosses >= state.rules.maxConsecLosses;
@@ -6160,7 +6160,7 @@ async function submitTrade(){
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
     account: closingOrder ? (closingOrder.account || 'personal') : 'personal' });
   state.day.tradesCount += 1;
-  if(result==='loss'){ state.day.lossUsed += lossAmount; state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); } else { state.consecutiveLosses = 0; }
+  if(result==='loss'){ state.day.lossUsed = +(state.day.lossUsed + lossAmount).toFixed(2); state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); } else { state.consecutiveLosses = 0; }
   archiveDisciplineDay(state.day.date, computeDisciplineScore());
 
   if(closingOrderId){
