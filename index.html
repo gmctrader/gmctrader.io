@@ -1513,13 +1513,14 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <div id="briefPairWatchBody"></div>
         </div>
         <div class="card tilt" style="grid-column:1/-1;">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:2px;">
             <h2 style="margin:0;">Market <span class="accent">News</span></h2>
             <div style="display:flex;align-items:center;gap:10px;">
               <span class="hint-inline" id="briefNewsUpdatedLabel" style="text-transform:none;"></span>
               <button class="side-logout" style="font-size:11px;padding:5px 12px;" onclick="refreshMarketNews(true)">↻ Refresh</button>
             </div>
           </div>
+          <div class="hint" style="margin:0 0 10px;">CPI, NFP, rate decisions and other high-impact releases always show up top — headlines below that only surface for pairs you're watching.</div>
           <div id="briefNewsBody"></div>
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--steel-hi);">
             <div class="row2">
@@ -4963,6 +4964,40 @@ function pairCurrencyCodes(pair){
   if(p.length===6) return [p.slice(0,3), p.slice(3)];
   return [p];
 }
+// Headline-level detection of high-impact macro releases (CPI, NFP, rate
+// decisions, etc.) — these move every pair, not just one, so they get their
+// own "Important" bucket instead of being buried in the general feed. This
+// works off free-tier news headlines alone; no special API access needed.
+const HIGH_IMPACT_KEYWORDS = [
+  'CPI','CONSUMER PRICE INDEX','NFP','NON-FARM','NONFARM PAYROLL','PAYROLLS',
+  'FOMC','FED ','FEDERAL RESERVE','RATE DECISION','INTEREST RATE','RATE HIKE','RATE CUT',
+  'GDP','PMI','RETAIL SALES','UNEMPLOYMENT','JOBLESS CLAIMS','PPI','PRODUCER PRICE',
+  'INFLATION','ECB','BOE','BOJ','RBA','RBNZ','CENTRAL BANK','POWELL','LAGARDE'
+];
+function isHighImpactHeadline(text){
+  const hay = (text||'').toUpperCase();
+  return HIGH_IMPACT_KEYWORDS.some(k=>hay.includes(k));
+}
+// Best-effort structured economic calendar (actual CPI/NFP prints, forecasts,
+// etc.) — this endpoint isn't available on every Finnhub plan, so a failure
+// here is silent and the Important bucket just falls back to headline
+// keyword-matching above instead of showing an error.
+let briefEconCache = { events: [], fetchedAt: 0, forKey: '' };
+async function fetchEconomicCalendar(key){
+  try{
+    const today = new Date();
+    const from = todayStr();
+    const toDate = new Date(today); toDate.setDate(toDate.getDate()+2);
+    const to = toDate.toISOString().slice(0,10);
+    const res = await fetch(`https://finnhub.io/api/v1/calendar/economic?from=${from}&to=${to}&token=${encodeURIComponent(key)}`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    const list = Array.isArray(data?.economicCalendar) ? data.economicCalendar : [];
+    return list.filter(e=>e && e.impact && String(e.impact).toLowerCase()!=='low').slice(0, 12);
+  }catch(e){
+    return [];
+  }
+}
 function renderBrief(){
   const dateEl = document.getElementById('briefDateLabel');
   if(dateEl) dateEl.textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
@@ -5197,14 +5232,19 @@ async function refreshMarketNews(force){
   }
   const cacheKey = key + '|' + (state.brief.watchedPairs||'');
   if(!force && briefNewsCache.items && briefNewsCache.forPairs===cacheKey && (Date.now()-briefNewsCache.fetchedAt)<BRIEF_NEWS_CACHE_MS){
-    renderNewsList(briefNewsCache.items);
+    renderNewsList(briefNewsCache.items, briefEconCache.events);
     renderNewsUpdatedLabel();
     refreshPairWatchInsightsOnly();
     return;
   }
   body.innerHTML = '<div class="hint" style="margin:0;">Fetching latest market news…</div>';
   try{
-    const res = await fetch(`https://finnhub.io/api/v1/news?category=forex&token=${encodeURIComponent(key)}`);
+    const [res, econEvents] = await Promise.all([
+      fetch(`https://finnhub.io/api/v1/news?category=forex&token=${encodeURIComponent(key)}`),
+      (force || briefEconCache.forKey!==key || (Date.now()-briefEconCache.fetchedAt)>=BRIEF_NEWS_CACHE_MS)
+        ? fetchEconomicCalendar(key) : Promise.resolve(briefEconCache.events)
+    ]);
+    briefEconCache = { events: econEvents, fetchedAt: Date.now(), forKey: key };
     if(!res.ok){
       if(res.status===401 || res.status===403){
         body.innerHTML = '<div class="hint" style="margin:0;color:var(--loss-bright);">That API key was rejected — double-check you copied it correctly from finnhub.io.</div>';
@@ -5218,7 +5258,7 @@ async function refreshMarketNews(force){
     const data = await res.json();
     const items = Array.isArray(data) ? data.slice(0, 30) : [];
     briefNewsCache = { items, fetchedAt: Date.now(), forPairs: cacheKey, error: null };
-    renderNewsList(items);
+    renderNewsList(items, econEvents);
     renderNewsUpdatedLabel();
     refreshPairWatchInsightsOnly();
   }catch(e){
@@ -5235,31 +5275,71 @@ function refreshPairWatchInsightsOnly(){
   if(!watched.length) return;
   renderPairWatchList(watched, (state.brief.newsApiKey||'').trim());
 }
-function renderNewsList(items){
+function newsRowHtml(it, pairLabel){
+  const dt = it.datetime ? new Date(it.datetime*1000).toLocaleString(undefined,{month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+  return `<div class="trade-row" style="align-items:flex-start;">
+    <div class="trade-meta" style="width:100%;">
+      <div class="top">${dt}${it.source?` · ${escapeHtml(it.source)}`:''}${pairLabel?` <span class="tag-chip pair">${escapeHtml(pairLabel)}</span>`:''}</div>
+      <div class="bottom"><a href="${escapeHtml(it.url||'#')}" target="_blank" rel="noopener noreferrer" style="color:var(--platinum);text-decoration:none;">${escapeHtml(it.headline||'Untitled')}</a></div>
+    </div>
+  </div>`;
+}
+function econEventRowHtml(e){
+  const dt = e.time ? new Date(e.time).toLocaleString(undefined,{month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (e.time||'');
+  const impact = (e.impact||'high').toString();
+  const impactColor = impact.toLowerCase()==='high' ? 'var(--loss-bright)' : 'var(--amber)';
+  const figures = [
+    (e.actual!=null && e.actual!=='') ? `Actual ${e.actual}` : null,
+    (e.estimate!=null && e.estimate!=='') ? `Est ${e.estimate}` : null,
+    (e.prev!=null && e.prev!=='') ? `Prev ${e.prev}` : null
+  ].filter(Boolean).join(' · ');
+  return `<div class="trade-row" style="align-items:flex-start;">
+    <div class="trade-meta" style="width:100%;">
+      <div class="top">${escapeHtml(String(dt))}${e.country?` · ${escapeHtml(e.country)}`:''} · <span style="color:${impactColor};text-transform:uppercase;font-weight:700;font-size:10px;">${escapeHtml(impact)} impact</span></div>
+      <div class="bottom" style="color:var(--platinum);">${escapeHtml(e.event||'Economic release')}${figures?` — ${escapeHtml(figures)}`:''}</div>
+    </div>
+  </div>`;
+}
+// Groups the feed into: macro releases that move every pair (CPI, NFP, rate
+// decisions — via the structured calendar when available, or keyword-matched
+// headlines otherwise), headlines tied to a specific watched pair, and — only
+// when nothing is being watched — a general fallback list so the card isn't empty.
+function renderNewsList(items, econEvents){
   const body = document.getElementById('briefNewsBody');
   if(!body) return;
-  if(!items || items.length===0){
+  econEvents = econEvents || [];
+  if((!items || items.length===0) && econEvents.length===0){
     body.innerHTML = '<div class="empty-state"><span class="glyph">📰</span>No headlines returned right now.</div>';
     return;
   }
   const watched = watchedPairList();
-  const watchedCodes = new Set(watched.flatMap(pairCurrencyCodes));
-  let ranked = items.map(it=>{
+  const classified = (items||[]).map(it=>{
     const hay = ((it.headline||'') + ' ' + (it.summary||'')).toUpperCase();
-    const hit = watched.length ? [...watchedCodes].some(c=>hay.includes(c)) : false;
-    return Object.assign({}, it, { _hit: hit });
+    const matchedPair = watched.find(p=>pairCurrencyCodes(p).some(c=>hay.includes(c))) || null;
+    return Object.assign({}, it, { _pair: matchedPair, _highImpact: isHighImpactHeadline(hay) });
   });
-  if(watched.length) ranked.sort((a,b)=>(b._hit - a._hit));
-  ranked = ranked.slice(0, 15);
-  body.innerHTML = ranked.map(it=>{
-    const dt = it.datetime ? new Date(it.datetime*1000).toLocaleString(undefined,{month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
-    return `<div class="trade-row" style="align-items:flex-start;">
-      <div class="trade-meta" style="width:100%;">
-        <div class="top">${dt}${it.source?` · ${escapeHtml(it.source)}`:''}${it._hit?' · <span style="color:var(--gold-bright);">watched pair</span>':''}</div>
-        <div class="bottom"><a href="${escapeHtml(it.url||'#')}" target="_blank" rel="noopener noreferrer" style="color:var(--platinum);text-decoration:none;">${escapeHtml(it.headline||'Untitled')}</a></div>
-      </div>
-    </div>`;
-  }).join('');
+  const important = classified.filter(it=>it._highImpact);
+  const pairSpecific = classified.filter(it=>!it._highImpact && it._pair);
+  const other = classified.filter(it=>!it._highImpact && !it._pair);
+
+  let html = '';
+  if(econEvents.length || important.length){
+    html += `<div class="hint-inline" style="display:block;margin:0 0 8px;color:var(--loss-bright);">📊 Important — moves every pair</div>`;
+    html += econEvents.slice(0,6).map(econEventRowHtml).join('');
+    html += important.slice(0,6).map(it=>newsRowHtml(it)).join('');
+  }
+  if(watched.length && pairSpecific.length){
+    html += `<div class="hint-inline" style="display:block;margin:14px 0 8px;color:var(--gold-bright);">👁 Watched pairs</div>`;
+    html += pairSpecific.slice(0,10).map(it=>newsRowHtml(it, it._pair)).join('');
+  }
+  // With watched pairs set, the feed stays limited to what actually matters —
+  // important macro releases plus your specific pairs. Only fall back to a
+  // general headline list when there's nothing being watched at all.
+  if(!watched.length && other.length){
+    html += `<div class="hint-inline" style="display:block;margin:14px 0 8px;">📰 Market headlines</div>`;
+    html += other.slice(0,10).map(it=>newsRowHtml(it)).join('');
+  }
+  body.innerHTML = html || '<div class="empty-state"><span class="glyph">📰</span>No headlines returned right now.</div>';
 }
 
 /* ============ JOURNAL ============ */
