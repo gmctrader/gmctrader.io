@@ -418,6 +418,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     <div class="quick-chip" onclick="quickAsk('journal')">◈ Journal overview</div>
     <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
     <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
+    <div class="quick-chip" onclick="quickAsk('news')">⚡ News/events coming up</div>
   </div>
 
   <div class="chat" id="chatLog"></div>
@@ -703,6 +704,8 @@ function todayStr(){ return new Date().toISOString().slice(0,10); }
   currentUser = data.session.user;
   await loadTraderRow();
   populateProviderSelects();
+  ensureEconomicCalendar(); // fire-and-forget: don't block app start on a third-party feed
+  setInterval(ensureEconomicCalendar, CALENDAR_REFRESH_MS);
   if(!activeApiKey()){
     document.getElementById('setupProviderSelect').value = scife.provider;
     buildProviderGrid('setup');
@@ -851,6 +854,82 @@ function summarizeJournal(){
     `Current rules — maxDailyLoss:${rules.maxDailyLoss ?? 'unset'}, maxTrades:${rules.maxTrades ?? 'unset'}, riskPerTrade:${rules.riskPerTrade ?? 'unset'}, minRR:${rules.minRR ?? 'unset'}, maxConsecLosses:${rules.maxConsecLosses ?? 'unset'}, accountBalance:${rules.accountBalance ?? 'unset'}, coolingOffMinutes:${rules.coolingOffMinutes ?? 'unset'}, maxRiskPerTrade:${rules.maxRiskPerTrade ?? 'unset'}, currency:${rules.currency ?? 'unset'}, accountType:${rules.accountType ?? 'unset'}.`,
     recent.length ? `Recent trades:\n${recent.join('\n')}` : 'No trades logged yet.'
   ].filter(Boolean).join('\n');
+}
+
+/* ============ ECONOMIC CALENDAR / NEWS (free, no-key, works regardless of LLM provider) ============
+   Plain chat-completion calls to most providers have no real-time web
+   access, so "read the news" can't just mean "ask the model" — it has to
+   mean "fetch real data and hand it to the model as context," the same way
+   the journal snapshot above works. This pulls the same public weekly
+   economic-calendar feed used by MT4/5 news indicators/EAs: no API key,
+   covers scheduled high-impact releases like Non-Farm Payrolls (NFP), CPI,
+   FOMC/rate decisions, GDP, PMI, central-bank speakers, etc. It does NOT
+   cover breaking geopolitical/company headlines — that would need a
+   separate paid news API and an API key field, which isn't wired up here. */
+const CALENDAR_URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json';
+const CALENDAR_REFRESH_MS = 30 * 60 * 1000; // the feed itself rate-limits to ~2 req/5min, so cache well past that
+let calendarFetchInFlight = null;
+let calendarFailedToastShown = false;
+
+// Fetches the calendar if the cached copy is missing/stale, caching the
+// result in the same `scife` jsonb column settings/memory/actionLog already
+// live in. Safe to call often — it's a no-op when the cache is fresh, and
+// coalesces concurrent calls into a single in-flight request.
+function ensureEconomicCalendar(){
+  const cache = scife.newsCache;
+  const isFresh = cache && cache.fetchedAt && (Date.now() - new Date(cache.fetchedAt).getTime() < CALENDAR_REFRESH_MS);
+  if(isFresh) return Promise.resolve();
+  if(calendarFetchInFlight) return calendarFetchInFlight;
+  calendarFetchInFlight = (async ()=>{
+    try{
+      const res = await fetch(CALENDAR_URL, { cache: 'no-store' });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const events = await res.json();
+      if(!Array.isArray(events)) throw new Error('unexpected calendar response shape');
+      scife.newsCache = { events, fetchedAt: new Date().toISOString() };
+      saveScife();
+    }catch(e){
+      // Keep whatever was cached before (even if stale) rather than wiping
+      // it — a transient network/CORS hiccup shouldn't blank out news
+      // context for the rest of the session if we already had something.
+      console.warn('Economic calendar fetch failed:', e);
+      if(!calendarFailedToastShown && !(scife.newsCache && scife.newsCache.events)){
+        calendarFailedToastShown = true;
+        showToast('Could not load economic news right now — everything else still works.');
+      }
+    }finally{
+      calendarFetchInFlight = null;
+    }
+  })();
+  return calendarFetchInFlight;
+}
+// Plain-text digest fed into the system prompt: medium/high impact events
+// from the last 24h (so SciFe can talk about what just printed) through the
+// next 5 days (so it can flag NFP/CPI/FOMC etc before they hit).
+function summarizeEconomicCalendar(){
+  const cache = scife.newsCache;
+  if(!cache || !Array.isArray(cache.events) || !cache.events.length) return 'Economic calendar: not loaded yet this session (will load automatically — if this persists, the feed may be unreachable from this network/browser).';
+  const now = Date.now();
+  const windowStart = now - 24*60*60*1000;
+  const windowEnd = now + 5*24*60*60*1000;
+  const rows = cache.events
+    .filter(e=>e.impact==='High' || e.impact==='Medium')
+    .map(e=>Object.assign({}, e, { ts: new Date(e.date).getTime() }))
+    .filter(e=>!isNaN(e.ts) && e.ts>=windowStart && e.ts<=windowEnd)
+    .sort((a,b)=>a.ts-b.ts)
+    .slice(0, 25)
+    .map(e=>{
+      const stamp = new Date(e.ts).toLocaleString([], { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      const bits = [`${e.country} ${e.title}`, stamp, `${e.impact} impact`];
+      if(e.actual) bits.push(`actual: ${e.actual}`);
+      if(e.forecast) bits.push(`forecast: ${e.forecast}`);
+      if(e.previous) bits.push(`previous: ${e.previous}`);
+      return '- ' + bits.join(' — ');
+    });
+  const ageMin = Math.round((now - new Date(cache.fetchedAt).getTime())/60000);
+  return rows.length
+    ? `Economic calendar — medium/high impact, last 24h through next 5 days (refreshed ${ageMin}min ago):\n${rows.join('\n')}`
+    : `Economic calendar: no medium/high impact events in the last 24h–next 5 days window (refreshed ${ageMin}min ago).`;
 }
 
 /* ============ TRADE LOGGING / EDITING (from conversation) ============
@@ -1021,6 +1100,10 @@ DURING A LOSING STREAK: When "Consecutive losses right now" is 2 or more, resist
 JOURNAL SNAPSHOT:
 ${summarizeJournal()}
 
+ECONOMIC CALENDAR:
+${summarizeEconomicCalendar()}
+You DO have real, current data on scheduled macro news — including Non-Farm Payrolls (NFP), CPI, FOMC/rate decisions, GDP, PMI, and central-bank speakers — via the list above, regardless of which model/provider is answering. Use it directly: if the trader asks what's coming up, whether news is near, or whether they should trade around a release, answer from that list rather than saying you have no real-time access. If something isn't on the list, say plainly it's outside this calendar's coverage (it only tracks scheduled macro data releases, not breaking geopolitical or company-specific news) instead of guessing.
+
 Known strategy names: ${strategies}
 Prop firm on file: ${pf.firmName ? pf.firmName+' ('+(pf.phase||'challenge')+')' : 'none configured'}
 Today's date: ${todayStr()}
@@ -1045,7 +1128,8 @@ function quickAsk(kind){
     day: "How was my day today, based on my journal?",
     journal: "Give me an overview of my trading journal so far.",
     trader: "Based on my journal, what kind of trader am I? Be honest about patterns.",
-    emotions: "I want to talk through how I've been feeling while trading lately."
+    emotions: "I want to talk through how I've been feeling while trading lately.",
+    news: "What economic news or events are coming up that I should know about — anything like NFP, CPI, or a rate decision?"
   };
   sendMessage(prompts[kind]);
 }
@@ -1088,6 +1172,7 @@ async function sendMessage(text){
   addTyping();
   setStage('thinking');
   try{
+    await ensureEconomicCalendar();
     const rawReply = await chatCompletion(buildSystemPrompt(), history.slice(-12));
     const { text: cleanReply, action } = extractTradeAction(rawReply);
     let confirmation = null;
