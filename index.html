@@ -657,6 +657,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .tag-chip.trader{background:rgba(91,102,99,0.12);color:#3f4a47;border-color:rgba(91,102,99,0.28);}
 .tag-chip.mood{background:rgba(245,166,35,0.1);color:var(--amber);border-color:rgba(245,166,35,0.28);text-transform:none;letter-spacing:0.01em;}
 .tag-chip.pair{background:rgba(212,175,55,0.12);color:var(--gold-bright);border-color:rgba(212,175,55,0.32);font-weight:700;}
+.tag-chip.violation{background:rgba(190,18,60,0.1);color:var(--loss-bright);border-color:rgba(190,18,60,0.32);font-weight:700;cursor:help;}
+.modal.quick-log-mode .quicklog-hide{display:none !important;}
 .order-levels{display:flex;gap:14px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);}
 .order-levels b{color:var(--platinum);font-weight:600;}
 .order-levels .lv-sl b{color:var(--loss-bright);}
@@ -2101,19 +2103,27 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 <!-- TRADE ENTRY MODAL -->
 <div class="overlay" id="tradeOverlay">
   <div class="modal">
-    <h3>Log Trade</h3>
-    <div class="sub">Record the outcome honestly.</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div>
+        <h3 style="margin-bottom:2px;">Log Trade</h3>
+        <div class="sub" style="margin-bottom:0;">Record the outcome honestly.</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--slate);cursor:pointer;white-space:nowrap;flex-shrink:0;padding-top:2px;">
+        <input type="checkbox" id="t_quickMode" onchange="toggleQuickLogMode()" style="width:16px;height:16px;flex-shrink:0;">
+        ⚡ Quick Log
+      </label>
+    </div>
     <div class="row2">
       <div class="field">
         <label>Trader</label>
         <select id="t_trader"></select>
       </div>
-      <div class="field">
+      <div class="field quicklog-hide" id="t_strategyFieldWrap">
         <label>Strategy</label>
         <select id="t_strategy" onchange="onStrategyChange()"></select>
       </div>
     </div>
-    <div class="field">
+    <div class="field quicklog-hide">
       <label>Logic used for this trade <span class="hint-inline">tap what applied</span></label>
       <div class="logic-check-grid" id="tradeLogicChoices"></div>
     </div>
@@ -2130,7 +2140,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
       <div class="field" id="lossAmountField"><label>Amount lost (<span class="cur-sym">$</span>)</label><input type="number" step="1" id="t_lossAmount" placeholder="e.g. 40"></div>
       <div class="field" id="winAmountField"><label>Amount won (<span class="cur-sym">$</span>)</label><input type="number" step="1" id="t_winAmount" placeholder="e.g. 80"></div>
     </div>
-    <div class="field">
+    <div class="field quicklog-hide">
       <label>Mindset while placing this trade</label>
       <div class="mood-grid" id="tradeMoodChoices">
         <div class="mood-chip" data-mood="calm" onclick="selectMood('calm')">😌 Calm</div>
@@ -2141,8 +2151,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <div class="mood-chip" data-mood="anxious" onclick="selectMood('anxious')">😰 Anxious</div>
       </div>
     </div>
-    <div class="field"><label>Notes</label><textarea id="t_notes" placeholder="Setup, mindset, anything worth remembering."></textarea></div>
-    <div class="row2">
+    <div class="field quicklog-hide"><label>Notes</label><textarea id="t_notes" placeholder="Setup, mindset, anything worth remembering."></textarea></div>
+    <div class="row2 quicklog-hide">
       <div class="field">
         <label>Chart screenshot <span class="hint-inline">optional</span></label>
         <input type="file" id="t_screenshot" accept="image/*" onchange="onTradeScreenshotPicked(event)">
@@ -2157,7 +2167,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <div class="hint" id="t_tvlinkHint" style="display:none;color:var(--loss-bright);">That doesn't look like a link — check it and try again.</div>
       </div>
     </div>
-    <div class="row2" id="t_dateChartRow">
+    <div class="row2 quicklog-hide" id="t_dateChartRow">
       <div class="field">
         <label>Trade date</label>
         <input type="date" id="t_date">
@@ -5255,6 +5265,13 @@ function renderNewsList(items){
 /* ============ JOURNAL ============ */
 function strategyName(id){ const s = state.psychology.strategies.find(s=>s.id===id); return s?s.name:null; }
 function traderName(id){ const t = state.psychology.traders.find(t=>t.id===id); return t?t.name:'Me'; }
+function ruleViolationChipHtml(t){
+  const labels = t.ruleViolationLabels;
+  if(!labels || !labels.length) return '';
+  const title = escapeHtml(labels.join(' · '));
+  const text = labels.length>1 ? `⚠ ${labels.length} rules broken` : '⚠ Rule broken';
+  return `<span class="tag-chip violation" title="${title}">${text}</span>`;
+}
 function renderJournal(){
   const list = document.getElementById('tradeList');
   const trades = filteredTrades().slice().reverse();
@@ -5280,6 +5297,7 @@ function renderJournal(){
             ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
             ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
             ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
+            ${ruleViolationChipHtml(t)}
             ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
           </div>
         </div>
@@ -6253,7 +6271,23 @@ function proceedToTrade(){
   document.getElementById('t_tvlink').value='';
   document.getElementById('t_tvlinkHint').style.display='none';
   setupTradeDateChartRow();
+  applyQuickLogModePref();
   document.getElementById('tradeOverlay').classList.add('show');
+}
+/* ============ QUICK LOG MODE (collapses trade modal to result + R:R only) ============ */
+function applyQuickLogModePref(){
+  let on = false;
+  try{ on = localStorage.getItem('gd_quicklog')==='1'; }catch(e){}
+  const cb = document.getElementById('t_quickMode');
+  if(cb) cb.checked = on;
+  const modal = document.querySelector('#tradeOverlay .modal');
+  if(modal) modal.classList.toggle('quick-log-mode', on);
+}
+function toggleQuickLogMode(){
+  const on = document.getElementById('t_quickMode').checked;
+  const modal = document.querySelector('#tradeOverlay .modal');
+  if(modal) modal.classList.toggle('quick-log-mode', on);
+  try{ localStorage.setItem('gd_quicklog', on ? '1' : '0'); }catch(e){}
 }
 function setupTradeDateChartRow(){
   const dateEl = document.getElementById('t_date');
@@ -6345,9 +6379,6 @@ async function submitTrade(){
   const strategyType = stratObj ? stratObj.type : null;
   const logics = getCheckedLogics('tradeLogicChoices');
   const now = new Date();
-  let brokeRuleThisTrade = pendingViolation;
-  if(state.rules.minRR!=null && rr!=='' && parseFloat(rr) < state.rules.minRR) brokeRuleThisTrade = true;
-  if(result==='loss' && state.rules.maxRiskPerTrade!=null && lossAmount > state.rules.maxRiskPerTrade) brokeRuleThisTrade = true;
 
   const tvLinkRaw = (document.getElementById('t_tvlink').value || '').trim();
   const tvHint = document.getElementById('t_tvlinkHint');
@@ -6378,10 +6409,11 @@ async function submitTrade(){
 
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
   const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : 'personal';
-  state.trades.push({ id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
+  const newTrade = { id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
     screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
-    account: tradeAccount });
+    account: tradeAccount };
+  state.trades.push(newTrade);
   state.day.tradesCount += 1;
   if(result==='loss'){
     // The personal "max daily loss" gate is priced in the personal account's
@@ -6398,6 +6430,39 @@ async function submitTrade(){
     }
     state.day.lossUsed = +(state.day.lossUsed + lossForGate).toFixed(2); state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now();
   } else { state.consecutiveLosses = 0; }
+
+  // Auto rule-break flagging: check every configured rule against the trade
+  // that was just logged (not just minRR/maxRiskPerTrade, and not only when
+  // the Pre-Trade Check was opened) so nothing slips through unflagged.
+  const violations = [];
+  if(state.rules.minRR!=null && rr!=='' && parseFloat(rr) < state.rules.minRR){
+    violations.push({code:'minRR', label:`Below minimum R:R (${rr} < ${state.rules.minRR})`});
+  }
+  if(result==='loss' && state.rules.maxRiskPerTrade!=null && lossAmount > state.rules.maxRiskPerTrade){
+    violations.push({code:'maxRiskPerTrade', label:`Risk exceeded max per trade (${curSym()}${lossAmount.toFixed(0)} > ${curSym()}${state.rules.maxRiskPerTrade})`});
+  }
+  if(state.rules.maxTrades!=null && state.day.tradesCount > state.rules.maxTrades){
+    violations.push({code:'maxTrades', label:`Over daily trade limit (${state.day.tradesCount}/${state.rules.maxTrades})`});
+  }
+  if(state.rules.maxDailyLoss!=null && state.day.lossUsed > state.rules.maxDailyLoss){
+    violations.push({code:'maxDailyLoss', label:`Over daily loss limit (${curSym()}${state.day.lossUsed.toFixed(2).replace(/\.00$/,'')}/${curSym()}${state.rules.maxDailyLoss})`});
+  }
+  if(state.rules.maxConsecLosses!=null && state.consecutiveLosses>0 && state.consecutiveLosses >= state.rules.maxConsecLosses){
+    violations.push({code:'maxConsecLosses', label:`Consecutive losses at limit (${state.consecutiveLosses}/${state.rules.maxConsecLosses})`});
+  }
+  if(state.session.restrict && !isInSession()){
+    violations.push({code:'session', label:`Traded outside session window (${state.session.start}–${state.session.end})`});
+  }
+  if(state.rules.coolingOffMinutes!=null && isInCooldown()){
+    violations.push({code:'coolingOff', label:'Traded during cooling-off period'});
+  }
+  if(RISKY_MOODS.includes(selectedMood)){
+    violations.push({code:'mood', label:`Logged in a high-risk emotional state (${MOOD_LABELS[selectedMood]})`});
+  }
+  newTrade.ruleViolations = violations.map(v=>v.code);
+  newTrade.ruleViolationLabels = violations.map(v=>v.label);
+  const brokeRuleThisTrade = pendingViolation || violations.length>0;
+
   archiveDisciplineDay(state.day.date, computeDisciplineScore());
 
   if(closingOrderId){
@@ -6407,7 +6472,7 @@ async function submitTrade(){
 
   if(brokeRuleThisTrade){
     state.day.ruleBrokenToday = true; state.streak.count = 0;
-    showToast('Rule broken — streak reset to 0');
+    showToast(newTrade.ruleViolationLabels.length ? `Rule broken: ${newTrade.ruleViolationLabels[0]} — streak reset to 0` : 'Rule broken — streak reset to 0');
   } else {
     showToast('Trade logged. Stay the course.');
     if(result==='win') fireConfetti();
@@ -6556,6 +6621,7 @@ function closeOrder(id, result){
   document.getElementById('t_tvlink').value='';
   document.getElementById('t_tvlinkHint').style.display='none';
   setupTradeDateChartRow();
+  applyQuickLogModePref();
   document.getElementById('tradeOverlay').classList.add('show');
 }
 
@@ -6705,6 +6771,7 @@ function showCalDay(iso){
               ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
               ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
               ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
+              ${ruleViolationChipHtml(t)}
               ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
             </div>
           </div>
