@@ -595,6 +595,43 @@ a{color:var(--bronze-bright);}
 .hero-stat.pos .hero-value{color:var(--win-bright);}
 .hero-stat.neg .hero-value{color:var(--loss-bright);}
 .hero-stat .hero-sub{font-size:10.5px;color:var(--slate-dim);margin-top:5px;}
+.hero-stat .hero-trend{font-size:10.5px;margin-top:6px;font-weight:700;display:none;}
+.hero-stat .hero-trend.show{display:block;}
+.hero-stat .hero-trend.up{color:var(--win-bright);}
+.hero-stat .hero-trend.down{color:var(--loss-bright);}
+.hero-stat .hero-trend.flat{color:var(--slate);}
+
+/* ============ MOMENTUM BANNER (motivation + trend, top of Overview) ============ */
+.momentum-banner{display:none;align-items:center;gap:12px;border:1px solid var(--steel);border-radius:var(--r-md);
+  padding:15px 18px;margin-bottom:16px;background:linear-gradient(120deg, rgba(16,185,129,0.07), rgba(16,185,129,0.02));
+  font-family:'Fraunces',serif;font-size:14.5px;line-height:1.55;color:var(--platinum);}
+.momentum-banner.show{display:flex;}
+.momentum-banner .mb-ico{font-size:22px;flex-shrink:0;}
+.momentum-banner b{color:var(--bronze-bright);font-weight:650;}
+
+/* ============ DAILY CHECKLIST (Overview: what's left to do today) ============ */
+.checklist-item{display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid var(--steel);font-size:13px;color:var(--platinum);}
+.checklist-item:last-child{border-bottom:none;}
+.checklist-item .ci-dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+.checklist-item.done .ci-dot{background:rgba(16,185,129,0.18);color:var(--win-bright);}
+.checklist-item.pending .ci-dot{background:rgba(255,255,255,0.05);border:1.5px solid var(--steel-hi);color:transparent;}
+.checklist-item.warn .ci-dot{background:rgba(244,63,94,0.18);color:var(--loss-bright);}
+.checklist-item .ci-label b{display:block;}
+.checklist-item .ci-label span{font-size:11px;color:var(--slate);}
+
+/* ============ JOURNAL: toolbar + day-grouped trade list ============ */
+.journal-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 4px;}
+.journal-toolbar .journal-search{flex:1;min-width:160px;border-radius:100px;}
+.journal-trade-scroll{max-height:640px;overflow-y:auto;margin-top:6px;padding-right:2px;}
+.journal-day-group{margin-bottom:16px;}
+.journal-day-group:last-child{margin-bottom:0;}
+.journal-day-header{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;
+  position:sticky;top:0;background:var(--panel-solid);z-index:2;border-bottom:1px solid var(--steel);margin-bottom:8px;}
+.journal-day-header .jdh-date{font-family:'Fraunces',serif;font-weight:650;font-size:13.5px;color:var(--platinum);}
+.journal-day-header .jdh-meta{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--slate);}
+.journal-day-header .jdh-pnl.pos{color:var(--win-bright);font-weight:700;}
+.journal-day-header .jdh-pnl.neg{color:var(--loss-bright);font-weight:700;}
+.journal-day-group .trade-list{max-height:none;overflow:visible;margin-top:0;}
 
 /* ============ INSIGHT BANNER (auto-generated "here's what this means" line) ============ */
 .insight-banner{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--steel);border-left:2.5px solid var(--bronze);
@@ -1431,9 +1468,10 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a Trade</button>
         </div>
       </div>
+      <div class="momentum-banner" id="momentumBanner"></div>
       <div class="hero-row" id="heroStatsRow">
-        <div class="hero-stat" id="hero_netPnl"><div class="hero-label">Net P/L</div><div class="hero-value">$0</div><div class="hero-sub">all logged trades</div></div>
-        <div class="hero-stat" id="hero_winRate"><div class="hero-label">Win Rate</div><div class="hero-value">—</div><div class="hero-sub">0 trades</div></div>
+        <div class="hero-stat" id="hero_netPnl"><div class="hero-label">Net P/L</div><div class="hero-value">$0</div><div class="hero-sub">all logged trades</div><div class="hero-trend" id="hero_netPnl_trend"></div></div>
+        <div class="hero-stat" id="hero_winRate"><div class="hero-label">Win Rate</div><div class="hero-value">—</div><div class="hero-sub">0 trades</div><div class="hero-trend" id="hero_winRate_trend"></div></div>
         <div class="hero-stat" id="hero_profitFactor"><div class="hero-label">Profit Factor</div><div class="hero-value">—</div><div class="hero-sub">gross win ÷ gross loss</div></div>
         <div class="hero-stat" id="hero_avgWinLoss"><div class="hero-label">Avg Win / Loss</div><div class="hero-value">—</div><div class="hero-sub">per-trade average</div></div>
       </div>
@@ -1475,32 +1513,41 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         </div>
       </div>
 
-      <div class="card tilt score-card" style="margin-top:18px">
-        <h2>Discipline <span class="accent">Score</span><span class="eyebrow" id="scoreEyebrow">how closely you're following your own rules, on a 0–100 scale</span></h2>
-        <div class="score-dial-wrap">
-          <div class="score-dial" id="scoreDial"></div>
-          <div class="score-dial-info">
-            <div class="score-num" id="scoreNum">—</div>
-            <div class="score-tier" id="scoreTier">Log a trade to begin</div>
-            <div class="score-desc" id="scoreDesc">This score is recalculated live from your loss limits, trade caps, session window, and cooling-off rule — then imputed into the calendar as your daily discipline history.</div>
+      <div class="grid" style="margin-top:18px">
+        <div class="card tilt score-card">
+          <h2>Discipline <span class="accent">Score</span><span class="eyebrow" id="scoreEyebrow">how closely you're following your own rules, on a 0–100 scale</span></h2>
+          <div class="score-dial-wrap">
+            <div class="score-dial" id="scoreDial"></div>
+            <div class="score-dial-info">
+              <div class="score-num" id="scoreNum">—</div>
+              <div class="score-tier" id="scoreTier">Log a trade to begin</div>
+              <div class="score-desc" id="scoreDesc">This score is recalculated live from your loss limits, trade caps, session window, and cooling-off rule — then imputed into the calendar as your daily discipline history.</div>
+            </div>
           </div>
+        </div>
+
+        <div class="card tilt">
+          <h2>Today's <span class="accent">Checklist</span><span class="eyebrow">what's left before your next trade</span></h2>
+          <div id="dailyChecklist"></div>
         </div>
       </div>
 
-      <div class="card tilt" style="margin-top:18px">
-        <h2>Risk <span class="accent">Console</span><span class="eyebrow">live daily gauges</span></h2>
-        <div class="gauge-row" id="gaugeRow"></div>
-      </div>
-
-      <div class="card tilt" style="margin-top:18px">
-        <div class="equity-head">
-          <div>
-            <h2 style="margin-bottom:4px">Pending <span class="accent">Orders</span></h2>
-          </div>
-          <button class="btn btn-sm btn-ghost" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();">Order Book →</button>
+      <div class="grid" style="margin-top:18px">
+        <div class="card tilt">
+          <h2>Risk <span class="accent">Console</span><span class="eyebrow">live daily gauges</span></h2>
+          <div class="gauge-row" id="gaugeRow"></div>
         </div>
-        <div class="trade-list" id="ordersListOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
-        <div id="ordersOverviewMore" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--slate);cursor:pointer;font-weight:600;letter-spacing:0.01em;" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();"></div>
+
+        <div class="card tilt">
+          <div class="equity-head">
+            <div>
+              <h2 style="margin-bottom:4px">Pending <span class="accent">Orders</span></h2>
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();">Order Book →</button>
+          </div>
+          <div class="trade-list" id="ordersListOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
+          <div id="ordersOverviewMore" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--slate);cursor:pointer;font-weight:600;letter-spacing:0.01em;" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();"></div>
+        </div>
       </div>
 
       <div class="card tilt" style="margin-top:18px">
@@ -1752,7 +1799,22 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         </div>
         <div class="card tilt">
           <h2>Trade <span class="accent">Journal</span></h2>
-          <div class="trade-list" id="tradeList"><div class="empty-state"><span class="glyph">📓</span>No trades logged yet.</div></div>
+          <div class="journal-toolbar">
+            <input type="text" class="trader-filter journal-search" id="j_search" placeholder="Search pair or notes…" oninput="renderJournal()">
+            <select class="trader-filter" id="j_resultFilter" onchange="renderJournal()">
+              <option value="all">All results</option>
+              <option value="win">Wins only</option>
+              <option value="loss">Losses only</option>
+            </select>
+            <select class="trader-filter" id="j_sortMode" onchange="renderJournal()">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="pnl_desc">Biggest win first</option>
+              <option value="pnl_asc">Biggest loss first</option>
+              <option value="rr_desc">Best R:R first</option>
+            </select>
+          </div>
+          <div id="tradeList"><div class="empty-state"><span class="glyph">📓</span>No trades logged yet.</div></div>
         </div>
       </div>
     </div>
@@ -4082,7 +4144,7 @@ function renderAll(){
   renderDemoStatus();
   updateCurrencyLabels();
   renderTraderFilterOptions();
-  renderDashboard(); renderHeroStats(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
+  renderDashboard(); renderHeroStats(); renderMomentumBanner(); renderDailyChecklist(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
   renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
   renderEquityChart('equityChart','equityTotal','equitySub');
@@ -4090,6 +4152,49 @@ function renderAll(){
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
 }
+/* ============ MOMENTUM BANNER (streak status + weekly trend, one sentence) ============ */
+function renderMomentumBanner(){
+  const el = document.getElementById('momentumBanner');
+  if(!el) return;
+  const trades = filteredTrades();
+  if(trades.length===0){ el.classList.remove('show'); return; }
+
+  const today = new Date(todayStr()+'T00:00:00');
+  const isoDaysAgo = n => { const d = new Date(today); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
+  const weekStart = isoDaysAgo(6), prevWeekStart = isoDaysAgo(13), prevWeekEnd = isoDaysAgo(7);
+  const thisWeekTrades = trades.filter(t=>t.date>=weekStart);
+  const lastWeekTrades = trades.filter(t=>t.date>=prevWeekStart && t.date<=prevWeekEnd);
+  const thisWeekPnl = thisWeekTrades.reduce((s,t)=>s+pnlOf(t),0);
+  const lastWeekPnl = lastWeekTrades.reduce((s,t)=>s+pnlOf(t),0);
+
+  const count = state.streak.count||0;
+  let streakMsg;
+  if(count===0){
+    streakMsg = state.day.ruleBrokenToday
+      ? `Streak reset today — that's fine, tomorrow's discipline starts the count again.`
+      : `Log a disciplined day to start your streak.`;
+  } else {
+    const next = STREAK_MILESTONES.find(m=>m>count);
+    streakMsg = next
+      ? `<b>${count}-day</b> discipline streak — ${next-count} day${next-count===1?'':'s'} to your next milestone (${next}).`
+      : `<b>${count}-day</b> discipline streak — you've cleared every milestone. Elite territory.`;
+  }
+
+  let trendMsg = '';
+  if(thisWeekTrades.length>0){
+    const fmt = n => (n>=0?'+':'-')+curSym()+Math.abs(n).toFixed(0);
+    if(lastWeekTrades.length>0){
+      const dir = thisWeekPnl>lastWeekPnl ? 'up from' : (thisWeekPnl<lastWeekPnl ? 'down from' : 'flat vs');
+      trendMsg = ` This week: <b>${fmt(thisWeekPnl)}</b> — ${dir} ${fmt(lastWeekPnl)} last week.`;
+    } else {
+      trendMsg = ` This week: <b>${fmt(thisWeekPnl)}</b> so far.`;
+    }
+  }
+
+  el.innerHTML = `<span class="mb-ico">${count>0?'🔥':'📓'}</span><span>${streakMsg}${trendMsg}</span>`;
+  el.classList.add('show');
+}
+
 /* ============ HERO STATS ROW (verdict-at-a-glance: Net P/L, Win Rate, Profit Factor, Avg Win/Loss) ============ */
 function renderHeroStats(){
   const row = document.getElementById('heroStatsRow');
@@ -4125,6 +4230,80 @@ function renderHeroStats(){
   alEl.className = 'hero-stat' + (ratio==null?'':(ratio>=1?' pos':' neg'));
   alEl.querySelector('.hero-value').textContent = ratio==null ? '—' : (ratio===Infinity?'∞':ratio.toFixed(2)+'x');
   alEl.querySelector('.hero-sub').textContent = `${curSym()}${avgWin.toFixed(0)} avg win · ${curSym()}${avgLoss.toFixed(0)} avg loss`;
+
+  // Week-over-week trend deltas for Net P/L and Win Rate — gives the hero
+  // row a sense of direction, not just a static snapshot.
+  const today = new Date(todayStr()+'T00:00:00');
+  const isoDaysAgo = n => { const d = new Date(today); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
+  const weekStart = isoDaysAgo(6), prevWeekStart = isoDaysAgo(13), prevWeekEnd = isoDaysAgo(7);
+  const thisWeekTrades = trades.filter(t=>t.date>=weekStart);
+  const lastWeekTrades = trades.filter(t=>t.date>=prevWeekStart && t.date<=prevWeekEnd);
+
+  const netTrendEl = document.getElementById('hero_netPnl_trend');
+  if(netTrendEl){
+    if(thisWeekTrades.length>0 && lastWeekTrades.length>0){
+      const twPnl = thisWeekTrades.reduce((s,t)=>s+pnlOf(t),0);
+      const lwPnl = lastWeekTrades.reduce((s,t)=>s+pnlOf(t),0);
+      const dir = twPnl>lwPnl?'up':(twPnl<lwPnl?'down':'flat');
+      netTrendEl.className = 'hero-trend show '+dir;
+      netTrendEl.textContent = (dir==='up'?'▲ ':dir==='down'?'▼ ':'— ') + 'vs last week: ' + (lwPnl>=0?'+':'-')+curSym()+Math.abs(lwPnl).toFixed(0);
+    } else {
+      netTrendEl.className = 'hero-trend';
+    }
+  }
+  const wrTrendEl = document.getElementById('hero_winRate_trend');
+  if(wrTrendEl){
+    if(thisWeekTrades.length>0 && lastWeekTrades.length>0){
+      const twWins = thisWeekTrades.filter(t=>t.result==='win').length;
+      const lwWins = lastWeekTrades.filter(t=>t.result==='win').length;
+      const twWr = Math.round(twWins/thisWeekTrades.length*100);
+      const lwWr = Math.round(lwWins/lastWeekTrades.length*100);
+      const dir = twWr>lwWr?'up':(twWr<lwWr?'down':'flat');
+      wrTrendEl.className = 'hero-trend show '+dir;
+      wrTrendEl.textContent = (dir==='up'?'▲ ':dir==='down'?'▼ ':'— ') + 'vs last week: ' + lwWr+'%';
+    } else {
+      wrTrendEl.className = 'hero-trend';
+    }
+  }
+}
+
+/* ============ DAILY CHECKLIST (Overview: a few live, honest yes/no items for today) ============ */
+function renderDailyChecklist(){
+  const el = document.getElementById('dailyChecklist');
+  if(!el) return;
+  const items = [];
+
+  if(state.session && state.session.restrict){
+    const now = new Date();
+    const nowMin = now.getHours()*60+now.getMinutes();
+    const toMin = s => { const [h,m] = (s||'00:00').split(':').map(Number); return h*60+m; };
+    const inSession = nowMin>=toMin(state.session.start) && nowMin<=toMin(state.session.end);
+    items.push({ state: inSession?'done':'warn', label: inSession ? 'Inside your trading window' : 'Outside your trading window',
+      sub: `${state.session.start}–${state.session.end}` });
+  }
+
+  const maxT = state.rules.maxTrades;
+  if(maxT){
+    const used = state.day.tradesCount||0;
+    items.push({ state: used<maxT?'done':'warn', label: `${used} / ${maxT} trades taken today`, sub: used<maxT ? `${maxT-used} remaining` : 'Limit reached — stop for today' });
+  }
+
+  const maxL = state.rules.maxDailyLoss;
+  if(maxL){
+    const used = state.day.lossUsed||0;
+    items.push({ state: used<maxL?'done':'warn', label: `${curSym()}${used.toFixed(0)} / ${curSym()}${maxL.toFixed(0)} daily loss used`, sub: used<maxL ? 'Within limit' : 'Limit reached — stop for today' });
+  }
+
+  items.push({ state: state.day.ruleBrokenToday?'warn':'done', label: state.day.ruleBrokenToday?'A rule was broken today':'No rules broken today', sub: state.day.ruleBrokenToday?'Streak reset to zero':'Streak intact' });
+
+  const hasWhy = !!(state.psychology.why && state.psychology.why.trim());
+  items.push({ state: hasWhy?'done':'pending', label: hasWhy?'Your trading purpose is set':'Write down why you trade', sub: hasWhy?'Visible on this page':'Visit Psychology to add it' });
+
+  el.innerHTML = items.map(i=>`
+    <div class="checklist-item ${i.state}">
+      <div class="ci-dot">${i.state==='done'?'✓':(i.state==='warn'?'!':'')}</div>
+      <div class="ci-label"><b>${i.label}</b><span>${i.sub}</span></div>
+    </div>`).join('');
 }
 
 /* ============ PERSISTENT SIDEBAR PILL (streak + discipline score, visible on every view) ============ */
@@ -5460,39 +5639,90 @@ function ruleViolationChipHtml(t){
   const text = labels.length>1 ? `⚠ ${labels.length} rules broken` : '⚠ Rule broken';
   return `<span class="tag-chip violation" title="${title}">${text}</span>`;
 }
+function journalTradeRowHtml(t){
+  const pnl = pnlOfRaw(t);
+  const sym = tradeCurSym(t);
+  const typeInfo = STRATEGY_TYPES[t.strategyType];
+  return `
+  <div class="trade-row">
+    ${t.screenshotUrl ? `<img src="${escapeHtml(t.screenshotUrl)}" class="trade-shot" loading="lazy" alt="Chart screenshot" onclick="openScreenshotLightbox('${t.screenshotUrl.replace(/'/g,"\\'")}')">` : ''}
+    <div class="trade-badge ${t.result}">${t.result==='win'?'WIN':'LOSS'}</div>
+    <div class="trade-meta">
+      <div class="top">${t.date} ${t.time}</div>
+      <div class="bottom">${t.notes ? t.notes : 'No notes'}</div>
+      <div class="trade-tags">
+        ${t.pair ? `<span class="tag-chip pair">${escapeHtml(t.pair)}</span>` : ''}
+        <span class="tag-chip trader">${escapeHtml(traderName(t.trader))}</span>
+        ${accountTagHtml(t.account)}
+        ${t.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(t.strategy)||'—')}</span>` : ''}
+        ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
+        ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
+        ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
+        ${ruleViolationChipHtml(t)}
+        ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
+      </div>
+    </div>
+    <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
+  </div>`;
+}
 function renderJournal(){
   const list = document.getElementById('tradeList');
-  const trades = filteredTrades().slice().reverse();
+  const searchEl = document.getElementById('j_search');
+  const resultEl = document.getElementById('j_resultFilter');
+  const sortEl = document.getElementById('j_sortMode');
+  const search = (searchEl?.value||'').trim().toLowerCase();
+  const resultFilter = resultEl?.value||'all';
+  const sortMode = sortEl?.value||'newest';
+
+  let trades = filteredTrades().slice();
+  if(search){
+    trades = trades.filter(t => (t.pair||'').toLowerCase().includes(search) || (t.notes||'').toLowerCase().includes(search));
+  }
+  if(resultFilter!=='all'){
+    trades = trades.filter(t => t.result===resultFilter);
+  }
+
+  const byDate = (a,b) => (a.date+((a.time||''))).localeCompare(b.date+(b.time||''));
+  if(sortMode==='newest') trades.sort(byDate).reverse();
+  else if(sortMode==='oldest') trades.sort(byDate);
+  else if(sortMode==='pnl_desc') trades.sort((a,b)=>pnlOf(b)-pnlOf(a));
+  else if(sortMode==='pnl_asc') trades.sort((a,b)=>pnlOf(a)-pnlOf(b));
+  else if(sortMode==='rr_desc') trades.sort((a,b)=>(parseFloat(b.rr)||0)-(parseFloat(a.rr)||0));
+
   if(trades.length===0){
-    list.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>No trades logged yet.</div>';
-  } else {
-    list.innerHTML = trades.map(t=>{
-      const pnl = pnlOfRaw(t);
-      const sym = tradeCurSym(t);
-      const typeInfo = STRATEGY_TYPES[t.strategyType];
+    list.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>'+(filteredTrades().length===0?'No trades logged yet.':'No trades match your search/filter.')+'</div>';
+  } else if(sortMode==='newest' || sortMode==='oldest'){
+    // Chronological sorts get grouped into day sections with a per-day P/L
+    // header — this is the "checking your daily results" view, not just a
+    // flat undifferentiated dump of every trade ever logged.
+    const groups = [];
+    let curDate = null, curGroup = null;
+    trades.forEach(t=>{
+      if(t.date!==curDate){ curDate = t.date; curGroup = { date: t.date, trades: [] }; groups.push(curGroup); }
+      curGroup.trades.push(t);
+    });
+    list.innerHTML = `<div class="journal-trade-scroll">` + groups.map(g=>{
+      const dayPnl = g.trades.reduce((s,t)=>s+pnlOf(t),0);
+      const wins = g.trades.filter(t=>t.result==='win').length;
       return `
-      <div class="trade-row">
-        ${t.screenshotUrl ? `<img src="${escapeHtml(t.screenshotUrl)}" class="trade-shot" loading="lazy" alt="Chart screenshot" onclick="openScreenshotLightbox('${t.screenshotUrl.replace(/'/g,"\\'")}')">` : ''}
-        <div class="trade-badge ${t.result}">${t.result==='win'?'WIN':'LOSS'}</div>
-        <div class="trade-meta">
-          <div class="top">${t.date} ${t.time}</div>
-          <div class="bottom">${t.notes ? t.notes : 'No notes'}</div>
-          <div class="trade-tags">
-            ${t.pair ? `<span class="tag-chip pair">${escapeHtml(t.pair)}</span>` : ''}
-            <span class="tag-chip trader">${escapeHtml(traderName(t.trader))}</span>
-            ${accountTagHtml(t.account)}
-            ${t.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(t.strategy)||'—')}</span>` : ''}
-            ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
-            ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
-            ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
-            ${ruleViolationChipHtml(t)}
-            ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
+      <div class="journal-day-group">
+        <div class="journal-day-header">
+          <div class="jdh-date">${g.date}</div>
+          <div class="jdh-meta">
+            <span>${g.trades.length} trade${g.trades.length!==1?'s':''}</span>
+            <span>${wins}W / ${g.trades.length-wins}L</span>
+            <span class="jdh-pnl ${dayPnl>=0?'pos':'neg'}">${dayPnl>=0?'+':'-'}${curSym()}${Math.abs(dayPnl).toFixed(0)}</span>
           </div>
         </div>
-        <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
+        <div class="trade-list">${g.trades.map(journalTradeRowHtml).join('')}</div>
       </div>`;
-    }).join('');
+    }).join('') + `</div>`;
+  } else {
+    // Non-chronological sorts (by P/L, by R:R) show a flat ranked list —
+    // day grouping wouldn't make sense once trades are reordered by size.
+    list.innerHTML = `<div class="journal-trade-scroll"><div class="trade-list">${trades.map(journalTradeRowHtml).join('')}</div></div>`;
   }
+
   const trades2 = filteredTrades();
   const total = trades2.length;
   const wins = trades2.filter(t=>t.result==='win').length;
