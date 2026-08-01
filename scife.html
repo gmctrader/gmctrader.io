@@ -848,8 +848,7 @@ function summarizeJournal(){
     `Current discipline streak: ${streak.count||0} days.`,
     `Consecutive losses right now: ${(traderRow && traderRow.consecutive_losses)||0}.`,
     topMood ? `Most logged emotion: ${topMood[0]} (${topMood[1]} times).` : '',
-    rules.maxDailyLoss ? `Max daily loss rule: ${rules.maxDailyLoss}.` : '',
-    rules.maxTrades ? `Max trades/day rule: ${rules.maxTrades}.` : '',
+    `Current rules — maxDailyLoss:${rules.maxDailyLoss ?? 'unset'}, maxTrades:${rules.maxTrades ?? 'unset'}, riskPerTrade:${rules.riskPerTrade ?? 'unset'}, minRR:${rules.minRR ?? 'unset'}, maxConsecLosses:${rules.maxConsecLosses ?? 'unset'}, accountBalance:${rules.accountBalance ?? 'unset'}, coolingOffMinutes:${rules.coolingOffMinutes ?? 'unset'}, maxRiskPerTrade:${rules.maxRiskPerTrade ?? 'unset'}, currency:${rules.currency ?? 'unset'}, accountType:${rules.accountType ?? 'unset'}.`,
     recent.length ? `Recent trades:\n${recent.join('\n')}` : 'No trades logged yet.'
   ].filter(Boolean).join('\n');
 }
@@ -862,7 +861,11 @@ function summarizeJournal(){
    the trader hands it a trade to log or edit. We pull that block out of the
    reply, act on it against the same `trades` array index.html uses, persist
    it, and strip the block itself out of what's shown/spoken. */
-const ACTION_RE = /<<<ACTION>>>([\s\S]*?)<<<END>>>/;
+// Tolerant of a variable number of trailing '>' — models occasionally emit
+// '<<<ACTION>>' instead of the specified '<<<ACTION>>>'. Matching only the
+// exact three-bracket form means that block leaks into the visible/spoken
+// reply as raw JSON AND the action itself silently never gets applied.
+const ACTION_RE = /<<<ACTION>+\s*([\s\S]*?)<<<END>+/;
 function extractTradeAction(replyText){
   const m = replyText.match(ACTION_RE);
   if(!m) return { text: replyText.trim(), action: null };
@@ -870,6 +873,18 @@ function extractTradeAction(replyText){
   let action = null;
   try{ action = JSON.parse(m[1].trim()); }catch(e){ action = null; }
   return { text, action };
+}
+/* ============ ACTION LOG (audit trail for anything SciFe edits/saves) ============
+   Every applied action — trade logged/edited, rule changed, etc — gets a
+   timestamped entry here so there's a durable record of what SciFe actually
+   did, independent of the chat transcript. Persisted in the `scife` jsonb
+   column (same one settings/memory already live in) so it survives reloads. */
+function logAction(type, details, ok){
+  scife.actionLog = scife.actionLog || [];
+  scife.actionLog.push({ type, details, ok: ok!==false, at: new Date().toISOString() });
+  if(scife.actionLog.length > 200) scife.actionLog = scife.actionLog.slice(-200);
+  saveScife();
+  console.log('[SciFe action]', type, ok===false ? 'FAILED' : 'ok', details);
 }
 function pnlOf(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0); }
 async function saveTrades(){
@@ -911,7 +926,11 @@ async function applyTradeAction(action){
     };
     traderRow.trades.push(trade);
     const ok = await saveTrades();
+    logAction('log_trade', { id: trade.id, result: trade.result, amount, pair: trade.pair, date: trade.date }, ok);
     return ok ? `[Logged: ${trade.result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}]` : '[Could not save that trade — try again in a moment.]';
+  }
+  if(action.type === 'edit_rule'){
+    return await applyRuleAction(action);
   }
   if(action.type === 'edit_trade'){
     const id = action.id!=null ? Number(action.id) : null;
@@ -930,9 +949,59 @@ async function applyTradeAction(action){
     if(action.account==='propfirm' || action.account==='personal') t.account = action.account;
     if(['calm','confident','fomo','revenge','bored','anxious'].includes(action.mood)) t.mood = action.mood;
     const ok = await saveTrades();
+    logAction('edit_trade', { id: t.id, date: t.date, pair: t.pair }, ok);
     return ok ? `[Updated trade ${t.date} ${t.pair||''}]` : '[Could not save that edit — try again in a moment.]';
   }
   return null;
+}
+
+/* ============ RULE EDITING (from conversation) ============
+   Lets the trader change one of their discipline rules ("set my max
+   trades/day to 2") directly from chat. Writes straight to the same
+   `rules` jsonb column the Rules settings screen in index.html reads and
+   writes, so a change made here shows up there (and vice versa) next load. */
+const RULE_KEYS = ['maxDailyLoss','maxTrades','riskPerTrade','minRR','maxConsecLosses','accountBalance','coolingOffMinutes','maxRiskPerTrade','currency','accountType'];
+const RULE_LABELS = {
+  maxDailyLoss:'Max daily loss', maxTrades:'Max trades/day', riskPerTrade:'Risk per trade (%)',
+  minRR:'Min R:R', maxConsecLosses:'Max consecutive losses', accountBalance:'Account balance',
+  coolingOffMinutes:'Cooling-off period (minutes)', maxRiskPerTrade:'Max risk per trade (%)',
+  currency:'Currency', accountType:'Account type'
+};
+const NON_NUMERIC_RULES = new Set(['currency','accountType']);
+function normalizeRuleKey(k){
+  if(!k) return null;
+  const norm = String(k).toLowerCase().replace(/[^a-z0-9]/g,'');
+  return RULE_KEYS.find(rk=>rk.toLowerCase()===norm) || null;
+}
+async function saveRulesField(){
+  if(!currentUser || !traderRow) return false;
+  const { error } = await sb.from('trader_data')
+    .update({ rules: traderRow.rules, updated_at: new Date().toISOString() })
+    .eq('user_id', currentUser.id);
+  if(error){ showToast('Could not save rule change: ' + (error.message||error.code)); return false; }
+  return true;
+}
+async function applyRuleAction(action){
+  const key = normalizeRuleKey(action.rule);
+  if(!key){
+    logAction('edit_rule', { rule: action.rule, reason: 'unrecognized rule name' }, false);
+    return `[Could not recognize "${action.rule||''}" as a rule to edit.]`;
+  }
+  traderRow.rules = traderRow.rules || {};
+  const prev = traderRow.rules[key];
+  let value = action.value;
+  if(!NON_NUMERIC_RULES.has(key)){
+    value = (value===null || value==='') ? null : parseFloat(value);
+    if(value!=null && isNaN(value)){
+      logAction('edit_rule', { rule: key, attemptedValue: action.value, reason: 'non-numeric value' }, false);
+      return `[That value for ${RULE_LABELS[key]} did not look like a number.]`;
+    }
+  }
+  traderRow.rules[key] = value;
+  const ok = await saveRulesField();
+  if(!ok){ traderRow.rules[key] = prev; logAction('edit_rule', { rule: key, from: prev, to: value }, false); return `[Could not save the change to ${RULE_LABELS[key]} — try again in a moment.]`; }
+  logAction('edit_rule', { rule: key, from: prev, to: value }, true);
+  return `[Updated ${RULE_LABELS[key]}: ${prev ?? '—'} → ${value ?? '—'}]`;
 }
 
 function buildSystemPrompt(){
@@ -956,13 +1025,15 @@ Known strategy names: ${strategies}
 Prop firm on file: ${pf.firmName ? pf.firmName+' ('+(pf.phase||'challenge')+')' : 'none configured'}
 Today's date: ${todayStr()}
 
-TRADE LOGGING & EDITING:
-You can log a new trade or edit an existing one directly from conversation — when the trader tells you about a trade they took, or asks you to change/fix/delete a detail on one already in the journal, do it instead of just talking about it.
-To do this, end your reply with a single action block on its own line, using this exact format (no other text on that line):
+TRADE LOGGING & EDITING, AND RULE EDITING:
+You can log a new trade, edit an existing one, or change one of the trader's discipline rules directly from conversation — when the trader tells you about a trade they took, asks you to change/fix/delete a detail on one already in the journal, or asks you to change a rule (e.g. "set my max trades per day to 2"), actually do it instead of just talking about it or describing the change in prose.
+To do this, end your reply with a single action block on its own line, and NOTHING else on that line. The format is exactly three '>' characters in each marker — not two, not more:
 <<<ACTION>>>{...json...}<<<END>>>
 For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"propfirm","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
 For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
-Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit an id that actually appears in the JOURNAL SNAPSHOT above. Only include the action block when the trader is actually giving you a trade to log or a real change to make — never for hypothetical or past-tense-recap conversation. The action block is invisible to the trader, so still say in plain words what you just logged/changed before it.
+For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
+Valid "rule" keys (use exactly one of these, spelled exactly like this — see current values in the JOURNAL SNAPSHOT above): maxDailyLoss, maxTrades, riskPerTrade, minRR, maxConsecLosses, accountBalance, coolingOffMinutes, maxRiskPerTrade, currency, accountType. "value" is a plain number for all of these except currency/accountType, which take a short string.
+Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit an id that actually appears in the JOURNAL SNAPSHOT above. Only include an action block when the trader is actually giving you a trade to log, a real change to make, or a real rule to change — never for hypothetical or past-tense-recap conversation. The action block is invisible to the trader (it is stripped out before display), so still say in plain words what you just logged/changed before it — but never print the literal action block text itself as part of your visible answer, and never describe the JSON to the trader instead of emitting a real action block.
 
 MEMORY FROM PAST SESSIONS:
 ${memNotes}`;
