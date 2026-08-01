@@ -814,6 +814,24 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .review-stat{background:rgba(15,23,22,0.03);border:1px solid var(--steel);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;}
 .review-stat-label{font-size:11px;color:var(--slate);font-family:'IBM Plex Mono',monospace;}
 .review-stat-val{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--platinum);}
+
+/* ============ REPORT CARD (equity sparkline + headline stats, week/month review) ============ */
+.report-card{
+  background:var(--panel-solid);border:1px solid var(--steel-hi);border-radius:var(--r-md);
+  padding:16px;margin-bottom:16px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 1px 0 rgba(255,255,255,0.04) inset;
+}
+.report-card-chart{border-bottom:1px solid var(--steel);padding-bottom:12px;}
+.rc-chart-sub{font-size:10.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;text-align:center;}
+.rc-chart-empty{height:96px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--slate);}
+.report-card-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px;}
+.rc-stat{display:flex;flex-direction:column;gap:3px;padding:2px 0;}
+.rc-stat.wide{grid-column:1 / -1;border-top:1px solid var(--steel);padding-top:10px;margin-top:2px;}
+.rc-label{font-size:10.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;}
+.rc-val{font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--platinum);}
+.rc-val.pos{color:var(--win-bright);}
+.rc-val.neg{color:var(--loss-bright);}
+@media(max-width:420px){.report-card-stats{grid-template-columns:1fr 1fr;}}
 .review-block{margin-bottom:14px;}
 .ok-banner{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;
   padding:13px 15px;margin-top:16px;font-size:12.5px;color:#065f46;line-height:1.55;}
@@ -3503,6 +3521,24 @@ function computePeriodStats(startIso, endIso){
   const rrVals = trades.map(t=>parseFloat(t.rr)).filter(v=>!isNaN(v));
   const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length) : null;
 
+  // Gross win/loss, profit factor, and the single biggest win/loss in R —
+  // the headline numbers a clean equity report card leads with.
+  const grossWin = trades.reduce((s,t)=>s + (t.result==='win' ? pnlOf(t) : 0), 0);
+  const grossLoss = trades.reduce((s,t)=>s + (t.result==='loss' ? Math.abs(pnlOf(t)) : 0), 0);
+  const profitFactor = grossLoss>0 ? (grossWin/grossLoss) : (grossWin>0 ? Infinity : null);
+  const winRRs = trades.filter(t=>t.result==='win').map(t=>parseFloat(t.rr)).filter(v=>!isNaN(v));
+  const lossRRs = trades.filter(t=>t.result==='loss').map(t=>parseFloat(t.rr)).filter(v=>!isNaN(v));
+  const biggestWinnerR = winRRs.length ? Math.max(...winRRs) : null;
+  const biggestLoserR = lossRRs.length ? -Math.max(...lossRRs) : null;
+
+  // Max drawdown within the period — same running peak-to-trough logic the
+  // main equity chart uses, walked over just this period's trades.
+  let cumRun = 0, peakRun = 0, maxDD = 0;
+  trades.forEach(t=>{ cumRun += pnlOf(t); peakRun = Math.max(peakRun, cumRun); maxDD = Math.max(maxDD, peakRun-cumRun); });
+  const bal = state.rules.accountBalance;
+  const netReturnPct = bal ? (pnl/bal*100) : null;
+  const maxDrawdownPct = bal ? (maxDD/bal*100) : null;
+
   const byDay = {};
   trades.forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOf(t); });
   let bestDay=null, worstDay=null;
@@ -3526,7 +3562,8 @@ function computePeriodStats(startIso, endIso){
     .sort((a,b)=>a.pnl-b.pnl);
 
   return { tradeCount, wins, losses: tradeCount-wins, winRate: tradeCount ? capDemoWinRate(Math.round(wins/tradeCount*100)) : 0,
-    pnl, avgRR, bestDay, worstDay, ruleBrokenDays, activeDays: histInRange.length, avgDiscipline, moodRows };
+    pnl, avgRR, bestDay, worstDay, ruleBrokenDays, activeDays: histInRange.length, avgDiscipline, moodRows,
+    trades, grossWin, grossLoss, profitFactor, biggestWinnerR, biggestLoserR, maxDD, maxDrawdownPct, netReturnPct };
 }
 
 /* Turns raw period stats into plain-language coaching feedback — what's working, what to fix. */
@@ -3667,16 +3704,63 @@ function showNextPeriodReview(){
   showPeriodReview(next.kind, next.label, next.data);
 }
 
+// Small equity sparkline for the report-card view — a lighter-weight cousin
+// of the main renderEquityChart, scoped to one week/month's trades.
+function buildMiniEquitySparkline(trades){
+  if(!trades || !trades.length) return '<div class="rc-chart-empty">No trades this period</div>';
+  let cum = 0;
+  const pts = [{x:0,y:0}];
+  trades.forEach(t=>{ cum += pnlOf(t); pts.push({x:pts.length,y:cum}); });
+  const W = 240, H = 96, pad = 8;
+  const minY = Math.min(0, ...pts.map(p=>p.y)), maxY = Math.max(0, ...pts.map(p=>p.y));
+  const spanY = (maxY-minY) || 1;
+  const sx = i => pad + (pts.length<=1 ? 0 : (i/(pts.length-1))*(W-pad*2));
+  const sy = v => pad + (H-pad*2) - ((v-minY)/spanY)*(H-pad*2);
+  const up = pts[pts.length-1].y >= pts[0].y;
+  const color = up ? 'var(--win-bright)' : 'var(--loss-bright)';
+  const rawColor = up ? '#10b981' : '#f43f5e';
+  const linePts = pts.map((p,i)=>`${sx(i)},${sy(p.y)}`).join(' ');
+  const baseY = sy(0);
+  const areaPts = `${sx(0)},${baseY} ${linePts} ${sx(pts.length-1)},${baseY}`;
+  const gradId = 'rcSpark' + Math.random().toString(36).slice(2,9);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${rawColor}" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="${rawColor}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <line x1="${pad}" y1="${baseY}" x2="${W-pad}" y2="${baseY}" stroke="var(--steel-hi)" stroke-width="1" stroke-dasharray="3,4"/>
+    <polygon points="${areaPts}" fill="url(#${gradId})"/>
+    <polyline points="${linePts}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
 function showPeriodReview(kind, label, data){
   document.getElementById('periodReviewTitle').textContent = kind==='monthly' ? 'Monthly Review' : 'Weekly Review';
   document.getElementById('periodReviewSub').textContent = label;
-  const pnlColor = data.pnl>=0 ? 'var(--win-bright)' : 'var(--loss-bright)';
+  const netReturnDisplay = data.netReturnPct!=null
+    ? `${data.netReturnPct>=0?'+':''}${data.netReturnPct.toFixed(2)}%`
+    : `${data.pnl>=0?'+':'-'}${curSym()}${Math.abs(data.pnl).toFixed(0)}`;
+  const netReturnCls = data.pnl>=0 ? 'pos' : 'neg';
+  const pfDisplay = data.profitFactor==null ? '—' : (data.profitFactor===Infinity ? '∞' : data.profitFactor.toFixed(2));
+  const ddDisplay = data.maxDrawdownPct!=null ? `${data.maxDrawdownPct.toFixed(2)}%` : `${curSym()}${data.maxDD.toFixed(0)}`;
+  const winnerDisplay = data.biggestWinnerR!=null ? data.biggestWinnerR.toFixed(2)+'R' : '—';
+  const loserDisplay = data.biggestLoserR!=null ? data.biggestLoserR.toFixed(2)+'R' : '—';
+  const avgRRDisplay = data.avgRR!=null ? data.avgRR.toFixed(2)+'R' : '—';
   let html = `
-    <div class="review-stat-grid">
-      <div class="review-stat"><span class="review-stat-label">Net P/L</span><span class="review-stat-val" style="color:${pnlColor}">${data.pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(data.pnl).toFixed(0)}</span></div>
-      <div class="review-stat"><span class="review-stat-label">Trades</span><span class="review-stat-val">${data.tradeCount}</span></div>
-      <div class="review-stat"><span class="review-stat-label">Win Rate</span><span class="review-stat-val">${data.winRate}%</span></div>
-      <div class="review-stat"><span class="review-stat-label">Avg RR</span><span class="review-stat-val">${data.avgRR!=null?data.avgRR.toFixed(2):'—'}</span></div>
+    <div class="report-card">
+      <div class="report-card-chart">
+        ${buildMiniEquitySparkline(data.trades)}
+        <div class="rc-chart-sub">${data.tradeCount} trade${data.tradeCount===1?'':'s'} this ${kind==='monthly'?'month':'week'}</div>
+      </div>
+      <div class="report-card-stats">
+        <div class="rc-stat"><span class="rc-label">Net Return</span><span class="rc-val ${netReturnCls}">${netReturnDisplay}</span></div>
+        <div class="rc-stat"><span class="rc-label">Profit Factor</span><span class="rc-val">${pfDisplay}</span></div>
+        <div class="rc-stat"><span class="rc-label">Max Drawdown</span><span class="rc-val neg">${ddDisplay}</span></div>
+        <div class="rc-stat"><span class="rc-label">Biggest Winner</span><span class="rc-val pos">${winnerDisplay}</span></div>
+        <div class="rc-stat"><span class="rc-label">Win Rate</span><span class="rc-val">${data.winRate}%</span></div>
+        <div class="rc-stat"><span class="rc-label">Biggest Loser</span><span class="rc-val neg">${loserDisplay}</span></div>
+        <div class="rc-stat wide"><span class="rc-label">Avg R:R</span><span class="rc-val">${avgRRDisplay}</span></div>
+      </div>
     </div>`;
   if(data.bestDay || data.worstDay){
     html += `<div class="review-block">`;
@@ -6140,7 +6224,7 @@ function renderEquityChart(containerId, totalId, subId){
     points.push({x:i+1,y:cum,label:t.date});
   });
 
-  const W = 720, H = 230, padL = 10, padR = 20, padT = 26, padB = 30;
+  const W = 720, H = 230, padL = 10, padR = 20, padT = 44, padB = 30;
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const sx = i => padL + (points.length<=1?0:(i/(points.length-1))*plotW);
 
@@ -6192,7 +6276,7 @@ function renderEquityChart(containerId, totalId, subId){
     const [x1,y1] = sampled[i], [x2,y2] = sampled[i+1];
     const up = y2 <= y1;
     const c = up ? NEON_UP : NEON_DOWN;
-    glowSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="9" stroke-linecap="round"/>`;
+    glowSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="6.5" stroke-linecap="round"/>`;
     coreSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`;
     if(up) hotSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#86efac" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>`;
   }
@@ -6220,36 +6304,50 @@ function renderEquityChart(containerId, totalId, subId){
   container.innerHTML = `
     <svg width="100%" viewBox="0 0 ${W} ${H+6}" style="overflow:visible">
       <defs>
-        <linearGradient id="areaGrad-${containerId}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${overallUp?'rgba(16,185,129,0.38)':'rgba(244,63,94,0.38)'}"/>
-          <stop offset="45%" stop-color="${overallUp?'rgba(16,185,129,0.14)':'rgba(244,63,94,0.14)'}"/>
+        <linearGradient id="areaGrad-${containerId}" gradientUnits="userSpaceOnUse" x1="0" y1="${padT-18}" x2="0" y2="${baseY+plotH*0.35}">
+          <stop offset="0%" stop-color="${overallUp?'rgba(16,185,129,0.30)':'rgba(244,63,94,0.26)'}"/>
+          <stop offset="30%" stop-color="${overallUp?'rgba(16,185,129,0.16)':'rgba(244,63,94,0.14)'}"/>
+          <stop offset="65%" stop-color="${overallUp?'rgba(16,185,129,0.05)':'rgba(244,63,94,0.05)'}"/>
           <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
         </linearGradient>
         <radialGradient id="endBloom-${containerId}" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.55"/>
+          <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.45"/>
           <stop offset="100%" stop-color="${lastColor}" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="reflFade-${containerId}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#fff" stop-opacity="0.5"/>
+          <stop offset="0%" stop-color="#fff" stop-opacity="0.4"/>
           <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
         </linearGradient>
         <mask id="reflMask-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,H+6-baseY)}" fill="url(#reflFade-${containerId})"/></mask>
         <filter id="eqGlow-${containerId}" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blurWide"/>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blurTight"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6.5" result="blurWide"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blurTight"/>
           <feMerge><feMergeNode in="blurWide"/><feMergeNode in="blurTight"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <clipPath id="eqReveal-${containerId}"><rect id="eqRevealRect-${containerId}" x="0" y="0" width="0" height="${H+6}"/></clipPath>
+        <!-- Fades the very top strip of the chart to nothing so the glow
+             dissolves smoothly into the panel instead of hitting a hard
+             edge right where the curve peaks near the top of the plot. -->
+        <linearGradient id="topFade-${containerId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${padT+18}">
+          <stop offset="0%" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="1"/>
+        </linearGradient>
+        <mask id="topFadeMask-${containerId}">
+          <rect x="0" y="0" width="${W}" height="${padT+18}" fill="url(#topFade-${containerId})"/>
+          <rect x="0" y="${padT+18}" width="${W}" height="${H+6-(padT+18)}" fill="#fff"/>
+        </mask>
       </defs>
       ${floorLines}
       <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
       <g clip-path="url(#eqReveal-${containerId})">
-        <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.5">${coreSegs}</g>
-        <path d="${areaPath}" fill="url(#areaGrad-${containerId})"/>
-        <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="30" fill="url(#endBloom-${containerId})"/>
-        <g filter="url(#eqGlow-${containerId})" opacity="0.9">${glowSegs}</g>
-        <g>${coreSegs}</g>
-        <g opacity="0.9">${hotSegs}</g>
+        <g mask="url(#topFadeMask-${containerId})">
+          <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.4">${coreSegs}</g>
+          <path d="${areaPath}" fill="url(#areaGrad-${containerId})"/>
+          <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="28" fill="url(#endBloom-${containerId})"/>
+          <g filter="url(#eqGlow-${containerId})" opacity="0.75">${glowSegs}</g>
+          <g>${coreSegs}</g>
+          <g opacity="0.9">${hotSegs}</g>
+        </g>
         ${markers}
         ${endGlow}
       </g>
