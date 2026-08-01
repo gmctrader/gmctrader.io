@@ -2306,6 +2306,26 @@ function updateCurrencyLabels(){ document.querySelectorAll('.cur-sym').forEach(e
 // Falls back to the personal account currency until one is explicitly set.
 function pfCurSym(pf){ pf = pf || activePropFirm(); const c = pf && pf.currency; return (CURRENCIES[c] || CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol; }
 
+// ---- Per-trade currency (fixes prop-firm trades being mislabeled/mis-summed
+// in the personal account's currency) ----------------------------------
+// A trade logged against a prop firm account was priced and entered in THAT
+// firm's currency (e.g. a $ FTMO account), which can legitimately differ
+// from the trader's personal account currency (e.g. R). Every trade now
+// remembers which account it belongs to (t.account), so we can always look
+// up the currency it was actually denominated in, instead of blindly
+// assuming the personal currency everywhere.
+function tradeAcctCcy(t){
+  if(t && t.account && t.account!=='personal'){
+    const pf = getPropFirm(t.account);
+    if(pf && pf.currency) return pf.currency;
+  }
+  return state.rules.currency || 'USD';
+}
+// Symbol for a single trade's OWN currency — use this next to any figure
+// that shows one specific trade's amount on its own (journal rows, calendar
+// day cards, CSV export), so a $13 prop win is always labelled $13, never R13.
+function tradeCurSym(t){ return (CURRENCIES[tradeAcctCcy(t)] || CURRENCIES.USD).symbol; }
+
 /* ============ ACCOUNT TYPE / LOT SIZE MATH ============ */
 // "Standard" is the default and the reference point every other type is
 // defined against. Pro accounts trade the same 100k-unit contract as
@@ -2379,6 +2399,9 @@ function getCachedFxRate(fromCcy, toCcy){
 function onFxRatesReady(){
   const ordersView = document.getElementById('view-orders');
   if(ordersView && ordersView.classList.contains('active') && typeof updateOrderRRPreview==='function') updateOrderRRPreview();
+  // Any combined P&L total shown before rates loaded was using a same-value
+  // fallback for prop-firm trades in a different currency — correct it now.
+  if(typeof renderAll==='function') renderAll();
 }
 // Exact $ risk and $ reward for a given order: price distance x units-per-lot
 // (scaled for account type) x lot size. Returns null if there isn't enough
@@ -3888,7 +3911,29 @@ function filteredTrades(){
   if(activeTraderFilter==='all') return state.trades;
   return state.trades.filter(t=>t.trader===activeTraderFilter);
 }
-function pnlOf(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0); }
+// Raw amount, in the trade's OWN account currency — exactly what the trader
+// typed in at the time (a $13 prop win stays 13, in $). Pair this with
+// tradeCurSym(t), never curSym(), when showing one trade on its own.
+function pnlOfRaw(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0); }
+// Combined-total amount, converted into the PERSONAL account currency.
+// Dashboards, journal totals, calendar day/month totals and stats all mix
+// trades from the personal account with trades from one or more prop firm
+// accounts that can be denominated in a different currency — summing the
+// raw numbers together (a $13 win + an R50 win = "63") was the bug. This
+// converts every trade into a single common currency (the personal one,
+// which is what curSym() labels everywhere) before it gets added to a
+// total. Falls back to the raw amount only when a live FX rate genuinely
+// isn't available yet (e.g. first load, offline) — a background fetch is
+// kicked off and the view re-renders automatically once the rate lands.
+function pnlOf(t){
+  const raw = pnlOfRaw(t);
+  const fromCcy = tradeAcctCcy(t);
+  const toCcy = state.rules.currency || 'USD';
+  if(fromCcy===toCcy) return raw;
+  const rate = getCachedFxRate(fromCcy, toCcy);
+  if(rate==null){ ensureFxRatesLoaded(); return raw; }
+  return raw*rate;
+}
 
 /* ============ 3D CARD TILT (mouse) + medallion tilt ============ */
 document.addEventListener('mousemove', (e)=>{
@@ -4249,7 +4294,7 @@ function pfDailyPnlSeries(pf){
   // personal trades, and trades logged against a different prop firm account,
   // shouldn't be able to trip (or pad) this account's daily loss / drawdown /
   // profit target math.
-  filteredTrades().filter(t=>t.account===pf.id).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOf(t); });
+  filteredTrades().filter(t=>t.account===pf.id).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOfRaw(t); });
   return Object.keys(byDay).sort().map(date=>({date, pnl: byDay[date]}));
 }
 
@@ -5217,7 +5262,8 @@ function renderJournal(){
     list.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>No trades logged yet.</div>';
   } else {
     list.innerHTML = trades.map(t=>{
-      const pnl = pnlOf(t);
+      const pnl = pnlOfRaw(t);
+      const sym = tradeCurSym(t);
       const typeInfo = STRATEGY_TYPES[t.strategyType];
       return `
       <div class="trade-row">
@@ -5237,7 +5283,7 @@ function renderJournal(){
             ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
           </div>
         </div>
-        <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
+        <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
       </div>`;
     }).join('');
   }
@@ -5473,9 +5519,17 @@ function downloadCSV(filename, rows){
   URL.revokeObjectURL(url);
 }
 function exportTradesCSV(){
-  const rows = [['Date','Time','Result','Trader','Strategy','Strategy Type','RR',`Win ${curSym()}`,`Loss ${curSym()}`,'P/L','Mood','Logic Tags','Notes']];
+  // Win/Loss are exported in each trade's OWN account currency (a prop-firm
+  // trade stays in that firm's $, a personal trade in your R) — so a
+  // "Currency" column is included per row instead of one currency symbol in
+  // the header, which would mislabel any row from a different-currency
+  // account. "P/L (personal ccy)" is the one column that's converted, so
+  // rows from different-currency accounts can still be summed/compared.
+  const rows = [['Date','Time','Result','Trader','Strategy','Strategy Type','RR','Account','Currency','Win','Loss',`P/L (${state.rules.currency||'USD'})`,'Mood','Logic Tags','Notes']];
   filteredTrades().forEach(t=>{
+    const pf = t.account && t.account!=='personal' ? getPropFirm(t.account) : null;
     rows.push([t.date, t.time, t.result, traderName(t.trader), strategyName(t.strategy)||'', t.strategyType||'', t.rr ?? '',
+      pf ? (pf.firmName||'Prop Firm') : 'Personal', tradeAcctCcy(t),
       t.winAmount||0, t.lossAmount||0, pnlOf(t).toFixed(2), t.mood ? (MOOD_LABELS[t.mood]||t.mood) : '', (t.logics||[]).map(logicLabel).join('; '), t.notes||'']);
   });
   downloadCSV('ghost-discipline-trades.csv', rows);
@@ -5778,8 +5832,10 @@ function setEquityStats(trades, maxDD){
   if(!pfEl) return;
   const wins = trades.filter(t=>t.result==='win');
   const losses = trades.filter(t=>t.result==='loss');
-  const grossWin = wins.reduce((s,t)=>s+(parseFloat(t.winAmount)||0),0);
-  const grossLoss = losses.reduce((s,t)=>s+(parseFloat(t.lossAmount)||0),0);
+  // Converted to the personal currency (via pnlOf) so a mix of personal and
+  // prop-firm trades doesn't get summed as if they were the same currency.
+  const grossWin = wins.reduce((s,t)=>s+pnlOf(t),0);
+  const grossLoss = losses.reduce((s,t)=>s+Math.abs(pnlOf(t)),0);
   pfEl.textContent = grossLoss>0 ? (grossWin/grossLoss).toFixed(2) : (grossWin>0?'∞':'—');
   awEl.textContent = curSym()+(wins.length?(grossWin/wins.length).toFixed(0):'0');
   alEl.textContent = curSym()+(losses.length?(grossLoss/losses.length).toFixed(0):'0');
@@ -6321,12 +6377,27 @@ async function submitTrade(){
   }
 
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
+  const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : 'personal';
   state.trades.push({ id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
     screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
-    account: closingOrder ? (closingOrder.account || 'personal') : 'personal' });
+    account: tradeAccount });
   state.day.tradesCount += 1;
-  if(result==='loss'){ state.day.lossUsed = +(state.day.lossUsed + lossAmount).toFixed(2); state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); } else { state.consecutiveLosses = 0; }
+  if(result==='loss'){
+    // The personal "max daily loss" gate is priced in the personal account's
+    // currency. A loss logged against a prop firm account (which can run in
+    // a different currency) needs converting first — otherwise a $13 prop
+    // loss was being added straight onto an R-denominated daily limit as if
+    // it were R13, tripping (or missing) the gate for the wrong reason.
+    let lossForGate = lossAmount;
+    const lossCcy = tradeAccount==='personal' ? (state.rules.currency||'USD') : (getPropFirm(tradeAccount)?.currency || state.rules.currency || 'USD');
+    const personalCcy = state.rules.currency || 'USD';
+    if(lossCcy !== personalCcy){
+      const rate = getCachedFxRate(lossCcy, personalCcy);
+      if(rate!=null) lossForGate = lossAmount*rate; else ensureFxRatesLoaded();
+    }
+    state.day.lossUsed = +(state.day.lossUsed + lossForGate).toFixed(2); state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now();
+  } else { state.consecutiveLosses = 0; }
   archiveDisciplineDay(state.day.date, computeDisciplineScore());
 
   if(closingOrderId){
@@ -6619,7 +6690,7 @@ function showCalDay(iso){
       </div>
     </div>
     <div class="trade-list" style="max-height:260px">
-      ${trades.map(t=>{ const pnl = pnlOf(t); const typeInfo = STRATEGY_TYPES[t.strategyType]; return `
+      ${trades.map(t=>{ const pnl = pnlOfRaw(t); const sym = tradeCurSym(t); const typeInfo = STRATEGY_TYPES[t.strategyType]; return `
         <div class="trade-row">
           ${t.screenshotUrl ? `<img src="${escapeHtml(t.screenshotUrl)}" class="trade-shot" loading="lazy" alt="Chart screenshot" onclick="openScreenshotLightbox('${t.screenshotUrl.replace(/'/g,"\\'")}')">` : ''}
           <div class="trade-badge ${t.result}">${t.result==='win'?'WIN':'LOSS'}</div>
@@ -6637,7 +6708,7 @@ function showCalDay(iso){
               ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
             </div>
           </div>
-          <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
+          <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
         </div>`;}).join('')}
     </div>`;
 }
