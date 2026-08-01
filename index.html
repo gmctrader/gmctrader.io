@@ -584,6 +584,35 @@ a{color:var(--bronze-bright);}
 .stat.bad b{color:var(--loss);}
 .stat.good b{color:var(--win);}
 
+/* ============ HERO STATS (verdict-at-a-glance row) ============ */
+.hero-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+@media(max-width:820px){.hero-row{grid-template-columns:repeat(2,1fr);}}
+.hero-stat{border:1px solid var(--steel);border-radius:var(--r-md);padding:18px 16px;background:var(--panel);
+  box-shadow:0 8px 20px -12px rgba(0,0,0,0.25);transition:transform .2s ease, border-color .2s ease;}
+.hero-stat:hover{transform:translateY(-3px);border-color:var(--steel-hi);}
+.hero-stat .hero-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--slate);font-weight:600;}
+.hero-stat .hero-value{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:var(--platinum);margin-top:6px;line-height:1.1;}
+.hero-stat.pos .hero-value{color:var(--win-bright);}
+.hero-stat.neg .hero-value{color:var(--loss-bright);}
+.hero-stat .hero-sub{font-size:10.5px;color:var(--slate-dim);margin-top:5px;}
+
+/* ============ INSIGHT BANNER (auto-generated "here's what this means" line) ============ */
+.insight-banner{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--steel);border-left:2.5px solid var(--bronze);
+  border-radius:12px;padding:12px 15px;margin-bottom:14px;background:rgba(16,185,129,0.045);font-size:13px;line-height:1.55;color:var(--platinum);}
+.insight-banner .insight-ico{flex-shrink:0;font-size:15px;line-height:1.4;}
+.insight-banner b{color:var(--bronze-bright);}
+
+/* ============ PERSISTENT DISCIPLINE PILL (visible on every view, in sidebar) ============ */
+.side-discipline-pill{display:flex;align-items:center;gap:10px;margin:14px 18px 6px;padding:10px 12px;
+  border:1px solid var(--steel);border-radius:14px;background:rgba(16,185,129,0.05);cursor:pointer;transition:border-color .2s ease, transform .2s ease;}
+.side-discipline-pill:hover{border-color:var(--steel-hi);transform:translateY(-1px);}
+.side-discipline-pill .sdp-streak{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px;color:var(--bronze-bright);white-space:nowrap;}
+.side-discipline-pill .sdp-streak.broken{color:var(--loss-bright);}
+.side-discipline-pill .sdp-divider{width:1px;align-self:stretch;background:var(--steel-hi);}
+.side-discipline-pill .sdp-col{display:flex;flex-direction:column;line-height:1.25;min-width:0;}
+.side-discipline-pill .sdp-col-label{font-size:8.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);}
+.side-discipline-pill .sdp-col-val{font-size:12.5px;font-weight:600;color:var(--platinum);}
+
 .why-banner{
   border:1px solid var(--steel);border-left:2.5px solid var(--bronze);border-radius:12px;
   padding:15px 17px;margin-top:16px;font-style:italic;color:var(--platinum);font-size:13.5px;line-height:1.65;
@@ -984,6 +1013,9 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 }
 .cal-day.win-day .pnl{color:var(--win-bright);}
 .cal-day.loss-day .pnl{color:var(--loss-bright);}
+.cal-heat-legend{display:flex;align-items:center;gap:8px;font-size:9.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.05em;margin:-4px 0 12px;}
+.cal-heat-legend .cal-heat-swatches{display:flex;gap:3px;}
+.cal-heat-legend .cal-heat-swatch{width:14px;height:14px;border-radius:4px;}
 /* Keep cells from feeling cramped when a trader logs many trades / large P&L; numbers abbreviate (see fmtCalPnl) and the grid holds a floor width on tiny screens instead of squashing. */
 @media(max-width:420px){
   .cal-grid{grid-template-columns:repeat(7, minmax(38px,1fr));}
@@ -1290,6 +1322,11 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <span>GMC Traders Desk</span>
       </div>
     </div>
+    <div class="side-discipline-pill" id="sideDisciplinePill" onclick="document.querySelector('.side-navbtn[data-view=dashboard]').click(); toggleSidebar(false);">
+      <div class="sdp-streak" id="sdpStreak">0</div>
+      <div class="sdp-divider"></div>
+      <div class="sdp-col"><span class="sdp-col-label">Discipline</span><span class="sdp-col-val" id="sdpScore">—</span></div>
+    </div>
     <nav class="side-nav" id="sideNav">
       <button class="side-navbtn active" data-view="dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -1393,6 +1430,12 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <select class="trader-filter" id="globalTraderFilter" onchange="onTraderFilterChange()"></select>
           <button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a Trade</button>
         </div>
+      </div>
+      <div class="hero-row" id="heroStatsRow">
+        <div class="hero-stat" id="hero_netPnl"><div class="hero-label">Net P/L</div><div class="hero-value">$0</div><div class="hero-sub">all logged trades</div></div>
+        <div class="hero-stat" id="hero_winRate"><div class="hero-label">Win Rate</div><div class="hero-value">—</div><div class="hero-sub">0 trades</div></div>
+        <div class="hero-stat" id="hero_profitFactor"><div class="hero-label">Profit Factor</div><div class="hero-value">—</div><div class="hero-sub">gross win ÷ gross loss</div></div>
+        <div class="hero-stat" id="hero_avgWinLoss"><div class="hero-label">Avg Win / Loss</div><div class="hero-value">—</div><div class="hero-sub">per-trade average</div></div>
       </div>
       <div class="grid">
         <div class="card tilt">
@@ -1614,11 +1657,13 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
       <div class="card tilt" style="margin-top:18px">
         <h2>Mindset <span class="accent">vs Outcome</span><span class="eyebrow">win rate by emotional state at entry</span></h2>
         <div class="hint" style="margin-bottom:14px">Tag your mindset when you close a trade. Over time this shows whether calm, planned entries actually outperform emotional ones — usually the most honest chart in the whole journal.</div>
+        <div id="moodInsight"></div>
         <div id="moodList"></div>
       </div>
 
       <div class="card tilt" style="margin-top:18px">
         <h2>Timing <span class="accent">Edge</span><span class="eyebrow">performance by hour and day of week</span></h2>
+        <div id="timingInsight"></div>
         <div class="row2">
           <div>
             <div class="hint" style="text-transform:uppercase;letter-spacing:0.08em;font-size:10px;color:var(--slate)">By day of week</div>
@@ -1665,6 +1710,18 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
           <div class="stat" style="flex:none;min-width:110px"><b id="calMonthDiscipline">—</b><span>Avg. discipline</span></div>
         </div>
         <div id="calDisciplineNote" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);margin:-6px 0 10px;">Trial discipline scores are capped at 50/50 — the full 0–100 scale unlocks with real access.</div>
+        <div class="cal-heat-legend">
+          <span>Big loss</span>
+          <div class="cal-heat-swatches">
+            <div class="cal-heat-swatch" style="background:rgba(244,63,94,0.368)"></div>
+            <div class="cal-heat-swatch" style="background:rgba(244,63,94,0.244)"></div>
+            <div class="cal-heat-swatch" style="background:rgba(244,63,94,0.12)"></div>
+            <div class="cal-heat-swatch" style="background:rgba(16,185,129,0.12)"></div>
+            <div class="cal-heat-swatch" style="background:rgba(16,185,129,0.244)"></div>
+            <div class="cal-heat-swatch" style="background:rgba(16,185,129,0.368)"></div>
+          </div>
+          <span>Big win</span>
+        </div>
         <div class="cal-grid" id="calGrid"></div>
         <div class="cal-detail" id="calDetail"><div class="empty-state">Tap a day with trades to see the detail.</div></div>
       </div>
@@ -3889,7 +3946,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
     if(btn.dataset.view==='calendar') renderCalendar();
     if(btn.dataset.view==='brief') renderBrief();
-    if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); }
+    if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
     if(btn.dataset.view==='journal') renderJournal();
     if(btn.dataset.view==='orders') renderOrders();
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
@@ -4025,13 +4082,64 @@ function renderAll(){
   renderDemoStatus();
   updateCurrencyLabels();
   renderTraderFilterOptions();
-  renderDashboard(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
+  renderDashboard(); renderHeroStats(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
   renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
   renderEquityChart('equityChart','equityTotal','equitySub');
-  renderOrders(); renderConfluence();
+  renderOrders(); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown();
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
+}
+/* ============ HERO STATS ROW (verdict-at-a-glance: Net P/L, Win Rate, Profit Factor, Avg Win/Loss) ============ */
+function renderHeroStats(){
+  const row = document.getElementById('heroStatsRow');
+  if(!row) return;
+  const trades = filteredTrades();
+  const wins = trades.filter(t=>t.result==='win');
+  const losses = trades.filter(t=>t.result==='loss');
+  const netPnl = trades.reduce((s,t)=>s+pnlOf(t),0);
+  const grossWin = wins.reduce((s,t)=>s+pnlOf(t),0);
+  const grossLoss = losses.reduce((s,t)=>s+Math.abs(pnlOf(t)),0);
+  const winRate = trades.length ? Math.round(wins.length/trades.length*100) : null;
+  const profitFactor = grossLoss>0 ? (grossWin/grossLoss) : (grossWin>0 ? Infinity : null);
+  const avgWin = wins.length ? grossWin/wins.length : 0;
+  const avgLoss = losses.length ? grossLoss/losses.length : 0;
+
+  const netEl = document.getElementById('hero_netPnl');
+  netEl.className = 'hero-stat' + (netPnl>0?' pos':(netPnl<0?' neg':''));
+  netEl.querySelector('.hero-value').textContent = (netPnl>=0?'+':'-')+curSym()+Math.abs(netPnl).toFixed(0);
+  netEl.querySelector('.hero-sub').textContent = `${trades.length} trade${trades.length!==1?'s':''} logged`;
+
+  const wrEl = document.getElementById('hero_winRate');
+  wrEl.className = 'hero-stat' + (winRate==null?'':(winRate>=50?' pos':' neg'));
+  wrEl.querySelector('.hero-value').textContent = winRate==null ? '—' : winRate+'%';
+  wrEl.querySelector('.hero-sub').textContent = trades.length ? `${wins.length}W / ${losses.length}L` : 'no trades yet';
+
+  const pfEl = document.getElementById('hero_profitFactor');
+  pfEl.className = 'hero-stat' + (profitFactor==null?'':(profitFactor>=1?' pos':' neg'));
+  pfEl.querySelector('.hero-value').textContent = profitFactor==null ? '—' : (profitFactor===Infinity ? '∞' : profitFactor.toFixed(2));
+  pfEl.querySelector('.hero-sub').textContent = 'gross win ÷ gross loss';
+
+  const alEl = document.getElementById('hero_avgWinLoss');
+  const ratio = avgLoss>0 ? (avgWin/avgLoss) : (avgWin>0?Infinity:null);
+  alEl.className = 'hero-stat' + (ratio==null?'':(ratio>=1?' pos':' neg'));
+  alEl.querySelector('.hero-value').textContent = ratio==null ? '—' : (ratio===Infinity?'∞':ratio.toFixed(2)+'x');
+  alEl.querySelector('.hero-sub').textContent = `${curSym()}${avgWin.toFixed(0)} avg win · ${curSym()}${avgLoss.toFixed(0)} avg loss`;
+}
+
+/* ============ PERSISTENT SIDEBAR PILL (streak + discipline score, visible on every view) ============ */
+function updateDisciplinePill(){
+  const streakEl = document.getElementById('sdpStreak');
+  const scoreEl = document.getElementById('sdpScore');
+  if(!streakEl) return;
+  streakEl.textContent = state.streak.count;
+  streakEl.className = 'sdp-streak' + (state.day.ruleBrokenToday ? ' broken' : '');
+  if(state.day.date){
+    const score = capDemoDisciplineScore(computeDisciplineScore());
+    scoreEl.textContent = isDemoMode ? `${score}/50` : score;
+  } else {
+    scoreEl.textContent = '—';
+  }
 }
 function renderDashboard(){
   const prevStreak = parseInt(document.getElementById('streakNum').textContent)||0;
@@ -5542,11 +5650,25 @@ function buildMoodStats(){
 }
 function renderMoodBreakdown(){
   const el = document.getElementById('moodList');
+  const insightEl = document.getElementById('moodInsight');
   if(!el) return;
   const rows = buildMoodStats();
   if(rows.length===0){
     el.innerHTML = '<div class="empty-state">Tag your mindset when closing trades to see this breakdown.</div>';
+    if(insightEl) insightEl.innerHTML = '';
     return;
+  }
+  if(insightEl){
+    const eligible = rows.filter(r=>r.trades>=2);
+    if(eligible.length>=2){
+      const best = eligible.slice().sort((a,b)=>b.winRate-a.winRate)[0];
+      const worst = eligible.slice().sort((a,b)=>a.winRate-b.winRate)[0];
+      if(best.label!==worst.label){
+        insightEl.innerHTML = `<div class="insight-banner"><span class="insight-ico">💡</span><span>You're sharpest trading <b>${best.label}</b> — ${best.winRate}% win rate over ${best.trades} trades. Your worst is <b>${worst.label}</b> at ${worst.winRate}% (${worst.pnl>=0?'+':'-'}${curSym()}${Math.abs(worst.pnl).toFixed(0)} total). That gap is your edge to protect.</span></div>`;
+      } else { insightEl.innerHTML = ''; }
+    } else {
+      insightEl.innerHTML = '<div class="insight-banner"><span class="insight-ico">💡</span><span>Tag at least two different moods over a few trades each and this banner will tell you which mindset is actually making you money.</span></div>';
+    }
   }
   el.innerHTML = rows.map(r=>{
     const barColor = r.winRate>=60 ? 'linear-gradient(90deg,var(--win),var(--win-bright))'
@@ -5601,6 +5723,27 @@ function renderTimingBreakdown(){
   };
   renderTimingRows(dowRows, '#dowTable tbody');
   renderTimingRows(hourRows, '#hourTable tbody');
+
+  const insightEl = document.getElementById('timingInsight');
+  if(insightEl){
+    const dowEligible = dowRows.filter(r=>r.trades>=2);
+    const hourEligible = hourRows.filter(r=>r.trades>=2);
+    if(dowEligible.length>=2 || hourEligible.length>=2){
+      const parts = [];
+      if(dowEligible.length>=2){
+        const bestDow = dowEligible.slice().sort((a,b)=>b.winRate-a.winRate)[0];
+        const worstDow = dowEligible.slice().sort((a,b)=>a.winRate-b.winRate)[0];
+        if(bestDow.name!==worstDow.name) parts.push(`Your best day is <b>${bestDow.name}</b> (${bestDow.winRate}% over ${bestDow.trades} trades) — your worst is <b>${worstDow.name}</b> (${worstDow.winRate}%).`);
+      }
+      if(hourEligible.length>=2){
+        const bestHour = hourEligible.slice().sort((a,b)=>b.winRate-a.winRate)[0];
+        parts.push(`Your sharpest window is around <b>${bestHour.name}</b> — ${bestHour.winRate}% win rate over ${bestHour.trades} trades.`);
+      }
+      insightEl.innerHTML = `<div class="insight-banner"><span class="insight-ico">⏱️</span><span>${parts.join(' ')}</span></div>`;
+    } else {
+      insightEl.innerHTML = '<div class="insight-banner"><span class="insight-ico">⏱️</span><span>Log a few more trades across different days and times — this banner will surface your best and worst windows automatically.</span></div>';
+    }
+  }
 }
 
 /* ============ CSV EXPORT ============ */
@@ -6758,6 +6901,18 @@ function renderCalendar(){
   trades.forEach(t=>{ if(!byDay[t.date]) byDay[t.date]=[]; byDay[t.date].push(t); });
   const grid = document.getElementById('calGrid');
   const dows = ['S','M','T','W','T','F','S'];
+
+  // First pass: compute each day's P/L so shading can be scaled relative to
+  // this month's biggest day, instead of every winning/losing day looking
+  // like the exact same flat color regardless of size.
+  const dayPnls = [];
+  for(let day=1; day<=daysInMonth; day++){
+    const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayTrades = byDay[iso] || [];
+    dayPnls.push(dayTrades.length ? dayTrades.reduce((s,t)=>s+pnlOf(t),0) : null);
+  }
+  const maxAbsPnl = dayPnls.reduce((mx,v)=> v!=null ? Math.max(mx, Math.abs(v)) : mx, 0);
+
   let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=0;i<startDow;i++) html += '<div class="cal-day empty"></div>';
   const disciplineByDay = {};
@@ -6772,9 +6927,16 @@ function renderCalendar(){
     monthPnl += dayPnl; monthTrades += dayTrades.length; monthWins += dayTrades.filter(t=>t.result==='win').length;
     const disc = disciplineByDay[iso];
     let cls = 'cal-day';
+    let heatStyle = '';
     if(dayTrades.length){
       cls += ' has-trades';
       cls += dayPnl>=0 ? ' win-day' : ' loss-day';
+      // Intensity floor of 0.3 so even a small win/loss day is still visibly
+      // tinted (not indistinguishable from an empty day); ceiling of 0.92 so
+      // the biggest day of the month doesn't blow out to solid color.
+      const intensity = maxAbsPnl>0 ? Math.min(0.92, 0.3 + (Math.abs(dayPnl)/maxAbsPnl)*0.62) : 0.3;
+      const rgb = dayPnl>=0 ? '16,185,129' : '244,63,94';
+      heatStyle = ` style="background:rgba(${rgb},${(intensity*0.4).toFixed(2)});border-color:rgba(${rgb},${Math.min(0.85,intensity+0.15).toFixed(2)})"`;
     }
     if(iso===todayIso) cls += ' today';
     let discDot = '';
@@ -6784,7 +6946,7 @@ function renderCalendar(){
       discDot = `<div class="cal-disc-dot" style="background:${tier.color};box-shadow:0 0 7px ${tier.color}" title="Discipline score: ${disc.score}"></div>`;
     }
     const pnlTitle = dayTrades.length ? `${dayTrades.length} trade${dayTrades.length>1?'s':''} · ${dayPnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(dayPnl).toFixed(2)}` : '';
-    html += `<div class="${cls}" ${dayTrades.length?`onclick="handleCalDayTap('${iso}')"`:''} ${pnlTitle?`title="${pnlTitle}"`:''}>
+    html += `<div class="${cls}"${heatStyle} ${dayTrades.length?`onclick="handleCalDayTap('${iso}')"`:''} ${pnlTitle?`title="${pnlTitle}"`:''}>
       ${discDot}
       <div class="n">${day}</div>
       ${dayTrades.length?`<div class="pnl">${fmtCalPnl(dayPnl)}</div>`:''}
