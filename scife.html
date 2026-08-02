@@ -32,7 +32,7 @@ body{
     radial-gradient(ellipse 70% 60% at 0% 100%, rgba(18,185,136,0.08), transparent 60%),
     #03050a;
   color:var(--platinum); font-family:'Instrument Sans',sans-serif; font-size:15px; line-height:1.55;
-  min-height:100vh; -webkit-font-smoothing:antialiased; position:relative;
+  min-height:100vh;min-height:100dvh; -webkit-font-smoothing:antialiased; position:relative;
 }
 /* ---- ambient "inside the machine" atmosphere: perspective floor grid + drifting aurora + fine scanlines ---- */
 body::before{
@@ -70,7 +70,7 @@ button{font-family:inherit;}
 ::-webkit-scrollbar-thumb{background:var(--steel-hi);border-radius:10px;}
 
 /* ---- shared shell ---- */
-.center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1;}
+.center-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1;}
 .gate-card{max-width:440px;width:100%;background:var(--panel);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
   border:1px solid var(--steel-hi);border-radius:var(--r-lg);position:relative;overflow:hidden;
   padding:44px 34px;text-align:center;
@@ -115,7 +115,7 @@ button{font-family:inherit;}
 .toast.show{opacity:1;}
 
 /* ---- main app shell ---- */
-#app{display:none;min-height:100vh;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 16px;position:relative;z-index:1;}
+#app{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 16px;position:relative;z-index:1;}
 .topbar{display:flex;align-items:center;justify-content:space-between;
   padding:calc(16px + env(safe-area-inset-top)) 4px 12px;position:sticky;top:0;
   background:linear-gradient(var(--bg) 65%, transparent);z-index:5;}
@@ -326,6 +326,14 @@ html[data-theme="light"] .toast{color:var(--platinum);}
 
 /* ============ MOBILE ============ */
 button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
+}
+/* the perspective grid + starfield are the heaviest layers to composite every frame;
+   dropping them on small/low-power screens fixes the flicker/stutter some phones show */
+@media (max-width:640px){
+  body::before,body::after{animation:none;}
+}
 #app{padding-bottom:calc(16px + env(safe-area-inset-bottom));}
 @media (max-width:640px){
   /* 16px min font-size on inputs prevents iOS Safari's auto-zoom-on-focus */
