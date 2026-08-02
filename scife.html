@@ -21,7 +21,7 @@
   --gold:#f2c877; --gold-bright:#ffdf9e; --gold-dim:#8a6b28;
   --platinum:#eef6f2; --slate:#8fa6a0; --slate-dim:#5e7772;
   --win:#2be08a; --loss:#ff5d7a; --loss-bright:#ff7a92;
-  --amber:#f0a94e; --r-sm:10px; --r-md:16px; --r-lg:22px;
+  --amber:#f0a94e; --r-sm:10px; --r-md:16px; --r-lg:22px; --bg:#03050a;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;min-height:100%;width:100%;overflow-x:hidden;}
@@ -118,7 +118,7 @@ button{font-family:inherit;}
 #app{display:none;min-height:100vh;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 16px;position:relative;z-index:1;}
 .topbar{display:flex;align-items:center;justify-content:space-between;
   padding:calc(16px + env(safe-area-inset-top)) 4px 12px;position:sticky;top:0;
-  background:linear-gradient(#03050a 65%, transparent);z-index:5;}
+  background:linear-gradient(var(--bg) 65%, transparent);z-index:5;}
 .topbar .back{color:var(--slate);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;
   padding:10px 8px;margin:-10px -8px;border-radius:10px;transition:color .15s,background .15s;}
 .topbar .back:hover{color:var(--bronze-bright);background:rgba(255,255,255,0.03);}
@@ -288,7 +288,7 @@ html[data-theme="light"]{
   --bronze-bright:#0ea37c; --bronze:#0a8f68;
   --gold:#b8862c; --gold-bright:#a8701f;
   --platinum:#132922; --slate:#4c635d; --slate-dim:#7c8f89;
-  --win:#178f57; --amber:#c97f1e;
+  --win:#178f57; --amber:#c97f1e; --bg:#f5f3ec;
 }
 html[data-theme="light"] body{
   background:
