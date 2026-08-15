@@ -1018,14 +1018,27 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 #shotOverlay img{width:100%;max-height:78vh;object-fit:contain;border-radius:12px;display:block;}
 
 /* ============ RISK GAUGE (brass instrument dial, speedometer sweep) ============ */
-.gauge-row{display:flex;gap:24px 20px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
-.gauge-unit{display:flex;flex-direction:column;align-items:center;width:132px;}
-.gauge-dial-wrap{position:relative;width:128px;height:128px;}
-.gauge-svg{position:absolute;top:0;left:0;filter:drop-shadow(0 10px 18px rgba(0,0,0,0.4));}
-.gauge-val{position:relative;z-index:1;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-  font-family:'Fraunces',serif;font-weight:650;font-size:21px;letter-spacing:-0.01em;color:var(--platinum);
-  font-feature-settings:"tnum" 1;white-space:nowrap;overflow:hidden;text-align:center;pointer-events:none;}
-.gauge-cap{font-size:9px;color:var(--slate);text-transform:uppercase;letter-spacing:0.12em;margin-top:9px;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;}
+.gauge-row{display:flex;gap:28px 22px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.gauge-unit{display:flex;flex-direction:column;align-items:center;width:148px;}
+.gauge-dial-wrap{position:relative;width:140px;height:140px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  user-select:none;transition:transform .18s cubic-bezier(.2,.8,.2,1);}
+.gauge-dial-wrap::after{
+  content:'';position:absolute;inset:10px;border-radius:50%;pointer-events:none;z-index:1;
+  background:radial-gradient(ellipse 55% 34% at 30% 20%, rgba(255,255,255,0.38), transparent 62%);
+  mix-blend-mode:screen;opacity:0.85;
+}
+.gauge-dial-wrap:hover{transform:translateY(-3px);}
+.gauge-dial-wrap:active{transform:translateY(1px) scale(0.965);}
+.gauge-svg{position:absolute;top:0;left:0;filter:drop-shadow(0 18px 28px rgba(0,0,0,0.48));transition:filter .25s ease;}
+@keyframes gaugeTapFlash{ 0%{filter:drop-shadow(0 18px 28px rgba(0,0,0,0.48)) brightness(1);}
+  32%{filter:drop-shadow(0 18px 28px rgba(0,0,0,0.48)) brightness(1.4) saturate(1.25);}
+  100%{filter:drop-shadow(0 18px 28px rgba(0,0,0,0.48)) brightness(1);} }
+.gauge-dial-wrap.gauge-tapped .gauge-svg{animation:gaugeTapFlash .6s cubic-bezier(.2,.7,.2,1);}
+.gauge-val{position:relative;z-index:2;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:650;font-size:22px;letter-spacing:-0.01em;color:var(--platinum);
+  font-feature-settings:"tnum" 1;white-space:nowrap;overflow:hidden;text-align:center;pointer-events:none;
+  text-shadow:0 2px 10px rgba(0,0,0,0.35);}
+.gauge-cap{font-size:9.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.12em;margin-top:12px;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;}
 
 /* ============ DISCIPLINE SCORE DIAL (3D instrument) ============ */
 .score-card{border-color:rgba(16,185,129,0.22);box-shadow:0 16px 34px rgba(15,23,22,0.09), 0 0 50px rgba(16,185,129,0.05), 0 2px 0 rgba(255,255,255,0.6) inset;}
@@ -6519,7 +6532,7 @@ const gaugeTokens = {};  // id -> bumped on every render so stale animation loop
 function fitGaugeText(el){
   const inner = el.firstElementChild;
   if(!inner) return;
-  const maxWidth = 92;
+  const maxWidth = 100;
   let size = 21;
   inner.style.fontSize = size + 'px';
   while(inner.scrollWidth > maxWidth && size > 10){
@@ -6529,36 +6542,59 @@ function fitGaugeText(el){
 }
 
 function ringGauge(pct, colorClass, id){
-  const r = 46, C = 2*Math.PI*r;
+  const cx=70, cy=70, r=50, C=2*Math.PI*r, arcTotal=C*0.75;
   pct = Math.max(0, Math.min(1, pct));
-  const dash = C*pct;
+  const dash = arcTotal*pct;
   const stops = colorClass==='bad' ? ['#f9a8b4','#f43f5e']
     : colorClass==='warn' ? ['#ffd39a','#f5a623']
     : ['#34d399','#2dd4bf'];
-  const glow = colorClass==='bad' ? 'rgba(244,63,94,0.55)' : colorClass==='warn' ? 'rgba(245,166,35,0.5)' : 'rgba(16,185,129,0.5)';
+  const glow = colorClass==='bad' ? 'rgba(244,63,94,0.6)' : colorClass==='warn' ? 'rgba(245,166,35,0.55)' : 'rgba(16,185,129,0.55)';
+  const angle = -135 + pct*270;
+  // Five static tick marks spanning the 270° sweep (0/25/50/75/100%), drawn
+  // as short radial lines just inside the bezel rim, for the instrument-panel feel.
+  const ticks = [0,0.25,0.5,0.75,1].map(t=>{
+    const a = -135 + t*270;
+    return `<line x1="${cx}" y1="${cy-58}" x2="${cx}" y2="${cy-52}" stroke="rgba(255,255,255,0.28)" stroke-width="1.6" stroke-linecap="round" transform="rotate(${a} ${cx} ${cy})"/>`;
+  }).join('');
   return `
-  <svg class="gauge-svg" width="128" height="128" viewBox="0 0 128 128">
+  <svg class="gauge-svg" width="140" height="140" viewBox="0 0 140 140">
     <defs>
-      <radialGradient id="bezel-${id}" cx="50%" cy="35%" r="70%">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.10)"/>
-        <stop offset="100%" stop-color="rgba(0,0,0,0.35)"/>
+      <radialGradient id="bezel-${id}" cx="34%" cy="26%" r="78%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.16)"/>
+        <stop offset="45%" stop-color="rgba(20,30,28,0.42)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.6)"/>
       </radialGradient>
+      <linearGradient id="rim-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
+        <stop offset="45%" stop-color="rgba(255,255,255,0.06)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.5)"/>
+      </linearGradient>
       <linearGradient id="ring-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="${stops[0]}"/>
         <stop offset="100%" stop-color="${stops[1]}"/>
       </linearGradient>
     </defs>
-    <circle cx="64" cy="64" r="58" fill="url(#bezel-${id})" stroke="var(--steel-hi)" stroke-width="1"/>
-    <circle cx="64" cy="64" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="9"/>
-    <circle id="arc-${id}" cx="64" cy="64" r="46" fill="none" stroke="url(#ring-${id})" stroke-width="9" stroke-linecap="round"
-      stroke-dasharray="${dash} ${C-dash}" transform="rotate(-90 64 64)" style="filter:drop-shadow(0 0 7px ${glow})"/>
+    <circle cx="${cx}" cy="${cy}" r="66" fill="url(#bezel-${id})" stroke="url(#rim-${id})" stroke-width="2"/>
+    <circle cx="${cx}" cy="${cy}" r="61" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>
+    ${ticks}
+    <circle id="arcbg-${id}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="10"
+      stroke-dasharray="${arcTotal} ${C-arcTotal}" stroke-linecap="round" transform="rotate(135 ${cx} ${cy})"/>
+    <circle id="arc-${id}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#ring-${id})" stroke-width="10" stroke-linecap="round"
+      stroke-dasharray="${dash} ${C-dash}" transform="rotate(135 ${cx} ${cy})" style="filter:drop-shadow(0 0 8px ${glow})"/>
+    <g id="ptr-${id}" transform="rotate(${angle} ${cx} ${cy})">
+      <line x1="${cx}" y1="${cy-31}" x2="${cx}" y2="${cy-52}" stroke="url(#ring-${id})" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 0 6px ${glow})"/>
+      <circle cx="${cx}" cy="${cy-52}" r="4" fill="url(#ring-${id})" style="filter:drop-shadow(0 0 7px ${glow})"/>
+      <circle cx="${cx}" cy="${cy-52}" r="1.6" fill="rgba(255,255,255,0.85)"/>
+    </g>
+    <circle cx="${cx}" cy="${cy}" r="6" fill="rgba(10,15,14,0.85)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
   </svg>`;
 }
 
-// Sweeps the ring + counts the number from wherever it last settled to the new target —
-// this is what gives the speedometer-needle feel instead of an abrupt jump.
+// Sweeps the ring + needle + counts the number from wherever it last settled to the new
+// target — this is what gives the speedometer feel instead of an abrupt jump.
 function animateGaugeTo(unit){
   const arcEl = document.getElementById('arc-'+unit.id);
+  const ptrEl = document.getElementById('ptr-'+unit.id);
   const valEl = document.getElementById('val-'+unit.id);
   if(!arcEl || !valEl) return;
 
@@ -6566,16 +6602,22 @@ function animateGaugeTo(unit){
   const stops = unit.cls==='bad' ? ['#f9a8b4','#f43f5e']
     : unit.cls==='warn' ? ['#ffd39a','#f5a623']
     : ['#34d399','#2dd4bf'];
-  const glow = unit.cls==='bad' ? 'rgba(244,63,94,0.55)' : unit.cls==='warn' ? 'rgba(245,166,35,0.5)' : 'rgba(16,185,129,0.5)';
+  const glow = unit.cls==='bad' ? 'rgba(244,63,94,0.6)' : unit.cls==='warn' ? 'rgba(245,166,35,0.55)' : 'rgba(16,185,129,0.55)';
   const gradEl = document.getElementById('ring-'+unit.id);
   if(gradEl){
     const stopEls = gradEl.querySelectorAll('stop');
     if(stopEls[0]) stopEls[0].setAttribute('stop-color', stops[0]);
     if(stopEls[1]) stopEls[1].setAttribute('stop-color', stops[1]);
   }
-  arcEl.style.filter = `drop-shadow(0 0 7px ${glow})`;
+  arcEl.style.filter = `drop-shadow(0 0 8px ${glow})`;
+  if(ptrEl){
+    const line = ptrEl.querySelector('line');
+    const dot = ptrEl.querySelector('circle');
+    if(line) line.style.filter = `drop-shadow(0 0 6px ${glow})`;
+    if(dot) dot.style.filter = `drop-shadow(0 0 7px ${glow})`;
+  }
 
-  const r = 46, C = 2*Math.PI*r;
+  const cx=70, cy=70, r=50, C=2*Math.PI*r, arcTotal=C*0.75;
   const prev = gaugeState[unit.id] || { pct:0, raw:0 };
   const fromPct = prev.pct, fromRaw = prev.raw;
   const toPct = Math.max(0, Math.min(1, unit.pct));
@@ -6585,8 +6627,10 @@ function animateGaugeTo(unit){
   const dur = 850;
 
   function apply(pct, raw){
-    const dash = C*Math.max(0, Math.min(1, pct));
+    const p = Math.max(0, Math.min(1, pct));
+    const dash = arcTotal*p;
     arcEl.setAttribute('stroke-dasharray', `${dash.toFixed(2)} ${(C-dash).toFixed(2)}`);
+    if(ptrEl) ptrEl.setAttribute('transform', `rotate(${(-135 + p*270).toFixed(2)} ${cx} ${cy})`);
     valEl.innerHTML = `<span>${unit.format(raw)}</span>`;
     fitGaugeText(valEl);
   }
@@ -6604,6 +6648,45 @@ function animateGaugeTo(unit){
     }
   }
   requestAnimationFrame(tick);
+}
+
+// Tap-to-kick: jolts the needle past its true reading and lets it spring back,
+// the way tapping the glass on a real analog gauge makes the needle twitch.
+// Purely a tactile flourish — it always settles back on the true value.
+const lastGaugeUnits = {};
+function kickGauge(id){
+  const unit = lastGaugeUnits[id];
+  const arcEl = document.getElementById('arc-'+id);
+  const ptrEl = document.getElementById('ptr-'+id);
+  if(!unit || !arcEl) return;
+  const wrap = arcEl.closest('.gauge-dial-wrap');
+  if(wrap){
+    wrap.classList.remove('gauge-tapped');
+    void wrap.offsetWidth;
+    wrap.classList.add('gauge-tapped');
+  }
+  const cx=70, cy=70, r=50, C=2*Math.PI*r, arcTotal=C*0.75;
+  const truePct = Math.max(0, Math.min(1, unit.pct));
+  const overPct = Math.min(1, truePct + 0.14 + (1-truePct)*0.05);
+  const token = (gaugeTokens[id] = (gaugeTokens[id]||0) + 1);
+  const start = performance.now();
+  const dOut = 190, dBack = 430;
+  function setPct(p){
+    p = Math.max(0, Math.min(1, p));
+    const dash = arcTotal*p;
+    arcEl.setAttribute('stroke-dasharray', `${dash.toFixed(2)} ${(C-dash).toFixed(2)}`);
+    if(ptrEl) ptrEl.setAttribute('transform', `rotate(${(-135 + p*270).toFixed(2)} ${cx} ${cy})`);
+  }
+  function tick(now){
+    if(gaugeTokens[id] !== token) return;
+    const el = now - start;
+    if(el < dOut){ setPct(truePct + (overPct-truePct)*easeOutCubic(el/dOut)); }
+    else if(el < dOut+dBack){ setPct(overPct + (truePct-overPct)*easeOutBack((el-dOut)/dBack)); }
+    else { setPct(truePct); gaugeState[id] = { pct: truePct, raw: unit.raw }; return; }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(e){} }
 }
 
 function renderGauges(){
@@ -6658,7 +6741,7 @@ function renderGauges(){
     row.dataset.ids = wantIds;
     row.innerHTML = units.map(u=>`
       <div class="gauge-unit">
-        <div class="gauge-dial-wrap">
+        <div class="gauge-dial-wrap" onclick="kickGauge('${u.id}')" title="Tap the dial">
           ${ringGauge(0, u.cls, u.id)}
           <div class="gauge-val" id="val-${u.id}"><span></span></div>
         </div>
@@ -6669,7 +6752,7 @@ function renderGauges(){
     units.forEach((u,i)=>{ if(caps[i] && caps[i].textContent !== u.cap) caps[i].textContent = u.cap; });
   }
 
-  units.forEach(u=> animateGaugeTo(u));
+  units.forEach(u=>{ lastGaugeUnits[u.id] = u; animateGaugeTo(u); });
 }
 
 /* ============ SESSION CLOCK ============ */
