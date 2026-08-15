@@ -2256,10 +2256,14 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
         <label>Trader</label>
         <select id="t_trader"></select>
       </div>
-      <div class="field quicklog-hide" id="t_strategyFieldWrap">
-        <label>Strategy</label>
-        <select id="t_strategy" onchange="onStrategyChange()"></select>
+      <div class="field" id="t_accountFieldWrap">
+        <label>Account <span class="hint-inline">whose rules apply</span></label>
+        <select id="t_account" onchange="onTradeAccountChange()"></select>
       </div>
+    </div>
+    <div class="field quicklog-hide" id="t_strategyFieldWrap">
+      <label>Strategy</label>
+      <select id="t_strategy" onchange="onStrategyChange()"></select>
     </div>
     <div class="field quicklog-hide">
       <label>Logic used for this trade <span class="hint-inline">tap what applied</span></label>
@@ -3057,6 +3061,12 @@ function applyDemoLocks(){
     if(field) field.classList.toggle('field-locked', isDemoMode);
   });
   updateOrderLotAcctHint();
+  const tAcctEl = document.getElementById('t_account');
+  if(tAcctEl && !tAcctEl.disabled){
+    if(isDemoMode) tAcctEl.value = 'personal';
+    const tAcctWrap = document.getElementById('t_accountFieldWrap');
+    if(tAcctWrap) tAcctWrap.classList.toggle('field-locked', isDemoMode);
+  }
   const logicGrid = document.getElementById('orderLogicChoices');
   if(logicGrid){
     const field = logicGrid.closest('.field');
@@ -3107,6 +3117,7 @@ function setupDemoFieldGuards(){
     { id:'o_sl', label:'Stop Loss' },
     { id:'o_tp', label:'Take Profit' },
     { id:'o_account', label:'Account', msg:'Prop Firm accounts are configured in the Prop Firm Compliance room, which is for real accounts only — every Proving Ground order trades your personal $1,000 USD demo balance. It unlocks fully with real access.' },
+    { id:'t_account', label:'Account', msg:'Prop Firm accounts are configured in the Prop Firm Compliance room, which is for real accounts only — every Proving Ground trade logs against your personal $1,000 USD demo balance. It unlocks fully with real access.' },
     { id:'p_monk', label:'Monk Code' },
     { id:'g_currency', label:'Account currency', msg:accountLockCopy },
     { id:'g_accountBalance', label:'Account balance', msg:accountLockCopy },
@@ -5051,6 +5062,26 @@ function populateTradeSelectors(){
     onOrderStrategyChange();
   }
   renderOrderAccountOptions();
+  renderTradeAccountOptions();
+}
+// Keeps the Log Trade modal's Account selector in sync with whatever's
+// actually configured in Prop Firm Compliance — mirrors renderOrderAccountOptions
+// below. This is what was missing: without it, every trade logged straight
+// from "Log a Trade" (rather than by closing an Order Book order) was always
+// silently tagged 'personal', so a prop firm account's Overall Drawdown /
+// Daily Loss / Profit Target never moved from directly-logged trades.
+function renderTradeAccountOptions(){
+  const sel = document.getElementById('t_account');
+  if(!sel) return;
+  const prevVal = sel.value || 'personal';
+  const opts = ['<option value="personal">Personal</option>']
+    .concat((state.propFirms||[]).map(pf=>`<option value="${pf.id}">Prop Firm — ${escapeHtml(pf.firmName || 'Unnamed account')}</option>`));
+  sel.innerHTML = opts.join('');
+  const stillValid = !isDemoMode && prevVal!=='personal' && !!getPropFirm(prevVal);
+  sel.value = stillValid ? prevVal : 'personal';
+}
+function onTradeAccountChange(){
+  updateTradeRiskPreview();
 }
 // Keeps the Order Book's Account selector in sync with whatever's actually
 // configured in Prop Firm Compliance — shows the real firm name once it's
@@ -5098,13 +5129,16 @@ function updateTradeRiskPreview(){
   const opt = sSel.options[sSel.selectedIndex];
   const stratRisk = opt ? parseFloat(opt.dataset.risk) : NaN;
   const pct = !isNaN(stratRisk) ? stratRisk : state.rules.riskPerTrade;
-  // If this trade is closing an order placed against the prop firm account,
-  // price the risk preview off that account's balance/currency instead of
-  // the personal one — otherwise the auto-filled loss/win amount silently
-  // reflects the wrong account.
+  // Price the risk preview off whichever account this trade is tagged to —
+  // either the order being closed (locked, if closing a pending order) or
+  // whatever's picked in the Account field for a direct "Log a Trade" entry —
+  // instead of always assuming personal. Otherwise the auto-filled loss/win
+  // amount silently reflects the wrong account's balance/currency.
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
-  const isPropFirm = !!(closingOrder && closingOrder.account && closingOrder.account!=='personal');
-  const closingOrderPf = isPropFirm ? getPropFirm(closingOrder.account) : null;
+  const tAcctSel = document.getElementById('t_account');
+  const selectedAccountId = closingOrder ? (closingOrder.account || 'personal') : ((tAcctSel && tAcctSel.value) || 'personal');
+  const isPropFirm = selectedAccountId !== 'personal';
+  const closingOrderPf = isPropFirm ? getPropFirm(selectedAccountId) : null;
   const balance = isPropFirm ? propFirmLiveBalance(closingOrderPf) : state.rules.accountBalance;
   const sym = isPropFirm ? pfCurSym(closingOrderPf) : curSym();
   const d = riskDollar(balance, pct);
@@ -6816,6 +6850,10 @@ function proceedToTrade(){
   document.getElementById('t_result').value='win'; onResultChange();
   resetMoodChoices(pretradeMood);
   populateTradeSelectors();
+  const tAcctEl = document.getElementById('t_account');
+  if(tAcctEl){ tAcctEl.disabled = false; tAcctEl.value = 'personal'; renderTradeAccountOptions(); }
+  const tAcctWrap = document.getElementById('t_accountFieldWrap');
+  if(tAcctWrap) tAcctWrap.classList.remove('field-locked');
   updateTradeRiskPreview();
   onStrategyChange();
   clearTradeScreenshot();
@@ -6959,7 +6997,8 @@ async function submitTrade(){
   }
 
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
-  const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : 'personal';
+  const tAccountSel = document.getElementById('t_account');
+  const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : ((tAccountSel && tAccountSel.value) || 'personal');
   const newTrade = { id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
     screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
@@ -7157,6 +7196,10 @@ function closeOrder(id, result){
   closingOrderId = id;
   populateTradeSelectors();
   document.getElementById('t_trader').value = order.trader;
+  const tAcctEl = document.getElementById('t_account');
+  if(tAcctEl){ tAcctEl.value = order.account || 'personal'; tAcctEl.disabled = true; }
+  const tAcctWrap = document.getElementById('t_accountFieldWrap');
+  if(tAcctWrap) tAcctWrap.classList.add('field-locked');
   document.getElementById('t_strategy').value = order.strategy || '';
   onStrategyChange();
   const preselected = order.logics || [];
