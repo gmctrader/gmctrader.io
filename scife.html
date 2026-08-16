@@ -281,6 +281,29 @@ button{font-family:inherit;}
 .key-link{font-size:12px;margin-top:6px;display:inline-block;text-decoration:none;font-weight:600;}
 .key-link:hover{text-decoration:underline;}
 
+/* ---- signal page ---- */
+.sig-textarea{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--steel-hi);background:rgba(255,255,255,0.03);
+  font-family:inherit;font-size:14px;color:var(--platinum);outline:none;resize:vertical;transition:border-color .15s, box-shadow .15s;}
+.sig-textarea:focus{border-color:var(--bronze);box-shadow:0 0 0 3px rgba(18,185,136,0.18);}
+.sig-disclaimer{padding:11px 13px;border-radius:11px;background:rgba(240,169,78,0.08);border:1px solid rgba(240,169,78,0.25);color:var(--slate);}
+.sig-bias{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14.5px;margin-bottom:16px;}
+.sig-bias.long{background:rgba(43,224,138,0.14);color:var(--win);border:1px solid rgba(43,224,138,0.35);}
+.sig-bias.short{background:rgba(255,93,122,0.14);color:var(--loss-bright);border:1px solid rgba(255,93,122,0.35);}
+.sig-bias.no_trade{background:rgba(240,169,78,0.14);color:var(--amber);border:1px solid rgba(240,169,78,0.35);}
+.sig-confbar{height:8px;border-radius:99px;background:var(--steel-hi);overflow:hidden;margin:6px 0 6px;}
+.sig-confbar-fill{height:100%;background:linear-gradient(90deg,var(--bronze),var(--gold));transition:width .4s ease;}
+.sig-check-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--steel);}
+.sig-check-row:last-child{border-bottom:none;}
+.sig-check-icon{flex:none;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px;}
+.sig-check-icon.present{background:rgba(43,224,138,0.18);color:var(--win);}
+.sig-check-icon.absent{background:rgba(255,93,122,0.18);color:var(--loss-bright);}
+.sig-check-icon.unclear{background:rgba(240,169,78,0.18);color:var(--amber);}
+.sig-check-label{font-weight:600;font-size:13.5px;}
+.sig-check-note{font-size:12.5px;color:var(--slate);margin-top:2px;}
+.sig-block{margin-bottom:16px;}
+.sig-block-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;}
+.sig-block-text{font-size:14px;line-height:1.5;}
+
 /* ============ LIGHT THEME ============ */
 html[data-theme="light"]{
   --steel:rgba(15,60,50,0.10); --steel-hi:rgba(15,60,50,0.18);
@@ -312,7 +335,9 @@ html[data-theme="light"] body::after{
     radial-gradient(1px 1px at 20% 90%, rgba(19,41,34,0.2), transparent);
 }
 html[data-theme="light"] .field input,
-html[data-theme="light"] .field select{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .field select,
+html[data-theme="light"] .sig-textarea{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .sig-disclaimer{color:var(--slate);}
 html[data-theme="light"] .field select option{background:#ffffff;color:var(--platinum);}
 html[data-theme="light"] .btn-ghost{background:rgba(15,60,50,0.045);}
 html[data-theme="light"] .btn-ghost:hover{background:rgba(15,60,50,0.08);}
@@ -397,7 +422,10 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   <div class="topbar">
     <a class="back" href="index.html">← Ghost Discipline</a>
     <div class="title serif">SciFe</div>
-    <div class="icon-btn" onclick="openSettings()" title="Settings">⚙</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="icon-btn" onclick="openSignalPage()" title="Signal">🎯</div>
+      <div class="icon-btn" onclick="openSettings()" title="Settings">⚙</div>
+    </div>
   </div>
 
   <div class="stage-3d-wrap" id="stage3dWrap">
@@ -427,6 +455,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
     <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
     <div class="quick-chip" onclick="quickAsk('news')">⚡ News/events coming up</div>
+    <div class="quick-chip" onclick="openSignalPage()">🎯 Analyze a setup</div>
   </div>
 
   <div class="chat" id="chatLog"></div>
@@ -439,6 +468,47 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
       <button class="send-btn" id="sendBtn" onclick="sendTyped()">➤</button>
     </div>
   </div>
+</div>
+
+<!-- ============ SIGNAL PAGE (strategy-based setup analysis) ============
+     No live chart/price feed exists anywhere in this app — this page does
+     NOT auto-detect anything. It takes what the trader types about a setup,
+     checks it against the exact confluence checklist their chosen strategy
+     is built from (same STRATEGY_TYPES logic set as the Playbook in
+     index.html), weighs it against their real track record on that
+     strategy and the live economic calendar already wired up above, and
+     returns a structured, honest readout — not an auto-signal. -->
+<div id="signalPage" style="display:none;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 24px;position:relative;z-index:1;min-height:100vh;min-height:100dvh;">
+  <div class="topbar">
+    <div class="icon-btn" onclick="closeSignalPage()" title="Back to chat">←</div>
+    <div class="title serif">Signal</div>
+    <div style="width:36px;"></div>
+  </div>
+
+  <div class="sig-disclaimer mono" style="font-size:12px;margin:2px 0 20px;">
+    No live chart or price feed — SciFe only reads what you describe below, checked against your strategy's own rules. Accuracy depends entirely on your description. Not financial advice.
+  </div>
+
+  <div class="field">
+    <label>Strategy</label>
+    <select id="sig_strategy" onchange="onSignalStrategyChange()"></select>
+    <div class="hint" id="sig_strategyChecklist"></div>
+  </div>
+
+  <div class="field">
+    <label>Pair / instrument</label>
+    <input type="text" id="sig_pair" placeholder="e.g. EURUSD, XAUUSD, NAS100" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>What are you seeing?</label>
+    <textarea id="sig_desc" class="sig-textarea" rows="6" placeholder="HTF bias, recent structure (BOS/CHoCH), where price sits relative to your key levels (order block, FVG, liquidity), current price..."></textarea>
+  </div>
+
+  <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()">Analyze setup</button>
+  <div class="hint" id="sig_error" style="display:none;color:var(--loss-bright);margin-top:10px;"></div>
+
+  <div id="sig_result" style="display:none;margin-top:24px;"></div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -1128,6 +1198,147 @@ Rules: pnl is a signed number in account currency (positive for a win, negative 
 
 MEMORY FROM PAST SESSIONS:
 ${memNotes}`;
+}
+
+/* ============ SIGNAL PAGE ============
+   Mirrors STRATEGY_TYPES.<type>.logics from index.html's Playbook — keep
+   these two lists in sync if the Playbook's logic sets ever change, since
+   this is what SciFe checks a description against for a given strategy type. */
+const SIGNAL_LOGIC_SETS = {
+  gmc: [ {id:'swings',label:'Swings'}, {id:'bos',label:'Break of Structure (BOS)'}, {id:'choch',label:'Change of Character (CHoCH)'}, {id:'orderblock',label:'Order Block'}, {id:'hiddensupply',label:'Hidden Supply Zone'}, {id:'hiddendemand',label:'Hidden Demand Zone'}, {id:'eqhigh',label:'Equal High'}, {id:'eqlow',label:'Equal Low'}, {id:'imbalance',label:'Imbalance'}, {id:'fibonacci',label:'Fibonacci Retracement'} ],
+  smc: [ {id:'liquiditygrab',label:'Liquidity Grab'}, {id:'smc_orderblock',label:'Order Block'}, {id:'smc_fvg',label:'Fair Value Gap (FVG)'}, {id:'smc_bos',label:'Break of Structure (BOS)'}, {id:'smc_choch',label:'Change of Character (CHoCH)'}, {id:'mitigation',label:'Mitigation Block'} ],
+  ict: [ {id:'ict_orderblock',label:'Order Block'}, {id:'ict_fvg',label:'Fair Value Gap (FVG)'}, {id:'liquiditysweep',label:'Liquidity Sweep'}, {id:'ote',label:'Optimal Trade Entry (OTE)'}, {id:'killzone',label:'Killzone Timing'}, {id:'breaker',label:'Breaker Block'} ],
+  ta: [ {id:'supres',label:'Support / Resistance'}, {id:'trendline',label:'Trendline'}, {id:'chartpattern',label:'Chart Pattern'}, {id:'indicator',label:'Indicator Signal'}, {id:'macross',label:'Moving Average Cross'}, {id:'volume',label:'Volume Confirmation'} ],
+  fundamentals: [ {id:'newsevent',label:'News Event'}, {id:'ratedecision',label:'Interest Rate Decision'}, {id:'econdata',label:'Economic Data Release'}, {id:'cbpolicy',label:'Central Bank Policy'}, {id:'geopolitical',label:'Geopolitical Event'}, {id:'earnings',label:'Earnings Report'} ]
+};
+function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+
+function openSignalPage(){
+  const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
+  if(!strategies.length) showToast('Add a strategy in Ghost Discipline first, then come back here.');
+  populateSignalStrategySelect();
+  document.getElementById('app').style.display='none';
+  document.getElementById('signalPage').style.display='flex';
+}
+function closeSignalPage(){
+  document.getElementById('signalPage').style.display='none';
+  document.getElementById('app').style.display='flex';
+}
+function populateSignalStrategySelect(){
+  const sel = document.getElementById('sig_strategy');
+  const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
+  sel.innerHTML = strategies.length
+    ? strategies.map(s=>`<option value="${s.id}">${sigEsc(s.name)}</option>`).join('')
+    : '<option value="">No strategies saved yet</option>';
+  onSignalStrategyChange();
+}
+function onSignalStrategyChange(){
+  const sel = document.getElementById('sig_strategy');
+  const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
+  const strat = strategies.find(s=>s.id===sel.value);
+  const hint = document.getElementById('sig_strategyChecklist');
+  if(!strat){ hint.textContent=''; return; }
+  const set = SIGNAL_LOGIC_SETS[strat.type];
+  hint.textContent = set ? ('Checked against: ' + set.map(l=>l.label).join(' · ')) : 'Custom strategy — SciFe judges it from your saved notes alone.';
+}
+// Real track record on this exact strategy, so confidence stays honest
+// instead of just optimistic — same trades array the journal snapshot uses.
+function summarizeStrategyPerformance(strategyId){
+  const trades = ((traderRow && traderRow.trades) || []).filter(t=>t.strategy===strategyId);
+  if(!trades.length) return 'TRACK RECORD ON THIS STRATEGY: no trades logged yet — treat confidence conservatively.';
+  const wins = trades.filter(t=>t.result==='win').length;
+  const winRate = Math.round((wins/trades.length)*100);
+  const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
+  return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
+}
+function buildSignalSystemPrompt(strategy){
+  const set = SIGNAL_LOGIC_SETS[strategy.type];
+  const logicList = set ? set.map(l=>`${l.id}: ${l.label}`).join('\n') : '(no fixed checklist for this custom strategy type — judge only against the notes below)';
+  return `You are SciFe running strict setup analysis inside Ghost Discipline. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, nothing before or after it.
+
+You have no live chart or price feed of your own. You can only reason over what the trader typed below — be honest about that limit. If the description is too thin to judge a concept, mark it "unclear" rather than guessing or inventing detail that wasn't given.
+
+STRATEGY: "${strategy.name}" (${strategy.type ? strategy.type.toUpperCase() : 'custom'})
+Strategy notes: ${strategy.notes || 'none provided'}
+Checklist to evaluate — one verdict per line, in this exact order:
+${logicList}
+
+${summarizeStrategyPerformance(strategy.id)}
+
+${summarizeEconomicCalendar()}
+Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this setup.
+
+Return exactly this JSON shape:
+{"bias":"long"|"short"|"no_trade","confidence":0,"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+checklist must have exactly one entry per line listed above, same order, exact "id" values given. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low, and bias should usually be "no_trade" in that case. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
+}
+function extractJson(text){
+  if(!text) return null;
+  const start = text.indexOf('{'), end = text.lastIndexOf('}');
+  if(start===-1 || end===-1 || end<start) return null;
+  try{ return JSON.parse(text.slice(start, end+1)); }catch(e){ return null; }
+}
+async function analyzeSignal(){
+  if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
+  const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
+  const strategy = strategies.find(s=>s.id===document.getElementById('sig_strategy').value);
+  if(!strategy){ showToast('Pick a strategy first'); return; }
+  const pair = document.getElementById('sig_pair').value.trim();
+  const desc = document.getElementById('sig_desc').value.trim();
+  if(!desc){ showToast("Describe what you're seeing first"); return; }
+  const btn = document.getElementById('sig_analyzeBtn');
+  const errEl = document.getElementById('sig_error');
+  btn.disabled = true; btn.textContent = 'Analyzing…';
+  errEl.style.display = 'none';
+  document.getElementById('sig_result').style.display = 'none';
+  try{
+    await ensureEconomicCalendar();
+    const userMsg = `Pair/instrument: ${pair || 'not specified'}\nWhat I'm seeing:\n${desc}`;
+    const raw = await chatCompletion(buildSignalSystemPrompt(strategy), [{ role:'user', content:userMsg }], { temperature:0.3, maxTokens:900 });
+    const parsed = extractJson(raw);
+    if(!parsed) throw new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
+    renderSignalResult(parsed, strategy);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, bias: parsed.bias, confidence: parsed.confidence }, true);
+  }catch(e){
+    errEl.textContent = 'SciFe hit an error: ' + (e.message || 'unknown');
+    errEl.style.display = 'block';
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, error: e.message||'unknown' }, false);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Analyze setup';
+  }
+}
+function renderSignalResult(r, strategy){
+  const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
+  const biasLabel = { long:'LONG bias', short:'SHORT bias', no_trade:'NO TRADE' }[biasClass];
+  const conf = Math.max(0, Math.min(100, parseInt(r.confidence,10) || 0));
+  const checklist = Array.isArray(r.checklist) ? r.checklist : [];
+  const icon = { present:'✓', absent:'✕', unclear:'?' };
+  const el = document.getElementById('sig_result');
+  el.innerHTML = `
+    <div class="sig-bias ${biasClass}">${biasLabel} · ${sigEsc(strategy.name)}</div>
+    <div class="sig-block">
+      <div class="sig-block-label">Confidence</div>
+      <div class="sig-confbar"><div class="sig-confbar-fill" style="width:${conf}%;"></div></div>
+      <div class="sig-block-text">${conf}/100</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-block-label">Confluence checklist</div>
+      ${checklist.map(c=>`
+        <div class="sig-check-row">
+          <div class="sig-check-icon ${c.status||'unclear'}">${icon[c.status]||'?'}</div>
+          <div>
+            <div class="sig-check-label">${sigEsc(c.label||c.id||'')}</div>
+            ${c.note ? `<div class="sig-check-note">${sigEsc(c.note)}</div>` : ''}
+          </div>
+        </div>`).join('') || '<div class="hint">No checklist returned.</div>'}
+    </div>
+    ${r.entry_idea ? `<div class="sig-block"><div class="sig-block-label">Entry idea</div><div class="sig-block-text">${sigEsc(r.entry_idea)}</div></div>` : ''}
+    <div class="sig-block"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
+    <div class="sig-block"><div class="sig-block-label">Risk note</div><div class="sig-block-text">${sigEsc(r.risk_note||'—')}</div></div>
+    <div class="sig-block"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:600;">${sigEsc(r.verdict||'—')}</div></div>
+  `;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 /* ============ QUICK ACTIONS ============ */
