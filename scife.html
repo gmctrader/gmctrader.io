@@ -303,6 +303,16 @@ button{font-family:inherit;}
 .sig-block{margin-bottom:16px;}
 .sig-block-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;}
 .sig-block-text{font-size:14px;line-height:1.5;}
+.sig-chart-thumb{margin-top:10px;position:relative;}
+.sig-chart-thumb img{max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;}
+.sig-chart-remove{margin-top:8px;width:auto;padding:6px 12px;font-size:12px;border-radius:8px;}
+.sig-style-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:4px 10px;border-radius:99px;background:rgba(45,212,168,0.12);color:var(--bronze-bright);border:1px solid rgba(45,212,168,0.3);margin-left:8px;}
+.sig-level-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--steel);gap:12px;}
+.sig-level-row:last-child{border-bottom:none;}
+.sig-level-name{font-size:12.5px;color:var(--slate);flex:none;}
+.sig-level-val{font-size:14px;font-weight:600;text-align:right;}
+.sig-level-val.structural{font-weight:500;font-style:italic;color:var(--slate);}
 
 /* ============ LIGHT THEME ============ */
 html[data-theme="light"]{
@@ -486,7 +496,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   </div>
 
   <div class="sig-disclaimer mono" style="font-size:12px;margin:2px 0 20px;">
-    No live chart or price feed — SciFe only reads what you describe below, checked against your strategy's own rules. Accuracy depends entirely on your description. Not financial advice.
+    No live chart or price feed — SciFe only reads what's in your chart image and text below, checked against your strategy's own rules. It won't invent a price it can't see. Not financial advice.
   </div>
 
   <div class="field">
@@ -496,13 +506,31 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   </div>
 
   <div class="field">
+    <label>Trade style</label>
+    <select id="sig_style" onchange="onSignalStyleChange()">
+      <option value="scalp">Scalp</option>
+      <option value="intraday" selected>Intraday</option>
+      <option value="swing">Swing</option>
+    </select>
+    <div class="hint" id="sig_styleHint"></div>
+  </div>
+
+  <div class="field">
     <label>Pair / instrument</label>
     <input type="text" id="sig_pair" placeholder="e.g. EURUSD, XAUUSD, NAS100" autocomplete="off">
   </div>
 
   <div class="field">
+    <label>Chart screenshot (optional)</label>
+    <input type="file" id="sig_chartInput" accept="image/*" style="display:none;" onchange="onChartFileChange(event)">
+    <button type="button" class="btn-ghost" onclick="document.getElementById('sig_chartInput').click()">📷 Upload chart image</button>
+    <div class="hint">Needs a vision-capable model — OpenAI, Claude, Gemini, or OpenRouter's GPT-4o mini. SciFe only uses price levels it can actually read off the image.</div>
+    <div id="sig_chartPreview"></div>
+  </div>
+
+  <div class="field">
     <label>What are you seeing?</label>
-    <textarea id="sig_desc" class="sig-textarea" rows="6" placeholder="HTF bias, recent structure (BOS/CHoCH), where price sits relative to your key levels (order block, FVG, liquidity), current price..."></textarea>
+    <textarea id="sig_desc" class="sig-textarea" rows="6" placeholder="HTF bias, recent structure (BOS/CHoCH), where price sits relative to your key levels (order block, FVG, liquidity), current price... (optional if you attached a chart, but exact numbers you type are more reliable than what SciFe reads off an image)"></textarea>
   </div>
 
   <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()">Analyze setup</button>
@@ -1201,9 +1229,9 @@ ${memNotes}`;
 }
 
 /* ============ SIGNAL PAGE ============
-   Mirrors STRATEGY_TYPES.<type>.logics from index.html's Playbook — keep
-   these two lists in sync if the Playbook's logic sets ever change, since
-   this is what SciFe checks a description against for a given strategy type. */
+   Mirrors STRATEGY_TYPES.<type>.logics and TRADE_STYLES from index.html's
+   Playbook — keep these in sync if either changes there, since this is what
+   SciFe checks a description/chart against for a given strategy + style. */
 const SIGNAL_LOGIC_SETS = {
   gmc: [ {id:'swings',label:'Swings'}, {id:'bos',label:'Break of Structure (BOS)'}, {id:'choch',label:'Change of Character (CHoCH)'}, {id:'orderblock',label:'Order Block'}, {id:'hiddensupply',label:'Hidden Supply Zone'}, {id:'hiddendemand',label:'Hidden Demand Zone'}, {id:'eqhigh',label:'Equal High'}, {id:'eqlow',label:'Equal Low'}, {id:'imbalance',label:'Imbalance'}, {id:'fibonacci',label:'Fibonacci Retracement'} ],
   smc: [ {id:'liquiditygrab',label:'Liquidity Grab'}, {id:'smc_orderblock',label:'Order Block'}, {id:'smc_fvg',label:'Fair Value Gap (FVG)'}, {id:'smc_bos',label:'Break of Structure (BOS)'}, {id:'smc_choch',label:'Change of Character (CHoCH)'}, {id:'mitigation',label:'Mitigation Block'} ],
@@ -1211,12 +1239,30 @@ const SIGNAL_LOGIC_SETS = {
   ta: [ {id:'supres',label:'Support / Resistance'}, {id:'trendline',label:'Trendline'}, {id:'chartpattern',label:'Chart Pattern'}, {id:'indicator',label:'Indicator Signal'}, {id:'macross',label:'Moving Average Cross'}, {id:'volume',label:'Volume Confirmation'} ],
   fundamentals: [ {id:'newsevent',label:'News Event'}, {id:'ratedecision',label:'Interest Rate Decision'}, {id:'econdata',label:'Economic Data Release'}, {id:'cbpolicy',label:'Central Bank Policy'}, {id:'geopolitical',label:'Geopolitical Event'}, {id:'earnings',label:'Earnings Report'} ]
 };
+const SIGNAL_TRADE_STYLES = {
+  scalp:    { label:'Scalp',    good:0.8, warn:0.4, tpRange:'1–2', blurb:'Scalps lean on a high win rate and fast turnaround more than a big reward — 0.5–1R is normal if your hit rate backs it up.' },
+  intraday: { label:'Intraday', good:1.5, warn:1,   tpRange:'2',   blurb:'Intraday setups carry it for hours, so they generally want at least 1–1.5R to be worth the screen time and spread.' },
+  swing:    { label:'Swing',    good:2,   warn:1.3, tpRange:'2–3', blurb:'Swing trades tie up margin and carry overnight risk for days, so the reward needs to clear a higher bar — 2R or better.' }
+};
+let sigChartImage = null; // { mime, base64 } — cleared on removeChartImage()
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+
+// Only the vision-capable models actually configured in PROVIDERS above —
+// update this if a model list there changes. Everything else in that list
+// (Groq's Llama/Gemma, Mistral's Nemo/Small/Large, OpenRouter's free Llama)
+// is text-only, so a chart upload against those would just silently fail.
+function currentModelSupportsVision(){
+  const p = scife.provider;
+  if(p==='anthropic' || p==='google' || p==='openai') return true;
+  if(p==='openrouter') return scife.model === 'openai/gpt-4o-mini';
+  return false; // groq, mistral
+}
 
 function openSignalPage(){
   const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
   if(!strategies.length) showToast('Add a strategy in Ghost Discipline first, then come back here.');
   populateSignalStrategySelect();
+  onSignalStyleChange();
   document.getElementById('app').style.display='none';
   document.getElementById('signalPage').style.display='flex';
 }
@@ -1241,6 +1287,13 @@ function onSignalStrategyChange(){
   const set = SIGNAL_LOGIC_SETS[strat.type];
   hint.textContent = set ? ('Checked against: ' + set.map(l=>l.label).join(' · ')) : 'Custom strategy — SciFe judges it from your saved notes alone.';
 }
+function onSignalStyleChange(){
+  const sel = document.getElementById('sig_style');
+  const hintEl = document.getElementById('sig_styleHint');
+  if(!sel || !hintEl) return;
+  const st = SIGNAL_TRADE_STYLES[sel.value] || SIGNAL_TRADE_STYLES.intraday;
+  hintEl.textContent = st.blurb;
+}
 // Real track record on this exact strategy, so confidence stays honest
 // instead of just optimistic — same trades array the journal snapshot uses.
 function summarizeStrategyPerformance(strategyId){
@@ -1251,26 +1304,31 @@ function summarizeStrategyPerformance(strategyId){
   const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
 }
-function buildSignalSystemPrompt(strategy){
+function buildSignalSystemPrompt(strategy, styleKey, hasImage){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
   const logicList = set ? set.map(l=>`${l.id}: ${l.label}`).join('\n') : '(no fixed checklist for this custom strategy type — judge only against the notes below)';
+  const style = SIGNAL_TRADE_STYLES[styleKey] || SIGNAL_TRADE_STYLES.intraday;
   return `You are SciFe running strict setup analysis inside Ghost Discipline. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, nothing before or after it.
 
-You have no live chart or price feed of your own. You can only reason over what the trader typed below — be honest about that limit. If the description is too thin to judge a concept, mark it "unclear" rather than guessing or inventing detail that wasn't given.
+You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot, so use whatever price axis labels, candles, and drawn levels are actually legible in it' : ''}. You can only reason over what's given below — be honest about that limit. If a concept is too thin to judge (not visible, not described), mark it "unclear" rather than guessing.
 
 STRATEGY: "${strategy.name}" (${strategy.type ? strategy.type.toUpperCase() : 'custom'})
 Strategy notes: ${strategy.notes || 'none provided'}
 Checklist to evaluate — one verdict per line, in this exact order:
 ${logicList}
 
+TRADE STYLE: ${style.label}. ${style.blurb} Minimum acceptable R:R for this style is roughly ${style.warn}R, a good target is ${style.good}R or better.
+
 ${summarizeStrategyPerformance(strategy.id)}
 
 ${summarizeEconomicCalendar()}
-Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this setup.
+Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this trade style.
+
+LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. Give ${style.tpRange} take-profit level(s) appropriate for a ${styleKey} trade, ordered nearest-to-furthest, with an approximate R:R for each — scale the furthest TP toward this style's good-R:R target (${style.good}R) only if the setup's actual structure supports it.
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
-checklist must have exactly one entry per line listed above, same order, exact "id" values given. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low, and bias should usually be "no_trade" in that case. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
+{"bias":"long"|"short"|"no_trade","confidence":0,"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+checklist must have exactly one entry per line listed above, same order, exact "id" values given. If bias is "no_trade", entry/stop_loss/take_profits should reflect that there's no valid trade — e.g. level:"n/a". confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low, and bias should usually be "no_trade" in that case. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -1278,49 +1336,105 @@ function extractJson(text){
   if(start===-1 || end===-1 || end<start) return null;
   try{ return JSON.parse(text.slice(start, end+1)); }catch(e){ return null; }
 }
+function onChartFileChange(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('Please upload an image file'); e.target.value=''; return; }
+  if(file.size > 5*1024*1024){ showToast('Image too large — please use one under 5MB'); e.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = function(){
+    const dataUrl = reader.result;
+    const comma = dataUrl.indexOf(',');
+    sigChartImage = { mime: file.type, base64: dataUrl.slice(comma+1) };
+    document.getElementById('sig_chartPreview').innerHTML = `
+      <div class="sig-chart-thumb">
+        <img src="${dataUrl}" alt="Uploaded chart">
+        <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
+      </div>`;
+    if(!currentModelSupportsVision()){
+      showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — switch to OpenAI, Claude, Gemini, or OpenRouter's GPT-4o mini in settings.");
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function removeChartImage(){
+  sigChartImage = null;
+  document.getElementById('sig_chartPreview').innerHTML = '';
+  document.getElementById('sig_chartInput').value = '';
+}
 async function analyzeSignal(){
   if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
   const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
   const strategy = strategies.find(s=>s.id===document.getElementById('sig_strategy').value);
   if(!strategy){ showToast('Pick a strategy first'); return; }
+  const styleKey = document.getElementById('sig_style').value || 'intraday';
   const pair = document.getElementById('sig_pair').value.trim();
   const desc = document.getElementById('sig_desc').value.trim();
-  if(!desc){ showToast("Describe what you're seeing first"); return; }
-  const btn = document.getElementById('sig_analyzeBtn');
+  if(!desc && !sigChartImage){ showToast("Add a chart image or describe what you're seeing"); return; }
   const errEl = document.getElementById('sig_error');
+  if(sigChartImage && !currentModelSupportsVision()){
+    errEl.textContent = `${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Switch to OpenAI, Claude, Gemini, or OpenRouter's GPT-4o mini in settings, or remove the chart and describe the setup in text instead.`;
+    errEl.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('sig_analyzeBtn');
   btn.disabled = true; btn.textContent = 'Analyzing…';
   errEl.style.display = 'none';
   document.getElementById('sig_result').style.display = 'none';
   try{
     await ensureEconomicCalendar();
-    const userMsg = `Pair/instrument: ${pair || 'not specified'}\nWhat I'm seeing:\n${desc}`;
-    const raw = await chatCompletion(buildSignalSystemPrompt(strategy), [{ role:'user', content:userMsg }], { temperature:0.3, maxTokens:900 });
+    const userMsg = [
+      `Pair/instrument: ${pair || 'not specified'}`,
+      `Trade style: ${(SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label}`,
+      desc ? `What I'm seeing:\n${desc}` : "What I'm seeing:\n(see attached chart image)"
+    ].join('\n');
+    const opts = { temperature:0.3, maxTokens:1100 };
+    if(sigChartImage) opts.image = sigChartImage;
+    const raw = await chatCompletion(buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage), [{ role:'user', content:userMsg }], opts);
     const parsed = extractJson(raw);
     if(!parsed) throw new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
-    renderSignalResult(parsed, strategy);
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, bias: parsed.bias, confidence: parsed.confidence }, true);
+    renderSignalResult(parsed, strategy, styleKey);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, bias: parsed.bias, confidence: parsed.confidence }, true);
   }catch(e){
     errEl.textContent = 'SciFe hit an error: ' + (e.message || 'unknown');
     errEl.style.display = 'block';
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, error: e.message||'unknown' }, false);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, error: e.message||'unknown' }, false);
   }finally{
     btn.disabled = false; btn.textContent = 'Analyze setup';
   }
 }
-function renderSignalResult(r, strategy){
+function sigLevelRow(name, lvl){
+  lvl = lvl || {};
+  const val = lvl.level || '—';
+  const cls = lvl.numeric ? '' : 'structural';
+  return `<div class="sig-level-row"><div class="sig-level-name">${sigEsc(name)}</div><div class="sig-level-val ${cls}">${sigEsc(val)}</div></div>`;
+}
+function renderSignalResult(r, strategy, styleKey){
   const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
   const biasLabel = { long:'LONG bias', short:'SHORT bias', no_trade:'NO TRADE' }[biasClass];
   const conf = Math.max(0, Math.min(100, parseInt(r.confidence,10) || 0));
   const checklist = Array.isArray(r.checklist) ? r.checklist : [];
+  const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
+  const styleLabel = (SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label;
   const icon = { present:'✓', absent:'✕', unclear:'?' };
   const el = document.getElementById('sig_result');
   el.innerHTML = `
-    <div class="sig-bias ${biasClass}">${biasLabel} · ${sigEsc(strategy.name)}</div>
+    <div>
+      <span class="sig-bias ${biasClass}">${biasLabel} · ${sigEsc(strategy.name)}</span>
+      <span class="sig-style-badge">${sigEsc(styleLabel)}</span>
+    </div>
     <div class="sig-block">
       <div class="sig-block-label">Confidence</div>
       <div class="sig-confbar"><div class="sig-confbar-fill" style="width:${conf}%;"></div></div>
       <div class="sig-block-text">${conf}/100</div>
     </div>
+    ${biasClass!=='no_trade' ? `
+    <div class="sig-block">
+      <div class="sig-block-label">Levels</div>
+      ${sigLevelRow('Entry', r.entry)}
+      ${sigLevelRow('Stop loss', r.stop_loss)}
+      ${tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(tp.rr)+'R)':''}`, tp)).join('')}
+    </div>` : ''}
     <div class="sig-block">
       <div class="sig-block-label">Confluence checklist</div>
       ${checklist.map(c=>`
@@ -1411,7 +1525,10 @@ async function sendMessage(text){
 
 /* Generic chat call — dispatches to whichever provider is currently
    selected in scife.provider. systemPrompt is a plain string;
-   turns is a list of {role:'user'|'assistant', content:string}. */
+   turns is a list of {role:'user'|'assistant', content:string}.
+   opts.image, when present ({mime, data (base64, no data-url prefix)}), is
+   attached to the LAST turn (must be role:'user') in whatever shape that
+   provider expects — used only by the Signal page's chart upload. */
 async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
   const maxTokens = opts.maxTokens || 500; // a little headroom for the trailing trade-action JSON block
@@ -1419,15 +1536,25 @@ async function chatCompletion(systemPrompt, turns, opts){
   const cfg = PROVIDERS[scife.provider] || PROVIDERS.openai;
   const apiKey = activeApiKey();
   if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
-  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature);
-  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature);
-  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature);
+  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, opts.image);
+  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, opts.image);
+  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, opts.image);
 }
 
 /* Covers OpenAI, Groq, OpenRouter, and Mistral — they all speak the same
    /chat/completions shape, just at a different base URL. */
-async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature){
-  const messages = [{ role:'system', content: systemPrompt }, ...turns];
+async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, image){
+  const messages = [{ role:'system', content: systemPrompt }];
+  turns.forEach((t,i)=>{
+    if(image && t.role==='user' && i===turns.length-1){
+      messages.push({ role:'user', content:[
+        { type:'text', text: t.content },
+        { type:'image_url', image_url:{ url:`data:${image.mime};base64,${image.data}` } }
+      ]});
+    } else {
+      messages.push({ role:t.role, content:t.content });
+    }
+  });
   const res = await fetch(cfg.baseURL, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + apiKey },
@@ -1441,7 +1568,16 @@ async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens,
   return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "I didn't catch that — try again?";
 }
 
-async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature){
+async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, image){
+  const messages = turns.map((t,i)=>{
+    if(image && t.role==='user' && i===turns.length-1){
+      return { role:t.role, content:[
+        { type:'image', source:{ type:'base64', media_type:image.mime, data:image.data } },
+        { type:'text', text:t.content }
+      ]};
+    }
+    return { role:t.role, content:t.content };
+  });
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers:{
@@ -1455,7 +1591,7 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
       max_tokens: maxTokens,
       temperature,
       system: systemPrompt,
-      messages: turns.map(t=>({ role:t.role, content:t.content }))
+      messages
     })
   });
   if(!res.ok){
@@ -1467,9 +1603,16 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
   return (block && block.text) || "I didn't catch that — try again?";
 }
 
-async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature){
+async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, image){
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${scife.model}:generateContent?key=${apiKey}`;
-  const contents = turns.map(t=>({ role: t.role === 'assistant' ? 'model' : 'user', parts:[{ text:t.content }] }));
+  const contents = turns.map((t,i)=>{
+    const parts = [];
+    if(image && t.role==='user' && i===turns.length-1){
+      parts.push({ inline_data:{ mime_type:image.mime, data:image.data } });
+    }
+    parts.push({ text:t.content });
+    return { role: t.role === 'assistant' ? 'model' : 'user', parts };
+  });
   const res = await fetch(url, {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
