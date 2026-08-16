@@ -106,6 +106,8 @@ button{font-family:inherit;}
 .btn:hover{filter:brightness(1.06);}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--bronze-dim), 0 4px 10px -4px rgba(18,185,136,0.5);}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn.btn-analyzing{opacity:1;cursor:wait;animation:btnAnalyzePulse 1.4s ease-in-out infinite;}
+@keyframes btnAnalyzePulse{0%,100%{box-shadow:0 3px 0 var(--bronze-dim), 0 10px 24px -8px rgba(18,185,136,0.55);}50%{box-shadow:0 3px 0 var(--bronze-dim), 0 10px 34px -6px rgba(45,212,168,0.85);}}
 .btn-ghost{background:rgba(255,255,255,0.03);color:var(--slate);border:1px solid var(--steel-hi);box-shadow:none;}
 .btn-ghost::after{display:none;}
 .btn-ghost:hover{background:rgba(255,255,255,0.06);filter:none;}
@@ -316,6 +318,91 @@ button{font-family:inherit;}
 .sig-level-name{font-size:12.5px;color:var(--slate);flex:none;}
 .sig-level-val{font-size:14px;font-weight:600;text-align:right;}
 .sig-level-val.structural{font-weight:500;font-style:italic;color:var(--slate);}
+
+/* ---- 3D chart scan effect — plays while analyzeSignal() is running ---- */
+.sig-chart-thumb{perspective:900px;}
+.sig-chart-thumb .sig-scan-frame{position:relative;border-radius:11px;overflow:hidden;
+  transform-style:preserve-3d;transform:rotateX(0deg) rotateY(0deg);
+  transition:transform .5s cubic-bezier(.2,.7,.3,1), box-shadow .5s ease;}
+.sig-chart-thumb.scanning .sig-scan-frame{
+  animation:scanTilt 3.2s ease-in-out infinite;
+  box-shadow:0 20px 46px -14px rgba(0,0,0,0.65), 0 0 34px -6px rgba(45,212,168,0.45);}
+@keyframes scanTilt{
+  0%,100%{transform:rotateX(2deg) rotateY(-3deg) scale(1.01);}
+  50%{transform:rotateX(-2deg) rotateY(3deg) scale(1.015);}}
+.sig-chart-thumb img{max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;transition:filter .4s ease;}
+.sig-chart-thumb.scanning img{filter:saturate(125%) contrast(108%) brightness(0.82);}
+/* holographic sweep bar */
+.sig-scan-frame .sig-scan-sweep{position:absolute;left:0;right:0;top:-20%;height:42%;pointer-events:none;z-index:3;opacity:0;
+  background:linear-gradient(180deg, transparent, rgba(45,212,168,0.28) 45%, rgba(242,200,119,0.4) 50%, rgba(45,212,168,0.28) 55%, transparent);
+  filter:blur(1px);}
+.sig-chart-thumb.scanning .sig-scan-sweep{opacity:1;animation:scanSweep 2.1s cubic-bezier(.4,0,.3,1) infinite;}
+@keyframes scanSweep{0%{top:-24%;}100%{top:104%;}}
+/* fine scanline texture + darken, matching the voice-orb "stage" console feel */
+.sig-scan-frame::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 3px);
+  mix-blend-mode:overlay;transition:opacity .3s ease;}
+.sig-chart-thumb.scanning .sig-scan-frame::before{opacity:.6;}
+.sig-scan-frame::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 50px 6px rgba(0,0,0,0.55);transition:opacity .3s ease;}
+.sig-chart-thumb.scanning .sig-scan-frame::after{opacity:1;}
+/* corner HUD brackets, reused visual language from the voice stage */
+.sig-scan-hud{position:absolute;inset:8px;z-index:4;pointer-events:none;opacity:0;transition:opacity .3s ease;}
+.sig-chart-thumb.scanning .sig-scan-hud{opacity:1;}
+.sig-scan-hud i{position:absolute;width:13px;height:13px;border:1.5px solid rgba(45,212,168,0.75);}
+.sig-scan-hud i:nth-child(1){top:0;left:0;border-right:none;border-bottom:none;}
+.sig-scan-hud i:nth-child(2){top:0;right:0;border-left:none;border-bottom:none;}
+.sig-scan-hud i:nth-child(3){bottom:0;left:0;border-right:none;border-top:none;}
+.sig-scan-hud i:nth-child(4){bottom:0;right:0;border-left:none;border-top:none;}
+.sig-scan-readout{position:absolute;top:14px;left:16px;z-index:4;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  letter-spacing:.14em;color:rgba(45,212,168,0.85);text-transform:uppercase;opacity:0;transition:opacity .3s ease;
+  text-shadow:0 0 8px rgba(45,212,168,0.6);}
+.sig-chart-thumb.scanning .sig-scan-readout{opacity:1;}
+.sig-scan-readout .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--bronze-bright);
+  box-shadow:0 0 6px var(--bronze-bright);margin-right:6px;animation:scanDotPulse 1s ease-in-out infinite;}
+@keyframes scanDotPulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+
+/* ---- redesigned results panel ---- */
+.sig-result-card{position:relative;border-radius:var(--r-lg);overflow:hidden;padding:24px 20px 22px;
+  background:var(--panel);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
+  border:1px solid var(--steel-hi);
+  box-shadow:0 24px 54px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+  opacity:0;transform:translateY(14px);animation:sigResultIn .5s cubic-bezier(.2,.7,.3,1) forwards;}
+@keyframes sigResultIn{to{opacity:1;transform:translateY(0);}}
+.sig-result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg, var(--bronze), var(--gold), var(--bronze));background-size:200% 100%;
+  animation:sigTopSheen 3s linear infinite;}
+.sig-result-card.bias-long::before{background:linear-gradient(90deg, var(--win), var(--bronze-bright), var(--win));background-size:200% 100%;}
+.sig-result-card.bias-short::before{background:linear-gradient(90deg, var(--loss-bright), var(--gold), var(--loss-bright));background-size:200% 100%;}
+.sig-result-card.bias-no_trade::before{background:linear-gradient(90deg, var(--amber), var(--slate-dim), var(--amber));background-size:200% 100%;}
+@keyframes sigTopSheen{from{background-position:0% 0;}to{background-position:200% 0;}}
+.sig-bias{display:inline-flex;align-items:center;gap:9px;padding:11px 18px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:18px;
+  box-shadow:0 8px 20px -8px rgba(0,0,0,0.4);}
+.sig-bias .sig-bias-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+.sig-bias.long .sig-bias-dot{background:var(--win);box-shadow:0 0 10px var(--win);}
+.sig-bias.short .sig-bias-dot{background:var(--loss-bright);box-shadow:0 0 10px var(--loss-bright);}
+.sig-bias.no_trade .sig-bias-dot{background:var(--amber);box-shadow:0 0 10px var(--amber);}
+.sig-confbar{height:9px;border-radius:99px;background:var(--steel-hi);overflow:hidden;margin:7px 0 6px;position:relative;}
+.sig-confbar-fill{height:100%;background:linear-gradient(90deg,var(--bronze),var(--gold));transition:width .8s cubic-bezier(.2,.7,.3,1);
+  box-shadow:0 0 10px rgba(18,185,136,0.55);position:relative;}
+.sig-confbar-fill::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform:translateX(-100%);animation:confShine 2.2s ease-in-out .6s infinite;}
+@keyframes confShine{to{transform:translateX(220%);}}
+.sig-block{margin-bottom:18px;padding-bottom:2px;opacity:0;animation:sigBlockIn .45s ease forwards;}
+@keyframes sigBlockIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.sig-block-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--bronze-bright);margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;}
+.sig-block-label::before{content:'';width:3px;height:11px;border-radius:2px;background:var(--bronze);display:inline-block;}
+.sig-check-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--steel);
+  opacity:0;animation:sigBlockIn .4s ease forwards;}
+.sig-check-icon{flex:none;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset;}
+.sig-check-icon.present{background:rgba(43,224,138,0.16);color:var(--win);box-shadow:0 0 10px -2px rgba(43,224,138,0.6);}
+.sig-check-icon.absent{background:rgba(255,93,122,0.16);color:var(--loss-bright);}
+.sig-check-icon.unclear{background:rgba(240,169,78,0.16);color:var(--amber);}
+.sig-level-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--steel);gap:12px;}
+.sig-level-val{font-size:14.5px;font-weight:700;text-align:right;font-family:'IBM Plex Mono',monospace;}
 
 /* ============ LIGHT THEME ============ */
 html[data-theme="light"]{
@@ -642,9 +729,9 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.groq.com/openai/v1/chat/completions',
     models: [
-      { value:'llama-3.3-70b-versatile', label:'Llama 3.3 70B — smart & free', vision:false },
-      { value:'llama-3.1-8b-instant', label:'Llama 3.1 8B — fastest', vision:false },
-      { value:'gemma2-9b-it', label:'Gemma 2 9B — light & free', vision:false }
+      { value:'meta-llama/llama-4-maverick-17b-128e-instruct', label:'Llama 4 Maverick — free & reads images 🔍', vision:true },
+      { value:'openai/gpt-oss-120b', label:'GPT-OSS 120B — free, strong reasoning', vision:false },
+      { value:'openai/gpt-oss-20b', label:'GPT-OSS 20B — free, fastest', vision:false }
     ]
   },
   google: {
@@ -843,6 +930,126 @@ const PROVIDERS = {
     models: [
       { value:'qwen-vl-plus', label:'Qwen-VL Plus — reads images 🔍', vision:true },
       { value:'qwen-plus', label:'Qwen Plus — text only', vision:false }
+    ]
+  },
+  ovhcloud: {
+    label: 'OVHcloud AI Endpoints',
+    badge: 'No key needed', badgeClass:'free',
+    cost: 'Free anonymous tier, EU-hosted (GDPR) — very low rate limit (~2 req/min) without a key',
+    keyLabel: 'API key (optional)',
+    keyPlaceholder: 'x',
+    keyHint: 'OVH itself doesn\'t require a key at low rate limits, but type any placeholder text (e.g. "x") since this field can\'t be left empty. Register free at OVHcloud Manager for a real key and higher limits.',
+    keyLink: 'https://endpoints.ai.cloud.ovh.net',
+    compat: 'openai',
+    baseURL: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
+    models: [
+      { value:'Qwen3.6-27B', label:'Qwen3.6 27B — free, EU-hosted', vision:false },
+      { value:'Mistral-Small-3.2-24B-Instruct-2506', label:'Mistral Small — free, EU-hosted', vision:false }
+    ]
+  },
+  llm7: {
+    label: 'LLM7.io',
+    badge: 'No key needed', badgeClass:'free',
+    cost: 'Genuinely free, works anonymously — 30 req/min with no signup at all',
+    keyLabel: 'API key (optional)',
+    keyPlaceholder: 'unused',
+    keyHint: 'Just type "unused" — this one works with no account. Get a free token at dash.llm7.io for a higher rate limit (120 req/min) if you want.',
+    keyLink: 'https://dash.llm7.io',
+    compat: 'openai',
+    baseURL: 'https://api.llm7.io/v1/chat/completions',
+    models: [
+      { value:'gpt-4o-mini', label:'GPT-4o mini (routed) — free & reads images 🔍', vision:true },
+      { value:'default', label:'Default (auto-routed) — free, text', vision:false }
+    ]
+  },
+  kluster: {
+    label: 'kluster.ai',
+    badge: 'Free credit', badgeClass:'freemodels',
+    cost: '$5 free credit on signup, no card',
+    keyLabel: 'kluster.ai API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Sign up at platform.kluster.ai — $5 free credit to start.',
+    keyLink: 'https://platform.kluster.ai',
+    compat: 'openai',
+    baseURL: 'https://api.kluster.ai/v1/chat/completions',
+    models: [
+      { value:'klusterai/Meta-Llama-3.1-405B-Instruct-Turbo', label:'Llama 3.1 405B — free-credit, most capable', vision:false },
+      { value:'klusterai/deepseek-ai/DeepSeek-R1', label:'DeepSeek R1 — free-credit, reasoning', vision:false }
+    ]
+  },
+  scaleway: {
+    label: 'Scaleway',
+    badge: 'Free tier', badgeClass:'free',
+    cost: 'Free tier credit (EU-hosted, GDPR-friendly) · pay-as-you-go after',
+    keyLabel: 'Scaleway API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Sign up at console.scaleway.com — Generative APIs free tier needs no card to start.',
+    keyLink: 'https://console.scaleway.com',
+    compat: 'openai',
+    baseURL: 'https://api.scaleway.ai/v1/chat/completions',
+    models: [
+      { value:'llama-3.3-70b-instruct', label:'Llama 3.3 70B — EU-hosted, free tier', vision:false },
+      { value:'mistral-small-3.2-24b-instruct-2506', label:'Mistral Small — EU-hosted, cheap', vision:false }
+    ]
+  },
+  featherless: {
+    label: 'Featherless AI',
+    badge: 'Free trial', badgeClass:'freemodels',
+    cost: '100,000 free trial tokens on signup, no card · pay-as-you-go after',
+    keyLabel: 'Featherless API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Sign up at featherless.ai — huge open-model catalog, 100K free tokens to start.',
+    keyLink: 'https://featherless.ai',
+    compat: 'openai',
+    baseURL: 'https://api.featherless.ai/v1/chat/completions',
+    models: [
+      { value:'google/gemma-3-27b-it', label:'Gemma 3 27B — reads images 🔍', vision:true },
+      { value:'meta-llama/Meta-Llama-3.1-8B-Instruct', label:'Llama 3.1 8B — free-trial text', vision:false }
+    ]
+  },
+  novita: {
+    label: 'Novita AI',
+    badge: 'Free credit', badgeClass:'freemodels',
+    cost: '~$0.50 signup voucher, plus a few permanently free ($0/token) open models',
+    keyLabel: 'Novita API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Sign up at novita.ai — small free voucher, no card required to start.',
+    keyLink: 'https://novita.ai',
+    compat: 'openai',
+    baseURL: 'https://api.novita.ai/openai/v1/chat/completions',
+    models: [
+      { value:'meta-llama/llama-3.1-8b-instruct', label:'Llama 3.1 8B — cheap & fast', vision:false },
+      { value:'qwen/qwen2.5-7b-instruct', label:'Qwen2.5 7B — free-tier friendly', vision:false }
+    ]
+  },
+  deepinfra: {
+    label: 'DeepInfra',
+    badge: 'Cheap', badgeClass:'paid',
+    cost: 'No free tier, but among the cheapest open-model hosting around',
+    keyLabel: 'DeepInfra API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Pay-as-you-go — sign up and add a small balance at deepinfra.com.',
+    keyLink: 'https://deepinfra.com/dash/api_keys',
+    compat: 'openai',
+    baseURL: 'https://api.deepinfra.com/v1/openai/chat/completions',
+    models: [
+      { value:'meta-llama/Llama-3.2-90B-Vision-Instruct', label:'Llama 3.2 90B Vision — reads images 🔍', vision:true },
+      { value:'deepseek-ai/DeepSeek-V3', label:'DeepSeek V3 — cheap, capable text', vision:false }
+    ]
+  },
+  hyperbolic: {
+    label: 'Hyperbolic',
+    badge: 'Free credit', badgeClass:'freemodels',
+    cost: '$6 free credit on signup (phone verification required) · pay-as-you-go after',
+    keyLabel: 'Hyperbolic API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'New accounts get $6 free credit after phone verification at app.hyperbolic.ai.',
+    keyLink: 'https://app.hyperbolic.ai',
+    compat: 'openai',
+    baseURL: 'https://api.hyperbolic.xyz/v1/chat/completions',
+    models: [
+      { value:'Qwen/Qwen2-VL-72B-Instruct', label:'Qwen2-VL 72B — reads images 🔍', vision:true },
+      { value:'deepseek-ai/DeepSeek-V3', label:'DeepSeek V3 — cheap, capable text', vision:false }
     ]
   },
   nvidia: {
@@ -1591,8 +1798,13 @@ function onChartFileChange(e){
       const comma = outDataUrl.indexOf(',');
       sigChartImage = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1) };
       document.getElementById('sig_chartPreview').innerHTML = `
-        <div class="sig-chart-thumb">
-          <img src="${outDataUrl}" alt="Uploaded chart">
+        <div class="sig-chart-thumb" id="sigChartThumb">
+          <div class="sig-scan-frame">
+            <img src="${outDataUrl}" alt="Uploaded chart">
+            <div class="sig-scan-sweep"></div>
+            <div class="sig-scan-hud"><i></i><i></i><i></i><i></i></div>
+            <div class="sig-scan-readout"><span class="dot"></span>READING CHART…</div>
+          </div>
           <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
         </div>`;
       if(!currentModelSupportsVision()){
@@ -1625,9 +1837,11 @@ async function analyzeSignal(){
     return;
   }
   const btn = document.getElementById('sig_analyzeBtn');
-  btn.disabled = true; btn.textContent = 'Analyzing…';
+  btn.disabled = true; btn.textContent = 'Analyzing…'; btn.classList.add('btn-analyzing');
   errEl.style.display = 'none';
   document.getElementById('sig_result').style.display = 'none';
+  const chartThumb = document.getElementById('sigChartThumb');
+  if(sigChartImage && chartThumb) chartThumb.classList.add('scanning');
   try{
     await ensureEconomicCalendar();
     const userMsg = [
@@ -1651,14 +1865,15 @@ async function analyzeSignal(){
     errEl.style.display = 'block';
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, error: e.message||'unknown' }, false);
   }finally{
-    btn.disabled = false; btn.textContent = 'Analyze setup';
+    btn.disabled = false; btn.textContent = 'Analyze setup'; btn.classList.remove('btn-analyzing');
+    if(chartThumb) chartThumb.classList.remove('scanning');
   }
 }
-function sigLevelRow(name, lvl){
+function sigLevelRow(name, lvl, i){
   lvl = lvl || {};
   const val = lvl.level || '—';
   const cls = lvl.numeric ? '' : 'structural';
-  return `<div class="sig-level-row"><div class="sig-level-name">${sigEsc(name)}</div><div class="sig-level-val ${cls}">${sigEsc(val)}</div></div>`;
+  return `<div class="sig-level-row" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;"><div class="sig-level-name">${sigEsc(name)}</div><div class="sig-level-val ${cls}">${sigEsc(val)}</div></div>`;
 }
 function renderSignalResult(r, strategy, styleKey){
   const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
@@ -1668,41 +1883,48 @@ function renderSignalResult(r, strategy, styleKey){
   const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
   const styleLabel = (SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label;
   const icon = { present:'✓', absent:'✕', unclear:'?' };
+  const levelRows = [sigLevelRow('Entry', r.entry, 0), sigLevelRow('Stop loss', r.stop_loss, 1),
+    ...tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(tp.rr)+'R)':''}`, tp, i+2))].join('');
   const el = document.getElementById('sig_result');
   el.innerHTML = `
-    <div>
-      <span class="sig-bias ${biasClass}">${biasLabel} · ${sigEsc(strategy.name)}</span>
-      <span class="sig-style-badge">${sigEsc(styleLabel)}</span>
+    <div class="sig-result-card bias-${biasClass}">
+      <div>
+        <span class="sig-bias ${biasClass}"><span class="sig-bias-dot"></span>${biasLabel} · ${sigEsc(strategy.name)}</span>
+        <span class="sig-style-badge">${sigEsc(styleLabel)}</span>
+      </div>
+      <div class="sig-block" style="animation-delay:.05s;">
+        <div class="sig-block-label">Confidence</div>
+        <div class="sig-confbar"><div class="sig-confbar-fill" style="width:0%;" data-target="${conf}"></div></div>
+        <div class="sig-block-text">${conf}/100</div>
+      </div>
+      ${biasClass!=='no_trade' ? `
+      <div class="sig-block" style="animation-delay:.15s;">
+        <div class="sig-block-label">Levels</div>
+        ${levelRows}
+      </div>` : ''}
+      <div class="sig-block" style="animation-delay:.25s;">
+        <div class="sig-block-label">Confluence checklist</div>
+        ${checklist.map((c,i)=>`
+          <div class="sig-check-row" style="animation-delay:${0.3+i*0.05}s;">
+            <div class="sig-check-icon ${c.status||'unclear'}">${icon[c.status]||'?'}</div>
+            <div>
+              <div class="sig-check-label">${sigEsc(c.label||c.id||'')}</div>
+              ${c.note ? `<div class="sig-check-note">${sigEsc(c.note)}</div>` : ''}
+            </div>
+          </div>`).join('') || '<div class="hint">No checklist returned.</div>'}
+      </div>
+      ${r.entry_idea ? `<div class="sig-block" style="animation-delay:.4s;"><div class="sig-block-label">Entry idea</div><div class="sig-block-text">${sigEsc(r.entry_idea)}</div></div>` : ''}
+      <div class="sig-block" style="animation-delay:.45s;"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
+      <div class="sig-block" style="animation-delay:.5s;"><div class="sig-block-label">Risk note</div><div class="sig-block-text">${sigEsc(r.risk_note||'—')}</div></div>
+      <div class="sig-block" style="animation-delay:.55s;margin-bottom:0;"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:700;font-size:15px;">${sigEsc(r.verdict||'—')}</div></div>
     </div>
-    <div class="sig-block">
-      <div class="sig-block-label">Confidence</div>
-      <div class="sig-confbar"><div class="sig-confbar-fill" style="width:${conf}%;"></div></div>
-      <div class="sig-block-text">${conf}/100</div>
-    </div>
-    ${biasClass!=='no_trade' ? `
-    <div class="sig-block">
-      <div class="sig-block-label">Levels</div>
-      ${sigLevelRow('Entry', r.entry)}
-      ${sigLevelRow('Stop loss', r.stop_loss)}
-      ${tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(tp.rr)+'R)':''}`, tp)).join('')}
-    </div>` : ''}
-    <div class="sig-block">
-      <div class="sig-block-label">Confluence checklist</div>
-      ${checklist.map(c=>`
-        <div class="sig-check-row">
-          <div class="sig-check-icon ${c.status||'unclear'}">${icon[c.status]||'?'}</div>
-          <div>
-            <div class="sig-check-label">${sigEsc(c.label||c.id||'')}</div>
-            ${c.note ? `<div class="sig-check-note">${sigEsc(c.note)}</div>` : ''}
-          </div>
-        </div>`).join('') || '<div class="hint">No checklist returned.</div>'}
-    </div>
-    ${r.entry_idea ? `<div class="sig-block"><div class="sig-block-label">Entry idea</div><div class="sig-block-text">${sigEsc(r.entry_idea)}</div></div>` : ''}
-    <div class="sig-block"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
-    <div class="sig-block"><div class="sig-block-label">Risk note</div><div class="sig-block-text">${sigEsc(r.risk_note||'—')}</div></div>
-    <div class="sig-block"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:600;">${sigEsc(r.verdict||'—')}</div></div>
   `;
   el.style.display = 'block';
+  // animate the confidence bar fill in on the next frame so the CSS transition actually plays
+  requestAnimationFrame(()=>{
+    const fill = el.querySelector('.sig-confbar-fill');
+    if(fill) requestAnimationFrame(()=>{ fill.style.width = fill.dataset.target + '%'; });
+  });
   el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
