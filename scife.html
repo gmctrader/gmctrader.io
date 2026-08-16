@@ -845,6 +845,22 @@ const PROVIDERS = {
       { value:'qwen-plus', label:'Qwen Plus — text only', vision:false }
     ]
   },
+  nvidia: {
+    label: 'NVIDIA (build.nvidia.com)',
+    badge: 'Free', badgeClass:'free',
+    cost: 'Free trial access to 80+ open models on NVIDIA\'s DGX Cloud — no card required',
+    keyLabel: 'NVIDIA API key',
+    keyPlaceholder: 'nvapi-...',
+    keyHint: 'Sign up and generate a key at build.nvidia.com — free trial tier, prototyping-scale rate limits.',
+    keyLink: 'https://build.nvidia.com',
+    compat: 'openai',
+    baseURL: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    models: [
+      { value:'meta/llama-3.3-70b-instruct', label:'Llama 3.3 70B — free & fast', vision:false },
+      { value:'meta/llama-3.1-405b-instruct', label:'Llama 3.1 405B — free, most capable', vision:false },
+      { value:'deepseek-ai/deepseek-r1', label:'DeepSeek R1 — free, reasoning', vision:false }
+    ]
+  },
   pollinations: {
     label: 'Pollinations AI',
     badge: 'Free', badgeClass:'free',
@@ -857,7 +873,13 @@ const PROVIDERS = {
     baseURL: 'https://gen.pollinations.ai/v1/chat/completions',
     models: [
       { value:'openai', label:'OpenAI (routed) — free & reads images 🔍', vision:true },
-      { value:'openai-fast', label:'OpenAI Fast (routed) — free, quick text', vision:false }
+      { value:'openai-large', label:'OpenAI Large (routed) — free, stronger', vision:true },
+      { value:'openai-reasoning', label:'OpenAI Reasoning (routed) — free, deep thinking', vision:false },
+      { value:'gemini', label:'Gemini (routed) — free & reads images 🔍', vision:true },
+      { value:'mistral', label:'Mistral (routed) — free, text', vision:false },
+      { value:'deepseek', label:'DeepSeek (routed) — free, text', vision:false },
+      { value:'qwen-coder', label:'Qwen Coder (routed) — free, code-focused', vision:false },
+      { value:'llama', label:'Llama (routed) — free, text', vision:false }
     ]
   },
   anthropic: {
