@@ -276,6 +276,9 @@ button{font-family:inherit;}
 .pc-badge.paid{background:rgba(242,169,78,0.15);color:var(--amber);}
 .pc-cost{font-size:11px;color:var(--slate);line-height:1.4;}
 .pc-check{position:absolute;top:8px;right:8px;color:var(--bronze-bright);font-size:12px;font-weight:700;}
+.pc-scanner{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:650;margin-top:6px;letter-spacing:.02em;}
+.pc-scanner.yes{color:var(--bronze-bright);}
+.pc-scanner.no{color:var(--slate-dim);}
 .key-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
 .key-saved-tag{font-size:11px;color:var(--win);font-weight:650;white-space:nowrap;}
 .key-link{font-size:12px;margin-top:6px;display:inline-block;text-decoration:none;font-weight:600;}
@@ -413,7 +416,8 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     </div>
     <div class="field">
       <label>Model</label>
-      <select id="setupModelSelect"></select>
+      <select id="setupModelSelect" onchange="onModelChange('setup')"></select>
+      <div class="hint" id="setupScannerNote"></div>
     </div>
     <div class="toggle-row">
       <div>
@@ -523,8 +527,8 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   <div class="field">
     <label>Chart screenshot (optional)</label>
     <input type="file" id="sig_chartInput" accept="image/*" style="display:none;" onchange="onChartFileChange(event)">
-    <button type="button" class="btn-ghost" onclick="document.getElementById('sig_chartInput').click()">📷 Upload chart image</button>
-    <div class="hint">Needs a vision-capable model — OpenAI, Claude, Gemini, or OpenRouter's GPT-4o mini. SciFe only uses price levels it can actually read off the image.</div>
+    <button type="button" class="btn-ghost" onclick="document.getElementById('sig_chartInput').click()">🔍 Upload chart image</button>
+    <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. SciFe only uses price levels it can actually read off the image.</div>
     <div id="sig_chartPreview"></div>
   </div>
 
@@ -561,7 +565,8 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     </div>
     <div class="field">
       <label>Model</label>
-      <select id="settingsModelSelect"></select>
+      <select id="settingsModelSelect" onchange="onModelChange('settings')"></select>
+      <div class="hint" id="settingsScannerNote"></div>
     </div>
     <div class="toggle-row">
       <div style="font-weight:600;font-size:13.5px;">Voice replies</div>
@@ -638,9 +643,9 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.groq.com/openai/v1/chat/completions',
     models: [
-      { value:'llama-3.3-70b-versatile', label:'Llama 3.3 70B — smart & free' },
-      { value:'llama-3.1-8b-instant', label:'Llama 3.1 8B — fastest' },
-      { value:'gemma2-9b-it', label:'Gemma 2 9B — light & free' }
+      { value:'llama-3.3-70b-versatile', label:'Llama 3.3 70B — smart & free', vision:false },
+      { value:'llama-3.1-8b-instant', label:'Llama 3.1 8B — fastest', vision:false },
+      { value:'gemma2-9b-it', label:'Gemma 2 9B — light & free', vision:false }
     ]
   },
   google: {
@@ -653,9 +658,9 @@ const PROVIDERS = {
     keyLink: 'https://aistudio.google.com/apikey',
     compat: 'gemini',
     models: [
-      { value:'gemini-3.5-flash', label:'Gemini 3.5 Flash — fast & free-tier' },
-      { value:'gemini-3.5-flash-lite', label:'Gemini 3.5 Flash-Lite — cheapest' },
-      { value:'gemini-3.1-pro', label:'Gemini 3.1 Pro — most capable' }
+      { value:'gemini-3.5-flash', label:'Gemini 3.5 Flash — fast & free-tier', vision:true },
+      { value:'gemini-3.5-flash-lite', label:'Gemini 3.5 Flash-Lite — cheapest', vision:true },
+      { value:'gemini-3.1-pro', label:'Gemini 3.1 Pro — most capable', vision:true }
     ]
   },
   openrouter: {
@@ -669,9 +674,9 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://openrouter.ai/api/v1/chat/completions',
     models: [
-      { value:'meta-llama/llama-3.1-8b-instruct:free', label:'Llama 3.1 8B — free' },
-      { value:'google/gemini-2.0-flash-exp:free', label:'Gemini 2.0 Flash (exp) — free' },
-      { value:'openai/gpt-4o-mini', label:'GPT-4o mini — paid, cheap' }
+      { value:'meta-llama/llama-3.1-8b-instruct:free', label:'Llama 3.1 8B — free', vision:false },
+      { value:'google/gemini-2.0-flash-exp:free', label:'Gemini 2.0 Flash (exp) — free', vision:true },
+      { value:'openai/gpt-4o-mini', label:'GPT-4o mini — paid, cheap', vision:true }
     ]
   },
   mistral: {
@@ -685,9 +690,10 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.mistral.ai/v1/chat/completions',
     models: [
-      { value:'open-mistral-nemo', label:'Mistral Nemo — free-tier friendly' },
-      { value:'mistral-small-latest', label:'Mistral Small — cheap' },
-      { value:'mistral-large-latest', label:'Mistral Large — most capable' }
+      { value:'open-mistral-nemo', label:'Mistral Nemo — free-tier friendly', vision:false },
+      { value:'mistral-small-latest', label:'Mistral Small — cheap', vision:false },
+      { value:'mistral-large-latest', label:'Mistral Large — most capable', vision:false },
+      { value:'pixtral-large-latest', label:'Pixtral Large — reads images 🔍', vision:true }
     ]
   },
   openai: {
@@ -701,8 +707,38 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.openai.com/v1/chat/completions',
     models: [
-      { value:'gpt-4o-mini', label:'gpt-4o-mini — fast & cheap' },
-      { value:'gpt-4o', label:'gpt-4o — smarter' }
+      { value:'gpt-4o-mini', label:'gpt-4o-mini — fast & cheap', vision:true },
+      { value:'gpt-4o', label:'gpt-4o — smarter', vision:true }
+    ]
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    badge: 'Cheap', badgeClass:'paid',
+    cost: 'No free tier, but extremely low per-token pricing',
+    keyLabel: 'DeepSeek API key',
+    keyPlaceholder: 'sk-...',
+    keyHint: 'Pay-as-you-go — among the cheapest frontier-quality models available.',
+    keyLink: 'https://platform.deepseek.com/api_keys',
+    compat: 'openai',
+    baseURL: 'https://api.deepseek.com/chat/completions',
+    models: [
+      { value:'deepseek-v4-flash', label:'DeepSeek V4 Flash — fast & cheap', vision:false },
+      { value:'deepseek-v4-pro', label:'DeepSeek V4 Pro — most capable', vision:false }
+    ]
+  },
+  together: {
+    label: 'Together AI',
+    badge: 'Free model', badgeClass:'free',
+    cost: 'Llama Vision is free · other open models pay-as-you-go',
+    keyLabel: 'Together API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Free sign-up credit, plus one always-free vision model (Llama Vision Free).',
+    keyLink: 'https://api.together.ai/settings/api-keys',
+    compat: 'openai',
+    baseURL: 'https://api.together.xyz/v1/chat/completions',
+    models: [
+      { value:'meta-llama/Llama-Vision-Free', label:'Llama Vision — free & reads images 🔍', vision:true },
+      { value:'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', label:'Llama 3.1 8B Turbo — cheap text', vision:false }
     ]
   },
   anthropic: {
@@ -715,12 +751,37 @@ const PROVIDERS = {
     keyLink: 'https://console.anthropic.com/settings/keys',
     compat: 'anthropic',
     models: [
-      { value:'claude-sonnet-5', label:'Claude Sonnet 5 — smart & fast' },
-      { value:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5 — fastest & cheap' },
-      { value:'claude-opus-4-8', label:'Claude Opus 4.8 — most capable' }
+      { value:'claude-sonnet-5', label:'Claude Sonnet 5 — smart & fast', vision:true },
+      { value:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5 — fastest & cheap', vision:true },
+      { value:'claude-opus-4-8', label:'Claude Opus 4.8 — most capable', vision:true }
     ]
   }
 };
+
+/* True if this provider has at least one model that can read images — drives
+   the 🔍 Scanner badge on provider cards. */
+function providerHasVision(key){
+  const cfg = PROVIDERS[key];
+  return !!(cfg && cfg.models && cfg.models.some(m=>m.vision));
+}
+/* True if the specific model currently selected can read images. Falls back
+   to false for anything not explicitly marked vision:true. */
+function modelSupportsVision(providerKey, modelValue){
+  const cfg = PROVIDERS[providerKey];
+  if(!cfg) return false;
+  const m = cfg.models.find(m=>m.value===modelValue);
+  return !!(m && m.vision);
+}
+/* Plain-English list of every currently vision-capable model, for error/hint
+   text — built from PROVIDERS so it never goes stale when providers change. */
+function visionCapableSummary(){
+  const parts = [];
+  Object.values(PROVIDERS).forEach(cfg=>{
+    const names = cfg.models.filter(m=>m.vision);
+    if(names.length) parts.push(cfg.label + ' (' + names.map(m=>m.label.split(' — ')[0]).join(', ') + ')');
+  });
+  return parts.join('; ');
+}
 
 function populateProviderSelects(){
   const opts = Object.entries(PROVIDERS).map(([key,cfg])=>`<option value="${key}">${cfg.label}</option>`).join('');
@@ -743,9 +804,11 @@ function buildProviderGrid(scope){
   grid.innerHTML = Object.entries(PROVIDERS).map(([key,cfg])=>{
     const isActive = key === active;
     const hasSavedKey = !!(scife.apiKeys && scife.apiKeys[key]);
+    const hasVision = providerHasVision(key);
     return `<div class="provider-card${isActive?' active':''}" data-key="${key}" onclick="selectProvider('${scope}','${key}')">
       <div class="pc-top"><span class="pc-name">${cfg.label}</span><span class="pc-badge ${cfg.badgeClass}">${cfg.badge}${hasSavedKey?' ✓':''}</span></div>
       <div class="pc-cost">${cfg.cost}</div>
+      <div class="pc-scanner ${hasVision?'yes':'no'}">${hasVision?'🔍 Scanner support':'🔍 No scanner'}</div>
     </div>`;
   }).join('');
 }
@@ -781,9 +844,33 @@ function onProviderChange(scope){
   if(keyInput) keyInput.value = savedKey;
   if(keySaved) keySaved.style.display = savedKey ? 'inline' : 'none';
   if(modelSelect){
-    modelSelect.innerHTML = cfg.models.map(m=>`<option value="${m.value}">${m.label}</option>`).join('');
+    modelSelect.innerHTML = cfg.models.map(m=>{
+      const alreadyMarked = m.label.includes('🔍');
+      const label = (m.vision && !alreadyMarked) ? m.label + ' 🔍' : m.label;
+      return `<option value="${m.value}">${label}</option>`;
+    }).join('');
     if(sel.value === scife.provider && scife.model) modelSelect.value = scife.model;
   }
+  updateScannerNote(scope);
+}
+
+/* Called when the Model dropdown itself changes (provider unchanged) so the
+   scanner note stays accurate even between models of the same provider. */
+function onModelChange(scope){ updateScannerNote(scope); }
+
+/* Reflects whether the exact model currently selected can read uploaded
+   images — this is what actually decides scanner support, not just the
+   provider, since some providers mix vision and text-only models. */
+function updateScannerNote(scope){
+  const providerSel = document.getElementById(scope+'ProviderSelect');
+  const modelSel = document.getElementById(scope+'ModelSelect');
+  const note = document.getElementById(scope+'ScannerNote');
+  if(!note || !providerSel || !modelSel) return;
+  const supported = modelSupportsVision(providerSel.value, modelSel.value);
+  note.textContent = supported
+    ? '🔍 Scanner supported — this model can read an uploaded chart image.'
+    : '🔍 Scanner not supported — this model is text-only. Pick a model marked 🔍 above to upload chart images.';
+  note.style.color = supported ? 'var(--bronze-bright)' : 'var(--slate-dim)';
 }
 
 /* Hides the "✓ saved" tag as soon as the person starts editing the key,
@@ -1247,15 +1334,11 @@ const SIGNAL_TRADE_STYLES = {
 let sigChartImage = null; // { mime, base64 } — cleared on removeChartImage()
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
-// Only the vision-capable models actually configured in PROVIDERS above —
-// update this if a model list there changes. Everything else in that list
-// (Groq's Llama/Gemma, Mistral's Nemo/Small/Large, OpenRouter's free Llama)
-// is text-only, so a chart upload against those would just silently fail.
+// Reads the vision:true/false flag set per-model in PROVIDERS above, so
+// adding or removing a provider/model automatically keeps this correct —
+// no hardcoded provider list to fall out of date.
 function currentModelSupportsVision(){
-  const p = scife.provider;
-  if(p==='anthropic' || p==='google' || p==='openai') return true;
-  if(p==='openrouter') return scife.model === 'openai/gpt-4o-mini';
-  return false; // groq, mistral
+  return modelSupportsVision(scife.provider, scife.model);
 }
 
 function openSignalPage(){
@@ -1352,7 +1435,7 @@ function onChartFileChange(e){
         <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
       </div>`;
     if(!currentModelSupportsVision()){
-      showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — switch to OpenAI, Claude, Gemini, or OpenRouter's GPT-4o mini in settings.");
+      showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
     }
   };
   reader.readAsDataURL(file);
@@ -1373,7 +1456,7 @@ async function analyzeSignal(){
   if(!desc && !sigChartImage){ showToast("Add a chart image or describe what you're seeing"); return; }
   const errEl = document.getElementById('sig_error');
   if(sigChartImage && !currentModelSupportsVision()){
-    errEl.textContent = `${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Switch to OpenAI, Claude, Gemini, or OpenRouter's GPT-4o mini in settings, or remove the chart and describe the setup in text instead.`;
+    errEl.textContent = `${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Pick a model marked 🔍 Scanner in settings (${visionCapableSummary()}), or remove the chart and describe the setup in text instead.`;
     errEl.style.display = 'block';
     return;
   }
