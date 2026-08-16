@@ -740,6 +740,111 @@ const PROVIDERS = {
       { value:'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', label:'Llama 3.1 8B Turbo — cheap text', vision:false }
     ]
   },
+  sambanova: {
+    label: 'SambaNova',
+    badge: 'Free', badgeClass:'free',
+    cost: 'Free developer tier, no credit card — very high rate limits',
+    keyLabel: 'SambaNova API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Sign up at cloud.sambanova.ai — free tier needs no card.',
+    keyLink: 'https://cloud.sambanova.ai/apis',
+    compat: 'openai',
+    baseURL: 'https://api.sambanova.ai/v1/chat/completions',
+    models: [
+      { value:'Meta-Llama-3.3-70B-Instruct', label:'Llama 3.3 70B — free & fast', vision:false },
+      { value:'Meta-Llama-3.1-8B-Instruct', label:'Llama 3.1 8B — free & fastest', vision:false }
+    ]
+  },
+  github: {
+    label: 'GitHub Models',
+    badge: 'Free', badgeClass:'free',
+    cost: 'Free with any GitHub account — daily limits scale with your Copilot tier',
+    keyLabel: 'GitHub personal access token',
+    keyPlaceholder: 'github_pat_...',
+    keyHint: 'Create a fine-grained PAT with "models: read" permission at github.com/settings/tokens.',
+    keyLink: 'https://github.com/settings/tokens',
+    compat: 'openai',
+    baseURL: 'https://models.github.ai/inference/chat/completions',
+    models: [
+      { value:'openai/gpt-4o-mini', label:'GPT-4o mini — free & reads images 🔍', vision:true },
+      { value:'openai/gpt-4o', label:'GPT-4o — free & reads images 🔍', vision:true }
+    ]
+  },
+  cerebras: {
+    label: 'Cerebras',
+    badge: 'Free', badgeClass:'free',
+    cost: '1M free tokens/day, no credit card — the fastest inference around',
+    keyLabel: 'Cerebras API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Sign up at cloud.cerebras.ai — free tier needs no card.',
+    keyLink: 'https://cloud.cerebras.ai',
+    compat: 'openai',
+    baseURL: 'https://api.cerebras.ai/v1/chat/completions',
+    models: [
+      { value:'llama-4-scout-17b-16e-instruct', label:'Llama 4 Scout — free & fast', vision:false },
+      { value:'llama3.1-8b', label:'Llama 3.1 8B — free & fastest', vision:false }
+    ]
+  },
+  huggingface: {
+    label: 'Hugging Face',
+    badge: 'Free', badgeClass:'free',
+    cost: 'Free-tier router across many open models, ~1,000 requests/day',
+    keyLabel: 'Hugging Face access token',
+    keyPlaceholder: 'hf_...',
+    keyHint: 'Create a free read token at huggingface.co/settings/tokens.',
+    keyLink: 'https://huggingface.co/settings/tokens',
+    compat: 'openai',
+    baseURL: 'https://router.huggingface.co/v1/chat/completions',
+    models: [
+      { value:'Qwen/Qwen2.5-VL-3B-Instruct', label:'Qwen2.5-VL 3B — free & reads images 🔍', vision:true },
+      { value:'meta-llama/Llama-3.1-8B-Instruct', label:'Llama 3.1 8B — free text', vision:false }
+    ]
+  },
+  cohere: {
+    label: 'Cohere',
+    badge: 'Free trial', badgeClass:'freemodels',
+    cost: '1,000 free trial calls/month, no credit card',
+    keyLabel: 'Cohere API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Every new account gets a free Trial key — no card needed for prototyping use.',
+    keyLink: 'https://dashboard.cohere.com/api-keys',
+    compat: 'openai',
+    baseURL: 'https://api.cohere.ai/compatibility/v1/chat/completions',
+    models: [
+      { value:'command-a-03-2025', label:'Command A — free trial text', vision:false },
+      { value:'command-r7b-12-2024', label:'Command R7B — free trial, fastest', vision:false }
+    ]
+  },
+  fireworks: {
+    label: 'Fireworks AI',
+    badge: 'Trial credit', badgeClass:'freemodels',
+    cost: '$1 free trial credit on sign-up · pay-as-you-go after',
+    keyLabel: 'Fireworks API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'New accounts get $1 in free credit — enough for real testing before paying anything.',
+    keyLink: 'https://fireworks.ai/account/api-keys',
+    compat: 'openai',
+    baseURL: 'https://api.fireworks.ai/inference/v1/chat/completions',
+    models: [
+      { value:'accounts/fireworks/models/llama-v3p2-11b-vision-instruct', label:'Llama Vision 11B — reads images 🔍', vision:true },
+      { value:'accounts/fireworks/models/llama-v3p3-70b-instruct', label:'Llama 3.3 70B — text only', vision:false }
+    ]
+  },
+  qwen: {
+    label: 'Qwen (Alibaba)',
+    badge: 'Free trial', badgeClass:'freemodels',
+    cost: 'Up to ~1M free tokens per model for 90 days on new accounts',
+    keyLabel: 'DashScope API key',
+    keyPlaceholder: 'sk-...',
+    keyHint: 'Activate Model Studio (Singapore/international region) at alibabacloud.com for the free quota.',
+    keyLink: 'https://bailian.console.alibabacloud.com/?apiKey=1',
+    compat: 'openai',
+    baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
+    models: [
+      { value:'qwen-vl-plus', label:'Qwen-VL Plus — reads images 🔍', vision:true },
+      { value:'qwen-plus', label:'Qwen Plus — text only', vision:false }
+    ]
+  },
   anthropic: {
     label: 'Anthropic (Claude)',
     badge: 'Paid', badgeClass:'paid',
@@ -1425,17 +1530,40 @@ function onChartFileChange(e){
   if(file.size > 5*1024*1024){ showToast('Image too large — please use one under 5MB'); e.target.value=''; return; }
   const reader = new FileReader();
   reader.onload = function(){
-    const dataUrl = reader.result;
-    const comma = dataUrl.indexOf(',');
-    sigChartImage = { mime: file.type, base64: dataUrl.slice(comma+1) };
-    document.getElementById('sig_chartPreview').innerHTML = `
-      <div class="sig-chart-thumb">
-        <img src="${dataUrl}" alt="Uploaded chart">
-        <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
-      </div>`;
-    if(!currentModelSupportsVision()){
-      showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
-    }
+    const img = new Image();
+    img.onload = function(){
+      // Re-encode through a canvas before sending anywhere. This normalizes
+      // whatever the source file actually is (odd color profiles, alpha
+      // channels some vision APIs choke on, unusual/undeclared formats) into
+      // a clean JPEG, and caps resolution — full-resolution phone
+      // screenshots (often 3000px+ tall) are the most common cause of a
+      // vision API generically rejecting an otherwise-fine image.
+      const MAX_DIM = 1600;
+      let { width, height } = img;
+      if(width > MAX_DIM || height > MAX_DIM){
+        const scale = MAX_DIM / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); // flatten any transparency
+      ctx.drawImage(img, 0, 0, width, height);
+      const outDataUrl = canvas.toDataURL('image/jpeg', 0.87);
+      const comma = outDataUrl.indexOf(',');
+      sigChartImage = { mime: 'image/jpeg', base64: outDataUrl.slice(comma + 1) };
+      document.getElementById('sig_chartPreview').innerHTML = `
+        <div class="sig-chart-thumb">
+          <img src="${outDataUrl}" alt="Uploaded chart">
+          <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
+        </div>`;
+      if(!currentModelSupportsVision()){
+        showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
+      }
+    };
+    img.onerror = function(){ showToast("Couldn't read that image — try a different file."); };
+    img.src = reader.result;
   };
   reader.readAsDataURL(file);
 }
@@ -1478,7 +1606,11 @@ async function analyzeSignal(){
     renderSignalResult(parsed, strategy, styleKey);
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, bias: parsed.bias, confidence: parsed.confidence }, true);
   }catch(e){
-    errEl.textContent = 'SciFe hit an error: ' + (e.message || 'unknown');
+    let msg = e.message || 'unknown';
+    if(/unable to process input image/i.test(msg)){
+      msg += ' — try a smaller or re-cropped screenshot (a plain PNG/JPEG under ~2MB works best), or remove the chart and describe the setup in text instead.';
+    }
+    errEl.textContent = 'SciFe hit an error: ' + msg;
     errEl.style.display = 'block';
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, error: e.message||'unknown' }, false);
   }finally{
@@ -1644,7 +1776,21 @@ async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens,
   });
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
-    throw new Error(err.error?.message || (cfg.label + ' request failed (' + res.status + ')'));
+    let msg = err.error?.message || (cfg.label + ' request failed (' + res.status + ')');
+    // OpenRouter's own error message is often just "Provider returned error" —
+    // the actually useful detail from the upstream provider (OpenAI, Google,
+    // etc.) is buried one level deeper in error.metadata.raw. Surface it.
+    const raw = err.error?.metadata?.raw;
+    if(raw){
+      const rawText = typeof raw === 'string' ? raw : (raw.message || JSON.stringify(raw));
+      if(rawText && !msg.includes(rawText)) msg += ' — ' + rawText;
+    }
+    // The single most common cause of an otherwise-blank provider error on a
+    // paid/non-free model: the account has no funded balance yet.
+    if(res.status === 402 || /credit|quota|balance|billing|insufficient/i.test(msg)){
+      msg += ` (check that your ${cfg.label} account has a funded balance — paid models need credit added before they'll run, even cheap ones.)`;
+    }
+    throw new Error(msg);
   }
   const data = await res.json();
   return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "I didn't catch that — try again?";
