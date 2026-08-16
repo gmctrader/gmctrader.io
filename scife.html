@@ -845,6 +845,21 @@ const PROVIDERS = {
       { value:'qwen-plus', label:'Qwen Plus — text only', vision:false }
     ]
   },
+  pollinations: {
+    label: 'Pollinations AI',
+    badge: 'Free', badgeClass:'free',
+    cost: 'Free, open-source community platform — no card, ever',
+    keyLabel: 'Pollinations API key',
+    keyPlaceholder: 'paste key',
+    keyHint: 'Grab an instant free key at enter.pollinations.ai (no card, no waitlist). Community-run, so treat it as best-effort rather than enterprise-grade uptime.',
+    keyLink: 'https://enter.pollinations.ai',
+    compat: 'openai',
+    baseURL: 'https://gen.pollinations.ai/v1/chat/completions',
+    models: [
+      { value:'openai', label:'OpenAI (routed) — free & reads images 🔍', vision:true },
+      { value:'openai-fast', label:'OpenAI Fast (routed) — free, quick text', vision:false }
+    ]
+  },
   anthropic: {
     label: 'Anthropic (Claude)',
     badge: 'Paid', badgeClass:'paid',
@@ -1435,7 +1450,7 @@ const SIGNAL_TRADE_STYLES = {
   intraday: { label:'Intraday', good:1.5, warn:1,   tpRange:'2',   blurb:'Intraday setups carry it for hours, so they generally want at least 1–1.5R to be worth the screen time and spread.' },
   swing:    { label:'Swing',    good:2,   warn:1.3, tpRange:'2–3', blurb:'Swing trades tie up margin and carry overnight risk for days, so the reward needs to clear a higher bar — 2R or better.' }
 };
-let sigChartImage = null; // { mime, base64 } — cleared on removeChartImage()
+let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
 // Reads the vision:true/false flag set per-model in PROVIDERS above, so
@@ -1552,7 +1567,7 @@ function onChartFileChange(e){
       ctx.drawImage(img, 0, 0, width, height);
       const outDataUrl = canvas.toDataURL('image/jpeg', 0.87);
       const comma = outDataUrl.indexOf(',');
-      sigChartImage = { mime: 'image/jpeg', base64: outDataUrl.slice(comma + 1) };
+      sigChartImage = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1) };
       document.getElementById('sig_chartPreview').innerHTML = `
         <div class="sig-chart-thumb">
           <img src="${outDataUrl}" alt="Uploaded chart">
