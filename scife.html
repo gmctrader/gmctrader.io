@@ -179,31 +179,61 @@ body{position:relative;}
   border:1px solid rgba(45,212,168,0.22);transform-style:preserve-3d;transform:rotateX(0deg) rotateY(0deg);
   transition:transform .35s cubic-bezier(.2,.7,.3,1), box-shadow .4s ease;
   box-shadow:0 30px 60px -18px rgba(0,0,0,0.7), 0 0 40px -12px rgba(18,185,136,0.25), inset 0 1px 0 rgba(255,255,255,0.05);}
+/* ---- living nebula fallback layer — sits behind the video at all times, so
+   the stage never looks like a flat/black void even before the video loads,
+   fails to load (no gmc.MP4 present), or on a browser that blocks autoplay.
+   When the video IS playing, this dims to a faint backing glow that blends
+   with it for extra depth; if the video errors out, this becomes the whole
+   show and is deliberately rich enough to carry the visual on its own. ---- */
+.stage-fallback{position:absolute;inset:0;z-index:0;opacity:1;transition:opacity .9s ease;
+  background:
+    radial-gradient(60% 50% at 30% 20%, rgba(45,212,168,0.30), transparent 65%),
+    radial-gradient(55% 45% at 75% 70%, rgba(139,92,246,0.22), transparent 65%),
+    radial-gradient(40% 40% at 60% 15%, rgba(242,200,119,0.14), transparent 70%),
+    radial-gradient(80% 70% at 50% 100%, rgba(18,185,136,0.18), transparent 70%);
+  background-size:180% 180%,170% 170%,160% 160%,150% 150%;
+  animation:nebulaDrift 18s ease-in-out infinite;}
+@keyframes nebulaDrift{
+  0%{background-position:0% 0%, 100% 100%, 50% 0%, 50% 100%;}
+  50%{background-position:30% 20%, 70% 80%, 60% 20%, 50% 90%;}
+  100%{background-position:0% 0%, 100% 100%, 50% 0%, 50% 100%;}}
+.stage.has-video .stage-fallback{opacity:.4;}
 /* fine holographic scanline + vignette overlay for a "console" feel */
 .stage::before{content:'';position:absolute;inset:0;z-index:3;pointer-events:none;
   background:repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 3px);
   mix-blend-mode:overlay;opacity:.5;}
 .stage::after{content:'';position:absolute;inset:0;z-index:3;pointer-events:none;
   box-shadow:inset 0 0 70px 10px rgba(0,0,0,0.65);}
-.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.4;
-  filter:saturate(130%) contrast(108%) brightness(0.75) hue-rotate(-4deg);transform:scale(1.04) translateZ(0px);transition:transform .6s ease, filter .4s ease;}
-.stage.speaking video{transform:scale(1.1) translateZ(6px);filter:saturate(160%) contrast(112%) brightness(0.95) hue-rotate(-4deg);}
-.stage-tint{position:absolute;inset:0;background:linear-gradient(180deg, rgba(6,20,16,0.08), rgba(2,8,6,0.78));}
+/* ---- glass reflection sweep — a soft diagonal highlight that drifts across
+   the panel every few seconds, the same trick that sells a phone/watch face
+   as glass rather than a flat rectangle ---- */
+.stage-glare{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;}
+.stage-glare::after{content:'';position:absolute;top:-60%;left:-30%;width:55%;height:220%;
+  background:linear-gradient(75deg, transparent, rgba(255,255,255,0.10) 45%, rgba(255,255,255,0.03) 55%, transparent);
+  transform:translateX(-40%) rotate(0deg);animation:stageGlareSweep 7s ease-in-out infinite;}
+@keyframes stageGlareSweep{0%,70%{transform:translateX(-120%);}88%{transform:translateX(340%);}100%{transform:translateX(340%);}}
+.stage video{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;opacity:0.55;
+  filter:saturate(135%) contrast(110%) brightness(0.85) hue-rotate(-4deg);transform:scale(1.04) translateZ(0px);transition:transform .6s ease, filter .4s ease, opacity .5s ease;}
+.stage.speaking video{transform:scale(1.1) translateZ(6px);filter:saturate(165%) contrast(114%) brightness(1.02) hue-rotate(-4deg);}
+.stage.video-failed video{display:none;}
+.stage-tint{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg, rgba(6,20,16,0.06), rgba(2,8,6,0.7));}
 
 /* corner HUD tick marks — reinforces the "interface, not a photo" feeling */
-.stage-hud{position:absolute;inset:10px;z-index:2;pointer-events:none;}
-.stage-hud i{position:absolute;width:14px;height:14px;border:1.5px solid rgba(45,212,168,0.55);}
+.stage-hud{position:absolute;inset:10px;z-index:5;pointer-events:none;}
+.stage-hud i{position:absolute;width:14px;height:14px;border:1.5px solid rgba(45,212,168,0.55);filter:drop-shadow(0 0 4px rgba(45,212,168,0.35));}
 .stage-hud i:nth-child(1){top:0;left:0;border-right:none;border-bottom:none;}
 .stage-hud i:nth-child(2){top:0;right:0;border-left:none;border-bottom:none;}
 .stage-hud i:nth-child(3){bottom:0;left:0;border-right:none;border-top:none;}
 .stage-hud i:nth-child(4){bottom:0;right:0;border-left:none;border-top:none;}
-.stage-readout{position:absolute;top:12px;left:14px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
-  letter-spacing:.12em;color:rgba(45,212,168,0.7);text-transform:uppercase;}
+.stage-readout{position:absolute;top:12px;left:14px;z-index:5;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  letter-spacing:.13em;color:rgba(45,212,168,0.75);text-transform:uppercase;padding-left:11px;}
+.stage-readout::before{content:'';position:absolute;left:0;top:4px;width:5px;height:5px;border-radius:50%;
+  background:var(--bronze-bright);box-shadow:0 0 6px var(--bronze-bright);animation:scanDotPulse 1.6s ease-in-out infinite;}
 .stage-readout .r2{display:block;color:rgba(242,200,119,0.55);margin-top:2px;font-size:9px;}
 
 /* orbit rings sit at different z-depths for a real sense of parallax when the stage tilts */
 .stage-orb{position:absolute;left:50%;top:50%;width:112px;height:112px;transform:translate(-50%,-50%) translateZ(30px);
-  border-radius:50%;transform-style:preserve-3d;pointer-events:none;}
+  border-radius:50%;transform-style:preserve-3d;pointer-events:none;z-index:5;}
 .stage-core{position:absolute;inset:30px;border-radius:50%;
   background:radial-gradient(circle, rgba(45,212,168,0.9), rgba(45,212,168,0.15) 55%, transparent 75%);
   filter:blur(2px);animation:coreBreathe 3.4s ease-in-out infinite;}
@@ -234,7 +264,7 @@ body{position:relative;}
 @keyframes ringPulse2{0%{box-shadow:0 0 0 0 rgba(242,169,78,0.4);}70%{box-shadow:0 0 0 26px rgba(242,169,78,0);}100%{box-shadow:0 0 0 0 rgba(242,169,78,0);}}
 
 /* circular bar visualizer — arranged with real rotateY steps for a 3D fan rather than a flat row */
-.wave-ring{position:absolute;left:50%;top:50%;width:2px;height:2px;transform-style:preserve-3d;pointer-events:none;}
+.wave-ring{position:absolute;left:50%;top:50%;width:2px;height:2px;transform-style:preserve-3d;pointer-events:none;z-index:5;}
 .wave-bar{position:absolute;left:-1px;top:-1px;width:2px;height:14px;border-radius:2px;
   background:linear-gradient(180deg, rgba(16,185,129,0.95), rgba(16,185,129,0));
   box-shadow:0 0 6px rgba(16,185,129,0.6);
@@ -242,10 +272,10 @@ body{position:relative;}
 .stage.listening .wave-bar{background:linear-gradient(180deg, rgba(242,169,78,0.95), rgba(242,169,78,0));box-shadow:0 0 6px rgba(242,169,78,0.6);}
 
 .stage-status{position:absolute;bottom:11px;left:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;
-  color:rgba(230,255,245,0.9);letter-spacing:0.05em;display:flex;align-items:center;gap:6px;z-index:2;text-transform:uppercase;}
+  color:rgba(230,255,245,0.9);letter-spacing:0.05em;display:flex;align-items:center;gap:6px;z-index:5;text-transform:uppercase;}
 .stage-status .dot{width:6px;height:6px;border-radius:50%;background:var(--bronze);box-shadow:0 0 8px var(--bronze);}
 .stage.listening .stage-status .dot{background:var(--amber);box-shadow:0 0 8px var(--amber);}
-.stage-emoji{position:absolute;bottom:10px;right:14px;font-size:16px;z-index:2;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));
+.stage-emoji{position:absolute;bottom:10px;right:14px;font-size:16px;z-index:5;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));
   transition:transform .2s ease;}
 .stage-emoji.pop{animation:emojiPop .5s ease;}
 @keyframes emojiPop{0%{transform:scale(0.4) rotate(-10deg);}55%{transform:scale(1.25) rotate(6deg);}100%{transform:scale(1) rotate(0deg);}}
@@ -701,10 +731,13 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 
   <div class="stage-3d-wrap" id="stage3dWrap">
     <div class="stage" id="stage">
-      <video id="stageVideo" autoplay muted loop playsinline preload="auto">
+      <div class="stage-fallback" aria-hidden="true"></div>
+      <video id="stageVideo" autoplay muted loop playsinline preload="auto"
+        poster="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><defs><radialGradient id='g' cx='50%25' cy='30%25' r='75%25'><stop offset='0%25' stop-color='%230f2a22'/><stop offset='45%25' stop-color='%23061912'/><stop offset='100%25' stop-color='%23010403'/></radialGradient></defs><rect width='100%25' height='100%25' fill='url(%23g)'/></svg>">
         <source src="gmc.MP4" type="video/mp4">
       </video>
       <div class="stage-tint"></div>
+      <div class="stage-glare" aria-hidden="true"></div>
       <div class="stage-hud"><i></i><i></i><i></i><i></i></div>
       <div class="stage-readout">Neural link · active<span class="r2">Ghost Discipline core</span></div>
       <div class="wave-ring" id="waveRing"></div>
@@ -1578,6 +1611,26 @@ document.addEventListener('visibilitychange', ()=>{
   if(!video) return;
   if(document.hidden) video.pause(); else video.play().catch(()=>{});
 });
+
+/* ============ STAGE VIDEO ROBUSTNESS ============
+   gmc.MP4 is an optional asset — if it's missing, blocked, or the format
+   isn't supported, the stage should still look like a finished, living
+   product (the nebula fallback layer) rather than a broken video box. */
+(function initStageVideo(){
+  const video = document.getElementById('stageVideo');
+  const stage = document.getElementById('stage');
+  if(!video || !stage) return;
+  video.addEventListener('error', ()=> stage.classList.add('video-failed'), true);
+  video.querySelectorAll && video.querySelectorAll('source').forEach(s=>{
+    s.addEventListener('error', ()=> stage.classList.add('video-failed'));
+  });
+  video.addEventListener('playing', ()=>{ stage.classList.add('has-video'); stage.classList.remove('video-failed'); });
+  video.addEventListener('stalled', ()=>{ /* keep fallback visible underneath — no class change needed */ });
+  // Some browsers silently refuse autoplay until a user gesture; retry once
+  // on first interaction rather than leaving the stage stuck on the fallback.
+  const retryPlay = ()=>{ video.play().catch(()=>{}); document.removeEventListener('click', retryPlay); };
+  video.play().catch(()=> document.addEventListener('click', retryPlay, { once:true }));
+})();
 
 /* ============ ESCAPE-TO-CLOSE for modal + Signal page ============ */
 document.addEventListener('keydown', (e)=>{
