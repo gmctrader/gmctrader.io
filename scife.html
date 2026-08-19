@@ -612,6 +612,32 @@ body{position:relative;}
   padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55));}
 .sig-ov-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
 .sig-ov-svg line{filter:drop-shadow(0 0 3px var(--ov-halo,rgba(0,0,0,.65)));}
+/* ---- sequential 3D draw-in: every shape on the chart appears one at a
+   time, left to right, with a small 3D "materializing" flourish rather
+   than everything fading in at once. animateOverlayDrawIn() (JS) sorts
+   shapes by their real x-position and assigns the staggered delay below
+   via inline style, then adds this class. transform-origin:left keeps
+   the rectangle/line growth reading as "drawing itself in" from its own
+   left edge, matching the direction price actually moves in on a chart. */
+.sig-ov-drawin{opacity:0;transform-origin:left center;
+  animation:ovDrawIn .55s cubic-bezier(.16,.8,.24,1) forwards;}
+@keyframes ovDrawIn{
+  from{opacity:0;transform:perspective(700px) rotateY(-38deg) scaleX(0.35);}
+  60%{opacity:1;}
+  to{opacity:1;transform:perspective(700px) rotateY(0deg) scaleX(1);}}
+/* dot/point elements already rely on transform:translate(-50%,-50%) for
+   centering — this variant preserves that while still popping in with
+   the same 3D scale/rotate flourish, instead of clobbering the centering. */
+@keyframes ovDrawInDot{
+  from{opacity:0;transform:translate(-50%,-50%) perspective(700px) rotateY(-45deg) scale(0.25);}
+  60%{opacity:1;}
+  to{opacity:1;transform:translate(-50%,-50%) perspective(700px) rotateY(0deg) scale(1);}}
+.sig-ov-anchor-dot.sig-ov-drawin,.sig-ov-dot.sig-ov-drawin{animation-name:ovDrawInDot;transform-origin:center;}
+/* full-width svg shapes (trendline/arrow) — transform-origin at the line's
+   own start point (set inline per-shape via --ov-origin) so the rotate/
+   scale flourish pivots from where the line actually begins, not the
+   center of the whole invisible 100%-size svg canvas. */
+.sig-ov-svg.sig-ov-drawin{transform-origin:var(--ov-origin, 50% 50%);}
 .sig-ov-dot{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);
   background:var(--ov-color, var(--platinum));box-shadow:0 0 0 2px rgba(4,7,10,.75), 0 0 0 3.5px var(--ov-halo,rgba(0,0,0,.5)), 0 0 6px var(--ov-color, var(--platinum));}
 .sig-ov-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:10px;}
@@ -2511,7 +2537,7 @@ ${memNotes}`;
 const SIGNAL_LOGIC_SETS = {
   gmc: [ {id:'swings',label:'Swings'}, {id:'bos',label:'Break of Structure (BOS)'}, {id:'choch',label:'Change of Character (CHoCH)'}, {id:'orderblock',label:'Order Block'}, {id:'hiddensupply',label:'Hidden Supply Zone'}, {id:'hiddendemand',label:'Hidden Demand Zone'}, {id:'eqhigh',label:'Equal High'}, {id:'eqlow',label:'Equal Low'}, {id:'imbalance',label:'Imbalance'}, {id:'fibonacci',label:'Fibonacci Retracement'} ],
   smc: [ {id:'liquiditygrab',label:'Liquidity Grab'}, {id:'smc_orderblock',label:'Order Block'}, {id:'smc_fvg',label:'Fair Value Gap (FVG)'}, {id:'smc_bos',label:'Break of Structure (BOS)'}, {id:'smc_choch',label:'Change of Character (CHoCH)'}, {id:'mitigation',label:'Mitigation Block'} ],
-  ict: [ {id:'ict_orderblock',label:'Order Block'}, {id:'ict_fvg',label:'Fair Value Gap (FVG)'}, {id:'liquiditysweep',label:'Liquidity Sweep'}, {id:'ote',label:'Optimal Trade Entry (OTE)'}, {id:'killzone',label:'Killzone Timing'}, {id:'breaker',label:'Breaker Block'} ],
+  ict: [ {id:'ict_orderblock',label:'Order Block'}, {id:'ict_fvg',label:'Fair Value Gap (FVG)'}, {id:'liquiditysweep',label:'Liquidity Sweep'}, {id:'ote',label:'Optimal Trade Entry (OTE)'}, {id:'killzone',label:'Killzone Timing'}, {id:'breaker',label:'Breaker Block'}, {id:'pdh',label:'Previous Day High (PDH)'}, {id:'pdl',label:'Previous Day Low (PDL)'}, {id:'pwh',label:'Previous Week High (PWH)'}, {id:'pwl',label:'Previous Week Low (PWL)'}, {id:'sessionhigh',label:'Session High'}, {id:'sessionlow',label:'Session Low'} ],
   ta: [ {id:'supres',label:'Support / Resistance'}, {id:'trendline',label:'Trendline'}, {id:'chartpattern',label:'Chart Pattern'}, {id:'indicator',label:'Indicator Signal'}, {id:'macross',label:'Moving Average Cross'}, {id:'volume',label:'Volume Confirmation'} ],
   fundamentals: [ {id:'newsevent',label:'News Event'}, {id:'ratedecision',label:'Interest Rate Decision'}, {id:'econdata',label:'Economic Data Release'}, {id:'cbpolicy',label:'Central Bank Policy'}, {id:'geopolitical',label:'Geopolitical Event'}, {id:'earnings',label:'Earnings Report'} ]
 };
@@ -2550,6 +2576,12 @@ const SIGNAL_LOGIC_DEFS = {
   ote: 'Optimal Trade Entry (OTE) — the 0.62–0.79 Fibonacci retracement zone (centered near 0.705, the "golden pocket") of the most recent displacement leg, taken after a liquidity sweep and a market structure shift. Use the same fib methodology as the GMC fibonacci definition to locate it.',
   killzone: 'Killzone Timing — whether the setup falls inside a defined ICT session window (London Open ≈ 2–5am EST, New York Open ≈ 7–10am EST, London Close ≈ 10am–12pm EST). Only judge this from an actual visible timestamp/session marker on the chart — if no time is visible, mark "unclear," never assume a session.',
   breaker: 'Breaker Block — a failed order block: price broke through it, then returned and it now acts as support/resistance from the opposite side of its original function.',
+  pdh: 'Previous Day High (PDH) — the highest price reached during the prior full trading day, only if identifiable from a visible date/session marker or explicitly stated. A classic resting buy-side liquidity target. Mark "unclear" if the chart gives no way to tell where one day ends and the next begins.',
+  pdl: 'Previous Day Low (PDL) — the lowest price of the prior full trading day, same visibility requirement as PDH. A classic resting sell-side liquidity target.',
+  pwh: 'Previous Week High (PWH) — the highest price of the prior full trading week. Only mark present if the chart\'s visible range genuinely spans multiple weeks and the prior week\'s high is identifiable — on a short intraday-only chart this is usually not determinable, so default to "unclear" rather than guessing.',
+  pwl: 'Previous Week Low (PWL) — the lowest price of the prior full trading week, same visibility requirement as PWH.',
+  sessionhigh: 'Session High — the highest price so far within the current trading session (e.g. the visible London or New York session), only if session boundaries are inferable from the chart (time axis, session separators, or stated).',
+  sessionlow: 'Session Low — the lowest price so far within the current trading session, same requirement as Session High.',
   // --- Classic TA ---
   supres: 'Support / Resistance — a horizontal price level that has visibly caused multiple prior reactions (rejections, bounces) at roughly the same price.',
   trendline: 'Trendline — a diagonal line connecting at least two (ideally three) swing points, currently acting as visible support or resistance.',
@@ -2677,12 +2709,13 @@ Also give "setup_x1_pct" and "setup_x2_pct" — the HORIZONTAL span (0=left edge
 
 CHART MARKERS FOR CHECKLIST ITEMS: for EVERY checklist item you marked "present" whose id is in one of the groups below, add one matching entry to "chart_markers" — don't skip any of them; a "present" item with no marker just vanishes from the chart, so if you called it present, place it. Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it (same 0–100 top-to-bottom / left-to-right percentage convention throughout, read directly off the chart — never guessed). SELF-CHECK BEFORE YOU ANSWER: for every checklist item you're about to mark "present" that belongs to one of the groups below, confirm you can actually give it real, non-null coordinates. If you can't confidently place it on the image, that's a sign your read of it is shakier than "present" implies — downgrade that item's status to "unclear" instead, and say why in its note. Never leave a checklist item marked "present" with no matching chart_markers entry when it belongs to a drawable group; a trader who sees something ticked in the checklist and then missing from the chart has no way to trust either one.
 - Point-to-point line — drawn between two real anchor points on the chart, like a TRENDLINE tool, never a flat ray in either direction (give "x1_pct"/"y1_pct" for the first anchor point and "x2_pct"/"y2_pct" for the second): trendline, bos, choch, smc_bos, smc_choch — for BOS/CHoCH specifically, anchor point 1 at the swing high/low that got broken and point 2 at the candle that broke it (the two points can share a y value if that reads more naturally, but both x1_pct and x2_pct AND both y1_pct and y2_pct are still required fields — never leave y1_pct/y2_pct null for these ids, that silently drops the marker)
-- Single horizontal level — a bounded SEGMENT, never a full-width ray (give "y_pct" for the price, plus "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at, or just before, the candle that actually set this level, and x2_pct at the current/rightmost candle): eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
-- Price zone/box — a real RECTANGLE, bounded on all four sides (give "y_pct" as the top edge, "y2_pct" as the bottom edge, "x1_pct"/"x2_pct" bounding it left/right to the exact candles that formed it — never the full image width): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand, chartpattern
+- Arrow — a directional ARROW tool (same x1_pct/y1_pct/x2_pct/y2_pct fields as the point-to-point line above), used specifically where the DIRECTION itself is the signal, not just the structure: point 1 (x1_pct/y1_pct) is where price was swept FROM, point 2 (x2_pct/y2_pct) is where it reversed TO — the arrowhead renders at point 2, so make sure point 2 is genuinely the destination, not the origin: liquiditygrab, liquiditysweep
+- Single horizontal level — a bounded SEGMENT, never a full-width ray (give "y_pct" for the price, plus "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at, or just before, the candle that actually set this level, and x2_pct at the current/rightmost candle): eqhigh, eqlow, supres, pdh, pdl, pwh, pwl, sessionhigh, sessionlow
+- Price zone/box — a real RECTANGLE, bounded on all four sides (give "y_pct" as the top edge, "y2_pct" as the bottom edge, "x1_pct" anchored to the exact candle(s) that formed it on the left — but for x2_pct, EXTEND the rectangle toward the right side of the chart, close to the rightmost visible candle (x2_pct in the low-to-high 90s), the way a real trader's platform draws an untested order block/FVG forward until price returns to it — do NOT tightly hug the zone to just the candles that formed it on the right side too, that reads as a cramped decorative box rather than a real trading zone): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand, chartpattern
 - Horizontal time band (give "x1_pct" and "x2_pct" marking the left/right extent along the image; leave y fields null): killzone, volume
 - Single point marker at the exact candle it fired on (give "x1_pct" for its horizontal position and "y_pct" for its vertical position; leave other fields null): indicator, macross
-Never add a chart_markers entry for an id that isn't in one of those five groups, or for an id not marked "present" in the checklist. Every shape drawn on the chart — trendlines, segments, rectangles, bands, and points alike — must be a bounded object anchored to real candles. Do not let any line behave like an infinite ray in either direction.
-CRITICAL COMPLETENESS RULE: for the checklist ids covered by the five groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
+Never add a chart_markers entry for an id that isn't in one of those six groups, or for an id not marked "present" in the checklist. Every shape drawn on the chart — trendlines, segments, rectangles, bands, and points alike — must be a bounded object anchored to real candles. Do not let any line behave like an infinite ray in either direction.
+CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
 {"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
@@ -3167,17 +3200,34 @@ function sigOvXBounds(x1Pct, x2Pct){
   const left = Math.min(x1, x2), right = Math.max(x1, x2);
   return { left, width: Math.max(2, right - left) };
 }
+// Same idea, but for price-zone rectangles (order blocks/FVGs) specifically:
+// a real trader's platform draws these forward toward the current candle
+// until price returns to mitigate them, rather than a fixed-width box. If
+// the model gave a real x2, that's respected as-is (it may have a genuine
+// reason to stop early, e.g. the zone was already mitigated) — this only
+// fills in the gap when x2 is missing, extending to the chart's right edge
+// instead of a narrow default width.
+const SIG_OV_ZONE_RIGHT_EDGE = 98;
+function sigOvXBoundsZone(x1Pct, x2Pct){
+  let x1 = (x1Pct==null || isNaN(x1Pct)) ? null : sigOvClamp(x1Pct);
+  let x2 = (x2Pct==null || isNaN(x2Pct)) ? null : sigOvClamp(x2Pct);
+  if(x1==null && x2==null){ x1 = SIG_OV_DEFAULT_X1; x2 = SIG_OV_ZONE_RIGHT_EDGE; }
+  else if(x1==null){ x1 = Math.max(0, x2 - (SIG_OV_DEFAULT_X2 - SIG_OV_DEFAULT_X1)); }
+  else if(x2==null){ x2 = SIG_OV_ZONE_RIGHT_EDGE; }
+  const left = Math.min(x1, x2), right = Math.max(x1, x2);
+  return { left, width: Math.max(2, right - left) };
+}
 function sigOvLineHTML(yPct, colorVar, dashed, x1Pct, x2Pct){
   if(yPct==null || isNaN(yPct)) return '';
   const { left, width } = sigOvXBounds(x1Pct, x2Pct);
   const anchorX = left + width; // right edge of the segment — where the leader line starts
   return `<div class="sig-ov-line${dashed?' dashed':''}" style="top:${sigOvClamp(yPct)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};"></div>` + sigOvAnchorDotHTML(anchorX, yPct, colorVar);
 }
-function sigOvZoneHTML(topPct, botPct, colorVar, bgVar, x1Pct, x2Pct){
+function sigOvZoneHTML(topPct, botPct, colorVar, bgVar, x1Pct, x2Pct, extendRight){
   if(topPct==null || botPct==null || isNaN(topPct) || isNaN(botPct)) return '';
   const top = sigOvClamp(Math.min(topPct, botPct));
   const bot = sigOvClamp(Math.max(topPct, botPct));
-  const { left, width } = sigOvXBounds(x1Pct, x2Pct);
+  const { left, width } = extendRight ? sigOvXBoundsZone(x1Pct, x2Pct) : sigOvXBounds(x1Pct, x2Pct);
   const anchorX = left + width, anchorY = (top+bot)/2;
   return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0.6, bot-top)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"></div>` + sigOvAnchorDotHTML(anchorX, anchorY, colorVar);
 }
@@ -3190,9 +3240,25 @@ function sigOvVBandHTML(label, x1Pct, x2Pct, colorVar, bgVar){
 function sigOvTrendlineHTML(x1, y1, x2, y2, colorVar){
   if([x1,y1,x2,y2].some(v=>v==null || isNaN(v))) return '';
   x1=sigOvClamp(x1); y1=sigOvClamp(y1); x2=sigOvClamp(x2); y2=sigOvClamp(y2);
-  const svg = `<svg class="sig-ov-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorVar}" stroke-width="0.6" vector-effect="non-scaling-stroke"/></svg>`;
+  const svg = `<svg class="sig-ov-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="--ov-origin:${x1}% ${y1}%;"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorVar}" stroke-width="0.6" vector-effect="non-scaling-stroke"/></svg>`;
   const endX = Math.max(x1,x2), endY = x1>x2 ? y1 : y2; // anchor at the rightmost point of the break
   return svg + sigOvAnchorDotHTML(endX, endY, colorVar);
+}
+// Real arrow tool (distinct from the plain trendline above): a line with a
+// visible arrowhead pointing from x1/y1 -> x2/y2, used for liquidity
+// sweeps/displacement/expected delivery — i.e. anywhere direction itself
+// is the point, not just structure. viewBox stays non-scaling so the
+// arrowhead keeps its shape regardless of the chart's own aspect ratio.
+function sigOvArrowHTML(x1, y1, x2, y2, colorVar){
+  if([x1,y1,x2,y2].some(v=>v==null || isNaN(v))) return '';
+  x1=sigOvClamp(x1); y1=sigOvClamp(y1); x2=sigOvClamp(x2); y2=sigOvClamp(y2);
+  const markerId = 'ovArrowHead' + Math.random().toString(36).slice(2,9);
+  const svg = `<svg class="sig-ov-svg sig-ov-arrow-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="--ov-origin:${x1}% ${y1}%;">
+    <defs><marker id="${markerId}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="${colorVar}"/></marker></defs>
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorVar}" stroke-width="0.7" stroke-dasharray="2.4 1.6"
+      vector-effect="non-scaling-stroke" marker-end="url(#${markerId})"/></svg>`;
+  return svg + sigOvAnchorDotHTML(x1, y1, colorVar);
 }
 // Which checklist ids can be drawn, what shape they need, and what color
 // category they belong to. Ids not listed here (fibonacci/ote — already
@@ -3211,9 +3277,15 @@ const SIG_MARKER_STYLES = {
   smc_choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
   eqhigh:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
   eqlow:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
-  liquiditygrab:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
-  liquiditysweep:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
+  liquiditygrab:{cat:'Liquidity Sweep', kind:'arrow', color:'var(--amber)'},
+  liquiditysweep:{cat:'Liquidity Sweep', kind:'arrow', color:'var(--amber)'},
   supres:{cat:'Support / Resistance', kind:'hline', color:'var(--cyan)', dashed:false},
+  pdh:{cat:'Key Levels', kind:'hline', color:'var(--slate-dim)', dashed:false},
+  pdl:{cat:'Key Levels', kind:'hline', color:'var(--slate-dim)', dashed:false},
+  pwh:{cat:'Key Levels', kind:'hline', color:'var(--cyan)', dashed:true},
+  pwl:{cat:'Key Levels', kind:'hline', color:'var(--cyan)', dashed:true},
+  sessionhigh:{cat:'Key Levels', kind:'hline', color:'var(--platinum)', dashed:true},
+  sessionlow:{cat:'Key Levels', kind:'hline', color:'var(--platinum)', dashed:true},
   orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   smc_orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   ict_orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
@@ -3254,6 +3326,7 @@ function markerIsComplete(id, m){
     case 'hline':     return num(m.y_pct) && num(m.x1_pct) && num(m.x2_pct);
     case 'zone':      return num(m.y_pct) && num(m.y2_pct) && num(m.x1_pct) && num(m.x2_pct);
     case 'trendline': return num(m.x1_pct) && num(m.y1_pct) && num(m.x2_pct) && num(m.y2_pct);
+    case 'arrow':      return num(m.x1_pct) && num(m.y1_pct) && num(m.x2_pct) && num(m.y2_pct);
     case 'vband':     return num(m.x1_pct) && num(m.x2_pct);
     case 'point':     return num(m.x1_pct) && num(m.y_pct);
     default:          return false;
@@ -3299,13 +3372,18 @@ function sigOvMarkerHTML(id, label, m){
   }
   if(style.kind === 'zone'){
     const mid = (m.y_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y_pct)+parseFloat(m.y2_pct))/2 : m.y_pct;
-    return { shape: sigOvZoneHTML(m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct),
+    return { shape: sigOvZoneHTML(m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct, true),
              rail: sigOvRailChipHTML(label, mid, style.color) };
   }
   if(style.kind === 'vband') return { shape: sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg), rail:'' };
   if(style.kind === 'trendline'){
     const mid = (m.y1_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(m.y2_pct))/2 : m.y1_pct;
     return { shape: sigOvTrendlineHTML(m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color),
+             rail: sigOvRailChipHTML(label, mid, style.color) };
+  }
+  if(style.kind === 'arrow'){
+    const mid = (m.y1_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(m.y2_pct))/2 : m.y1_pct;
+    return { shape: sigOvArrowHTML(m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color),
              rail: sigOvRailChipHTML(label, mid, style.color) };
   }
   if(style.kind === 'point'){
@@ -3352,9 +3430,19 @@ async function toggleChartOverlay(btn){
   const shapes = [], railChips = [];
   const addPiece = (shape, rail_, cat, color)=>{ if(shape){ shapes.push(shape); if(rail_) railChips.push(rail_); if(cat) legendCats.set(cat, color); } };
   if(cp.fib_top_y_pct != null && cp.fib_bottom_y_pct != null){
-    const mid = (parseFloat(cp.fib_top_y_pct)+parseFloat(cp.fib_bottom_y_pct))/2;
-    addPiece(sigOvZoneHTML(cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)', setupX1, setupX2),
-      sigOvRailChipHTML('OTE / Fib zone', mid, 'var(--gold)'), 'Fibonacci OTE zone', 'var(--gold)');
+    const top = parseFloat(cp.fib_top_y_pct), bot = parseFloat(cp.fib_bottom_y_pct);
+    const eq = (top + bot) / 2;
+    // Real ICT/SMC premium-vs-discount split: everything above the 50%
+    // equilibrium is Premium (expensive — favor selling into it), everything
+    // below is Discount (cheap — favor buying from it). Two distinctly-
+    // tinted zones plus a labeled EQ line reads exactly like a trader's own
+    // fib-tool annotation, instead of one undifferentiated OTE band.
+    addPiece(sigOvZoneHTML(top, eq, 'var(--loss-bright)', 'rgba(255,93,122,0.10)', setupX1, setupX2),
+      sigOvRailChipHTML('Premium', (top+eq)/2, 'var(--loss-bright)'), 'Premium / Discount', 'var(--gold)');
+    addPiece(sigOvZoneHTML(eq, bot, 'var(--win)', 'rgba(43,224,138,0.10)', setupX1, setupX2),
+      sigOvRailChipHTML('Discount', (eq+bot)/2, 'var(--win)'), 'Premium / Discount', 'var(--gold)');
+    addPiece(sigOvLineHTML(eq, 'var(--gold)', true, setupX1, setupX2),
+      sigOvRailChipHTML('EQ 50%', eq, 'var(--gold)'), 'Premium / Discount', 'var(--gold)');
   }
   if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--gold-bright)', false, setupX1, setupX2),
     sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)'), 'Entry / SL / TP', 'var(--gold-bright)');
@@ -3364,6 +3452,18 @@ async function toggleChartOverlay(btn){
     if(tps[i] && cp[key] != null) addPiece(sigOvLineHTML(cp[key], 'var(--win)', false, setupX1, setupX2),
       sigOvRailChipHTML('TP'+(i+1)+' '+sigOvShortLevel(tps[i].level), cp[key], 'var(--win)'), 'Entry / SL / TP', 'var(--gold-bright)');
   });
+  // Directional arrow — entry toward the furthest reachable TP, showing
+  // expected price delivery at a glance (the "Arrow/Ray: direction from
+  // entry toward target" tool). Placed just right of the level lines so it
+  // doesn't sit on top of them; purely visual, not tied to a checklist item.
+  if(cp.entry_y_pct != null){
+    const furthestKey = ['tp3_y_pct','tp2_y_pct','tp1_y_pct'].find((k,idx)=> tps[2-idx] && cp[k] != null);
+    if(furthestKey){
+      const arrowX = Math.min(99, (setupX2 != null ? sigOvClamp(setupX2) : SIG_OV_DEFAULT_X2) + 2);
+      addPiece(sigOvArrowHTML(arrowX, cp.entry_y_pct, arrowX, cp[furthestKey], 'var(--gold-bright)'),
+        '', 'Expected delivery', 'var(--gold-bright)');
+    }
+  }
   // Structure markers: only for checklist items the model actually marked
   // "present" AND returned a matching, locatable chart_markers entry —
   // already scoped to whichever strategy (GMC/SMC/ICT/TA) the trader picked.
@@ -3397,6 +3497,7 @@ async function toggleChartOverlay(btn){
     overlay.style.setProperty('--ov-halo', halo);
     overlay.innerHTML = shapes.join('');
     frame.appendChild(overlay);
+    animateOverlayDrawIn(overlay);
     rail.innerHTML = railChips.join('');
     const legendEl = thumb.querySelector('.sig-ov-legend');
     const legendHTML = sigOvLegendHTML(legendCats);
@@ -3425,6 +3526,42 @@ async function toggleChartOverlay(btn){
   }
 }
 
+// Sorts every rendered shape on the chart by its real left-to-right
+// position and staggers a 3D "materializing" entrance across them, so the
+// overlay draws itself in one piece at a time from left to right instead
+// of all at once — matching how a trader actually reads a chart. Each
+// primary shape (line/zone/svg) was concatenated with its anchor-dot from
+// the SAME addPiece call, so they land as consecutive DOM siblings here —
+// grouping keeps a shape and its dot animating together.
+function animateOverlayDrawIn(overlayEl){
+  const els = Array.from(overlayEl.children);
+  function shapeX(el){
+    if(el.classList.contains('sig-ov-svg')){
+      const line = el.querySelector('line');
+      if(line) return Math.min(parseFloat(line.getAttribute('x1'))||0, parseFloat(line.getAttribute('x2'))||0);
+      return 50;
+    }
+    if(el.style && el.style.left) return parseFloat(el.style.left) || 0;
+    return 50;
+  }
+  const groups = [];
+  for(let i=0;i<els.length;i++){
+    const el = els[i];
+    if(el.classList.contains('sig-ov-anchor-dot')) continue; // always a companion, grouped with its predecessor below
+    const group = [el];
+    const next = els[i+1];
+    if(next && next.classList.contains('sig-ov-anchor-dot')) group.push(next);
+    groups.push({ els: group, x: shapeX(el) });
+  }
+  groups.sort((a,b)=>a.x-b.x);
+  const STEP_MS = 100;
+  groups.forEach((g,i)=>{
+    g.els.forEach(el=>{
+      el.classList.add('sig-ov-drawin');
+      el.style.animationDelay = (i*STEP_MS)+'ms';
+    });
+  });
+}
 let lastSignal = null; // { result, strategy, styleKey, pair } — feeds "Place on Order Book"
 function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
