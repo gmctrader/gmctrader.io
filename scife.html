@@ -1679,6 +1679,51 @@ const SIGNAL_TRADE_STYLES = {
   intraday: { label:'Intraday', good:1.5, warn:1,   tpRange:'2',   blurb:'Intraday setups carry it for hours, so they generally want at least 1–1.5R to be worth the screen time and spread.' },
   swing:    { label:'Swing',    good:2,   warn:1.3, tpRange:'2–3', blurb:'Swing trades tie up margin and carry overnight risk for days, so the reward needs to clear a higher bar — 2R or better.' }
 };
+// Expert-level definitions for every checklist concept across all strategy
+// types, keyed by id (ids are unique across GMC/SMC/ICT/TA — no collisions).
+// These get woven into the system prompt so the model judges each concept
+// against a real trading definition instead of guessing from the label alone.
+const SIGNAL_LOGIC_DEFS = {
+  // --- Ghost Money Concepts (GMC) ---
+  swings: 'The most recent significant swing high and swing low that define the current structure leg — points where price clearly reversed on the visible timeframe. Minor noise wicks don\'t count; only reversals that actually shifted the short-term trend.',
+  bos: 'Break of Structure — price closes beyond a prior significant swing point IN THE DIRECTION of the prevailing trend (e.g. a higher high in an uptrend), confirming continuation. Requires an actual close beyond the level, not just a wick poke.',
+  choch: 'Change of Character — price closes beyond a structure point in the OPPOSITE direction of the prevailing trend (e.g. breaking below the most recent higher low in an uptrend) — the first technical sign the trend may be reversing. Do not confuse with BOS: check what the prior trend actually was before labeling this.',
+  orderblock: 'Order Block — the last opposing-colored candle (or tight cluster) immediately before the impulsive move that caused a BOS/CHoCH. Only counts as relevant if price is currently near it or has returned to test it — an order block far from current price is present-but-irrelevant, note that distinction.',
+  hiddensupply: 'Hidden Supply Zone — an unmarked area ABOVE current price where prior selling pressure likely originated (e.g. near an unmitigated prior high or a rejection wick cluster), inferred from price reaction rather than an explicit drawn box.',
+  hiddendemand: 'Hidden Demand Zone — same idea BELOW current price: an inferred accumulation/buying area from prior reaction, not an explicitly drawn zone.',
+  eqhigh: 'Equal High — two or more swing highs sitting at approximately the same price (within a small tolerance for the visible scale), marking a resting buy-side liquidity pool that price is often drawn toward before reversing.',
+  eqlow: 'Equal Low — two or more swing lows at approximately the same price, marking a sell-side liquidity pool.',
+  imbalance: 'Imbalance / Fair Value Gap — a 3-candle sequence where candle 1\'s wick and candle 3\'s wick do not overlap, leaving a visible price gap in delivery. Price often returns to partially or fully fill this gap before continuing.',
+  fibonacci: 'Fibonacci Retracement — evaluate ONLY if a fib tool is visibly drawn on the chart, OR the two anchor points (a clear, recent swing low and swing high of the CURRENT leg) are unambiguously identifiable from visible candles. Method: (1) State the actual anchor points — for a bullish read, anchor low-to-high; for bearish, high-to-low. (2) Identify which key level current price is sitting at or reacting to: 0.382, 0.5, 0.618, 0.65, 0.786. (3) The 0.618–0.79 zone (often called the "golden pocket" or ICT "OTE") is a premium reaction zone — flag explicitly if price is inside it. (4) Check for confluence: does the fib level line up with an order block, FVG, or equal high/low at roughly the same price? Stacked confluence is meaningfully stronger than a fib level alone — say so in the note. (5) If no fib is drawn and the anchor swing points aren\'t clearly identifiable, mark "unclear" — never fabricate anchor prices or a retracement % that isn\'t actually inferable from the image.',
+  // --- Smart Money Concepts (SMC) ---
+  liquiditygrab: 'Liquidity Grab — price wicks through a prior swing high/low (sweeping resting stop orders) and then closes back on the other side, trapping breakout traders before reversing.',
+  smc_orderblock: 'Order Block (SMC) — same definition as GMC order block: last opposing candle before the impulsive move; only relevant if price is near/testing it now.',
+  smc_fvg: 'Fair Value Gap (SMC) — same 3-candle imbalance definition as GMC imbalance.',
+  smc_bos: 'Break of Structure (SMC) — same as GMC BOS: continuation break in the direction of the prevailing trend.',
+  smc_choch: 'Change of Character (SMC) — same as GMC CHoCH: the first structural break against the prevailing trend.',
+  mitigation: 'Mitigation Block — an order block that price has already returned to and partially traded through once before; the block is "mitigated" and considered weaker on a second test than a fresh, untested block.',
+  // --- ICT ---
+  ict_orderblock: 'Order Block (ICT) — same core definition: last opposing candle before displacement; note whether it is fresh (untested) or already mitigated.',
+  ict_fvg: 'Fair Value Gap (ICT) — same 3-candle imbalance definition; ICT treats the FVG as a probable draw-on-liquidity price will revisit.',
+  liquiditysweep: 'Liquidity Sweep — price takes out a prior high/low (grabbing resting liquidity) before reversing — same mechanism as "liquidity grab," ICT terminology.',
+  ote: 'Optimal Trade Entry (OTE) — the 0.62–0.79 Fibonacci retracement zone (centered near 0.705, the "golden pocket") of the most recent displacement leg, taken after a liquidity sweep and a market structure shift. Use the same fib methodology as the GMC fibonacci definition to locate it.',
+  killzone: 'Killzone Timing — whether the setup falls inside a defined ICT session window (London Open ≈ 2–5am EST, New York Open ≈ 7–10am EST, London Close ≈ 10am–12pm EST). Only judge this from an actual visible timestamp/session marker on the chart — if no time is visible, mark "unclear," never assume a session.',
+  breaker: 'Breaker Block — a failed order block: price broke through it, then returned and it now acts as support/resistance from the opposite side of its original function.',
+  // --- Classic TA ---
+  supres: 'Support / Resistance — a horizontal price level that has visibly caused multiple prior reactions (rejections, bounces) at roughly the same price.',
+  trendline: 'Trendline — a diagonal line connecting at least two (ideally three) swing points, currently acting as visible support or resistance.',
+  chartpattern: 'Chart Pattern — a recognizable classical pattern actually visible in the price action (e.g. head and shoulders, double top/bottom, triangle, flag, wedge) — only note one if the structure genuinely resembles it, don\'t force a label onto ambiguous price action.',
+  indicator: 'Indicator Signal — any visible on-chart indicator (RSI, MACD, moving averages, etc.) giving a legible signal (crossover, divergence, overbought/oversold) — only from what\'s actually plotted and readable in the image.',
+  macross: 'Moving Average Cross — two visible moving average lines crossing, or price crossing a visible MA, in a way that\'s legible on the chart.',
+  volume: 'Volume Confirmation — a visible volume histogram/bar showing above-average volume backing the recent move, if a volume pane is present in the image.',
+  // --- Fundamentals (judged from calendar data injected separately, not the chart image) ---
+  newsevent: 'News Event — any relevant scheduled or recent news release for this instrument, per the economic calendar data provided.',
+  ratedecision: 'Interest Rate Decision — an upcoming or recent central bank rate decision relevant to this instrument.',
+  econdata: 'Economic Data Release — scheduled data (CPI, NFP, GDP, etc.) relevant to this instrument\'s currency/market.',
+  cbpolicy: 'Central Bank Policy — broader policy stance/guidance (hawkish/dovish tone) currently relevant.',
+  geopolitical: 'Geopolitical Event — any relevant geopolitical development affecting this instrument, if known.',
+  earnings: 'Earnings Report — a scheduled or recent earnings release, for equity/index instruments.'
+};
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
@@ -1737,15 +1782,18 @@ function summarizeStrategyPerformance(strategyId){
 }
 function buildSignalSystemPrompt(strategy, styleKey, hasImage){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
-  const logicList = set ? set.map(l=>`${l.id}: ${l.label}`).join('\n') : '(no fixed checklist for this custom strategy type — judge only against the notes below)';
+  const logicList = set
+    ? set.map(l=>`- ${l.id} (${l.label}): ${SIGNAL_LOGIC_DEFS[l.id] || 'Use standard trading definition for this concept.'}`).join('\n')
+    : '(no fixed checklist for this custom strategy type — judge only against the strategy notes below, using sound general technical-analysis judgment)';
   const style = SIGNAL_TRADE_STYLES[styleKey] || SIGNAL_TRADE_STYLES.intraday;
-  return `You are SciFe running strict setup analysis inside Ghost Discipline. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, nothing before or after it.
+  return `You are SciFe, an expert price-action analyst running setup analysis inside Ghost Discipline. You know Smart Money Concepts, ICT, and classical TA in real depth — apply the actual definitions below precisely, don't guess at what a term means. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, no reasoning text, nothing before or after it.
 
-You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot, so use whatever price axis labels, candles, and drawn levels are actually legible in it' : ''}. You can only reason over what's given below — be honest about that limit. If a concept is too thin to judge (not visible, not described), mark it "unclear" rather than guessing.
+You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label, candle body/wick, drawn line, and indicator pane in it carefully before judging anything' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
 
 STRATEGY: "${strategy.name}" (${strategy.type ? strategy.type.toUpperCase() : 'custom'})
 Strategy notes: ${strategy.notes || 'none provided'}
-Checklist to evaluate — one verdict per line, in this exact order:
+
+Checklist to evaluate — work through EVERY item below carefully and individually using its exact definition before writing your final verdict. Do not skim past items or default to a generic answer — a wrong or lazy read on any one item (especially Fibonacci, which needs real anchor-point identification, not a guess) undermines the whole analysis:
 ${logicList}
 
 TRADE STYLE: ${style.label}. ${style.blurb} Minimum acceptable R:R for this style is roughly ${style.warn}R, a good target is ${style.good}R or better.
@@ -1849,17 +1897,49 @@ async function analyzeSignal(){
       `Trade style: ${(SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label}`,
       desc ? `What I'm seeing:\n${desc}` : "What I'm seeing:\n(see attached chart image)"
     ].join('\n');
-    const opts = { temperature:0.3, maxTokens:1100 };
+    // 1800 tokens gives real headroom for a 10-item checklist with a genuine
+    // per-item note on each, plus levels/entry_idea/risk_note — the previous
+    // 1100 budget was tight enough that longer checklists (GMC has 10 items)
+    // could get cut off mid-JSON, which surfaced as a generic parse failure.
+    const opts = { temperature:0.3, maxTokens:1800 };
     if(sigChartImage) opts.image = sigChartImage;
-    const raw = await chatCompletion(buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage), [{ role:'user', content:userMsg }], opts);
-    const parsed = extractJson(raw);
-    if(!parsed) throw new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
+    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage);
+    const userTurn = [{ role:'user', content:userMsg }];
+
+    let raw, parsed, lastErr;
+    // Up to 2 attempts total: a transient provider hiccup (rate limit/5xx) or
+    // a response that didn't come back as clean JSON both get one retry with
+    // a stricter reminder, instead of failing the whole scan on the first blip.
+    for(let attempt=1; attempt<=2; attempt++){
+      try{
+        const promptForAttempt = attempt===1 ? systemPrompt
+          : systemPrompt + '\n\nYour previous response did not come back as a single valid JSON object. This time, output ONLY the raw JSON object described above — no markdown code fences, no leading/trailing text, no explanation.';
+        raw = await chatCompletion(promptForAttempt, userTurn, opts);
+        parsed = extractJson(raw);
+        if(parsed){ lastErr = null; break; }
+        lastErr = new Error("Couldn't parse a structured signal from that response.");
+      }catch(e){
+        lastErr = e;
+        // Only retry on errors that are plausibly transient (rate limit /
+        // server overload / timeout) — don't burn a second call on something
+        // like a missing API key or an unsupported image that'll fail again.
+        const transient = /429|5\d\d|rate.?limit|overloaded|timeout|temporarily/i.test(e.message||'');
+        if(attempt===2 || !transient) break;
+      }
+    }
+    if(!parsed){
+      throw lastErr || new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
+    }
     renderSignalResult(parsed, strategy, styleKey);
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, bias: parsed.bias, confidence: parsed.confidence }, true);
   }catch(e){
     let msg = e.message || 'unknown';
     if(/unable to process input image/i.test(msg)){
       msg += ' — try a smaller or re-cropped screenshot (a plain PNG/JPEG under ~2MB works best), or remove the chart and describe the setup in text instead.';
+    } else if(/429|rate.?limit/i.test(msg)){
+      msg += ' — this provider is rate-limiting your key right now. Wait a moment and try again, or switch to a different model in settings.';
+    } else if(/5\d\d|overloaded|temporarily/i.test(msg)){
+      msg += ' — this looks like a provider-side outage/overload rather than anything wrong on your end. Try again shortly, or switch provider in settings.';
     }
     errEl.textContent = 'SciFe hit an error: ' + msg;
     errEl.style.display = 'block';
@@ -2049,6 +2129,11 @@ async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens,
     if(res.status === 402 || /credit|quota|balance|billing|insufficient/i.test(msg)){
       msg += ` (check that your ${cfg.label} account has a funded balance — paid models need credit added before they'll run, even cheap ones.)`;
     }
+    // Always append the numeric status, even when the provider gave a worded
+    // message — this lets upstream transient-error detection (429/5xx →
+    // auto-retry) match reliably regardless of wording, and gives the trader
+    // a concrete code to reference if they need to check provider status.
+    if(!new RegExp(String(res.status)).test(msg)) msg += ` [HTTP ${res.status}]`;
     throw new Error(msg);
   }
   const data = await res.json();
@@ -2083,10 +2168,13 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
   });
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
-    throw new Error(err.error?.message || ('Anthropic request failed (' + res.status + ')'));
+    let msg = err.error?.message || ('Anthropic request failed (' + res.status + ')');
+    if(!new RegExp(String(res.status)).test(msg)) msg += ` [HTTP ${res.status}]`;
+    throw new Error(msg);
   }
   const data = await res.json();
   const block = (data.content||[]).find(c=>c.type==='text');
+  if(data.stop_reason === 'max_tokens' && (!block || !block.text)) throw new Error('Anthropic cut the response off before it finished (hit the token limit) — retrying.');
   return (block && block.text) || "I didn't catch that — try again?";
 }
 
@@ -2111,11 +2199,23 @@ async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperatu
   });
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
-    throw new Error(err.error?.message || ('Gemini request failed (' + res.status + ')'));
+    let msg = err.error?.message || ('Gemini request failed (' + res.status + ')');
+    if(!new RegExp(String(res.status)).test(msg)) msg += ` [HTTP ${res.status}]`;
+    throw new Error(msg);
   }
   const data = await res.json();
   const cand = data.candidates && data.candidates[0];
   const text = cand && cand.content && cand.content.parts && cand.content.parts.map(p=>p.text||'').join('');
+  if(!text && cand && cand.finishReason && cand.finishReason !== 'STOP'){
+    // SAFETY = the image tripped Gemini's content filter (rare, but happens on
+    // some chart screenshots with watermarks/text overlays). MAX_TOKENS = cut
+    // off before finishing. Either way, a plain "didn't catch that" would be
+    // misleading — say what actually happened.
+    const reason = cand.finishReason === 'SAFETY' ? 'Gemini blocked this image/response for safety reasons — try a plainer chart screenshot without extra overlays or text.'
+      : cand.finishReason === 'MAX_TOKENS' ? 'Gemini cut the response off before it finished (hit the token limit) — retrying.'
+      : `Gemini stopped early (${cand.finishReason}) — retrying.`;
+    throw new Error(reason);
+  }
   return text || "I didn't catch that — try again?";
 }
 
