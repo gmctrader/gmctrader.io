@@ -237,6 +237,33 @@ body{position:relative;}
 .stage-readout .r2{display:block;color:rgba(242,200,119,0.55);margin-top:2px;font-size:9px;}
 
 /* orbit rings sit at different z-depths for a real sense of parallax when the stage tilts */
+/* ---- volumetric gyroscope core — sits centered inside .stage-orb, layered
+   with the existing flat rings. Three rings spin on three different axes
+   (X, Y, and a combined X+Y "equator" tilt) at different speeds, which is
+   the standard CSS 3D trick for reading as an actual rotating sphere/orb
+   rather than a flat disc tilted once — the combination of axes is what
+   sells real volume as it turns, especially as the outer .stage tilts on
+   hover and parallaxes against it. Sits at its own translateZ so it reads
+   in front of/behind the flat orbit rings for real depth ordering. ---- */
+.stage-gyro{position:absolute;inset:14px;transform-style:preserve-3d;pointer-events:none;}
+.stage-gyro-ring{position:absolute;inset:0;border-radius:50%;transform-style:preserve-3d;}
+.stage-gyro-ring::before{content:'';position:absolute;inset:0;border-radius:50%;
+  border:1.5px solid rgba(45,212,168,0.5);box-shadow:0 0 10px rgba(45,212,168,0.35), inset 0 0 10px rgba(45,212,168,0.15);}
+.stage-gyro-ring.gx{animation:gyroSpinX 5.5s linear infinite;}
+.stage-gyro-ring.gx::before{border-color:rgba(45,212,168,0.55);}
+.stage-gyro-ring.gy{animation:gyroSpinY 7.2s linear infinite;}
+.stage-gyro-ring.gy::before{border-color:rgba(242,200,119,0.5);box-shadow:0 0 10px rgba(242,200,119,0.3);}
+.stage-gyro-ring.gz{animation:gyroSpinZ 9.8s linear infinite;}
+.stage-gyro-ring.gz::before{border-color:rgba(139,92,246,0.45);box-shadow:0 0 10px rgba(139,92,246,0.3);}
+@keyframes gyroSpinX{from{transform:rotateX(0deg);}to{transform:rotateX(360deg);}}
+@keyframes gyroSpinY{from{transform:rotateY(20deg) rotateX(70deg);}to{transform:rotateY(380deg) rotateX(70deg);}}
+@keyframes gyroSpinZ{from{transform:rotateY(-30deg) rotateX(35deg) rotateZ(0deg);}to{transform:rotateY(-30deg) rotateX(35deg) rotateZ(360deg);}}
+.stage.speaking .stage-gyro-ring::before{filter:brightness(1.3);}
+.stage.speaking .stage-gyro-ring.gx{animation-duration:2.6s;}
+.stage.speaking .stage-gyro-ring.gy{animation-duration:3.4s;}
+.stage.speaking .stage-gyro-ring.gz{animation-duration:4.6s;}
+.stage.listening .stage-gyro-ring::before{border-color:rgba(242,169,78,0.6);box-shadow:0 0 10px rgba(242,169,78,0.4);}
+
 .stage-orb{position:absolute;left:50%;top:50%;width:112px;height:112px;transform:translate(-50%,-50%) translateZ(30px);
   border-radius:50%;transform-style:preserve-3d;pointer-events:none;z-index:5;}
 .stage-core{position:absolute;inset:30px;border-radius:50%;
@@ -452,8 +479,21 @@ body{position:relative;}
 .chart-lightbox-overlay{z-index:99999;pointer-events:auto;}
 .chart-lightbox-overlay .modal{pointer-events:auto;}
 .chart-lightbox-stage{display:flex;align-items:stretch;gap:0;position:relative;}
-.chart-lightbox-imgwrap{position:relative;display:block;flex:1 1 auto;min-width:0;line-height:0;border-radius:12px;overflow:hidden;}
-.chart-lightbox-imgwrap img{display:block;width:100%;max-height:90vh;object-fit:contain;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
+/* FIX: the lightbox image box previously forced width:100% + max-height:90vh
+   with object-fit:contain — for any chart whose aspect ratio didn't match
+   that box exactly (tall/portrait screenshots, ultra-wide multi-pane
+   charts), the browser letterboxed the actual image inside a larger box,
+   but the overlay (position:absolute;inset:0) was sized to that larger
+   box, not the visible image — so every rectangle/line landed shifted
+   from where it should be, and could visually "stop" partway across the
+   real chart. Fix: the imgwrap now just centers content (flex), and a
+   new inner .chart-lightbox-frame is display:inline-block so it shrink-
+   wraps to EXACTLY the image's own rendered box — no letterboxing is
+   possible, so the overlay (a child of the frame, not the wrap) always
+   maps 1:1 onto the real image no matter its aspect ratio. */
+.chart-lightbox-imgwrap{position:relative;display:flex;align-items:center;justify-content:center;flex:1 1 auto;min-width:0;border-radius:12px;overflow:hidden;}
+.chart-lightbox-frame{position:relative;display:inline-block;line-height:0;max-width:100%;}
+.chart-lightbox-frame img{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
 @media (min-width:640px){ .chart-lightbox-modal{padding:24px;} }
 .sig-style-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
   padding:4px 10px;border-radius:99px;background:rgba(45,212,168,0.12);color:var(--bronze-bright);border:1px solid rgba(45,212,168,0.3);margin-left:8px;}
@@ -474,6 +514,17 @@ body{position:relative;}
 @keyframes scanTilt{
   0%,100%{transform:rotateX(2deg) rotateY(-3deg) scale(1.01);}
   50%{transform:rotateX(-2deg) rotateY(3deg) scale(1.015);}}
+/* Admin-only variant: same base mechanism, wider swing, an extra rotateZ
+   drift, and a gold-tinted glow instead of green — kept as a separate
+   animation/rule so the default trader-facing scan effect above is never
+   touched by this. */
+.sig-chart-thumb.scanning.admin-scan .sig-scan-frame{
+  animation:scanTiltAdmin 2.4s ease-in-out infinite;
+  box-shadow:0 26px 56px -14px rgba(0,0,0,0.7), 0 0 46px -6px rgba(242,200,119,0.55), 0 0 18px -2px rgba(139,92,246,0.35);}
+@keyframes scanTiltAdmin{
+  0%{transform:rotateX(4deg) rotateY(-6deg) rotateZ(-0.6deg) scale(1.018);}
+  50%{transform:rotateX(-4deg) rotateY(6deg) rotateZ(0.6deg) scale(1.03);}
+  100%{transform:rotateX(4deg) rotateY(-6deg) rotateZ(-0.6deg) scale(1.018);}}
 .sig-chart-thumb img{max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;transition:filter .4s ease;}
 .sig-chart-thumb.scanning img{filter:saturate(125%) contrast(108%) brightness(0.82);}
 /* holographic sweep bar */
@@ -481,6 +532,9 @@ body{position:relative;}
   background:linear-gradient(180deg, transparent, rgba(45,212,168,0.28) 45%, rgba(242,200,119,0.4) 50%, rgba(45,212,168,0.28) 55%, transparent);
   filter:blur(1px);}
 .sig-chart-thumb.scanning .sig-scan-sweep{opacity:1;animation:scanSweep 2.1s cubic-bezier(.4,0,.3,1) infinite;}
+.sig-chart-thumb.scanning.admin-scan .sig-scan-sweep{
+  background:linear-gradient(180deg, transparent, rgba(242,200,119,0.32) 45%, rgba(139,92,246,0.42) 50%, rgba(242,200,119,0.32) 55%, transparent);
+  animation-duration:1.5s;}
 @keyframes scanSweep{0%{top:-24%;}100%{top:104%;}}
 /* fine scanline texture + darken, matching the voice-orb "stage" console feel */
 .sig-scan-frame::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
@@ -835,6 +889,11 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
       <div class="wave-ring" id="waveRing"></div>
       <div class="stage-orb">
         <div class="stage-core"></div>
+        <div class="stage-gyro">
+          <div class="stage-gyro-ring gx"></div>
+          <div class="stage-gyro-ring gy"></div>
+          <div class="stage-gyro-ring gz"></div>
+        </div>
         <div class="stage-ring"></div>
         <div class="stage-ring2"></div>
         <div class="stage-ring3"></div>
@@ -2731,8 +2790,14 @@ function openChartLightbox(){
   const liveRail = overlayOn ? document.getElementById('sigOvRail') : null;
   const liveLegend = overlayOn ? thumb.querySelector('.sig-ov-legend') : null;
   const src = imgEl.currentSrc || imgEl.src;
-  wrap.innerHTML = `<img id="chartLightboxImg" src="${src}" alt="Chart, enlarged">`
-    + (liveOverlay ? `<div class="sig-analysis-overlay" style="opacity:1;">${liveOverlay.innerHTML}</div>` : '');
+  // The overlay must live inside .chart-lightbox-frame (which shrink-wraps
+  // to the image's real rendered size), not the outer wrap — see the CSS
+  // fix note above. This is what keeps every marker aligned to the actual
+  // chart pixels for any image aspect ratio.
+  wrap.innerHTML = `<div class="chart-lightbox-frame" id="chartLightboxFrame">
+      <img id="chartLightboxImg" src="${src}" alt="Chart, enlarged">
+      ${liveOverlay ? `<div class="sig-analysis-overlay" style="opacity:1;">${liveOverlay.innerHTML}</div>` : ''}
+    </div>`;
   rail.innerHTML = liveRail ? liveRail.innerHTML : '';
   stage.classList.toggle('rail-on', !!(liveRail && liveRail.innerHTML));
   if(legendBox){
@@ -2740,7 +2805,8 @@ function openChartLightbox(){
     legendBox.style.display = liveLegend ? 'flex' : 'none';
   }
   document.getElementById('chartLightboxOverlay').classList.add('show');
-  const relayout = ()=>resolveOverlayRail(stage, wrap, rail);
+  const frameEl = document.getElementById('chartLightboxFrame');
+  const relayout = ()=>resolveOverlayRail(stage, frameEl, rail);
   const imgTag = document.getElementById('chartLightboxImg');
   if(imgTag && imgTag.complete) relayout(); else if(imgTag) imgTag.onload = relayout;
   requestAnimationFrame(relayout); // covers the no-overlay / already-cached case
@@ -2805,6 +2871,25 @@ async function analyzeSignal(){
     renderScanHistory();
     return;
   }
+  // 24-HOUR RE-SCAN COOLDOWN (non-admin only): if this pair already has a
+  // stored read from within the last 24h and the trader has now uploaded a
+  // genuinely different chart image (a different hash — the identical-hash
+  // branch above already handled the "same chart again" case for free),
+  // block the scan. This exists to stop SciFe being used to keep re-
+  // uploading slightly different screenshots hoping for a more favorable
+  // read — same "Ghost Discipline" spirit as the weekly cap. Admins are
+  // exempt, same as the weekly limit.
+  if(!scife.usage.isAdmin && sigChartImage && memEntry && memEntry.at){
+    const COOLDOWN_MS = 24*60*60*1000;
+    const elapsed = Date.now() - memEntry.at;
+    if(elapsed < COOLDOWN_MS){
+      const remaining = COOLDOWN_MS - elapsed;
+      const hrs = Math.floor(remaining/3600000), mins = Math.max(1, Math.round((remaining%3600000)/60000));
+      showSigError(`You already scanned a chart for ${pair || 'this pair'} within the last 24 hours. A newly uploaded chart for the same pair unlocks again in ${hrs}h ${mins}m — this stops the tool being used to chase a different answer by re-uploading. Admins aren't limited by this.`, false);
+      showToast('24-hour re-scan cooldown active for this pair');
+      return;
+    }
+  }
   // Consume the scan now, before the request goes out to any provider —
   // this is the one and only place the counter moves, regardless of which
   // AI server ends up handling the call below.
@@ -2819,7 +2904,14 @@ async function analyzeSignal(){
   document.getElementById('sig_orderPlaced').style.display = 'none';
   showSkeleton(!!sigChartImage);
   const chartThumb = document.getElementById('sigChartThumb');
-  if(sigChartImage && chartThumb) chartThumb.classList.add('scanning');
+  if(sigChartImage && chartThumb){
+    chartThumb.classList.add('scanning');
+    // Same scan effect for everyone by default (existing perspective is
+    // untouched) — admin accounts get a visually distinct variant so it's
+    // always obvious which mode is active, without changing the base look
+    // regular traders already know.
+    chartThumb.classList.toggle('admin-scan', !!scife.usage.isAdmin);
+  }
   try{
     await ensureEconomicCalendar();
     const userMsg = [
