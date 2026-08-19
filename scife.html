@@ -25,6 +25,8 @@
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;min-height:100%;width:100%;overflow-x:hidden;}
+:focus-visible{outline:2px solid var(--bronze-bright);outline-offset:2px;border-radius:6px;}
+button:focus-visible,.icon-btn:focus-visible,.quick-chip:focus-visible,.provider-card:focus-visible{outline-offset:3px;}
 body{
   background:
     radial-gradient(ellipse 60% 40% at 50% 0%, rgba(45,212,168,0.10), transparent 60%),
@@ -74,15 +76,26 @@ button{font-family:inherit;}
 .gate-card{max-width:440px;width:100%;background:var(--panel);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
   border:1px solid var(--steel-hi);border-radius:var(--r-lg);position:relative;overflow:hidden;
   padding:44px 34px;text-align:center;
-  box-shadow:0 30px 70px -20px rgba(0,0,0,0.65), 0 0 0 1px rgba(45,212,168,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset;}
+  box-shadow:0 30px 70px -20px rgba(0,0,0,0.65), 0 0 0 1px rgba(45,212,168,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset;
+  animation:gateIn .5s cubic-bezier(.2,.8,.3,1) both;}
+@keyframes gateIn{0%{opacity:0;transform:translateY(14px) scale(.985);}100%{opacity:1;transform:translateY(0) scale(1);}}
 .gate-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
   background:linear-gradient(135deg, rgba(45,212,168,0.5), rgba(242,200,119,0.25) 40%, transparent 65%);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;}
+.gate-mark{width:52px;height:52px;margin:0 auto 18px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(140deg, rgba(45,212,168,0.18), rgba(242,200,119,0.1));
+  border:1px solid rgba(45,212,168,0.3);box-shadow:0 0 26px -8px rgba(18,185,136,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+  position:relative;}
+.gate-mark::after{content:'';position:absolute;inset:8px;border-radius:50%;
+  background:radial-gradient(circle, rgba(45,212,168,0.9), rgba(45,212,168,0.1) 60%, transparent 75%);
+  filter:blur(1px);animation:coreBreathe 3.4s ease-in-out infinite;}
 .gate-card h1{font-family:'Fraunces',serif;font-weight:650;font-size:27px;margin:0 0 10px;
   background:linear-gradient(100deg, var(--platinum) 30%, var(--gold-bright) 60%, var(--bronze-bright) 90%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .gate-card p{color:var(--slate);font-size:14.5px;margin:0 0 24px;}
+.gate-foot{margin-top:18px;font-size:11.5px;color:var(--slate-dim);display:flex;align-items:center;justify-content:center;gap:6px;}
+.gate-foot .gd{width:5px;height:5px;border-radius:50%;background:var(--bronze);box-shadow:0 0 6px var(--bronze);flex:none;}
 .field{text-align:left;margin-bottom:16px;position:relative;z-index:1;}
 .field label{display:block;font-size:11.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--slate);margin-bottom:7px;}
 .field input,.field select{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--steel-hi);background:rgba(255,255,255,0.03);
@@ -119,8 +132,9 @@ button{font-family:inherit;}
 /* ---- main app shell ---- */
 #app{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 16px;position:relative;z-index:1;}
 .topbar{display:flex;align-items:center;justify-content:space-between;
-  padding:calc(16px + env(safe-area-inset-top)) 4px 12px;position:sticky;top:0;
-  background:linear-gradient(var(--bg) 65%, transparent);z-index:5;}
+  padding:calc(16px + env(safe-area-inset-top)) 4px 14px;position:sticky;top:0;
+  background:linear-gradient(var(--bg) 70%, transparent);z-index:5;}
+.topbar-icons{display:flex;align-items:center;gap:8px;}
 .topbar .back{color:var(--slate);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;
   padding:10px 8px;margin:-10px -8px;border-radius:10px;transition:color .15s,background .15s;}
 .topbar .back:hover{color:var(--bronze-bright);background:rgba(255,255,255,0.03);}
@@ -208,7 +222,11 @@ button{font-family:inherit;}
 .stage-emoji.pop{animation:emojiPop .5s ease;}
 @keyframes emojiPop{0%{transform:scale(0.4) rotate(-10deg);}55%{transform:scale(1.25) rotate(6deg);}100%{transform:scale(1) rotate(0deg);}}
 
-.quick-row{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+.quick-row-wrap{position:relative;margin-bottom:14px;}
+.quick-row-wrap::after{content:'';position:absolute;top:0;right:0;bottom:4px;width:28px;pointer-events:none;
+  background:linear-gradient(90deg, transparent, var(--bg));z-index:1;}
+.quick-row{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;margin-bottom:0;scrollbar-width:none;}
+.quick-row::-webkit-scrollbar{display:none;}
 .quick-chip{flex:none;font-size:12.5px;font-weight:600;color:var(--bronze-bright);
   background:linear-gradient(180deg, rgba(18,185,136,0.13), rgba(18,185,136,0.05));
   border:1px solid rgba(45,212,168,0.3);padding:9px 15px;border-radius:99px;cursor:pointer;white-space:nowrap;
@@ -227,7 +245,8 @@ button{font-family:inherit;}
 .bubble.assistant{align-self:flex-start;color:var(--platinum);background:rgba(255,255,255,0.035);
   backdrop-filter:blur(8px);border:1px solid rgba(45,212,168,0.22);border-bottom-left-radius:5px;
   box-shadow:0 8px 20px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(45,212,168,0.04) inset;}
-.bubble.system{align-self:center;color:var(--slate-dim);font-size:12.5px;text-align:center;max-width:100%;}
+.bubble.system{align-self:center;color:var(--slate);font-size:13px;text-align:center;max-width:88%;
+  background:rgba(255,255,255,0.03);border:1px solid var(--steel-hi);border-radius:14px;padding:14px 18px;margin:6px 0;}
 
 .typing{align-self:flex-start;display:flex;gap:4px;padding:6px 4px;}
 .typing span{width:6px;height:6px;border-radius:50%;background:var(--bronze);box-shadow:0 0 6px rgba(18,185,136,0.6);animation:tb 1.2s infinite ease-in-out;}
@@ -248,7 +267,15 @@ button{font-family:inherit;}
 @keyframes micBreathe{0%,100%{box-shadow:0 0 0 5px rgba(242,169,78,0.2);}50%{box-shadow:0 0 0 10px rgba(242,169,78,0.08);}}
 .send-btn{background:linear-gradient(120deg, var(--bronze), var(--gold));color:#03110c;box-shadow:0 3px 0 var(--bronze-dim), 0 0 14px -4px rgba(18,185,136,0.6);}
 .send-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--bronze-dim);}
-.send-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+.send-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;filter:grayscale(.3);}
+
+/* ---- scroll-to-latest affordance ---- */
+.chat-wrap{position:relative;flex:1;display:flex;min-height:220px;}
+.scroll-latest{position:absolute;left:50%;bottom:8px;transform:translateX(-50%) translateY(8px);opacity:0;pointer-events:none;
+  background:var(--panel-solid);border:1px solid var(--steel-hi);color:var(--bronze-bright);font-size:11.5px;font-weight:650;
+  padding:7px 14px;border-radius:99px;cursor:pointer;z-index:4;transition:.2s;box-shadow:0 10px 24px -10px rgba(0,0,0,0.6);}
+.scroll-latest.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
+
 
 /* settings modal */
 .overlay{position:fixed;inset:0;background:rgba(2,5,4,0.72);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;
@@ -258,13 +285,39 @@ button{font-family:inherit;}
   border:1px solid var(--steel-hi);border-radius:var(--r-lg);padding:26px 24px;max-width:400px;width:100%;
   max-height:88vh;overflow-y:auto;position:relative;
   box-shadow:0 30px 70px -16px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,212,168,0.06) inset;}
-.modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;
+.modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;padding-right:26px;
   background:linear-gradient(100deg, var(--platinum) 30%, var(--gold-bright) 65%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .modal .sub{color:var(--slate);font-size:13px;margin:0 0 18px;}
+.modal-close{position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:9px;border:1px solid var(--steel-hi);
+  background:rgba(255,255,255,0.03);color:var(--slate);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;line-height:1;transition:.15s;}
+.modal-close:hover{background:rgba(255,93,122,0.12);color:var(--loss-bright);border-color:rgba(255,93,122,0.35);}
+
+/* ---- settings tab nav (AI / Voice / Memory / Scans) ---- */
+.settings-tabs{display:flex;gap:5px;background:rgba(255,255,255,0.03);border:1px solid var(--steel-hi);border-radius:12px;
+  padding:4px;margin-bottom:18px;position:sticky;top:-2px;z-index:2;backdrop-filter:blur(10px);}
+.settings-tab{flex:1;text-align:center;font-size:11.5px;font-weight:650;letter-spacing:.02em;color:var(--slate);
+  padding:8px 4px;border-radius:9px;cursor:pointer;transition:.15s;white-space:nowrap;}
+.settings-tab:hover{color:var(--platinum);}
+.settings-tab.active{background:linear-gradient(120deg, var(--bronze), var(--gold));color:#03110c;box-shadow:0 4px 12px -4px rgba(18,185,136,0.5);}
+.settings-pane{display:none;animation:pcIn .2s ease both;}
+.settings-pane.active{display:block;}
 
 /* ---- provider picker ---- */
-.provider-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px;}
+.provider-search{position:relative;margin-bottom:9px;}
+.provider-search input{width:100%;padding:9px 12px 9px 32px;border-radius:10px;border:1px solid var(--steel-hi);
+  background:rgba(255,255,255,0.03);font-family:inherit;font-size:13px;color:var(--platinum);outline:none;
+  transition:border-color .15s, box-shadow .15s;}
+.provider-search input:focus{border-color:var(--bronze);box-shadow:0 0 0 3px rgba(18,185,136,0.18);}
+.provider-search input::placeholder{color:var(--slate-dim);}
+.provider-search::before{content:'⌕';position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--slate-dim);font-size:14px;pointer-events:none;}
+.provider-search .p-count{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:10.5px;color:var(--slate-dim);
+  font-family:'IBM Plex Mono',monospace;pointer-events:none;}
+.provider-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px;max-height:328px;overflow-y:auto;padding:2px;scroll-behavior:smooth;}
+.provider-grid .pc-empty{grid-column:1/-1;text-align:center;font-size:12.5px;color:var(--slate-dim);padding:22px 8px;}
+.provider-card{animation:pcIn .25s ease both;}
+@keyframes pcIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 .provider-card{border:1px solid var(--steel-hi);border-radius:13px;padding:10px 11px;cursor:pointer;
   background:rgba(255,255,255,0.025);transition:border-color .15s,background .15s,box-shadow .15s,transform .15s ease;
   transform-style:preserve-3d;will-change:transform;position:relative;}
@@ -529,12 +582,22 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 </head>
 <body>
 
+<!-- ============ BOOT LOADER (avoids a blank flash while the session check resolves) ============ -->
+<div class="center-screen" id="bootLoader">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div class="gate-mark" aria-hidden="true"></div>
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--slate-dim);text-transform:uppercase;">Connecting…</div>
+  </div>
+</div>
+
 <!-- ============ NOT SIGNED IN ============ -->
 <div class="center-screen" id="authGate" style="display:none;">
   <div class="gate-card">
+    <div class="gate-mark" aria-hidden="true"></div>
     <h1 class="serif">Sign in first</h1>
     <p>SciFe follows your Ghost Discipline account. Sign in there, then come back to this page.</p>
     <a class="btn" href="index.html" style="text-decoration:none;">Go to Ghost Discipline</a>
+    <div class="gate-foot"><span class="gd"></span>Ghost Discipline · SciFe</div>
   </div>
 </div>
 
@@ -542,11 +605,13 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 <div class="center-screen" id="setupScreen" style="display:none;">
   <div class="gate-card" style="text-align:left;">
     <div style="text-align:center;">
+      <div class="gate-mark" aria-hidden="true"></div>
       <h1 class="serif">Set up SciFe</h1>
       <p>Your optional voice companion. Talk through your charts, your emotions, and your journal. It uses your own AI provider key — nothing routes through us.</p>
     </div>
     <div class="field">
       <label>AI provider</label>
+      <div class="provider-search"><input type="text" id="setupProviderSearch" placeholder="Search 25+ providers…" autocomplete="off" oninput="filterProviders('setup', this.value)"><span class="p-count" id="setupProviderCount"></span></div>
       <div class="provider-grid" id="setupProviderGrid"></div>
       <select id="setupProviderSelect" style="display:none;" onchange="onProviderChange('setup')"></select>
       <div class="hint" id="setupProviderHint"></div>
@@ -574,17 +639,18 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     </div>
     <button class="btn" style="margin-top:8px;" onclick="saveSetup()">Save &amp; start talking</button>
     <a href="index.html" style="display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--slate);">Back to Ghost Discipline</a>
+    <div class="gate-foot"><span class="gd"></span>Your key stays in your browser calls only</div>
   </div>
 </div>
 
 <!-- ============ MAIN APP ============ -->
 <div id="app">
   <div class="topbar">
-    <a class="back" href="index.html">← Ghost Discipline</a>
+    <a class="back" href="index.html" aria-label="Back to Ghost Discipline">← Ghost Discipline</a>
     <div class="title serif">SciFe</div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="icon-btn" onclick="openSignalPage()" title="Signal">🎯</div>
-      <div class="icon-btn" onclick="openSettings()" title="Settings">⚙</div>
+    <div class="topbar-icons">
+      <div class="icon-btn" role="button" tabindex="0" onclick="openSignalPage()" onkeydown="if(event.key==='Enter')openSignalPage()" title="Analyze a setup" aria-label="Open Signal analysis">🎯</div>
+      <div class="icon-btn" role="button" tabindex="0" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()" title="Settings" aria-label="Open settings">⚙</div>
     </div>
   </div>
 
@@ -609,23 +675,29 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     </div>
   </div>
 
-  <div class="quick-row" id="quickRow">
-    <div class="quick-chip" onclick="quickAsk('day')">✦ How was my day?</div>
-    <div class="quick-chip" onclick="quickAsk('journal')">◈ Journal overview</div>
-    <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
-    <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
-    <div class="quick-chip" onclick="quickAsk('news')">⚡ News/events coming up</div>
-    <div class="quick-chip" onclick="openSignalPage()">🎯 Analyze a setup</div>
+  <div class="quick-row-wrap">
+    <div class="quick-row" id="quickRow">
+      <div class="quick-chip" onclick="quickAsk('day')">✦ How was my day?</div>
+      <div class="quick-chip" onclick="quickAsk('journal')">◈ Journal overview</div>
+      <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
+      <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
+      <div class="quick-chip" onclick="quickAsk('news')">⚡ News/events coming up</div>
+      <div class="quick-chip" onclick="openSignalPage()">🎯 Analyze a setup</div>
+    </div>
   </div>
 
-  <div class="chat" id="chatLog"></div>
+  <div class="chat-wrap">
+    <div class="chat" id="chatLog"></div>
+    <div class="scroll-latest" id="scrollLatestBtn" onclick="scrollChatToBottom(true)">↓ New messages</div>
+  </div>
 
   <div class="composer">
     <div class="composer-row">
-      <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
-      <input id="textInput" type="text" placeholder="Talk to SciFe…" autocomplete="off"
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input" aria-label="Toggle voice input">🎤</button>
+      <input id="textInput" type="text" placeholder="Talk to SciFe…" autocomplete="off" aria-label="Message SciFe"
+        oninput="document.getElementById('sendBtn').disabled = !this.value.trim();"
         onkeydown="if(event.key==='Enter'){sendTyped();}">
-      <button class="send-btn" id="sendBtn" onclick="sendTyped()">➤</button>
+      <button class="send-btn" id="sendBtn" onclick="sendTyped()" aria-label="Send message" disabled>➤</button>
     </div>
   </div>
 </div>
@@ -713,55 +785,70 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="overlay" id="settingsOverlay">
-  <div class="modal">
-    <h3 class="serif">SciFe settings</h3>
+<div class="overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings();">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <button class="modal-close" onclick="closeSettings()" aria-label="Close settings">✕</button>
+    <h3 class="serif" id="settingsTitle">SciFe settings</h3>
     <div class="sub">Your key and preferences, synced to your account. Appearance follows the theme set on the main app.</div>
-    <div class="settings-section-label">AI</div>
-    <div class="field">
-      <label>AI provider</label>
-      <div class="provider-grid" id="settingsProviderGrid"></div>
-      <select id="settingsProviderSelect" style="display:none;" onchange="onProviderChange('settings')"></select>
-      <div class="hint" id="settingsProviderHint"></div>
-    </div>
-    <div class="field">
-      <div class="key-row-top">
-        <label id="settingsKeyLabel">API key</label>
-        <span class="key-saved-tag" id="settingsKeySaved" style="display:none;">✓ saved</span>
-      </div>
-      <input type="password" id="settingsKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false" oninput="onKeyInput('settings')">
-      <div class="hint" id="settingsKeyHint"></div>
-      <a class="key-link" id="settingsKeyLink" href="#" target="_blank" rel="noopener">Get a free API key →</a>
-    </div>
-    <div class="field">
-      <label>Model</label>
-      <select id="settingsModelSelect" onchange="onModelChange('settings')"></select>
-      <div class="hint" id="settingsScannerNote"></div>
-    </div>
-    <div class="toggle-row">
-      <div style="font-weight:600;font-size:13.5px;">Voice replies</div>
-      <div class="switch" id="settingsVoiceSwitch" onclick="this.classList.toggle('on')"></div>
-    </div>
-    <div class="field" style="margin-top:2px;">
-      <label>Voice</label>
-      <select id="settingsVoiceSelect"></select>
-      <div class="hint">Picks the most natural-sounding voice your browser offers.</div>
-    </div>
-    <div class="toggle-row">
-      <div>
-        <div style="font-weight:600;font-size:13.5px;">Hands-free conversation</div>
-        <div class="hint" style="margin-top:2px;">Keeps listening after SciFe replies, and lets you interrupt while it's talking.</div>
-      </div>
-      <div class="switch" id="settingsHandsFreeSwitch" onclick="this.classList.toggle('on')"></div>
+
+    <div class="settings-tabs" role="tablist">
+      <div class="settings-tab active" data-pane="ai" onclick="switchSettingsTab('ai')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('ai')">AI</div>
+      <div class="settings-tab" data-pane="voice" onclick="switchSettingsTab('voice')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('voice')">Voice</div>
+      <div class="settings-tab" data-pane="memory" onclick="switchSettingsTab('memory')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('memory')">Memory</div>
+      <div class="settings-tab" data-pane="scans" onclick="switchSettingsTab('scans')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('scans')">Scans</div>
     </div>
 
-    <div class="settings-section-label">Memory</div>
-    <div class="toggle-row">
-      <div>
-        <div style="font-weight:600;font-size:13.5px;">Memory</div>
-        <div class="hint" style="margin-top:2px;" id="memoryCountHint">0 notes remembered</div>
+    <div class="settings-pane active" id="paneAi">
+      <div class="field">
+        <label>AI provider</label>
+        <div class="provider-search"><input type="text" id="settingsProviderSearch" placeholder="Search 25+ providers…" autocomplete="off" oninput="filterProviders('settings', this.value)"><span class="p-count" id="settingsProviderCount"></span></div>
+        <div class="provider-grid" id="settingsProviderGrid"></div>
+        <select id="settingsProviderSelect" style="display:none;" onchange="onProviderChange('settings')"></select>
+        <div class="hint" id="settingsProviderHint"></div>
       </div>
-      <button class="btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="clearMemory()">Clear</button>
+      <div class="field">
+        <div class="key-row-top">
+          <label id="settingsKeyLabel">API key</label>
+          <span class="key-saved-tag" id="settingsKeySaved" style="display:none;">✓ saved</span>
+        </div>
+        <input type="password" id="settingsKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false" oninput="onKeyInput('settings')">
+        <div class="hint" id="settingsKeyHint"></div>
+        <a class="key-link" id="settingsKeyLink" href="#" target="_blank" rel="noopener">Get a free API key →</a>
+      </div>
+      <div class="field">
+        <label>Model</label>
+        <select id="settingsModelSelect" onchange="onModelChange('settings')"></select>
+        <div class="hint" id="settingsScannerNote"></div>
+      </div>
+    </div>
+
+    <div class="settings-pane" id="paneVoice">
+      <div class="toggle-row">
+        <div style="font-weight:600;font-size:13.5px;">Voice replies</div>
+        <div class="switch" id="settingsVoiceSwitch" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="field" style="margin-top:2px;">
+        <label>Voice</label>
+        <select id="settingsVoiceSelect"></select>
+        <div class="hint">Picks the most natural-sounding voice your browser offers.</div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:600;font-size:13.5px;">Hands-free conversation</div>
+          <div class="hint" style="margin-top:2px;">Keeps listening after SciFe replies, and lets you interrupt while it's talking.</div>
+        </div>
+        <div class="switch" id="settingsHandsFreeSwitch" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <div class="settings-pane" id="paneMemory">
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:600;font-size:13.5px;">Memory</div>
+          <div class="hint" style="margin-top:2px;" id="memoryCountHint">0 notes remembered</div>
+        </div>
+        <button class="btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="clearMemory()">Clear</button>
+      </div>
     </div>
 
     <!-- SCAN LIMIT / ADMIN — weekly Signal-scan cap lives on the trader's synced
@@ -772,16 +859,17 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
          password lifts the cap for this account. This is still a fully
          client-side static page with no server to verify the password against
          — see the note in saveSettings()/unlockAdmin() in the script below. -->
-    <div class="settings-section-label">Signal scans</div>
-    <div class="field" style="margin-top:2px;">
-      <div class="hint" id="settingsScanHint">—</div>
-      <div id="settingsAdminLocked">
-        <input type="password" id="settingsAdminPassInput" placeholder="Admin password" autocomplete="off" spellcheck="false" style="margin-top:8px;">
-        <button class="btn-ghost" style="width:auto;margin-top:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="unlockAdmin()">Unlock admin (unlimited)</button>
-      </div>
-      <div id="settingsAdminUnlocked" style="display:none;margin-top:8px;">
-        <span class="key-saved-tag">✓ Admin — unlimited scans</span>
-        <button class="btn-ghost" style="width:auto;margin-left:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="lockAdmin()">Lock</button>
+    <div class="settings-pane" id="paneScans">
+      <div class="field" style="margin-top:2px;">
+        <div class="hint" id="settingsScanHint">—</div>
+        <div id="settingsAdminLocked">
+          <input type="password" id="settingsAdminPassInput" placeholder="Admin password" autocomplete="off" spellcheck="false" style="margin-top:8px;">
+          <button class="btn-ghost" style="width:auto;margin-top:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="unlockAdmin()">Unlock admin (unlimited)</button>
+        </div>
+        <div id="settingsAdminUnlocked" style="display:none;margin-top:8px;">
+          <span class="key-saved-tag">✓ Admin — unlimited scans</span>
+          <button class="btn-ghost" style="width:auto;margin-left:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="lockAdmin()">Lock</button>
+        </div>
       </div>
     </div>
 
@@ -1257,7 +1345,16 @@ function buildProviderGrid(scope){
   if(!grid) return;
   const sel = document.getElementById(scope+'ProviderSelect');
   const active = sel.value || scife.provider;
-  grid.innerHTML = Object.entries(PROVIDERS).map(([key,cfg])=>{
+  // Surface already-configured providers first, then vision-capable ones —
+  // with 25+ options, the ones most useful to THIS trader belong up top.
+  const entries = Object.entries(PROVIDERS).sort((a,b)=>{
+    const aKey = !!(scife.apiKeys && scife.apiKeys[a[0]]), bKey = !!(scife.apiKeys && scife.apiKeys[b[0]]);
+    if(aKey !== bKey) return aKey ? -1 : 1;
+    const aVis = providerHasVision(a[0]), bVis = providerHasVision(b[0]);
+    if(aVis !== bVis) return aVis ? -1 : 1;
+    return 0;
+  });
+  grid.innerHTML = entries.map(([key,cfg])=>{
     const isActive = key === active;
     const hasSavedKey = !!(scife.apiKeys && scife.apiKeys[key]);
     const hasVision = providerHasVision(key);
@@ -1267,6 +1364,8 @@ function buildProviderGrid(scope){
       <div class="pc-scanner ${hasVision?'yes':'no'}">${hasVision?'🔍 Scanner support':'🔍 No scanner'}</div>
     </div>`;
   }).join('');
+  const searchEl = document.getElementById(scope+'ProviderSearch');
+  if(searchEl && searchEl.value) filterProviders(scope, searchEl.value);
 }
 
 /* Called when a provider card is tapped. */
@@ -1346,9 +1445,87 @@ function showToast(msg){
 }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
+/* ============ SETTINGS TABS ============ */
+function switchSettingsTab(name){
+  document.querySelectorAll('.settings-tab').forEach(t=>t.classList.toggle('active', t.dataset.pane===name));
+  document.querySelectorAll('.settings-pane').forEach(p=>p.classList.toggle('active', p.id === 'pane'+name.charAt(0).toUpperCase()+name.slice(1)));
+}
+
+/* ============ PROVIDER SEARCH (25+ providers is a lot to scan by eye —
+   this filters the visible cards live by name/cost/badge text, no other
+   state changes) ============ */
+function filterProviders(scope, query){
+  const grid = document.getElementById(scope+'ProviderGrid');
+  const countEl = document.getElementById(scope+'ProviderCount');
+  if(!grid) return;
+  const q = (query||'').trim().toLowerCase();
+  const cards = Array.from(grid.querySelectorAll('.provider-card'));
+  let shown = 0;
+  cards.forEach(card=>{
+    const hay = card.textContent.toLowerCase();
+    const match = !q || hay.includes(q);
+    card.style.display = match ? '' : 'none';
+    if(match) shown++;
+  });
+  let empty = grid.querySelector('.pc-empty');
+  if(shown === 0){
+    if(!empty){ empty = document.createElement('div'); empty.className = 'pc-empty'; grid.appendChild(empty); }
+    empty.textContent = `No providers match "${query}"`;
+  } else if(empty){ empty.remove(); }
+  if(countEl) countEl.textContent = q ? `${shown}/${cards.length}` : '';
+}
+
+/* ============ CHAT SCROLL HELPERS ============ */
+function scrollChatToBottom(smooth){
+  const log = document.getElementById('chatLog');
+  if(!log) return;
+  log.scrollTo({ top: log.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  const btn = document.getElementById('scrollLatestBtn');
+  if(btn) btn.classList.remove('show');
+}
+function isNearChatBottom(){
+  const log = document.getElementById('chatLog');
+  if(!log) return true;
+  return (log.scrollHeight - log.scrollTop - log.clientHeight) < 80;
+}
+function initChatScrollWatch(){
+  const log = document.getElementById('chatLog');
+  const btn = document.getElementById('scrollLatestBtn');
+  if(!log || !btn) return;
+  log.addEventListener('scroll', ()=>{
+    btn.classList.toggle('show', !isNearChatBottom() && log.scrollHeight > log.clientHeight + 40);
+  });
+}
+/* ============ PAGE VISIBILITY (pause the background loop + heavy stage
+   animation while the tab isn't visible — saves battery/CPU for no visible
+   benefit) ============ */
+document.addEventListener('visibilitychange', ()=>{
+  const video = document.getElementById('stageVideo');
+  if(!video) return;
+  if(document.hidden) video.pause(); else video.play().catch(()=>{});
+});
+
+/* ============ ESCAPE-TO-CLOSE for modal + Signal page ============ */
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Escape') return;
+  const overlay = document.getElementById('settingsOverlay');
+  if(overlay && overlay.classList.contains('show')){ closeSettings(); return; }
+  const sigPage = document.getElementById('signalPage');
+  if(sigPage && sigPage.style.display !== 'none'){ closeSignalPage(); }
+});
+
 /* ============ BOOT ============ */
 (async function boot(){
-  const { data } = await sb.auth.getSession();
+  let data;
+  try{
+    ({ data } = await sb.auth.getSession());
+  }catch(e){
+    document.getElementById('bootLoader').style.display='none';
+    document.getElementById('authGate').style.display='flex';
+    showToast('Could not reach the server — check your connection');
+    return;
+  }
+  document.getElementById('bootLoader').style.display='none';
   if(!data.session){ document.getElementById('authGate').style.display='flex'; return; }
   currentUser = data.session.user;
   await loadTraderRow();
@@ -1534,6 +1711,9 @@ function openSettings(){
   populateVoiceSelect();
   document.getElementById('memoryCountHint').textContent = scife.memory.length + ' notes remembered';
   renderAdminSection();
+  const search = document.getElementById('settingsProviderSearch');
+  if(search){ search.value = ''; filterProviders('settings', ''); }
+  switchSettingsTab('ai');
   document.getElementById('settingsOverlay').classList.add('show');
 }
 function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('show'); }
@@ -1566,6 +1746,7 @@ function startApp(){
   document.getElementById('app').style.display='flex';
   addBubble('system', memoryOpeningLine());
   setupSpeechRecognition();
+  initChatScrollWatch();
 }
 function memoryOpeningLine(){
   if(scife.memory.length){
@@ -2418,11 +2599,17 @@ function quickAsk(kind){
 /* ============ CHAT UI ============ */
 function addBubble(role, text){
   const log = document.getElementById('chatLog');
+  const wasNearBottom = isNearChatBottom();
   const div = document.createElement('div');
   div.className = 'bubble ' + role;
   div.textContent = text;
   log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
+  if(wasNearBottom || role === 'user'){
+    log.scrollTop = log.scrollHeight;
+  } else {
+    const btn = document.getElementById('scrollLatestBtn');
+    if(btn) btn.classList.add('show');
+  }
   return div;
 }
 function addTyping(){
@@ -2443,6 +2630,7 @@ function sendTyped(){
   const text = input.value.trim();
   if(!text) return;
   input.value = '';
+  document.getElementById('sendBtn').disabled = true;
   sendMessage(text);
 }
 
