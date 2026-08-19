@@ -118,6 +118,100 @@ body{
   overflow-x:hidden;
 }
 .serif{ font-variation-settings:"opsz" 40; }
+
+/* ============================================================
+   100x ENHANCEMENT PACK — global polish, motion, and micro-UX.
+   Purely additive: builds on the existing design tokens above so
+   nothing here fights the app's own look, and every rule below
+   only adds behavior — it never removes or overrides core layout.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+}
+:focus-visible{outline:2px solid var(--bronze-bright);outline-offset:2px;border-radius:8px;}
+button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline-offset:3px;}
+::selection{background:var(--bronze-bright);color:var(--bronze-ink);}
+*{scrollbar-width:thin;scrollbar-color:var(--steel-hi) transparent;}
+*::-webkit-scrollbar{width:9px;height:9px;}
+*::-webkit-scrollbar-track{background:transparent;}
+*::-webkit-scrollbar-thumb{background:var(--steel-hi);border-radius:20px;border:2px solid transparent;background-clip:padding-box;}
+*::-webkit-scrollbar-thumb:hover{background:var(--slate-dim);background-clip:padding-box;}
+
+/* ---- staggered card entrance whenever a view becomes active ---- */
+.view.active .grid > .card{animation:cardRise .5s cubic-bezier(.2,.8,.2,1) backwards;}
+.view.active .grid > .card:nth-child(1){animation-delay:.02s;}
+.view.active .grid > .card:nth-child(2){animation-delay:.07s;}
+.view.active .grid > .card:nth-child(3){animation-delay:.12s;}
+.view.active .grid > .card:nth-child(4){animation-delay:.17s;}
+.view.active .grid > .card:nth-child(n+5){animation-delay:.2s;}
+@keyframes cardRise{from{opacity:0;transform:translateY(10px) scale(.99);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+/* ---- button ripple, delegated so it works on every .btn / .side-navbtn everywhere ---- */
+.btn,.side-navbtn{position:relative;overflow:hidden;}
+.gd-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.45);transform:scale(0);animation:gdRippleAnim .6s ease-out;pointer-events:none;}
+html[data-theme="dark"] .gd-ripple{background:rgba(255,255,255,0.24);}
+@keyframes gdRippleAnim{to{transform:scale(3.2);opacity:0;}}
+
+/* ---- soft "pop" pulse whenever a key readout's value actually changes ---- */
+.count-pop{animation:gdCountPop .4s cubic-bezier(.3,1.4,.4,1);}
+@keyframes gdCountPop{0%{transform:scale(1);}40%{transform:scale(1.07);}100%{transform:scale(1);}}
+
+/* ---- multi-toast stack (replaces the single fixed toast) ---- */
+.toast-stack{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column-reverse;
+  gap:8px;z-index:1200;pointer-events:none;align-items:center;max-width:92vw;}
+.toast2{background:var(--panel-solid);border:1px solid var(--steel-hi);color:var(--platinum);padding:12px 18px;
+  border-radius:100px;font-size:13px;font-family:'Instrument Sans',sans-serif;box-shadow:0 10px 34px rgba(0,0,0,0.45);
+  display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(10px) scale(.95);
+  animation:gdToastIn .35s cubic-bezier(.2,.8,.2,1) forwards;white-space:nowrap;}
+.toast2.out{animation:gdToastOut .3s ease forwards;}
+@keyframes gdToastIn{to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes gdToastOut{to{opacity:0;transform:translateY(6px) scale(.95);}}
+.toast2 .t-ico{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:10.5px;font-weight:800;}
+.toast2.success .t-ico{background:rgba(16,185,129,0.18);color:var(--win-bright);}
+.toast2.error .t-ico{background:rgba(244,63,94,0.18);color:var(--loss-bright);}
+.toast2.warn .t-ico{background:rgba(245,166,35,0.2);color:var(--amber);}
+.toast2.info .t-ico{background:rgba(13,148,136,0.18);color:var(--neon-cyan);}
+
+/* ---- offline / online banner, more visible than the small sidebar sync dot ---- */
+.net-banner{position:fixed;top:0;left:0;right:0;z-index:1300;text-align:center;padding:9px 14px;font-size:12.5px;
+  font-weight:650;letter-spacing:.01em;background:var(--loss);color:#fff;transform:translateY(-100%);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1);font-family:'Instrument Sans',sans-serif;}
+.net-banner.show{transform:translateY(0);}
+
+/* ---- command palette (⌘K / Ctrl+K) ---- */
+.cmdk-overlay{position:fixed;inset:0;z-index:1400;background:rgba(3,5,10,0.5);backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;
+  opacity:0;pointer-events:none;transition:opacity .2s ease;}
+.cmdk-overlay.show{opacity:1;pointer-events:auto;}
+.cmdk-box{width:min(560px,92vw);background:var(--panel-solid);border:1px solid var(--steel-hi);border-radius:16px;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,0.6);overflow:hidden;transform:translateY(-14px) scale(.98);
+  transition:transform .25s cubic-bezier(.2,.8,.2,1);}
+.cmdk-overlay.show .cmdk-box{transform:translateY(0) scale(1);}
+.cmdk-input-row{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--steel);}
+.cmdk-input-row input{flex:1;border:none;outline:none;background:transparent;font-size:15px;color:var(--platinum);
+  font-family:'Instrument Sans',sans-serif;min-width:0;}
+.cmdk-ico{opacity:.5;font-size:14px;flex-shrink:0;}
+.cmdk-list{max-height:52vh;overflow-y:auto;padding:8px;}
+.cmdk-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;
+  font-size:13.5px;color:var(--platinum);}
+.cmdk-item .ci-ico{width:26px;height:26px;border-radius:8px;background:var(--graphite);display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;font-size:12.5px;}
+.cmdk-item.active,.cmdk-item:hover{background:var(--graphite);}
+.cmdk-item .ci-hint{margin-left:auto;font-size:10px;color:var(--slate-dim);font-family:'IBM Plex Mono',monospace;
+  text-transform:uppercase;letter-spacing:.05em;}
+.cmdk-empty{padding:24px;text-align:center;color:var(--slate);font-size:13px;}
+.cmdk-foot{display:flex;gap:14px;align-items:center;padding:9px 16px;border-top:1px solid var(--steel);
+  font-size:10.5px;color:var(--slate-dim);}
+.kbd{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;
+  border-radius:5px;background:var(--graphite-hi);border:1px solid var(--steel-hi);font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:var(--slate);margin-right:4px;}
+.cmdk-launcher{position:fixed;bottom:20px;right:76px;z-index:998;display:flex;align-items:center;gap:6px;
+  padding:0 14px;height:46px;border-radius:23px;border:1px solid var(--steel-hi);background:var(--panel-solid);
+  color:var(--slate);font-size:12px;cursor:pointer;box-shadow:0 10px 24px -8px rgba(0,0,0,0.35);
+  transition:transform .15s ease,color .2s ease;}
+.cmdk-launcher:hover{transform:translateY(-2px);color:var(--platinum);}
+@media (max-width:760px){ .cmdk-launcher{display:none;} }
 ::selection{background:rgba(16,185,129,0.28);}
 /* ============ BACKGROUND VIDEO LAYER ============ */
 .bg-video-layer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:-3;overflow:hidden;background:var(--void);perspective:1400px;opacity:0.112;}
@@ -7558,6 +7652,181 @@ function toggleGdTheme(){
   }
 })();
 </script>
+
+<script>
+/* ============================================================
+   100x ENHANCEMENT PACK — additive layer on top of the app above.
+   Command palette, richer stacked toasts, offline/online banner,
+   button ripple, animated "pop" on key numbers changing, and a
+   global error safety net. Everything here hooks into the existing
+   DOM/functions via event delegation and observers, so none of the
+   core app logic in the script above needed to change.
+   ============================================================ */
+(function(){
+  'use strict';
+
+  /* ---- multi-toast: keeps every existing showToast(msg) call working
+     unchanged, adds an optional type ('success'|'error'|'warn'|'info')
+     and stacks up to 3 instead of one message overwriting the last. ---- */
+  const toastStack = document.createElement('div');
+  toastStack.className = 'toast-stack';
+  toastStack.id = 'toastStack';
+  document.body.appendChild(toastStack);
+  const TOAST_ICONS = { success:'✓', error:'✕', warn:'!', info:'i' };
+  window.showToast = function(msg, type){
+    type = (type && TOAST_ICONS[type]) ? type : 'info';
+    const el = document.createElement('div');
+    el.className = 'toast2 ' + type;
+    el.setAttribute('role','status');
+    const ico = document.createElement('span'); ico.className = 't-ico'; ico.textContent = TOAST_ICONS[type];
+    const txt = document.createElement('span'); txt.textContent = msg;
+    el.appendChild(ico); el.appendChild(txt);
+    toastStack.appendChild(el);
+    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(), 320); }, 2800);
+    while(toastStack.children.length > 3) toastStack.removeChild(toastStack.firstChild);
+  };
+  const legacyToast = document.getElementById('toast');
+  if(legacyToast) legacyToast.style.display = 'none';
+
+  /* ---- offline / online banner ---- */
+  const netBanner = document.getElementById('netBanner');
+  function setNetStatus(){ if(netBanner) netBanner.classList.toggle('show', !navigator.onLine); }
+  window.addEventListener('online', ()=>{ setNetStatus(); showToast('Back online — syncing…', 'success'); });
+  window.addEventListener('offline', ()=>{ setNetStatus(); showToast("You're offline — changes save on this device", 'warn'); });
+  setNetStatus();
+
+  /* ---- button ripple on every .btn / .side-navbtn, current and future ---- */
+  document.addEventListener('click', function(e){
+    const el = e.target.closest('.btn, .side-navbtn');
+    if(!el) return;
+    const rect = el.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const r = document.createElement('span');
+    r.className = 'gd-ripple';
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size/2) + 'px';
+    r.style.top = (e.clientY - rect.top - size/2) + 'px';
+    el.appendChild(r);
+    setTimeout(()=>r.remove(), 650);
+  }, true);
+
+  /* ---- gentle haptic tap on primary actions, mobile only ---- */
+  document.addEventListener('click', function(e){
+    if(navigator.vibrate && e.target.closest('.btn-primary')) navigator.vibrate(8);
+  }, true);
+
+  /* ---- soft pop whenever a key readout's value actually changes, so
+     numbers feel alive instead of silently flipping ---- */
+  const POP_SELECTORS = ['#scoreNum','#streakNum','#hero_netPnl .hero-value','#hero_winRate .hero-value',
+    '#hero_profitFactor .hero-value','#hero_avgWinLoss .hero-value','#statTodayPnl b'];
+  const popTargets = POP_SELECTORS.map(s=>document.querySelector(s)).filter(Boolean);
+  const lastText = new WeakMap();
+  popTargets.forEach(t=>lastText.set(t, t.textContent));
+  if(popTargets.length){
+    const popObserver = new MutationObserver(muts=>{
+      const seen = new Set();
+      muts.forEach(m=>{
+        const node = m.target.nodeType===3 ? m.target.parentElement : m.target;
+        const tracked = popTargets.find(p=>p===node || p.contains(node));
+        if(!tracked || seen.has(tracked)) return;
+        seen.add(tracked);
+        if(lastText.get(tracked) === tracked.textContent) return;
+        lastText.set(tracked, tracked.textContent);
+        tracked.classList.remove('count-pop'); void tracked.offsetWidth; tracked.classList.add('count-pop');
+      });
+    });
+    popTargets.forEach(t=>popObserver.observe(t, { childList:true, characterData:true, subtree:true }));
+  }
+
+  /* ---- command palette (⌘K / Ctrl+K) ---- */
+  const cmdkOverlay = document.getElementById('cmdkOverlay');
+  const cmdkInput = document.getElementById('cmdkInput');
+  const cmdkList = document.getElementById('cmdkList');
+  let cmdActive = 0, cmdFiltered = [];
+  function buildCommands(){
+    const cmds = [];
+    document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
+      const label = btn.textContent.trim().replace(/\s+/g,' ');
+      cmds.push({ icon:'→', label:'Go to ' + label, hint:'Nav', run:()=>btn.click() });
+    });
+    cmds.push({ icon:'+', label:'Log a Trade', hint:'Action', run:()=>{ if(typeof openPretrade==='function') openPretrade(); } });
+    cmds.push({ icon:'☾', label:'Toggle dark / light theme', hint:'Action', run:()=>{ const b=document.querySelector('.theme-toggle-fab'); if(b) b.click(); } });
+    const scifeBtn = document.getElementById('scifeNavBtn');
+    if(scifeBtn) cmds.push({ icon:'✦', label:'Open SciFe', hint:'Voice', run:()=>scifeBtn.click() });
+    cmds.push({ icon:'⎋', label:'Sign out', hint:'Action', run:()=>{ if(typeof handleLogout==='function') handleLogout(); } });
+    return cmds;
+  }
+  function renderCmdk(query){
+    const all = buildCommands();
+    const q = (query||'').toLowerCase().trim();
+    cmdFiltered = q ? all.filter(c=>c.label.toLowerCase().includes(q)) : all;
+    cmdActive = 0;
+    if(!cmdFiltered.length){ cmdkList.innerHTML = '<div class="cmdk-empty">No matches</div>'; return; }
+    cmdkList.innerHTML = cmdFiltered.map((c,i)=>
+      `<div class="cmdk-item${i===0?' active':''}" data-i="${i}"><span class="ci-ico">${c.icon}</span><span>${c.label}</span><span class="ci-hint">${c.hint}</span></div>`
+    ).join('');
+  }
+  function openCmdk(){
+    if(!cmdkOverlay) return;
+    renderCmdk('');
+    cmdkOverlay.classList.add('show');
+    setTimeout(()=>cmdkInput && cmdkInput.focus(), 30);
+  }
+  function closeCmdk(){ if(!cmdkOverlay) return; cmdkOverlay.classList.remove('show'); if(cmdkInput) cmdkInput.value=''; }
+  function highlightCmd(){
+    [...cmdkList.children].forEach((el,i)=>el.classList.toggle('active', i===cmdActive));
+    const el = cmdkList.children[cmdActive];
+    if(el) el.scrollIntoView({ block:'nearest' });
+  }
+  function runActive(){
+    const cmd = cmdFiltered[cmdActive];
+    if(cmd){ closeCmdk(); setTimeout(cmd.run, 40); }
+  }
+  window.openCommandPalette = openCmdk;
+  if(cmdkInput){
+    cmdkInput.addEventListener('input', ()=>renderCmdk(cmdkInput.value));
+    cmdkInput.addEventListener('keydown', e=>{
+      if(e.key==='ArrowDown'){ e.preventDefault(); cmdActive = Math.min(cmdActive+1, cmdFiltered.length-1); highlightCmd(); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); cmdActive = Math.max(cmdActive-1, 0); highlightCmd(); }
+      else if(e.key==='Enter'){ e.preventDefault(); runActive(); }
+      else if(e.key==='Escape'){ closeCmdk(); }
+    });
+  }
+  if(cmdkList){
+    cmdkList.addEventListener('mousemove', e=>{
+      const item = e.target.closest('.cmdk-item');
+      if(!item) return;
+      cmdActive = +item.dataset.i;
+      highlightCmd();
+    });
+    cmdkList.addEventListener('click', e=>{
+      const item = e.target.closest('.cmdk-item');
+      if(!item) return;
+      cmdActive = +item.dataset.i;
+      runActive();
+    });
+  }
+  if(cmdkOverlay) cmdkOverlay.addEventListener('click', e=>{ if(e.target===cmdkOverlay) closeCmdk(); });
+  document.addEventListener('keydown', e=>{
+    if((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmdk(); }
+  });
+
+  /* ---- global error safety net: surfaces unexpected JS errors as a
+     toast instead of a silently broken screen; throttled so one bad
+     loop can't spam the trader with repeat toasts ---- */
+  let lastErrShown = 0;
+  function safetyNetToast(){
+    const now = Date.now();
+    if(now - lastErrShown < 4000) return;
+    lastErrShown = now;
+    showToast('Something glitched — try that again.', 'error');
+  }
+  window.addEventListener('error', safetyNetToast);
+  window.addEventListener('unhandledrejection', safetyNetToast);
+
+})();
+</script>
+
 <!-- SYNC CONFLICT MODAL -->
 <div class="overlay" id="syncConflictOverlay">
   <div class="modal" style="max-width:440px;">
@@ -7611,6 +7880,24 @@ function toggleGdTheme(){
       <button class="side-logout" style="width:100%;" onclick="document.getElementById('getAppOverlay').classList.remove('show')">Got it</button>
     </div>
   </div>
+</div>
+
+<!-- ============ 100x ENHANCEMENT PACK — command palette, offline banner ============ -->
+<div class="net-banner" id="netBanner">You're offline — changes are saved on this device and will sync when you're back.</div>
+
+<div class="cmdk-overlay" id="cmdkOverlay">
+  <div class="cmdk-box" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="cmdk-input-row">
+      <span class="cmdk-ico">⌘</span>
+      <input id="cmdkInput" type="text" placeholder="Jump to a screen or run a quick action…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="cmdk-list" id="cmdkList"></div>
+    <div class="cmdk-foot"><span><span class="kbd">↑</span><span class="kbd">↓</span> navigate</span><span><span class="kbd">↵</span> select</span><span><span class="kbd">esc</span> close</span></div>
+  </div>
+</div>
+
+<div class="cmdk-launcher" id="cmdkLauncher" onclick="window.openCommandPalette && window.openCommandPalette()" title="Command palette">
+  <span>Jump to…</span><span class="kbd">⌘K</span>
 </div>
 
 </body>
