@@ -571,6 +571,13 @@ body{position:relative;}
 .sig-level-edit input:focus{border-color:var(--bronze);box-shadow:0 0 0 3px rgba(18,185,136,0.18);}
 .sig-level-edit input::placeholder{color:var(--slate-dim);font-weight:500;font-style:italic;}
 .sig-level-hint{font-size:11px;color:var(--slate-dim);margin-top:-8px;margin-bottom:14px;font-style:italic;}
+.sig-level-value{font-size:14.5px;font-weight:700;color:var(--platinum);text-align:right;font-family:'IBM Plex Mono',monospace;letter-spacing:.01em;word-break:break-word;}
+.sig-level-value.structural{font-weight:500;font-style:italic;color:var(--slate);font-family:inherit;text-align:right;}
+.sig-rr-banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:rgba(240,169,78,0.1);border:1px solid rgba(240,169,78,0.35);margin-bottom:14px;font-size:13px;line-height:1.5;color:var(--platinum);}
+.sig-rr-banner .glyph{flex:none;font-size:16px;line-height:1.2;}
+.sig-invalid-banner{padding:12px 14px;border-radius:12px;background:rgba(255,93,122,0.08);border:1px solid rgba(255,93,122,0.3);margin-bottom:14px;font-size:12.5px;line-height:1.6;color:var(--slate);}
+.sig-invalid-banner strong{color:var(--loss-bright);font-weight:700;}
+.sig-invalid-banner .old-level{text-decoration:line-through;color:var(--slate-dim);}
 .sig-action-row{display:flex;gap:10px;margin-top:4px;}
 .sig-action-row .btn{flex:1;margin:0;}
 .sig-copy-btn{flex:none;width:44px;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
@@ -1004,7 +1011,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false } };
+let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false }, chartMemory:{} };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -1850,7 +1857,8 @@ async function loadTraderRow(){
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
     voiceURI: s.voiceURI || '',
-    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin }
+    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin },
+    chartMemory: (s.chartMemory && typeof s.chartMemory === 'object') ? s.chartMemory : {}
   };
   rolloverUsageWeek();
   updateScanBanner();
@@ -2478,10 +2486,14 @@ function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desir
   const biasBlock = traderBias && traderBias !== 'unsure'
     ? `\nTHE TRADER'S OWN READ: they think this setup is ${traderBias.toUpperCase()}. Form your own bias FIRST, purely from the checklist and evidence below — decide it before you let their stated view influence you at all. Then compare. If your independent read agrees with theirs, say so plainly. If it does NOT, do not soften it or split the difference to avoid friction — state your actual bias and give a direct, specific reason it differs from theirs (e.g. which checklist item they may be reading differently, or what evidence points the other way). Agreeing with the trader is not the goal; being right is. A trader who only ever hears "you're right" from this tool isn't being served by it.\n`
     : '\nThe trader hasn\'t committed to a direction yet — just give your own independent, unbiased read.\n';
-  const rr = (typeof desiredRR === 'number' && desiredRR > 0) ? desiredRR : null;
-  const tpBlock = rr
-    ? `Give EXACTLY 3 take-profit levels, ordered nearest-to-furthest: TP1 and TP2 are intermediate partial-profit levels on the way to the target (roughly 1/3 and 2/3 of the way there, placed at real structure — prior swing points, liquidity, or order blocks — not just a blind fraction of distance). TP3 is the primary target, built around the trader's requested R:R of ${rr}. Only place TP3 at that exact R:R if the chart's actual structure (a real swing point, liquidity pool, or resistance/support level) genuinely sits at roughly that distance — do not invent a level just to hit the number. If nothing structural supports a ${rr}R target from this entry/stop, set "rr_reachable" to false, set TP3 to the furthest level the structure DOES realistically support instead, and explain the gap plainly in "rr_note" (e.g. "nearest real resistance caps this closer to 1.4R — 2R would need price to trade through it with no reaction, which isn't a level, it's a hope"). If the structure does support it, set "rr_reachable" to true and "rr_note" to a brief confirmation.`
-    : `Give ${style.tpRange} take-profit level(s) appropriate for a ${styleKey} trade, ordered nearest-to-furthest, with an approximate R:R for each — scale the furthest TP toward this style's good-R:R target (${style.good}R) only if the setup's actual structure supports it. No specific R:R was requested, so set "rr_reachable" to true and "rr_note" to an empty string.`;
+  const rrExplicit = (typeof desiredRR === 'number' && desiredRR > 0) ? desiredRR : null;
+  // Always target exactly 3 TPs. If the trader gave a specific R:R, TP3 is
+  // built around that; if not, auto-pick a sensible target from this trade
+  // style's own "good" R:R instead of leaving it vague — the trader should
+  // never get fewer than TP1/TP2/TP3 just because they left the field blank.
+  const rr = rrExplicit != null ? rrExplicit : style.good;
+  const rrSource = rrExplicit != null ? `the trader's requested R:R of ${rr}` : `an auto-selected target of ${rr}R (this trade style's own "good" R:R benchmark, since the trader didn't specify one)`;
+  const tpBlock = `Give EXACTLY 3 take-profit levels — TP1, TP2, TP3, ordered nearest-to-furthest, every one placed at real visible structure (a prior swing point, liquidity pool, order block, or resistance/support level) — never a blind fraction of distance with no structural basis. TP1 and TP2 are intermediate partial-profit levels on the way to the target (roughly 1/3 and 2/3 of the way there). TP3 is the primary target, built around ${rrSource}. Only place TP3 at that exact R:R if the chart's actual structure genuinely sits at roughly that distance — do not invent a level just to hit the number. If nothing structural supports a ${rr}R target from this entry/stop, set "rr_reachable" to false, set TP3 to the furthest level the structure DOES realistically support instead (TP1/TP2 should still be given normally, scaled to what IS reachable), and explain the gap plainly in "rr_note" (e.g. "nearest real resistance caps this closer to 1.4R — 2R would need price to trade through it with no reaction, which isn't a level, it's a hope"). If the structure does support the ${rr}R target, set "rr_reachable" to true and "rr_note" to a brief confirmation. Regardless of reachability, "take_profits" must always contain exactly 3 entries — never fewer.`;
   return `You are SciFe, an expert price-action analyst running setup analysis inside Ghost Discipline. You know Smart Money Concepts, ICT, and classical TA in real depth — apply the actual definitions below precisely, don't guess at what a term means. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, no reasoning text, nothing before or after it.
 
 CONSISTENCY IS CRITICAL: if this looks like the same chart image you may have seen before (same candles, same visible price axis, same structure), read it exactly the same way every time — the same swing highs/lows, the same order blocks, the same entry/stop/target levels. Never vary your reading of an unchanged chart between analyses; a trader re-uploading the same screenshot must get the same coordinates back, not a different interpretation. Anchor strictly to what's visibly printed on the chart (candle wicks/bodies and axis labels) rather than an impression of the image, since that visible data doesn't change between reads even if your phrasing does.
@@ -2501,12 +2513,12 @@ ${summarizeStrategyPerformance(strategy.id)}
 ${summarizeEconomicCalendar()}
 Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this trade style.
 
-LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
+LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
 }
 function extractJson(text){
@@ -2514,6 +2526,20 @@ function extractJson(text){
   const start = text.indexOf('{'), end = text.lastIndexOf('}');
   if(start===-1 || end===-1 || end<start) return null;
   try{ return JSON.parse(text.slice(start, end+1)); }catch(e){ return null; }
+}
+/* Hashes the exact bytes SciFe is about to send for analysis (the
+   re-encoded JPEG, not the original file) so two uploads of the same chart
+   produce the same hash regardless of filename/timestamp metadata. This is
+   what lets a re-upload of an unchanged chart return the identical stored
+   read instead of asking the model to "be consistent" and hoping — see
+   chartMemory usage in analyzeSignal(). */
+function chartMemoryKey(pair){
+  return (pair || '').trim().toUpperCase() || '_NOPAIR';
+}
+async function sha256Hex(str){
+  const bytes = new TextEncoder().encode(str);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 function onChartFileChange(e){
   const file = e.target.files && e.target.files[0];
@@ -2544,7 +2570,8 @@ function onChartFileChange(e){
       ctx.drawImage(img, 0, 0, width, height);
       const outDataUrl = canvas.toDataURL('image/jpeg', 0.87);
       const comma = outDataUrl.indexOf(',');
-      sigChartImage = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1) };
+      sigChartImage = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1), hash: null };
+      sha256Hex(sigChartImage.data).then(h=>{ if(sigChartImage) sigChartImage.hash = h; });
       document.getElementById('sig_chartPreview').innerHTML = `
         <div class="sig-chart-thumb" id="sigChartThumb">
           <div class="sig-scan-frame">
@@ -2586,10 +2613,28 @@ async function analyzeSignal(){
   if(!strategy){ showToast('Pick a strategy first'); return; }
   const styleKey = document.getElementById('sig_style').value || 'intraday';
   const pair = document.getElementById('sig_pair').value.trim();
+  const desiredRRraw = document.getElementById('sig_desiredRR') ? document.getElementById('sig_desiredRR').value.trim() : '';
+  const desiredRR = desiredRRraw && !isNaN(parseFloat(desiredRRraw)) && parseFloat(desiredRRraw) > 0 ? parseFloat(desiredRRraw) : null;
   const desc = document.getElementById('sig_desc').value.trim();
   if(!desc && !sigChartImage){ showToast("Add a chart image or describe what you're seeing"); return; }
   if(sigChartImage && !currentModelSupportsVision()){
     showSigError(`${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Pick a model marked 🔍 Scanner in settings (${visionCapableSummary()}), or remove the chart and describe the setup in text instead.`, false);
+    return;
+  }
+  // CONSISTENCY GUARD: if this is the exact same chart image (by content
+  // hash) already scanned for this pair, replay the stored read instead of
+  // calling the model again. This is what actually guarantees identical
+  // coordinates on re-upload — an instruction alone can't, since a model
+  // call is never perfectly deterministic. Doesn't cost a weekly scan.
+  const memKey = chartMemoryKey(pair);
+  scife.chartMemory = scife.chartMemory || {};
+  const memEntry = scife.chartMemory[memKey];
+  if(sigChartImage && sigChartImage.hash && memEntry && memEntry.hash === sigChartImage.hash){
+    hideSkeleton();
+    renderSignalResult(memEntry.result, strategy, styleKey, pair, null);
+    showToast('Same chart as last scan — showing the same read (no coordinates changed)');
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: true, bias: memEntry.result.bias, confidence: memEntry.result.confidence, cached: true }, true);
+    renderScanHistory();
     return;
   }
   // Consume the scan now, before the request goes out to any provider —
@@ -2621,7 +2666,7 @@ async function analyzeSignal(){
     // could get cut off mid-JSON, which surfaced as a generic parse failure.
     const opts = { temperature:0.3, maxTokens:1800 };
     if(sigChartImage) opts.image = sigChartImage;
-    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias);
+    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias, desiredRR);
     const userTurn = [{ role:'user', content:userMsg }];
 
     let raw, parsed, lastErr;
@@ -2649,7 +2694,24 @@ async function analyzeSignal(){
       throw lastErr || new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
     }
     hideSkeleton();
-    renderSignalResult(parsed, strategy, styleKey, pair);
+    // If there's a prior stored read for this pair AND this is a genuinely
+    // different chart (different hash, or no image this time), and the new
+    // read actually diverges in bias or levels, surface the old coordinates
+    // explicitly as invalidated rather than silently swapping them out.
+    let invalidated = null;
+    if(memEntry && memEntry.result){
+      const isNewChart = !sigChartImage || !sigChartImage.hash || memEntry.hash !== sigChartImage.hash;
+      const oldR = memEntry.result;
+      const entryChanged = (oldR.entry && oldR.entry.level) !== (parsed.entry && parsed.entry.level);
+      const slChanged = (oldR.stop_loss && oldR.stop_loss.level) !== (parsed.stop_loss && parsed.stop_loss.level);
+      const biasChanged = oldR.bias !== parsed.bias;
+      if(isNewChart && (entryChanged || slChanged || biasChanged)){
+        invalidated = oldR;
+      }
+    }
+    scife.chartMemory[memKey] = { hash: (sigChartImage && sigChartImage.hash) || null, result: parsed, at: Date.now() };
+    saveScife();
+    renderSignalResult(parsed, strategy, styleKey, pair, invalidated);
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, bias: parsed.bias, confidence: parsed.confidence }, true);
     renderScanHistory();
   }catch(e){
@@ -2722,32 +2784,49 @@ function renderScanHistory(){
     return `<div class="sig-history-chip ${bias}"><span class="dot"></span>${sigEsc(d.pair || d.strategy || '')} · ${biasShort}${d.confidence!=null?' · '+d.confidence+'%':''}</div>`;
   }).join('');
 }
-function sigLevelEditRow(id, name, lvl, i){
+function sigLevelRow(name, lvl, i){
   lvl = lvl || {};
-  const numeric = lvl.numeric && lvl.level && !isNaN(parseFloat(lvl.level));
-  const value = numeric ? parseFloat(lvl.level) : '';
-  const placeholder = numeric ? '' : (lvl.level ? sigEsc(lvl.level).slice(0,40) : 'not given');
+  const hasVal = lvl.level != null && lvl.level !== '';
+  const structural = hasVal && lvl.numeric === false;
+  // Full, untouched string exactly as SciFe returned it — no parseFloat
+  // round-trip, no slicing/truncation. This is the read-only coordinate the
+  // trader locks in on; it is never fed back through an editable field.
+  const text = hasVal ? sigEsc(String(lvl.level)) : 'not given';
   return `<div class="sig-level-edit" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;">
-    <label for="${id}">${sigEsc(name)}</label>
-    <input type="number" step="any" id="${id}" value="${value}" placeholder="${placeholder}">
+    <label>${sigEsc(name)}</label>
+    <div class="sig-level-value${structural?' structural':''}">${text}</div>
   </div>`;
 }
 let lastSignal = null; // { result, strategy, styleKey, pair } — feeds "Place on Order Book"
-function renderSignalResult(r, strategy, styleKey, pair){
+function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
   const biasLabel = { long:'LONG bias', short:'SHORT bias', no_trade:'NO TRADE' }[biasClass];
   const conf = Math.max(0, Math.min(100, parseInt(r.confidence,10) || 0));
   const checklist = Array.isArray(r.checklist) ? r.checklist : [];
-  const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
+  // take_profits should always be exactly 3 (TP1/TP2/TP3) per the prompt —
+  // pad defensively so the UI never silently drops a row if a response
+  // ever comes back short.
+  const tps = Array.isArray(r.take_profits) ? r.take_profits.slice(0,3) : [];
+  while(tps.length < 3) tps.push({ level:'', rr:'', numeric:false });
   const styleLabel = (SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label;
   const icon = { present:'✓', absent:'✕', unclear:'?' };
-  const firstTp = tps[0] || null;
-  const levelEditRows = [
-    sigLevelEditRow('sig_edit_entry', 'Entry', r.entry, 0),
-    sigLevelEditRow('sig_edit_sl', 'Stop loss', r.stop_loss, 1),
-    sigLevelEditRow('sig_edit_tp', `TP1${firstTp && firstTp.rr ? ' ('+sigEsc(firstTp.rr)+'R)' : ''}`, firstTp, 2)
+  const levelRows = [
+    sigLevelRow('Entry', r.entry, 0),
+    sigLevelRow('Stop loss', r.stop_loss, 1),
+    ...tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(String(tp.rr))+'R)':''}`, tp, 2+i))
   ].join('');
-  const extraTps = tps.slice(1);
+  const rrBanner = (r.rr_reachable === false)
+    ? `<div class="sig-rr-banner"><span class="glyph">⚠</span><div><strong>Requested R:R not reachable from this structure.</strong> TP3 was set to the furthest level the chart actually supports instead.${r.rr_note ? ' '+sigEsc(r.rr_note) : ''}</div></div>`
+    : (r.rr_note ? `<div class="hint" style="margin-bottom:12px;">${sigEsc(r.rr_note)}</div>` : '');
+  const invalidBanner = invalidated ? (()=>{
+    const oldTps = Array.isArray(invalidated.take_profits) ? invalidated.take_profits : [];
+    const parts = [];
+    if(invalidated.bias) parts.push(`bias <span class="old-level">${sigEsc(invalidated.bias)}</span>`);
+    if(invalidated.entry && invalidated.entry.level) parts.push(`entry <span class="old-level">${sigEsc(String(invalidated.entry.level))}</span>`);
+    if(invalidated.stop_loss && invalidated.stop_loss.level) parts.push(`SL <span class="old-level">${sigEsc(String(invalidated.stop_loss.level))}</span>`);
+    oldTps.forEach((tp,i)=>{ if(tp && tp.level) parts.push(`TP${i+1} <span class="old-level">${sigEsc(String(tp.level))}</span>`); });
+    return `<div class="sig-invalid-banner"><strong>Chart has moved — previous read is now invalid.</strong><br>Old: ${parts.join(' · ')}</div>`;
+  })() : '';
   lastSignal = { result:r, strategy, styleKey, pair: pair || '' };
   const el = document.getElementById('sig_result');
   el.innerHTML = `
@@ -2756,6 +2835,7 @@ function renderSignalResult(r, strategy, styleKey, pair){
         <span class="sig-bias ${biasClass}"><span class="sig-bias-dot"></span>${biasLabel} · ${sigEsc(strategy.name)}</span>
         <span class="sig-style-badge">${sigEsc(styleLabel)}</span>
       </div>
+      ${invalidBanner}
       <div class="sig-block" style="animation-delay:.05s;">
         <div class="sig-block-label">Confidence</div>
         <div class="sig-confbar"><div class="sig-confbar-fill" style="width:0%;" data-target="${conf}"></div></div>
@@ -2763,9 +2843,9 @@ function renderSignalResult(r, strategy, styleKey, pair){
       </div>
       ${biasClass!=='no_trade' ? `
       <div class="sig-block" style="animation-delay:.15s;">
-        <div class="sig-block-label">Levels — edit before placing</div>
-        ${levelEditRows}
-        ${extraTps.length ? `<div class="sig-level-hint">Further TPs from SciFe: ${extraTps.map(tp=>sigEsc(tp.level)+(tp.rr?' ('+sigEsc(tp.rr)+'R)':'')).join(', ')} — noted on the order, not editable here.</div>` : ''}
+        <div class="sig-block-label">Levels — locked, read-only</div>
+        ${rrBanner}
+        ${levelRows}
       </div>` : ''}
       <div class="sig-block" style="animation-delay:.25s;">
         <div class="sig-block-label">Confluence checklist</div>
@@ -2838,17 +2918,14 @@ async function placeSignalOnOrderBook(btn){
     psychology.orders = Array.isArray(psychology.orders) ? psychology.orders : [];
     const traders = Array.isArray(psychology.traders) ? psychology.traders : [];
     const trader = traders[0] ? traders[0].id : null;
-    // Read straight from the editable level inputs the trader may have
-    // filled in or corrected — this is what actually goes on the order,
-    // not necessarily the raw text SciFe returned.
-    const entryInput = document.getElementById('sig_edit_entry');
-    const slInput = document.getElementById('sig_edit_sl');
-    const tpInput = document.getElementById('sig_edit_tp');
-    const entryNum = entryInput && entryInput.value !== '' ? parseFloat(entryInput.value) : null;
-    const slNum = slInput && slInput.value !== '' ? parseFloat(slInput.value) : null;
-    const tpNum = tpInput && tpInput.value !== '' ? parseFloat(tpInput.value) : null;
+    // Levels are locked/read-only in the UI now, so the order is placed
+    // straight from what SciFe returned — not from anything the trader
+    // could have hand-edited in a field.
     const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
     const firstTp = tps[0] || null;
+    const entryNum = (r.entry && r.entry.numeric && r.entry.level != null && !isNaN(parseFloat(r.entry.level))) ? parseFloat(r.entry.level) : null;
+    const slNum = (r.stop_loss && r.stop_loss.numeric && r.stop_loss.level != null && !isNaN(parseFloat(r.stop_loss.level))) ? parseFloat(r.stop_loss.level) : null;
+    const tpNum = (firstTp && firstTp.numeric && firstTp.level != null && !isNaN(parseFloat(firstTp.level))) ? parseFloat(firstTp.level) : null;
     const rrPlanned = firstTp && firstTp.rr ? String(firstTp.rr).replace(/[^\d.]/g,'') : null;
     const noteParts = [];
     if(r.entry_idea) noteParts.push(r.entry_idea);
