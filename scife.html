@@ -755,7 +755,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
       </div>
       <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
       <div class="stage-emoji" id="stageEmoji">🙂</div>
-      <button class="stage-video-btn" id="stageVideoBtn" type="button" onclick="document.getElementById('stageVideoInput').click()" title="Change neural-link video" aria-label="Change neural-link video">🎬</button>
+      <button class="stage-video-btn" id="stageVideoBtn" type="button" onclick="requestStageVideoChange()" title="Change neural-link video (admin only)" aria-label="Change neural-link video">🎬</button>
       <input type="file" id="stageVideoInput" accept="video/*" style="display:none;" onchange="if(this.files[0]) chooseStageVideo(this.files[0]); this.value='';">
     </div>
   </div>
@@ -826,6 +826,12 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
       <option value="swing">Swing</option>
     </select>
     <div class="hint" id="sig_styleHint"></div>
+  </div>
+
+  <div class="field">
+    <label>Your target R:R <span style="font-weight:400;color:var(--slate);">(optional)</span></label>
+    <input type="number" id="sig_desiredRR" step="0.1" min="0.1" placeholder="e.g. 2 for 1:2">
+    <div class="hint">TP1 and TP2 are laid out as intermediate targets on the way there; TP3 is the main target built around this R:R. Leave blank and SciFe picks a sensible target for the trade style instead. If the chart's own structure genuinely can't support the R:R you ask for, SciFe will tell you rather than force a level that isn't really there.</div>
   </div>
 
   <div class="field">
@@ -925,11 +931,11 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
         <div class="switch" id="settingsHandsFreeSwitch" onclick="this.classList.toggle('on')"></div>
       </div>
       <div class="field" style="margin-top:2px;">
-        <label>Neural-link video</label>
-        <div class="hint" style="margin-bottom:8px;">Pick any video from your device to play behind the orb — it's stored right in this browser, so it works even if gmc.MP4 isn't hosted alongside the page.</div>
+        <label>Neural-link video <span style="font-weight:400;color:var(--slate);font-size:11.5px;">— admin only</span></label>
+        <div class="hint" style="margin-bottom:8px;">Pick any video from your device to play behind the orb — it's stored right in this browser, so it works even if gmc.MP4 isn't hosted alongside the page. Changing it requires the admin password (same one that unlocks unlimited scans).</div>
         <div style="display:flex;gap:10px;">
-          <button class="btn-ghost" style="flex:1;width:auto;padding:9px 12px;font-size:12.5px;border-radius:9px;" type="button" onclick="document.getElementById('stageVideoInput').click()">Choose video…</button>
-          <button class="btn-ghost" style="flex:1;width:auto;padding:9px 12px;font-size:12.5px;border-radius:9px;" type="button" onclick="resetStageVideo()">Reset to default</button>
+          <button class="btn-ghost" style="flex:1;width:auto;padding:9px 12px;font-size:12.5px;border-radius:9px;" type="button" onclick="requestStageVideoChange()">Choose video…</button>
+          <button class="btn-ghost" style="flex:1;width:auto;padding:9px 12px;font-size:12.5px;border-radius:9px;" type="button" onclick="requestStageVideoChange(true)">Reset to default</button>
         </div>
       </div>
     </div>
@@ -974,6 +980,21 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- VIDEO ADMIN GATE — the 🎬 neural-link video control is admin-only,
+     gated behind the same ADMIN_PASSWORD used to unlock unlimited scans. -->
+<div class="overlay" id="videoAdminOverlay" onclick="if(event.target===this)closeVideoAdminGate();">
+  <div class="modal" style="max-width:380px;" role="dialog" aria-modal="true" aria-labelledby="videoAdminTitle">
+    <h3 id="videoAdminTitle">Admin password required</h3>
+    <div class="sub">Changing the neural-link video is an admin-only action — enter the same password that unlocks unlimited scans.</div>
+    <div class="field"><label>Admin password</label><input type="password" id="videoAdminPassInput" placeholder="Enter password" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')submitVideoAdminGate()"></div>
+    <div class="hint" id="videoAdminError" style="display:none;color:var(--loss-bright);margin-top:-2px;">Incorrect password.</div>
+    <div class="btn-row" style="margin-top:16px;gap:10px;display:flex;">
+      <button class="btn-ghost" style="flex:1;" type="button" onclick="closeVideoAdminGate()">Cancel</button>
+      <button class="btn" style="flex:1;" type="button" onclick="submitVideoAdminGate()">Unlock</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============ SUPABASE (same project as Ghost Discipline) ============ */
@@ -1626,6 +1647,49 @@ document.addEventListener('visibilitychange', ()=>{
   if(!video) return;
   if(document.hidden) video.pause(); else video.play().catch(()=>{});
 });
+
+/* ---- admin gate for the neural-link video (🎬) — same ADMIN_PASSWORD /
+   scife.usage.isAdmin flag used to unlock unlimited scans, so unlocking
+   either one here also unlocks the other, consistent with there being a
+   single admin state on the account. ---- */
+let videoAdminPendingAction = null; // 'choose' | 'reset'
+function requestStageVideoChange(isReset){
+  if(scife.usage && scife.usage.isAdmin){
+    if(isReset) resetStageVideo(); else document.getElementById('stageVideoInput').click();
+    return;
+  }
+  videoAdminPendingAction = isReset ? 'reset' : 'choose';
+  const overlay = document.getElementById('videoAdminOverlay');
+  const err = document.getElementById('videoAdminError');
+  const input = document.getElementById('videoAdminPassInput');
+  if(err) err.style.display = 'none';
+  if(input) input.value = '';
+  if(overlay){ overlay.classList.add('show'); setTimeout(()=>input && input.focus(), 30); }
+}
+function closeVideoAdminGate(){
+  const overlay = document.getElementById('videoAdminOverlay');
+  if(overlay) overlay.classList.remove('show');
+  videoAdminPendingAction = null;
+}
+async function submitVideoAdminGate(){
+  const input = document.getElementById('videoAdminPassInput');
+  const err = document.getElementById('videoAdminError');
+  const pass = input ? input.value : '';
+  if(pass !== ADMIN_PASSWORD){
+    if(err) err.style.display = 'block';
+    return;
+  }
+  // Same admin flag as Settings → Scans — unlocking here unlocks unlimited
+  // scans too, and vice versa, since it's one admin state on the account.
+  scife.usage.isAdmin = true;
+  await saveScife();
+  if(typeof renderAdminSection === 'function') renderAdminSection();
+  if(typeof updateScanBanner === 'function') updateScanBanner();
+  const action = videoAdminPendingAction;
+  closeVideoAdminGate();
+  showToast('Admin unlocked');
+  if(action === 'reset') resetStageVideo(); else document.getElementById('stageVideoInput').click();
+}
 
 /* ============ STAGE VIDEO STORAGE (IndexedDB) ============
    gmc.MP4 only plays if that file actually sits next to this HTML file on
@@ -2405,7 +2469,7 @@ function summarizeStrategyPerformance(strategyId){
   const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
 }
-function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias){
+function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
   const logicList = set
     ? set.map(l=>`- ${l.id} (${l.label}): ${SIGNAL_LOGIC_DEFS[l.id] || 'Use standard trading definition for this concept.'}`).join('\n')
@@ -2414,7 +2478,13 @@ function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias){
   const biasBlock = traderBias && traderBias !== 'unsure'
     ? `\nTHE TRADER'S OWN READ: they think this setup is ${traderBias.toUpperCase()}. Form your own bias FIRST, purely from the checklist and evidence below — decide it before you let their stated view influence you at all. Then compare. If your independent read agrees with theirs, say so plainly. If it does NOT, do not soften it or split the difference to avoid friction — state your actual bias and give a direct, specific reason it differs from theirs (e.g. which checklist item they may be reading differently, or what evidence points the other way). Agreeing with the trader is not the goal; being right is. A trader who only ever hears "you're right" from this tool isn't being served by it.\n`
     : '\nThe trader hasn\'t committed to a direction yet — just give your own independent, unbiased read.\n';
+  const rr = (typeof desiredRR === 'number' && desiredRR > 0) ? desiredRR : null;
+  const tpBlock = rr
+    ? `Give EXACTLY 3 take-profit levels, ordered nearest-to-furthest: TP1 and TP2 are intermediate partial-profit levels on the way to the target (roughly 1/3 and 2/3 of the way there, placed at real structure — prior swing points, liquidity, or order blocks — not just a blind fraction of distance). TP3 is the primary target, built around the trader's requested R:R of ${rr}. Only place TP3 at that exact R:R if the chart's actual structure (a real swing point, liquidity pool, or resistance/support level) genuinely sits at roughly that distance — do not invent a level just to hit the number. If nothing structural supports a ${rr}R target from this entry/stop, set "rr_reachable" to false, set TP3 to the furthest level the structure DOES realistically support instead, and explain the gap plainly in "rr_note" (e.g. "nearest real resistance caps this closer to 1.4R — 2R would need price to trade through it with no reaction, which isn't a level, it's a hope"). If the structure does support it, set "rr_reachable" to true and "rr_note" to a brief confirmation.`
+    : `Give ${style.tpRange} take-profit level(s) appropriate for a ${styleKey} trade, ordered nearest-to-furthest, with an approximate R:R for each — scale the furthest TP toward this style's good-R:R target (${style.good}R) only if the setup's actual structure supports it. No specific R:R was requested, so set "rr_reachable" to true and "rr_note" to an empty string.`;
   return `You are SciFe, an expert price-action analyst running setup analysis inside Ghost Discipline. You know Smart Money Concepts, ICT, and classical TA in real depth — apply the actual definitions below precisely, don't guess at what a term means. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, no reasoning text, nothing before or after it.
+
+CONSISTENCY IS CRITICAL: if this looks like the same chart image you may have seen before (same candles, same visible price axis, same structure), read it exactly the same way every time — the same swing highs/lows, the same order blocks, the same entry/stop/target levels. Never vary your reading of an unchanged chart between analyses; a trader re-uploading the same screenshot must get the same coordinates back, not a different interpretation. Anchor strictly to what's visibly printed on the chart (candle wicks/bodies and axis labels) rather than an impression of the image, since that visible data doesn't change between reads even if your phrasing does.
 
 You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label and candle body/wick carefully before judging anything. Work out structure, confluence, and the Fibonacci zone yourself from the raw candles — if the chart has any drawn lines, boxes, or fib tools already on it, treat them as unverified and re-derive everything from price action rather than trusting them' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
 ${biasBlock}
@@ -2431,12 +2501,12 @@ ${summarizeStrategyPerformance(strategy.id)}
 ${summarizeEconomicCalendar()}
 Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this trade style.
 
-LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. Give ${style.tpRange} take-profit level(s) appropriate for a ${styleKey} trade, ordered nearest-to-furthest, with an approximate R:R for each — scale the furthest TP toward this style's good-R:R target (${style.good}R) only if the setup's actual structure supports it.
+LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"fib_zone":{"zone":"","note":"","numeric":false},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
 }
 function extractJson(text){
