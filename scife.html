@@ -439,6 +439,12 @@ body{position:relative;}
 .sig-chart-thumb{margin-top:10px;position:relative;}
 .sig-chart-thumb img{max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;}
 .sig-chart-remove{margin-top:8px;width:auto;padding:6px 12px;font-size:12px;border-radius:8px;}
+.sig-chart-expand{margin-top:8px;width:auto;padding:6px 12px;font-size:12px;border-radius:8px;}
+/* ---- chart lightbox: enlarged, close-up view of the (optionally scanned)
+   chart image, reusing the same .overlay/.modal scaffolding as settings ---- */
+.chart-lightbox-modal{max-width:min(94vw, 920px);width:100%;padding:20px;max-height:92vh;}
+.chart-lightbox-imgwrap{position:relative;display:block;max-width:100%;line-height:0;border-radius:12px;overflow:hidden;}
+.chart-lightbox-imgwrap img{display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
 .sig-style-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
   padding:4px 10px;border-radius:99px;background:rgba(45,212,168,0.12);color:var(--bronze-bright);border:1px solid rgba(45,212,168,0.3);margin-left:8px;}
 .sig-level-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--steel);gap:12px;}
@@ -500,10 +506,11 @@ body{position:relative;}
 .sig-overlay-toggle{margin-top:8px;width:auto;padding:7px 13px;font-size:12px;border-radius:8px;display:inline-flex;}
 .sig-analysis-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s ease;}
 .sig-chart-thumb.overlay-on .sig-analysis-overlay{opacity:1;}
-.sig-ov-zone{position:absolute;left:0;right:0;pointer-events:none;
+.sig-ov-zone{position:absolute;left:58%;width:39%;pointer-events:none;
   background:var(--ov-zonebg, rgba(242,200,119,0.14));
-  border-top:1.5px dashed var(--ov-color, var(--gold));border-bottom:1.5px dashed var(--ov-color, var(--gold));}
-.sig-ov-line{position:absolute;left:0;right:0;top:0;height:0;border-top:2px solid var(--ov-color, var(--gold));
+  border-top:1.5px dashed var(--ov-color, var(--gold));border-bottom:1.5px dashed var(--ov-color, var(--gold));
+  border-left:1.5px dashed var(--ov-color, var(--gold));border-right:1.5px dashed var(--ov-color, var(--gold));}
+.sig-ov-line{position:absolute;left:58%;width:39%;top:0;height:0;border-top:2px solid var(--ov-color, var(--gold));
   filter:drop-shadow(0 0 3px var(--ov-halo,rgba(0,0,0,.65))) drop-shadow(0 0 5px var(--ov-halo,rgba(0,0,0,.35)));}
 .sig-ov-tag{position:absolute;right:6px;top:-10px;transform:translateY(-50%);
   background:var(--ov-color, var(--gold));color:#04070a;font-family:'IBM Plex Mono',monospace;
@@ -919,6 +926,15 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 
   <div id="sig_result" style="display:none;margin-top:24px;"></div>
   <div id="sig_orderPlaced" class="hint" style="display:none;margin-top:10px;color:var(--win-bright,#2dd4a8);"></div>
+</div>
+
+<!-- CHART LIGHTBOX (enlarged close-up view, with exit button) -->
+<div class="overlay" id="chartLightboxOverlay" onclick="if(event.target===this)closeChartLightbox();">
+  <div class="modal chart-lightbox-modal" role="dialog" aria-modal="true" aria-labelledby="chartLightboxTitle">
+    <button class="modal-close" onclick="closeChartLightbox()" aria-label="Exit full-size chart view">✕</button>
+    <h3 class="serif" id="chartLightboxTitle" style="font-size:16px;">Chart — full size</h3>
+    <div class="chart-lightbox-imgwrap" id="chartLightboxImgWrap"></div>
+  </div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -1843,6 +1859,8 @@ function resetStageVideo(){
 /* ============ ESCAPE-TO-CLOSE for modal + Signal page ============ */
 document.addEventListener('keydown', (e)=>{
   if(e.key !== 'Escape') return;
+  const lightbox = document.getElementById('chartLightboxOverlay');
+  if(lightbox && lightbox.classList.contains('show')){ closeChartLightbox(); return; }
   const overlay = document.getElementById('settingsOverlay');
   if(overlay && overlay.classList.contains('show')){ closeSettings(); return; }
   const sigPage = document.getElementById('signalPage');
@@ -2557,16 +2575,17 @@ LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 ${hasImage ? `
 CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.
+Also give "setup_x1_pct" and "setup_x2_pct" — the HORIZONTAL span (0=left edge, 100=right edge of the image) that the entry/stop/target/fib lines should be drawn across. These must bound only the relevant candles for this setup (roughly from where it formed up to the current/rightmost candle) — NEVER the full image width. These lines are drawn as bounded segments, not infinite rays, so a real horizontal extent is required here, not a placeholder default.
 
 CHART MARKERS FOR CHECKLIST ITEMS: for every checklist item you marked "present" whose id is in the list below, also add one entry to "chart_markers" giving its position on the image (same 0–100 top-to-bottom / left-to-right percentage convention, read directly off the chart — never guessed). Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it:
-- Single horizontal level (give "y_pct" only): bos, choch, smc_bos, smc_choch, eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
-- Price zone/box (give "y_pct" as the zone's top edge and "y2_pct" as its bottom edge): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand
-- Diagonal trendline (give "x1_pct"/"y1_pct" for its first anchor point and "x2_pct"/"y2_pct" for its second): trendline
+- Single horizontal level (give "y_pct" for the price, AND "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at (or just before) the candle that actually set this level and x2_pct at the current/rightmost candle; never span the full image width, this must render as a bounded segment, not a ray): bos, choch, smc_bos, smc_choch, eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
+- Price zone/box (give "y_pct" as the zone's top edge, "y2_pct" as its bottom edge, AND "x1_pct"/"x2_pct" bounding it to the actual candles that formed the zone — a real rectangle over those candles only, never the full image width): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand
+- Diagonal trendline (give "x1_pct"/"y1_pct" for its first anchor point and "x2_pct"/"y2_pct" for its second — a bounded segment between the two swing points, never extended past them): trendline
 - Horizontal time band (give "x1_pct" and "x2_pct" marking the session's left/right extent along the image; leave y fields null): killzone
-Never add a chart_markers entry for an id that isn't in one of those four groups, or for an id not marked "present" in the checklist.` : ''}
+Never add a chart_markers entry for an id that isn't in one of those four groups, or for an id not marked "present" in the checklist. Every shape drawn on the chart — lines, zones, and trendlines alike — must be a bounded object anchored to real candles on both ends. Do not let any line behave like an infinite ray in either direction.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is fine if nothing qualified.' : ''}`;
 }
 function extractJson(text){
@@ -2628,6 +2647,7 @@ function onChartFileChange(e){
             <div class="sig-scan-hud"><i></i><i></i><i></i><i></i></div>
             <div class="sig-scan-readout"><span class="dot"></span>READING CHART…</div>
           </div>
+          <button type="button" class="btn-ghost sig-chart-expand" onclick="openChartLightbox()">🔍 View full size</button>
           <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
         </div>`;
       if(!currentModelSupportsVision()){
@@ -2643,6 +2663,26 @@ function removeChartImage(){
   sigChartImage = null;
   document.getElementById('sig_chartPreview').innerHTML = '';
   document.getElementById('sig_chartInput').value = '';
+}
+/* ============ CHART LIGHTBOX (enlarged, close-up view) ============
+   Opens the current chart image full-size in a modal, exactly as-is
+   (including the analysis overlay, if it's currently toggled on) —
+   available both right after upload and after a scan completes. Closed
+   via its ✕ button, clicking outside the modal, or Escape. */
+function openChartLightbox(){
+  const thumb = document.getElementById('sigChartThumb');
+  const frame = thumb && thumb.querySelector('.sig-scan-frame');
+  const imgEl = frame && frame.querySelector('img');
+  if(!imgEl){ showToast('No chart image to view'); return; }
+  const wrap = document.getElementById('chartLightboxImgWrap');
+  const liveOverlay = thumb.classList.contains('overlay-on') ? thumb.querySelector('.sig-analysis-overlay') : null;
+  wrap.innerHTML = `<img src="${imgEl.currentSrc || imgEl.src}" alt="Chart, enlarged">`
+    + (liveOverlay ? `<div class="sig-analysis-overlay" style="opacity:1;">${liveOverlay.innerHTML}</div>` : '');
+  document.getElementById('chartLightboxOverlay').classList.add('show');
+}
+function closeChartLightbox(){
+  const overlay = document.getElementById('chartLightboxOverlay');
+  if(overlay) overlay.classList.remove('show');
 }
 async function analyzeSignal(){
   if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
@@ -2883,15 +2923,32 @@ function computeImageBrightness(dataUrl){
     }catch(e){ resolve(128); }
   });
 }
-function sigOvLineHTML(label, yPct, colorVar, dashed){
-  if(yPct==null || isNaN(yPct)) return '';
-  return `<div class="sig-ov-line${dashed?' dashed':''}" style="top:${sigOvClamp(yPct)}%;--ov-color:${colorVar};"><span class="sig-ov-tag">${sigEsc(label)}</span></div>`;
+// Bounded x-extent helpers. Analysis objects are never allowed to render as
+// full-width "rays" — every line/zone gets a real left/right extent. When
+// the model genuinely couldn't place x1/x2 (nulls), fall back to a modest,
+// clearly-bounded segment on the right-hand (most-recent-price) side of the
+// chart rather than stretching edge-to-edge.
+const SIG_OV_DEFAULT_X1 = 58, SIG_OV_DEFAULT_X2 = 97;
+function sigOvXBounds(x1Pct, x2Pct){
+  let x1 = (x1Pct==null || isNaN(x1Pct)) ? null : sigOvClamp(x1Pct);
+  let x2 = (x2Pct==null || isNaN(x2Pct)) ? null : sigOvClamp(x2Pct);
+  if(x1==null && x2==null){ x1 = SIG_OV_DEFAULT_X1; x2 = SIG_OV_DEFAULT_X2; }
+  else if(x1==null){ x1 = Math.max(0, x2 - (SIG_OV_DEFAULT_X2 - SIG_OV_DEFAULT_X1)); }
+  else if(x2==null){ x2 = Math.min(100, x1 + (SIG_OV_DEFAULT_X2 - SIG_OV_DEFAULT_X1)); }
+  const left = Math.min(x1, x2), right = Math.max(x1, x2);
+  return { left, width: Math.max(2, right - left) };
 }
-function sigOvZoneHTML(label, topPct, botPct, colorVar, bgVar){
+function sigOvLineHTML(label, yPct, colorVar, dashed, x1Pct, x2Pct){
+  if(yPct==null || isNaN(yPct)) return '';
+  const { left, width } = sigOvXBounds(x1Pct, x2Pct);
+  return `<div class="sig-ov-line${dashed?' dashed':''}" style="top:${sigOvClamp(yPct)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};"><span class="sig-ov-tag">${sigEsc(label)}</span></div>`;
+}
+function sigOvZoneHTML(label, topPct, botPct, colorVar, bgVar, x1Pct, x2Pct){
   if(topPct==null || botPct==null || isNaN(topPct) || isNaN(botPct)) return '';
   const top = sigOvClamp(Math.min(topPct, botPct));
   const bot = sigOvClamp(Math.max(topPct, botPct));
-  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0.6, bot-top)}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-zone-tag">${sigEsc(label)}</span></div>`;
+  const { left, width } = sigOvXBounds(x1Pct, x2Pct);
+  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0.6, bot-top)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-zone-tag">${sigEsc(label)}</span></div>`;
 }
 function sigOvVBandHTML(label, x1Pct, x2Pct, colorVar, bgVar){
   if(x1Pct==null || x2Pct==null || isNaN(x1Pct) || isNaN(x2Pct)) return '';
@@ -2937,8 +2994,8 @@ const SIG_MARKER_STYLES = {
 function sigOvMarkerHTML(id, label, m){
   const style = SIG_MARKER_STYLES[id];
   if(!style || !m) return '';
-  if(style.kind === 'hline') return sigOvLineHTML(label, m.y_pct, style.color, style.dashed);
-  if(style.kind === 'zone') return sigOvZoneHTML(label, m.y_pct, m.y2_pct, style.color, style.bg);
+  if(style.kind === 'hline') return sigOvLineHTML(label, m.y_pct, style.color, style.dashed, m.x1_pct, m.x2_pct);
+  if(style.kind === 'zone') return sigOvZoneHTML(label, m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct);
   if(style.kind === 'vband') return sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg);
   if(style.kind === 'trendline') return sigOvTrendlineHTML(label, m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color);
   return '';
@@ -2966,13 +3023,14 @@ async function toggleChartOverlay(btn){
   if(!imgEl){ showToast('Chart image is gone — re-upload to draw an overlay'); return; }
   const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
   const legendCats = new Map(); // category label -> color, de-duped, insertion order
+  const setupX1 = cp.setup_x1_pct, setupX2 = cp.setup_x2_pct;
   const pieces = [
-    sigOvZoneHTML('OTE', cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)'),
-    r.entry && cp.entry_y_pct != null ? sigOvLineHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)') : '',
-    r.stop_loss && cp.stop_loss_y_pct != null ? sigOvLineHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)') : '',
-    tps[0] && cp.tp1_y_pct != null ? sigOvLineHTML('TP1 '+sigOvShortLevel(tps[0].level), cp.tp1_y_pct, 'var(--win)') : '',
-    tps[1] && cp.tp2_y_pct != null ? sigOvLineHTML('TP2 '+sigOvShortLevel(tps[1].level), cp.tp2_y_pct, 'var(--win)') : '',
-    tps[2] && cp.tp3_y_pct != null ? sigOvLineHTML('TP3 '+sigOvShortLevel(tps[2].level), cp.tp3_y_pct, 'var(--win)') : ''
+    sigOvZoneHTML('OTE', cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)', setupX1, setupX2),
+    r.entry && cp.entry_y_pct != null ? sigOvLineHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)', false, setupX1, setupX2) : '',
+    r.stop_loss && cp.stop_loss_y_pct != null ? sigOvLineHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)', false, setupX1, setupX2) : '',
+    tps[0] && cp.tp1_y_pct != null ? sigOvLineHTML('TP1 '+sigOvShortLevel(tps[0].level), cp.tp1_y_pct, 'var(--win)', false, setupX1, setupX2) : '',
+    tps[1] && cp.tp2_y_pct != null ? sigOvLineHTML('TP2 '+sigOvShortLevel(tps[1].level), cp.tp2_y_pct, 'var(--win)', false, setupX1, setupX2) : '',
+    tps[2] && cp.tp3_y_pct != null ? sigOvLineHTML('TP3 '+sigOvShortLevel(tps[2].level), cp.tp3_y_pct, 'var(--win)', false, setupX1, setupX2) : ''
   ].filter(Boolean);
   if(cp.fib_top_y_pct != null && cp.fib_bottom_y_pct != null) legendCats.set('Entry / SL / TP / OTE', 'var(--gold)');
   else if(pieces.length) legendCats.set('Entry / SL / TP', 'var(--gold-bright)');
