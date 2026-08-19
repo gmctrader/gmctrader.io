@@ -71,28 +71,52 @@ button{font-family:inherit;}
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-thumb{background:var(--steel-hi);border-radius:10px;}
 
+/* ---- fine grain texture — the thing that separates "flat gradient" from
+   "physical premium material"; barely visible but adds real depth ---- */
+body{position:relative;}
+.grain-overlay{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
+
 /* ---- shared shell ---- */
-.center-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1;}
+.center-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1;perspective:1400px;}
+.center-orb{position:absolute;border-radius:50%;filter:blur(50px);pointer-events:none;opacity:.5;z-index:0;animation:orbFloat 12s ease-in-out infinite;}
+.center-orb.o1{width:280px;height:280px;top:8%;left:6%;background:radial-gradient(circle, rgba(45,212,168,0.35), transparent 70%);animation-delay:0s;}
+.center-orb.o2{width:320px;height:320px;bottom:6%;right:4%;background:radial-gradient(circle, rgba(242,200,119,0.28), transparent 70%);animation-delay:-4s;}
+.center-orb.o3{width:200px;height:200px;bottom:22%;left:14%;background:radial-gradient(circle, rgba(18,185,136,0.22), transparent 70%);animation-delay:-8s;}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(14px,-18px) scale(1.06);}}
 .gate-card{max-width:440px;width:100%;background:var(--panel);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
   border:1px solid var(--steel-hi);border-radius:var(--r-lg);position:relative;overflow:hidden;
-  padding:44px 34px;text-align:center;
+  padding:44px 34px;text-align:center;transform-style:preserve-3d;will-change:transform;
   box-shadow:0 30px 70px -20px rgba(0,0,0,0.65), 0 0 0 1px rgba(45,212,168,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset;
-  animation:gateIn .5s cubic-bezier(.2,.8,.3,1) both;}
-@keyframes gateIn{0%{opacity:0;transform:translateY(14px) scale(.985);}100%{opacity:1;transform:translateY(0) scale(1);}}
-.gate-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
-  background:linear-gradient(135deg, rgba(45,212,168,0.5), rgba(242,200,119,0.25) 40%, transparent 65%);
+  animation:gateIn .6s cubic-bezier(.2,.8,.3,1) both;
+  transition:transform .35s cubic-bezier(.2,.7,.3,1), box-shadow .35s ease;}
+@keyframes gateIn{0%{opacity:0;transform:translateY(18px) scale(.97) rotateX(6deg);}100%{opacity:1;transform:translateY(0) scale(1) rotateX(0);}}
+/* animated gold/emerald foil ring — slowly rotates around the card edge for
+   a "premium material catching the light" effect, distinct from the static
+   corner gradient below */
+.gate-card::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:2;
+  background:conic-gradient(from 0deg, rgba(45,212,168,0.75), rgba(242,200,119,0.55), transparent 30%, transparent 60%, rgba(45,212,168,0.75));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;}
+  -webkit-mask-composite:xor;mask-composite:exclude;animation:foilRotate 6s linear infinite;}
+@keyframes foilRotate{to{transform:rotate(360deg);}}
+/* cursor-follow spotlight — set via --mx/--my from JS on mousemove */
+.gate-card::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;
+  background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,0.07), transparent 60%);
+  opacity:0;transition:opacity .3s ease;}
+.gate-card:hover::after{opacity:1;}
+.gate-card > *{position:relative;z-index:3;}
 .gate-mark{width:52px;height:52px;margin:0 auto 18px;border-radius:16px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(140deg, rgba(45,212,168,0.18), rgba(242,200,119,0.1));
   border:1px solid rgba(45,212,168,0.3);box-shadow:0 0 26px -8px rgba(18,185,136,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
-  position:relative;}
+  position:relative;transform-style:preserve-3d;}
 .gate-mark::after{content:'';position:absolute;inset:8px;border-radius:50%;
   background:radial-gradient(circle, rgba(45,212,168,0.9), rgba(45,212,168,0.1) 60%, transparent 75%);
   filter:blur(1px);animation:coreBreathe 3.4s ease-in-out infinite;}
 .gate-card h1{font-family:'Fraunces',serif;font-weight:650;font-size:27px;margin:0 0 10px;
-  background:linear-gradient(100deg, var(--platinum) 30%, var(--gold-bright) 60%, var(--bronze-bright) 90%);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  background:linear-gradient(100deg, var(--platinum) 20%, var(--gold-bright) 45%, var(--bronze-bright) 65%, var(--gold-bright) 85%, var(--platinum) 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:foilShimmer 5s ease-in-out infinite;}
+@keyframes foilShimmer{0%,100%{background-position:0% 0;}50%{background-position:100% 0;}}
 .gate-card p{color:var(--slate);font-size:14.5px;margin:0 0 24px;}
 .gate-foot{margin-top:18px;font-size:11.5px;color:var(--slate-dim);display:flex;align-items:center;justify-content:center;gap:6px;}
 .gate-foot .gd{width:5px;height:5px;border-radius:50%;background:var(--bronze);box-shadow:0 0 6px var(--bronze);flex:none;}
@@ -112,10 +136,13 @@ button{font-family:inherit;}
   background:linear-gradient(100deg, var(--bronze) 0%, var(--bronze-bright) 55%, var(--gold) 130%);
   color:#03110c;font-weight:700;letter-spacing:.01em;
   font-size:14px;padding:13px 22px;border-radius:12px;border:none;cursor:pointer;width:100%;position:relative;overflow:hidden;
-  box-shadow:0 3px 0 var(--bronze-dim), 0 10px 24px -8px rgba(18,185,136,0.55);transition:transform .12s ease, box-shadow .12s ease, filter .15s;}
+  box-shadow:0 3px 0 var(--bronze-dim), 0 10px 24px -8px rgba(18,185,136,0.55), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -8px 14px -10px rgba(0,0,0,0.35);
+  transition:transform .12s ease, box-shadow .12s ease, filter .15s;}
 .btn::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.5) 48%, transparent 66%);
   transform:translateX(-120%);transition:transform .6s ease;}
 .btn:hover::after{transform:translateX(120%);}
+.btn:not(:hover)::after{animation:btnIdleShine 4.5s ease-in-out infinite;}
+@keyframes btnIdleShine{0%,88%{transform:translateX(-120%);}96%{transform:translateX(120%);}100%{transform:translateX(120%);}}
 .btn:hover{filter:brightness(1.06);}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--bronze-dim), 0 4px 10px -4px rgba(18,185,136,0.5);}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -139,8 +166,9 @@ button{font-family:inherit;}
   padding:10px 8px;margin:-10px -8px;border-radius:10px;transition:color .15s,background .15s;}
 .topbar .back:hover{color:var(--bronze-bright);background:rgba(255,255,255,0.03);}
 .topbar .title{font-family:'Fraunces',serif;font-weight:650;font-size:19px;letter-spacing:.01em;
-  background:linear-gradient(100deg, var(--platinum) 20%, var(--gold-bright) 55%, var(--bronze-bright) 90%);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  background:linear-gradient(100deg, var(--platinum) 15%, var(--gold-bright) 40%, var(--bronze-bright) 60%, var(--gold-bright) 80%, var(--platinum) 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:foilShimmer 6s ease-in-out infinite;}
 .icon-btn{width:36px;height:36px;border-radius:11px;border:1px solid var(--steel-hi);background:rgba(255,255,255,0.03);
   display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--slate);transition:.15s;}
 .icon-btn:hover{background:rgba(45,212,168,0.1);color:var(--bronze-bright);border-color:var(--bronze);}
@@ -230,9 +258,12 @@ button{font-family:inherit;}
 .quick-chip{flex:none;font-size:12.5px;font-weight:600;color:var(--bronze-bright);
   background:linear-gradient(180deg, rgba(18,185,136,0.13), rgba(18,185,136,0.05));
   border:1px solid rgba(45,212,168,0.3);padding:9px 15px;border-radius:99px;cursor:pointer;white-space:nowrap;
-  transition:background .15s, box-shadow .15s, transform .1s, border-color .15s;}
-.quick-chip:hover{background:linear-gradient(180deg, rgba(18,185,136,0.24), rgba(242,200,119,0.08));
-  border-color:rgba(242,200,119,0.45);box-shadow:0 6px 16px -6px rgba(18,185,136,0.4);transform:translateY(-1px);}
+  box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 6px 14px -10px rgba(0,0,0,0.5);
+  transition:background .15s, box-shadow .15s, transform .15s cubic-bezier(.2,.8,.3,1), border-color .15s;}
+.quick-chip:hover{background:linear-gradient(180deg, rgba(18,185,136,0.26), rgba(242,200,119,0.1));
+  border-color:rgba(242,200,119,0.5);box-shadow:0 10px 22px -8px rgba(18,185,136,0.5), 0 0 0 1px rgba(242,200,119,0.15);
+  transform:translateY(-2px) scale(1.02);}
+.quick-chip:active{transform:translateY(0) scale(.98);}
 
 .chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding:4px 2px 12px;min-height:220px;perspective:800px;}
 .bubble{max-width:82%;padding:12px 15px;border-radius:16px;font-size:14.5px;line-height:1.55;white-space:pre-wrap;
@@ -244,7 +275,7 @@ button{font-family:inherit;}
   box-shadow:0 10px 24px -10px rgba(0,0,0,0.6), 0 0 0 1px rgba(242,200,119,0.06) inset;}
 .bubble.assistant{align-self:flex-start;color:var(--platinum);background:rgba(255,255,255,0.035);
   backdrop-filter:blur(8px);border:1px solid rgba(45,212,168,0.22);border-bottom-left-radius:5px;
-  box-shadow:0 8px 20px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(45,212,168,0.04) inset;}
+  box-shadow:0 8px 20px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(45,212,168,0.04) inset, inset 0 1px 0 rgba(255,255,255,0.05);}
 .bubble.system{align-self:center;color:var(--slate);font-size:13px;text-align:center;max-width:88%;
   background:rgba(255,255,255,0.03);border:1px solid var(--steel-hi);border-radius:14px;padding:14px 18px;margin:6px 0;}
 
@@ -284,7 +315,13 @@ button{font-family:inherit;}
 .modal{background:var(--panel);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);
   border:1px solid var(--steel-hi);border-radius:var(--r-lg);padding:26px 24px;max-width:400px;width:100%;
   max-height:88vh;overflow-y:auto;position:relative;
-  box-shadow:0 30px 70px -16px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,212,168,0.06) inset;}
+  box-shadow:0 30px 70px -16px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,212,168,0.06) inset;
+  animation:gateIn .4s cubic-bezier(.2,.8,.3,1) both;}
+.modal::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:0;
+  background:conic-gradient(from 90deg, rgba(45,212,168,0.55), rgba(242,200,119,0.4), transparent 35%, transparent 65%, rgba(45,212,168,0.55));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;animation:foilRotate 7s linear infinite;}
+.modal > *{position:relative;z-index:1;}
 .modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;padding-right:26px;
   background:linear-gradient(100deg, var(--platinum) 30%, var(--gold-bright) 65%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
@@ -321,8 +358,11 @@ button{font-family:inherit;}
 .provider-card{border:1px solid var(--steel-hi);border-radius:13px;padding:10px 11px;cursor:pointer;
   background:rgba(255,255,255,0.025);transition:border-color .15s,background .15s,box-shadow .15s,transform .15s ease;
   transform-style:preserve-3d;will-change:transform;position:relative;}
-.provider-card:hover{border-color:var(--bronze);box-shadow:0 10px 20px -10px rgba(0,0,0,0.5);transform:translateY(-1px);}
-.provider-card.active{border-color:var(--bronze);background:rgba(18,185,136,0.1);box-shadow:0 0 0 1px var(--bronze) inset, 0 0 16px -4px rgba(18,185,136,0.5);}
+.provider-card:hover{border-color:var(--bronze);box-shadow:0 14px 26px -12px rgba(0,0,0,0.55);transform:translateY(-2px) translateZ(6px);}
+.provider-card.active{border-color:var(--bronze);background:rgba(18,185,136,0.1);
+  box-shadow:0 0 0 1px var(--bronze) inset, 0 0 22px -4px rgba(18,185,136,0.6), 0 0 0 4px rgba(18,185,136,0.08);
+  animation:cardSelectedGlow 2.4s ease-in-out infinite;}
+@keyframes cardSelectedGlow{0%,100%{box-shadow:0 0 0 1px var(--bronze) inset, 0 0 18px -4px rgba(18,185,136,0.5), 0 0 0 4px rgba(18,185,136,0.06);}50%{box-shadow:0 0 0 1px var(--bronze) inset, 0 0 28px -2px rgba(18,185,136,0.75), 0 0 0 5px rgba(18,185,136,0.12);}}
 .pc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;}
 .pc-name{font-weight:650;font-size:13px;line-height:1.3;color:var(--platinum);}
 .pc-badge{font-size:9.5px;font-weight:700;padding:2.5px 7px;border-radius:99px;white-space:nowrap;letter-spacing:.02em;flex:none;}
@@ -559,7 +599,9 @@ html[data-theme="light"] .icon-btn{background:rgba(15,60,50,0.045);}
 html[data-theme="light"] .bubble.assistant{background:rgba(15,60,50,0.045);}
 html[data-theme="light"] .composer{background:linear-gradient(transparent, #f5f3ec 40%);}
 html[data-theme="light"] .composer-row{background:rgba(255,255,255,0.7);}
-html[data-theme="light"] .provider-card{background:rgba(15,60,50,0.035);}
+html[data-theme="light"] .grain-overlay{opacity:.02;}
+html[data-theme="light"] .center-orb{opacity:.32;}
+html[data-theme="light"] .gate-card::after{background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.045), transparent 60%);}
 
 /* ============ MOBILE ============ */
 button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
@@ -581,6 +623,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 </style>
 </head>
 <body>
+<div class="grain-overlay" aria-hidden="true"></div>
 
 <!-- ============ BOOT LOADER (avoids a blank flash while the session check resolves) ============ -->
 <div class="center-screen" id="bootLoader">
@@ -592,7 +635,8 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 
 <!-- ============ NOT SIGNED IN ============ -->
 <div class="center-screen" id="authGate" style="display:none;">
-  <div class="gate-card">
+  <div class="center-orb o1"></div><div class="center-orb o2"></div><div class="center-orb o3"></div>
+  <div class="gate-card tilt-3d">
     <div class="gate-mark" aria-hidden="true"></div>
     <h1 class="serif">Sign in first</h1>
     <p>SciFe follows your Ghost Discipline account. Sign in there, then come back to this page.</p>
@@ -603,7 +647,8 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 
 <!-- ============ SETUP (first run / editing key) ============ -->
 <div class="center-screen" id="setupScreen" style="display:none;">
-  <div class="gate-card" style="text-align:left;">
+  <div class="center-orb o1"></div><div class="center-orb o2"></div><div class="center-orb o3"></div>
+  <div class="gate-card tilt-3d" style="text-align:left;">
     <div style="text-align:center;">
       <div class="gate-mark" aria-hidden="true"></div>
       <h1 class="serif">Set up SciFe</h1>
@@ -1444,6 +1489,35 @@ function showToast(msg){
   clearTimeout(t._timer); t._timer = setTimeout(()=>t.classList.remove('show'), 3200);
 }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+/* ============ PREMIUM 3D TILT + CURSOR SPOTLIGHT ============
+   Applied to .tilt-3d surfaces (gate/setup cards) — tilts toward the
+   pointer and drives a soft spotlight via --mx/--my custom properties
+   consumed by the ::after radial-gradient in CSS. Skipped on touch-only
+   devices, where a mouse-tilt effect has nothing meaningful to respond to. */
+const SUPPORTS_HOVER = window.matchMedia && window.matchMedia('(hover:hover)').matches;
+function initTilt3D(){
+  if(!SUPPORTS_HOVER) return;
+  document.querySelectorAll('.tilt-3d').forEach(el=>{
+    if(el._tiltBound) return;
+    el._tiltBound = true;
+    el.addEventListener('mousemove', (e)=>{
+      const r = el.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      const rotY = (px - 0.5) * 8;
+      const rotX = (0.5 - py) * 6;
+      el.style.transform = `translateY(-2px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      el.style.setProperty('--mx', (px*100) + '%');
+      el.style.setProperty('--my', (py*100) + '%');
+    });
+    el.addEventListener('mouseleave', ()=>{ el.style.transform = ''; });
+  });
+}
+document.addEventListener('DOMContentLoaded', initTilt3D);
+// also re-scan after the gate/setup cards render (they start display:none,
+// so binding again once visible is cheap and idempotent via _tiltBound)
+setTimeout(initTilt3D, 300);
 
 /* ============ SETTINGS TABS ============ */
 function switchSettingsTab(name){
@@ -3146,13 +3220,13 @@ function stopSpeaking(){
 
 /* ============ SPEECH-TO-TEXT (free, browser-native, optional) ============ */
 function setupSpeechRecognition(){
+  buildWaveRing();
+  setupStageParallax();
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){
     document.getElementById('micBtn').style.display = 'none';
     return;
   }
-  buildWaveRing();
-  setupStageParallax();
   recognition = new SR();
   recognition.continuous = false;
   recognition.interimResults = false;
