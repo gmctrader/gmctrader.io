@@ -21,7 +21,7 @@
   --gold:#f2c877; --gold-bright:#ffdf9e; --gold-dim:#8a6b28;
   --platinum:#eef6f2; --slate:#8fa6a0; --slate-dim:#5e7772;
   --win:#2be08a; --loss:#ff5d7a; --loss-bright:#ff7a92;
-  --amber:#f0a94e; --r-sm:10px; --r-md:16px; --r-lg:22px; --bg:#03050a;
+  --amber:#f0a94e; --violet:#b39bff; --cyan:#5fd0e8; --r-sm:10px; --r-md:16px; --r-lg:22px; --bg:#03050a;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;min-height:100%;width:100%;overflow-x:hidden;}
@@ -566,6 +566,9 @@ body{position:relative;}
 .sig-ov-legend-chip .sw{width:9px;height:9px;border-radius:3px;flex:none;background:var(--sw-color);}
 .sig-ov-style-note{font-size:11px;color:var(--slate-dim);margin-top:6px;font-style:italic;}
 .sig-chart-thumb:not(.overlay-on) .sig-ov-style-note{display:none;}
+.sig-ov-missing-note{font-size:11.5px;color:var(--amber);margin-top:8px;padding:8px 11px;border-radius:9px;
+  background:rgba(240,169,78,0.1);border:1px solid rgba(240,169,78,0.3);line-height:1.5;}
+.sig-ov-missing-note::before{content:'⚠ ';}
 
 /* ---- redesigned results panel ---- */
 .sig-result-card{position:relative;border-radius:var(--r-lg);overflow:hidden;padding:24px 20px 22px;
@@ -683,7 +686,7 @@ html[data-theme="light"]{
   --bronze-bright:#0ea37c; --bronze:#0a8f68;
   --gold:#b8862c; --gold-bright:#a8701f;
   --platinum:#132922; --slate:#4c635d; --slate-dim:#7c8f89;
-  --win:#178f57; --amber:#c97f1e; --bg:#f5f3ec;
+  --win:#178f57; --amber:#c97f1e; --violet:#7c5cd6; --cyan:#1489a3; --bg:#f5f3ec;
 }
 html[data-theme="light"] body{
   background:
@@ -2613,7 +2616,7 @@ ${hasImage ? `
 CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.
 Also give "setup_x1_pct" and "setup_x2_pct" — the HORIZONTAL span (0=left edge, 100=right edge of the image) that the entry/stop/target/fib lines should be drawn across. These must bound only the relevant candles for this setup (roughly from where it formed up to the current/rightmost candle) — NEVER the full image width. These lines are drawn as bounded segments, not infinite rays, so a real horizontal extent is required here, not a placeholder default.
 
-CHART MARKERS FOR CHECKLIST ITEMS: for EVERY checklist item you marked "present" whose id is in one of the groups below, add one matching entry to "chart_markers" — don't skip any of them; a "present" item with no marker just vanishes from the chart, so if you called it present, place it. Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it (same 0–100 top-to-bottom / left-to-right percentage convention throughout, read directly off the chart — never guessed):
+CHART MARKERS FOR CHECKLIST ITEMS: for EVERY checklist item you marked "present" whose id is in one of the groups below, add one matching entry to "chart_markers" — don't skip any of them; a "present" item with no marker just vanishes from the chart, so if you called it present, place it. Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it (same 0–100 top-to-bottom / left-to-right percentage convention throughout, read directly off the chart — never guessed). SELF-CHECK BEFORE YOU ANSWER: for every checklist item you're about to mark "present" that belongs to one of the groups below, confirm you can actually give it real, non-null coordinates. If you can't confidently place it on the image, that's a sign your read of it is shakier than "present" implies — downgrade that item's status to "unclear" instead, and say why in its note. Never leave a checklist item marked "present" with no matching chart_markers entry when it belongs to a drawable group; a trader who sees something ticked in the checklist and then missing from the chart has no way to trust either one.
 - Point-to-point line — drawn between two real anchor points on the chart, like a TRENDLINE tool, never a flat ray in either direction (give "x1_pct"/"y1_pct" for the first anchor point and "x2_pct"/"y2_pct" for the second): trendline, bos, choch, smc_bos, smc_choch — for BOS/CHoCH specifically, anchor point 1 at the swing high/low that got broken and point 2 at the candle that broke it (the two points can share a y value if that reads more naturally, but both x1_pct and x2_pct AND both y1_pct and y2_pct are still required fields — never leave y1_pct/y2_pct null for these ids, that silently drops the marker)
 - Single horizontal level — a bounded SEGMENT, never a full-width ray (give "y_pct" for the price, plus "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at, or just before, the candle that actually set this level, and x2_pct at the current/rightmost candle): eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
 - Price zone/box — a real RECTANGLE, bounded on all four sides (give "y_pct" as the top edge, "y2_pct" as the bottom edge, "x1_pct"/"x2_pct" bounding it left/right to the exact candles that formed it — never the full image width): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand, chartpattern
@@ -3113,15 +3116,15 @@ const SIG_MARKER_STYLES = {
   eqlow:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
   liquiditygrab:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
   liquiditysweep:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
-  supres:{cat:'Support / Resistance', kind:'hline', color:'var(--platinum)', dashed:false},
+  supres:{cat:'Support / Resistance', kind:'hline', color:'var(--cyan)', dashed:false},
   orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   smc_orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   ict_orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   breaker:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   mitigation:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
-  imbalance:{cat:'FVG / Imbalance', kind:'zone', color:'var(--platinum)', bg:'rgba(238,246,242,0.10)'},
-  smc_fvg:{cat:'FVG / Imbalance', kind:'zone', color:'var(--platinum)', bg:'rgba(238,246,242,0.10)'},
-  ict_fvg:{cat:'FVG / Imbalance', kind:'zone', color:'var(--platinum)', bg:'rgba(238,246,242,0.10)'},
+  imbalance:{cat:'FVG / Imbalance', kind:'zone', color:'var(--violet)', bg:'rgba(179,155,255,0.16)'},
+  smc_fvg:{cat:'FVG / Imbalance', kind:'zone', color:'var(--violet)', bg:'rgba(179,155,255,0.16)'},
+  ict_fvg:{cat:'FVG / Imbalance', kind:'zone', color:'var(--violet)', bg:'rgba(179,155,255,0.16)'},
   hiddensupply:{cat:'Supply Zone', kind:'zone', color:'var(--loss-bright)', bg:'rgba(255,93,122,0.14)'},
   hiddendemand:{cat:'Demand Zone', kind:'zone', color:'var(--win)', bg:'rgba(43,224,138,0.14)'},
   trendline:{cat:'Trendline', kind:'trendline', color:'var(--platinum)'},
@@ -3223,6 +3226,7 @@ async function toggleChartOverlay(btn){
   const markerById = {};
   markers.forEach(m=>{ if(m && m.id && !markerById[m.id]) markerById[m.id] = m; });
   let missingCount = 0;
+  const missingLabels = [];
   checklist.forEach(c=>{
     if(!c || c.status !== 'present') return;
     const style = SIG_MARKER_STYLES[c.id];
@@ -3230,7 +3234,7 @@ async function toggleChartOverlay(btn){
     const m = markerById[c.id];
     const built = m ? sigOvMarkerHTML(c.id, (c.label || c.id || '').toUpperCase(), m) : null;
     if(built && built.shape) addPiece(built.shape, built.rail, style.cat, style.color);
-    else missingCount++;
+    else{ missingCount++; missingLabels.push(c.label || c.id); }
   });
   if(!shapes.length){
     showToast("SciFe couldn't confidently place anything from this read on the chart image — try re-analyzing.");
@@ -3261,7 +3265,7 @@ async function toggleChartOverlay(btn){
       const note = document.createElement('div');
       note.className = 'hint sig-ov-missing-note';
       note.style.marginTop = '6px';
-      note.textContent = `${missingCount} confluence${missingCount>1?'s':''} marked present but couldn't be precisely located on this image, so ${missingCount>1?"they aren't":"it isn't"} drawn.`;
+      note.textContent = `Ticked present but not drawn (couldn't be precisely located on this image): ${missingLabels.join(', ')}.`;
       (thumb.querySelector('.sig-ov-style-note') || stage).after(note);
     }
     thumb.classList.add('overlay-on');
