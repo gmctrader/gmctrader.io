@@ -589,6 +589,11 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     No live chart or price feed — SciFe only reads what's in your chart image and text below, checked against your strategy's own rules. It won't invent a price it can't see. Not financial advice.
   </div>
 
+  <div id="sig_scanBanner" class="sig-scan-banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 13px;border-radius:11px;background:var(--panel-2,rgba(255,255,255,0.04));border:1px solid var(--steel);margin:-4px 0 18px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;">
+    <span id="sig_scanBannerText">Scans remaining this week: —</span>
+    <span class="icon-btn" style="width:26px;height:26px;font-size:13px;" title="Settings" onclick="openSettings()">⚙</span>
+  </div>
+
   <div class="field">
     <label>Strategy</label>
     <select id="sig_strategy" onchange="onSignalStrategyChange()"></select>
@@ -614,7 +619,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     <label>Chart screenshot (optional)</label>
     <input type="file" id="sig_chartInput" accept="image/*" style="display:none;" onchange="onChartFileChange(event)">
     <button type="button" class="btn-ghost" onclick="document.getElementById('sig_chartInput').click()">🔍 Upload chart image</button>
-    <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. SciFe only uses price levels it can actually read off the image.</div>
+    <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. Use a clean chart with no drawn indicators, fib tools, or annotations — SciFe reads raw price action and works out its own swing points, Fibonacci zone, and full confluence logic itself, rather than trusting whatever's already drawn on the image.</div>
     <div id="sig_chartPreview"></div>
   </div>
 
@@ -643,6 +648,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   <div class="hint" id="sig_error" style="display:none;color:var(--loss-bright);margin-top:10px;"></div>
 
   <div id="sig_result" style="display:none;margin-top:24px;"></div>
+  <div id="sig_orderPlaced" class="hint" style="display:none;margin-top:10px;color:var(--win-bright,#2dd4a8);"></div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -693,6 +699,28 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
       </div>
       <button class="btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="clearMemory()">Clear</button>
     </div>
+
+    <!-- SCAN LIMIT / ADMIN — weekly Signal-scan cap lives on the trader's synced
+         account row (trader_data.scife.usage), same place as every other SciFe
+         setting, so it follows them across devices and switching AI provider
+         inside settings never resets or bypasses it (analyzeSignal() checks
+         this before it ever branches to a provider). Entering the admin
+         password lifts the cap for this account. This is still a fully
+         client-side static page with no server to verify the password against
+         — see the note in saveSettings()/unlockAdmin() in the script below. -->
+    <div class="field" style="border-top:1px solid var(--steel);margin-top:4px;padding-top:14px;">
+      <label>Signal scans</label>
+      <div class="hint" id="settingsScanHint">—</div>
+      <div id="settingsAdminLocked">
+        <input type="password" id="settingsAdminPassInput" placeholder="Admin password" autocomplete="off" spellcheck="false" style="margin-top:8px;">
+        <button class="btn-ghost" style="width:auto;margin-top:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="unlockAdmin()">Unlock admin (unlimited)</button>
+      </div>
+      <div id="settingsAdminUnlocked" style="display:none;margin-top:8px;">
+        <span class="key-saved-tag">✓ Admin — unlimited scans</span>
+        <button class="btn-ghost" style="width:auto;margin-left:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="lockAdmin()">Lock</button>
+      </div>
+    </div>
+
     <div style="display:flex;gap:10px;margin-top:18px;">
       <button class="btn-ghost" style="flex:1;" onclick="closeSettings()">Close</button>
       <button class="btn" style="flex:1;" onclick="saveSettings()">Save</button>
@@ -710,7 +738,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'' };
+let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false } };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -1283,6 +1311,7 @@ async function loadTraderRow(){
   // single "apiKey" field (from before multi-provider support) if present.
   const apiKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? { ...s.apiKeys } : {};
   if(s.apiKey && !apiKeys[provider]) apiKeys[provider] = s.apiKey;
+  const u = (s.usage && typeof s.usage === 'object') ? s.usage : {};
   scife = {
     provider,
     apiKeys,
@@ -1290,8 +1319,100 @@ async function loadTraderRow(){
     voiceOn: s.voiceOn !== false,
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
-    voiceURI: s.voiceURI || ''
+    voiceURI: s.voiceURI || '',
+    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin }
   };
+  rolloverUsageWeek();
+  updateScanBanner();
+}
+
+/* ============ WEEKLY SCAN LIMIT (5/week, unlimited for admin) ============
+   The counter lives in trader_data.scife.usage on the trader's own account
+   row — the exact same synced object every other SciFe setting uses — so it
+   follows the account across devices and, crucially, switching AI provider
+   or model in Settings never touches it: the gate below sits in
+   analyzeSignal() itself, before the call ever branches out to whichever
+   provider is selected, so there is exactly one counter no matter which of
+   the 15+ providers in PROVIDERS gets used for the scan.
+   Honesty check: this is still a single static HTML file with no backend of
+   its own — there's no server to hold the real password check or the real
+   counter out of reach of the browser. A trader determined enough to open
+   devtools and edit `scife.usage`/`scife.usage.isAdmin` directly, or to read
+   "@MEGOAT1" out of this file's source, can defeat this. What this DOES
+   reliably stop is the ordinary path — switching provider/model, reloading,
+   or using a different device — none of which touch or reset the count. */
+const SCAN_LIMIT_PER_WEEK = 5;
+const ADMIN_PASSWORD = '@MEGOAT1';
+function getWeekKey(d){
+  d = d || new Date();
+  const dt = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+  return dt.getUTCFullYear() + '-W' + String(weekNo).padStart(2, '0');
+}
+function rolloverUsageWeek(){
+  const wk = getWeekKey();
+  if(scife.usage.weekKey !== wk){
+    scife.usage.weekKey = wk;
+    scife.usage.scanCount = 0;
+  }
+}
+function scansRemaining(){
+  if(scife.usage.isAdmin) return Infinity;
+  return Math.max(0, SCAN_LIMIT_PER_WEEK - scife.usage.scanCount);
+}
+function updateScanBanner(){
+  const el = document.getElementById('sig_scanBannerText');
+  if(!el) return;
+  el.textContent = scife.usage.isAdmin
+    ? 'Unlimited scans — Admin'
+    : `Scans remaining this week: ${scansRemaining()}/${SCAN_LIMIT_PER_WEEK}`;
+}
+/* Re-pulls the usage object from the synced row before every scan attempt —
+   catches a scan already used on another device/tab this week, and rolls the
+   week over if it's a new one — rather than trusting a stale local copy. */
+async function refreshUsageFromServer(){
+  if(!currentUser) return;
+  try{
+    const { data, error } = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
+    if(error || !data) return;
+    const s = data.scife || {};
+    const u = (s.usage && typeof s.usage === 'object') ? s.usage : null;
+    if(u) scife.usage = { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin };
+  }catch(e){ /* offline or transient — fall back to local copy below */ }
+  rolloverUsageWeek();
+  updateScanBanner();
+}
+async function unlockAdmin(){
+  const pass = document.getElementById('settingsAdminPassInput').value;
+  if(pass !== ADMIN_PASSWORD){ showToast('Incorrect admin password'); return; }
+  scife.usage.isAdmin = true;
+  await saveScife();
+  document.getElementById('settingsAdminPassInput').value = '';
+  renderAdminSection();
+  updateScanBanner();
+  showToast('Admin unlocked — unlimited scans on this account');
+}
+async function lockAdmin(){
+  scife.usage.isAdmin = false;
+  await saveScife();
+  renderAdminSection();
+  updateScanBanner();
+  showToast('Admin locked — back to 5 scans/week');
+}
+function renderAdminSection(){
+  const hint = document.getElementById('settingsScanHint');
+  const locked = document.getElementById('settingsAdminLocked');
+  const unlocked = document.getElementById('settingsAdminUnlocked');
+  if(!hint || !locked || !unlocked) return;
+  rolloverUsageWeek();
+  hint.textContent = scife.usage.isAdmin
+    ? 'Admin access is active on this account — Signal scans are unlimited.'
+    : `${scansRemaining()}/${SCAN_LIMIT_PER_WEEK} Signal scans left this week. Enter the admin password for unlimited access.`;
+  locked.style.display = scife.usage.isAdmin ? 'none' : 'block';
+  unlocked.style.display = scife.usage.isAdmin ? 'block' : 'none';
 }
 
 /* Appearance is no longer a SciFe-specific setting — it just mirrors the
@@ -1342,6 +1463,7 @@ function openSettings(){
   document.getElementById('settingsHandsFreeSwitch').classList.toggle('on', scife.handsFree);
   populateVoiceSelect();
   document.getElementById('memoryCountHint').textContent = scife.memory.length + ' notes remembered';
+  renderAdminSection();
   document.getElementById('settingsOverlay').classList.add('show');
 }
 function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('show'); }
@@ -1765,6 +1887,8 @@ function openSignalPage(){
   setTraderBias('unsure');
   document.getElementById('app').style.display='none';
   document.getElementById('signalPage').style.display='flex';
+  updateScanBanner();
+  refreshUsageFromServer();
 }
 function closeSignalPage(){
   document.getElementById('signalPage').style.display='none';
@@ -1815,7 +1939,7 @@ function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias){
     : '\nThe trader hasn\'t committed to a direction yet — just give your own independent, unbiased read.\n';
   return `You are SciFe, an expert price-action analyst running setup analysis inside Ghost Discipline. You know Smart Money Concepts, ICT, and classical TA in real depth — apply the actual definitions below precisely, don't guess at what a term means. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, no reasoning text, nothing before or after it.
 
-You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label, candle body/wick, drawn line, and indicator pane in it carefully before judging anything' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
+You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label and candle body/wick carefully before judging anything. Work out structure, confluence, and the Fibonacci zone yourself from the raw candles — if the chart has any drawn lines, boxes, or fib tools already on it, treat them as unverified and re-derive everything from price action rather than trusting them' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
 ${biasBlock}
 STRATEGY: "${strategy.name}" (${strategy.type ? strategy.type.toUpperCase() : 'custom'})
 Strategy notes: ${strategy.notes || 'none provided'}
@@ -1832,8 +1956,10 @@ Factor any imminent high-impact release into risk_note — flag it plainly if on
 
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. Give ${style.tpRange} take-profit level(s) appropriate for a ${styleKey} trade, ordered nearest-to-furthest, with an approximate R:R for each — scale the furthest TP toward this style's good-R:R target (${style.good}R) only if the setup's actual structure supports it.
 
+FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
+
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"fib_zone":{"zone":"","note":"","numeric":false},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
 }
 function extractJson(text){
@@ -1898,6 +2024,17 @@ function removeChartImage(){
 }
 async function analyzeSignal(){
   if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
+  // Weekly scan gate — sits here, before any provider is picked, so it's a
+  // single account-level check no matter which AI server/model is selected.
+  // Re-pulled from the synced row (not just the in-memory copy) so a scan
+  // used on another device/tab this week still counts.
+  await refreshUsageFromServer();
+  if(!scife.usage.isAdmin && scansRemaining() <= 0){
+    document.getElementById('sig_error').textContent = `Weekly scan limit reached (${SCAN_LIMIT_PER_WEEK}/week). It resets Monday, or unlock Admin in settings for unlimited scans.`;
+    document.getElementById('sig_error').style.display = 'block';
+    showToast('Weekly scan limit reached');
+    return;
+  }
   const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
   const strategy = strategies.find(s=>s.id===document.getElementById('sig_strategy').value);
   if(!strategy){ showToast('Pick a strategy first'); return; }
@@ -1911,10 +2048,19 @@ async function analyzeSignal(){
     errEl.style.display = 'block';
     return;
   }
+  // Consume the scan now, before the request goes out to any provider —
+  // this is the one and only place the counter moves, regardless of which
+  // AI server ends up handling the call below.
+  if(!scife.usage.isAdmin){
+    scife.usage.scanCount += 1;
+    await saveScife();
+  }
+  updateScanBanner();
   const btn = document.getElementById('sig_analyzeBtn');
   btn.disabled = true; btn.textContent = 'Analyzing…'; btn.classList.add('btn-analyzing');
   errEl.style.display = 'none';
   document.getElementById('sig_result').style.display = 'none';
+  document.getElementById('sig_orderPlaced').style.display = 'none';
   const chartThumb = document.getElementById('sigChartThumb');
   if(sigChartImage && chartThumb) chartThumb.classList.add('scanning');
   try{
@@ -1958,7 +2104,7 @@ async function analyzeSignal(){
     if(!parsed){
       throw lastErr || new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
     }
-    renderSignalResult(parsed, strategy, styleKey);
+    renderSignalResult(parsed, strategy, styleKey, pair);
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, bias: parsed.bias, confidence: parsed.confidence }, true);
   }catch(e){
     let msg = e.message || 'unknown';
@@ -1983,7 +2129,8 @@ function sigLevelRow(name, lvl, i){
   const cls = lvl.numeric ? '' : 'structural';
   return `<div class="sig-level-row" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;"><div class="sig-level-name">${sigEsc(name)}</div><div class="sig-level-val ${cls}">${sigEsc(val)}</div></div>`;
 }
-function renderSignalResult(r, strategy, styleKey){
+let lastSignal = null; // { result, strategy, styleKey, pair } — feeds "Place on Order Book"
+function renderSignalResult(r, strategy, styleKey, pair){
   const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
   const biasLabel = { long:'LONG bias', short:'SHORT bias', no_trade:'NO TRADE' }[biasClass];
   const conf = Math.max(0, Math.min(100, parseInt(r.confidence,10) || 0));
@@ -1993,6 +2140,7 @@ function renderSignalResult(r, strategy, styleKey){
   const icon = { present:'✓', absent:'✕', unclear:'?' };
   const levelRows = [sigLevelRow('Entry', r.entry, 0), sigLevelRow('Stop loss', r.stop_loss, 1),
     ...tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(tp.rr)+'R)':''}`, tp, i+2))].join('');
+  lastSignal = { result:r, strategy, styleKey, pair: pair || '' };
   const el = document.getElementById('sig_result');
   el.innerHTML = `
     <div class="sig-result-card bias-${biasClass}">
@@ -2021,19 +2169,78 @@ function renderSignalResult(r, strategy, styleKey){
             </div>
           </div>`).join('') || '<div class="hint">No checklist returned.</div>'}
       </div>
+      ${r.fib_zone && (r.fib_zone.zone || r.fib_zone.note) ? `<div class="sig-block" style="animation-delay:.35s;"><div class="sig-block-label">Fibonacci zone (OTE)</div><div class="sig-block-text">${sigEsc(r.fib_zone.zone||'—')}${r.fib_zone.numeric===false?' <span style="font-style:italic;color:var(--slate);">(structural)</span>':''}</div>${r.fib_zone.note?`<div class="sig-check-note">${sigEsc(r.fib_zone.note)}</div>`:''}</div>` : ''}
       ${r.entry_idea ? `<div class="sig-block" style="animation-delay:.4s;"><div class="sig-block-label">Entry idea</div><div class="sig-block-text">${sigEsc(r.entry_idea)}</div></div>` : ''}
       <div class="sig-block" style="animation-delay:.45s;"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
       <div class="sig-block" style="animation-delay:.5s;"><div class="sig-block-label">Risk note</div><div class="sig-block-text">${sigEsc(r.risk_note||'—')}</div></div>
-      <div class="sig-block" style="animation-delay:.55s;margin-bottom:0;"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:700;font-size:15px;">${sigEsc(r.verdict||'—')}</div></div>
+      <div class="sig-block" style="animation-delay:.55s;margin-bottom:${biasClass==='no_trade'?'0':'14px'};"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:700;font-size:15px;">${sigEsc(r.verdict||'—')}</div></div>
+      ${biasClass!=='no_trade' ? `<button type="button" class="btn" style="margin:0;" onclick="placeSignalOnOrderBook(this)">🎫 Place on Order Book as pending signal</button>` : ''}
     </div>
   `;
   el.style.display = 'block';
+  document.getElementById('sig_orderPlaced').style.display = 'none';
   // animate the confidence bar fill in on the next frame so the CSS transition actually plays
   requestAnimationFrame(()=>{
     const fill = el.querySelector('.sig-confbar-fill');
     if(fill) requestAnimationFrame(()=>{ fill.style.width = fill.dataset.target + '%'; });
   });
   el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ============ PLACE ON ORDER BOOK (pending signal) ============
+   Writes straight into the same trader_data.psychology.orders array the
+   Order Book room in index.html reads and renders — same shape as the order
+   object placeOrder() there builds, so it shows up exactly like a
+   hand-entered pending order the next time Ghost Discipline loads. Re-fetches
+   psychology fresh right before writing (rather than trusting the copy from
+   when SciFe first loaded) and only touches the `psychology` column on the
+   upsert, so it can't stomp on trades/orders added from index.html meanwhile. */
+async function placeSignalOnOrderBook(btn){
+  if(!lastSignal || !lastSignal.result) return;
+  const { result: r, strategy, styleKey, pair } = lastSignal;
+  const biasClass = ['long','short'].includes(r.bias) ? r.bias : null;
+  if(!biasClass){ showToast('No trade — nothing to place'); return; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Placing…'; }
+  try{
+    const { data, error } = await sb.from('trader_data').select('psychology').eq('user_id', currentUser.id).maybeSingle();
+    if(error) throw error;
+    const psychology = (data && data.psychology) || (traderRow && traderRow.psychology) || {};
+    psychology.orders = Array.isArray(psychology.orders) ? psychology.orders : [];
+    const traders = Array.isArray(psychology.traders) ? psychology.traders : [];
+    const trader = traders[0] ? traders[0].id : null;
+    const entryNum = r.entry && r.entry.numeric ? parseFloat(r.entry.level) : null;
+    const slNum = r.stop_loss && r.stop_loss.numeric ? parseFloat(r.stop_loss.level) : null;
+    const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
+    const firstTp = tps.find(tp=>tp && tp.numeric);
+    const tpNum = firstTp ? parseFloat(firstTp.level) : null;
+    const rrPlanned = firstTp && firstTp.rr ? String(firstTp.rr).replace(/[^\d.]/g,'') : null;
+    const noteParts = [];
+    if(r.entry_idea) noteParts.push(r.entry_idea);
+    if(r.fib_zone && r.fib_zone.zone) noteParts.push('Fib/OTE zone: ' + r.fib_zone.zone);
+    if(!entryNum && r.entry && r.entry.level) noteParts.push('Entry (structural): ' + r.entry.level);
+    if(!slNum && r.stop_loss && r.stop_loss.level) noteParts.push('SL (structural): ' + r.stop_loss.level);
+    if(tps.length > (firstTp?1:0)) noteParts.push('Other TPs: ' + tps.filter(tp=>tp!==firstTp).map(tp=>tp.level).join(', '));
+    noteParts.push('Placed from SciFe scan — ' + (r.verdict || ''));
+    const now = new Date();
+    psychology.orders.push({
+      id: 'ord_'+Date.now(), date: todayStr(), time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+      trader, strategy: strategy.id, strategyType: strategy.type, style: styleKey,
+      logics: strategy.logics || [], pair: pair || null, direction: biasClass==='long' ? 'buy' : 'sell',
+      entry: entryNum, sl: slNum, tp: tpNum, rrPlanned, notes: noteParts.join(' — ').slice(0, 500),
+      status: 'pending', account: 'personal'
+    });
+    const { error: upErr } = await sb.from('trader_data').upsert({ user_id: currentUser.id, psychology }, { onConflict: 'user_id' });
+    if(upErr) throw upErr;
+    if(traderRow) traderRow.psychology = psychology;
+    const placedEl = document.getElementById('sig_orderPlaced');
+    placedEl.textContent = '✓ Placed on Order Book as a pending ' + (biasClass==='long'?'BUY':'SELL') + (pair?' — '+pair:'') + '. Close it out from Ghost Discipline once it resolves.';
+    placedEl.style.display = 'block';
+    if(btn){ btn.textContent = '✓ Placed on Order Book'; }
+    logAction('placed_pending_order', { pair: pair || null, direction: biasClass, strategy: strategy.name }, true);
+  }catch(e){
+    showToast('Could not place order: ' + (e.message||e.code||'unknown error'));
+    if(btn){ btn.disabled = false; btn.textContent = '🎫 Place on Order Book as pending signal'; }
+  }
 }
 
 /* ============ QUICK ACTIONS ============ */
