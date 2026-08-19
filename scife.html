@@ -512,6 +512,22 @@ body{position:relative;}
 .sig-ov-zone-tag{position:absolute;left:6px;top:2px;background:var(--ov-color, var(--gold));color:#04070a;
   font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
   padding:2px 6px;border-radius:4px;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55));}
+.sig-ov-line.dashed{border-top-style:dashed;}
+.sig-ov-vband{position:absolute;top:0;bottom:0;pointer-events:none;
+  background:var(--ov-zonebg, rgba(143,166,160,0.10));
+  border-left:1.5px dashed var(--ov-color, var(--slate));border-right:1.5px dashed var(--ov-color, var(--slate));}
+.sig-ov-vband-tag{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:var(--ov-color, var(--slate));
+  color:#04070a;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55));}
+.sig-ov-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+.sig-ov-svg line{filter:drop-shadow(0 0 3px var(--ov-halo,rgba(0,0,0,.65)));}
+.sig-ov-point-tag{position:absolute;transform:translate(-50%,-50%);background:var(--ov-color, var(--platinum));
+  color:#04070a;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.02em;
+  padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55)), 0 2px 6px rgba(0,0,0,.5);}
+.sig-ov-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px;}
+.sig-chart-thumb:not(.overlay-on) .sig-ov-legend{display:none;}
+.sig-ov-legend-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--slate);font-family:'IBM Plex Mono',monospace;}
+.sig-ov-legend-chip .sw{width:9px;height:9px;border-radius:3px;flex:none;background:var(--sw-color);}
 
 /* ---- redesigned results panel ---- */
 .sig-result-card{position:relative;border-radius:var(--r-lg);overflow:hidden;padding:24px 20px 22px;
@@ -2540,11 +2556,18 @@ LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it
 
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 ${hasImage ? `
-CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.` : ''}
+CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.
+
+CHART MARKERS FOR CHECKLIST ITEMS: for every checklist item you marked "present" whose id is in the list below, also add one entry to "chart_markers" giving its position on the image (same 0–100 top-to-bottom / left-to-right percentage convention, read directly off the chart — never guessed). Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it:
+- Single horizontal level (give "y_pct" only): bos, choch, smc_bos, smc_choch, eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
+- Price zone/box (give "y_pct" as the zone's top edge and "y2_pct" as its bottom edge): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand
+- Diagonal trendline (give "x1_pct"/"y1_pct" for its first anchor point and "x2_pct"/"y2_pct" for its second): trendline
+- Horizontal time band (give "x1_pct" and "x2_pct" marking the session's left/right extent along the image; leave y fields null): killzone
+Never add a chart_markers entry for an id that isn't in one of those four groups, or for an id not marked "present" in the checklist.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
-trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key).' : ''}`;
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is fine if nothing qualified.' : ''}`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -2823,12 +2846,13 @@ function sigLevelRow(name, lvl, i){
   </div>`;
 }
 /* ============ DRAW ANALYSIS ON CHART (overlay) ============
-   Renders the entry/stop/TP/fib levels SciFe returned as horizontal lines
-   directly on top of the uploaded chart thumbnail, positioned using the
-   chart_positions percentages the model read off the image itself. Colors
-   are fixed to the app's own semantic palette; only the glow/outline behind
-   each line is picked from the chart's own average brightness so it stays
-   readable on any chart theme (dark platform, light platform, whatever). */
+   Renders the entry/stop/TP/fib levels SciFe returned, PLUS every
+   present-and-locatable checklist concept (BOS/CHoCH, order blocks, FVGs,
+   liquidity, trendlines, S/R, killzones — whichever apply to the selected
+   strategy), as shapes drawn directly on top of the uploaded chart
+   thumbnail. Colors are fixed per concept category from the app's own
+   palette; only the glow/outline behind every shape is picked from the
+   chart's own average brightness so it stays readable on any chart theme. */
 function sigOvShortLevel(v){
   if(v==null || v==='') return '';
   const s = String(v);
@@ -2859,15 +2883,71 @@ function computeImageBrightness(dataUrl){
     }catch(e){ resolve(128); }
   });
 }
-function sigOvLineHTML(label, yPct, colorVar){
+function sigOvLineHTML(label, yPct, colorVar, dashed){
   if(yPct==null || isNaN(yPct)) return '';
-  return `<div class="sig-ov-line" style="top:${sigOvClamp(yPct)}%;--ov-color:${colorVar};"><span class="sig-ov-tag">${sigEsc(label)}</span></div>`;
+  return `<div class="sig-ov-line${dashed?' dashed':''}" style="top:${sigOvClamp(yPct)}%;--ov-color:${colorVar};"><span class="sig-ov-tag">${sigEsc(label)}</span></div>`;
 }
 function sigOvZoneHTML(label, topPct, botPct, colorVar, bgVar){
   if(topPct==null || botPct==null || isNaN(topPct) || isNaN(botPct)) return '';
   const top = sigOvClamp(Math.min(topPct, botPct));
   const bot = sigOvClamp(Math.max(topPct, botPct));
-  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0, bot-top)}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-zone-tag">${sigEsc(label)}</span></div>`;
+  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0.6, bot-top)}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-zone-tag">${sigEsc(label)}</span></div>`;
+}
+function sigOvVBandHTML(label, x1Pct, x2Pct, colorVar, bgVar){
+  if(x1Pct==null || x2Pct==null || isNaN(x1Pct) || isNaN(x2Pct)) return '';
+  const left = sigOvClamp(Math.min(x1Pct, x2Pct));
+  const right = sigOvClamp(Math.max(x1Pct, x2Pct));
+  return `<div class="sig-ov-vband" style="left:${left}%;width:${Math.max(0.6, right-left)}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-vband-tag">${sigEsc(label)}</span></div>`;
+}
+function sigOvTrendlineHTML(label, x1, y1, x2, y2, colorVar){
+  if([x1,y1,x2,y2].some(v=>v==null || isNaN(v))) return '';
+  x1=sigOvClamp(x1); y1=sigOvClamp(y1); x2=sigOvClamp(x2); y2=sigOvClamp(y2);
+  const svg = `<svg class="sig-ov-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorVar}" stroke-width="0.6" vector-effect="non-scaling-stroke"/></svg>`;
+  const midX = (x1+x2)/2, midY = (y1+y2)/2;
+  const tag = `<span class="sig-ov-point-tag" style="left:${midX}%;top:${midY}%;--ov-color:${colorVar};">${sigEsc(label)}</span>`;
+  return svg + tag;
+}
+// Which checklist ids can be drawn, what shape they need, and what color
+// category they belong to. Ids not listed here (fibonacci/ote — already
+// covered by the dedicated fib zone — plus chartpattern/indicator/macross/
+// volume/fundamentals, none of which map to a simple shape) are skipped.
+const SIG_MARKER_STYLES = {
+  bos:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
+  choch:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
+  smc_bos:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
+  smc_choch:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
+  eqhigh:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
+  eqlow:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
+  liquiditygrab:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
+  liquiditysweep:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
+  supres:{cat:'Support / Resistance', kind:'hline', color:'var(--platinum)', dashed:false},
+  orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
+  smc_orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
+  ict_orderblock:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
+  breaker:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
+  mitigation:{cat:'Order Block', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
+  imbalance:{cat:'FVG / Imbalance', kind:'zone', color:'var(--platinum)', bg:'rgba(238,246,242,0.10)'},
+  smc_fvg:{cat:'FVG / Imbalance', kind:'zone', color:'var(--platinum)', bg:'rgba(238,246,242,0.10)'},
+  ict_fvg:{cat:'FVG / Imbalance', kind:'zone', color:'var(--platinum)', bg:'rgba(238,246,242,0.10)'},
+  hiddensupply:{cat:'Supply Zone', kind:'zone', color:'var(--loss-bright)', bg:'rgba(255,93,122,0.14)'},
+  hiddendemand:{cat:'Demand Zone', kind:'zone', color:'var(--win)', bg:'rgba(43,224,138,0.14)'},
+  trendline:{cat:'Trendline', kind:'trendline', color:'var(--platinum)'},
+  killzone:{cat:'Killzone', kind:'vband', color:'var(--slate-dim)', bg:'rgba(143,166,160,0.10)'}
+};
+function sigOvMarkerHTML(id, label, m){
+  const style = SIG_MARKER_STYLES[id];
+  if(!style || !m) return '';
+  if(style.kind === 'hline') return sigOvLineHTML(label, m.y_pct, style.color, style.dashed);
+  if(style.kind === 'zone') return sigOvZoneHTML(label, m.y_pct, m.y2_pct, style.color, style.bg);
+  if(style.kind === 'vband') return sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg);
+  if(style.kind === 'trendline') return sigOvTrendlineHTML(label, m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color);
+  return '';
+}
+function sigOvLegendHTML(categoriesUsed){
+  if(!categoriesUsed.size) return '';
+  const chips = Array.from(categoriesUsed).map(([cat,color])=>
+    `<span class="sig-ov-legend-chip"><span class="sw" style="--sw-color:${color};"></span>${sigEsc(cat)}</span>`).join('');
+  return `<div class="sig-ov-legend">${chips}</div>`;
 }
 async function toggleChartOverlay(btn){
   const thumb = document.getElementById('sigChartThumb');
@@ -2885,6 +2965,7 @@ async function toggleChartOverlay(btn){
   const imgEl = frame.querySelector('img');
   if(!imgEl){ showToast('Chart image is gone — re-upload to draw an overlay'); return; }
   const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
+  const legendCats = new Map(); // category label -> color, de-duped, insertion order
   const pieces = [
     sigOvZoneHTML('OTE', cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)'),
     r.entry && cp.entry_y_pct != null ? sigOvLineHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)') : '',
@@ -2893,8 +2974,24 @@ async function toggleChartOverlay(btn){
     tps[1] && cp.tp2_y_pct != null ? sigOvLineHTML('TP2 '+sigOvShortLevel(tps[1].level), cp.tp2_y_pct, 'var(--win)') : '',
     tps[2] && cp.tp3_y_pct != null ? sigOvLineHTML('TP3 '+sigOvShortLevel(tps[2].level), cp.tp3_y_pct, 'var(--win)') : ''
   ].filter(Boolean);
+  if(cp.fib_top_y_pct != null && cp.fib_bottom_y_pct != null) legendCats.set('Entry / SL / TP / OTE', 'var(--gold)');
+  else if(pieces.length) legendCats.set('Entry / SL / TP', 'var(--gold-bright)');
+  // Structure markers: only for checklist items the model actually marked
+  // "present" AND returned a matching, locatable chart_markers entry.
+  const checklist = Array.isArray(r.checklist) ? r.checklist : [];
+  const markers = Array.isArray(r.chart_markers) ? r.chart_markers : [];
+  const markerById = {};
+  markers.forEach(m=>{ if(m && m.id && !markerById[m.id]) markerById[m.id] = m; });
+  checklist.forEach(c=>{
+    if(!c || c.status !== 'present') return;
+    const style = SIG_MARKER_STYLES[c.id];
+    const m = markerById[c.id];
+    if(!style || !m) return;
+    const html = sigOvMarkerHTML(c.id, (c.label || c.id || '').toUpperCase(), m);
+    if(html){ pieces.push(html); legendCats.set(style.cat, style.color); }
+  });
   if(!pieces.length){
-    showToast("SciFe couldn't confidently place any level on this chart image — try re-analyzing.");
+    showToast("SciFe couldn't confidently place anything from this read on the chart image — try re-analyzing.");
     return;
   }
   btn.disabled = true;
@@ -2908,6 +3005,10 @@ async function toggleChartOverlay(btn){
     overlay.style.setProperty('--ov-halo', halo);
     overlay.innerHTML = pieces.join('');
     frame.appendChild(overlay);
+    const legendEl = thumb.querySelector('.sig-ov-legend');
+    const legendHTML = sigOvLegendHTML(legendCats);
+    if(legendEl) legendEl.outerHTML = legendHTML;
+    else if(legendHTML) frame.insertAdjacentHTML('afterend', legendHTML);
     thumb.classList.add('overlay-on');
     btn.textContent = '🙈 Hide chart overlay';
   }catch(e){
