@@ -623,6 +623,22 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     <textarea id="sig_desc" class="sig-textarea" rows="6" placeholder="HTF bias, recent structure (BOS/CHoCH), where price sits relative to your key levels (order block, FVG, liquidity), current price... (optional if you attached a chart, but exact numbers you type are more reliable than what SciFe reads off an image)"></textarea>
   </div>
 
+  <div class="field">
+    <label>What's your read?</label>
+    <div class="sig-bias-toggle" id="sig_traderBias">
+      <button type="button" class="sig-bias-opt" data-val="long" onclick="setTraderBias('long')">
+        <span class="sig-bias-opt-dot"></span>Long
+      </button>
+      <button type="button" class="sig-bias-opt active" data-val="unsure" onclick="setTraderBias('unsure')">
+        <span class="sig-bias-opt-dot"></span>Not sure
+      </button>
+      <button type="button" class="sig-bias-opt" data-val="short" onclick="setTraderBias('short')">
+        <span class="sig-bias-opt-dot"></span>Short
+      </button>
+    </div>
+    <div class="hint">SciFe forms its own read independently — if it disagrees with yours, it'll say so and explain why, not just agree with you.</div>
+  </div>
+
   <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()">Analyze setup</button>
   <div class="hint" id="sig_error" style="display:none;color:var(--loss-bright);margin-top:10px;"></div>
 
@@ -1724,6 +1740,13 @@ const SIGNAL_LOGIC_DEFS = {
   geopolitical: 'Geopolitical Event — any relevant geopolitical development affecting this instrument, if known.',
   earnings: 'Earnings Report — a scheduled or recent earnings release, for equity/index instruments.'
 };
+let sigTraderBias = 'unsure';
+function setTraderBias(val){
+  sigTraderBias = val;
+  document.querySelectorAll('#sig_traderBias .sig-bias-opt').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.val===val);
+  });
+}
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
@@ -1739,6 +1762,7 @@ function openSignalPage(){
   if(!strategies.length) showToast('Add a strategy in Ghost Discipline first, then come back here.');
   populateSignalStrategySelect();
   onSignalStyleChange();
+  setTraderBias('unsure');
   document.getElementById('app').style.display='none';
   document.getElementById('signalPage').style.display='flex';
 }
@@ -1780,16 +1804,19 @@ function summarizeStrategyPerformance(strategyId){
   const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
 }
-function buildSignalSystemPrompt(strategy, styleKey, hasImage){
+function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
   const logicList = set
     ? set.map(l=>`- ${l.id} (${l.label}): ${SIGNAL_LOGIC_DEFS[l.id] || 'Use standard trading definition for this concept.'}`).join('\n')
     : '(no fixed checklist for this custom strategy type — judge only against the strategy notes below, using sound general technical-analysis judgment)';
   const style = SIGNAL_TRADE_STYLES[styleKey] || SIGNAL_TRADE_STYLES.intraday;
+  const biasBlock = traderBias && traderBias !== 'unsure'
+    ? `\nTHE TRADER'S OWN READ: they think this setup is ${traderBias.toUpperCase()}. Form your own bias FIRST, purely from the checklist and evidence below — decide it before you let their stated view influence you at all. Then compare. If your independent read agrees with theirs, say so plainly. If it does NOT, do not soften it or split the difference to avoid friction — state your actual bias and give a direct, specific reason it differs from theirs (e.g. which checklist item they may be reading differently, or what evidence points the other way). Agreeing with the trader is not the goal; being right is. A trader who only ever hears "you're right" from this tool isn't being served by it.\n`
+    : '\nThe trader hasn\'t committed to a direction yet — just give your own independent, unbiased read.\n';
   return `You are SciFe, an expert price-action analyst running setup analysis inside Ghost Discipline. You know Smart Money Concepts, ICT, and classical TA in real depth — apply the actual definitions below precisely, don't guess at what a term means. Do NOT chat, do NOT add commentary outside the JSON. Output ONLY one JSON object — no markdown fences, no reasoning text, nothing before or after it.
 
 You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label, candle body/wick, drawn line, and indicator pane in it carefully before judging anything' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
-
+${biasBlock}
 STRATEGY: "${strategy.name}" (${strategy.type ? strategy.type.toUpperCase() : 'custom'})
 Strategy notes: ${strategy.notes || 'none provided'}
 
@@ -1806,8 +1833,8 @@ Factor any imminent high-impact release into risk_note — flag it plainly if on
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. Give ${style.tpRange} take-profit level(s) appropriate for a ${styleKey} trade, ordered nearest-to-furthest, with an approximate R:R for each — scale the furthest TP toward this style's good-R:R target (${style.good}R) only if the setup's actual structure supports it.
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
-checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false}],"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -1895,6 +1922,7 @@ async function analyzeSignal(){
     const userMsg = [
       `Pair/instrument: ${pair || 'not specified'}`,
       `Trade style: ${(SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label}`,
+      `Trader's own read before analysis: ${sigTraderBias === 'unsure' ? 'not committed / unsure' : sigTraderBias.toUpperCase()}`,
       desc ? `What I'm seeing:\n${desc}` : "What I'm seeing:\n(see attached chart image)"
     ].join('\n');
     // 1800 tokens gives real headroom for a 10-item checklist with a genuine
@@ -1903,7 +1931,7 @@ async function analyzeSignal(){
     // could get cut off mid-JSON, which surfaced as a generic parse failure.
     const opts = { temperature:0.3, maxTokens:1800 };
     if(sigChartImage) opts.image = sigChartImage;
-    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage);
+    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias);
     const userTurn = [{ role:'user', content:userMsg }];
 
     let raw, parsed, lastErr;
