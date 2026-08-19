@@ -442,7 +442,15 @@ body{position:relative;}
 .sig-chart-expand{margin-top:8px;width:auto;padding:6px 12px;font-size:12px;border-radius:8px;}
 /* ---- chart lightbox: enlarged, close-up view of the (optionally scanned)
    chart image, reusing the same .overlay/.modal scaffolding as settings ---- */
-.chart-lightbox-modal{max-width:min(94vw, 920px);width:100%;padding:20px;max-height:92vh;}
+.chart-lightbox-modal{max-width:min(94vw, 920px);width:100%;padding:20px;max-height:92vh;overflow-x:hidden;}
+/* The close button is pinned to the VIEWPORT (not the modal's scroll box) so
+   it can never scroll out of reach on a tall chart image, and sits on its
+   own stacking layer above everything else in the lightbox. */
+#chartLightboxCloseBtn{position:fixed !important;top:max(18px, env(safe-area-inset-top));right:max(18px, env(safe-area-inset-right));
+  z-index:100000;width:38px;height:38px;pointer-events:auto;cursor:pointer;
+  background:var(--panel-solid);box-shadow:0 6px 18px -4px rgba(0,0,0,0.6);}
+.chart-lightbox-overlay{z-index:99999;pointer-events:auto;}
+.chart-lightbox-overlay .modal{pointer-events:auto;}
 .chart-lightbox-imgwrap{position:relative;display:block;max-width:100%;line-height:0;border-radius:12px;overflow:hidden;}
 .chart-lightbox-imgwrap img{display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
 .sig-style-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
@@ -531,6 +539,8 @@ body{position:relative;}
 .sig-ov-point-tag{position:absolute;transform:translate(-50%,-50%);background:var(--ov-color, var(--platinum));
   color:#04070a;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.02em;
   padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55)), 0 2px 6px rgba(0,0,0,.5);}
+.sig-ov-dot{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);
+  background:var(--ov-color, var(--platinum));box-shadow:0 0 0 2px rgba(4,7,10,.75), 0 0 0 3.5px var(--ov-halo,rgba(0,0,0,.5)), 0 0 6px var(--ov-color, var(--platinum));}
 .sig-ov-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px;}
 .sig-chart-thumb:not(.overlay-on) .sig-ov-legend{display:none;}
 .sig-ov-legend-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--slate);font-family:'IBM Plex Mono',monospace;}
@@ -929,11 +939,12 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 </div>
 
 <!-- CHART LIGHTBOX (enlarged close-up view, with exit button) -->
-<div class="overlay" id="chartLightboxOverlay" onclick="if(event.target===this)closeChartLightbox();">
+<div class="overlay chart-lightbox-overlay" id="chartLightboxOverlay" onclick="if(event.target===this)closeChartLightbox();">
   <div class="modal chart-lightbox-modal" role="dialog" aria-modal="true" aria-labelledby="chartLightboxTitle">
-    <button class="modal-close" onclick="closeChartLightbox()" aria-label="Exit full-size chart view">✕</button>
+    <button class="modal-close" id="chartLightboxCloseBtn" onclick="closeChartLightbox();return false;" aria-label="Exit full-size chart view">✕</button>
     <h3 class="serif" id="chartLightboxTitle" style="font-size:16px;">Chart — full size</h3>
     <div class="chart-lightbox-imgwrap" id="chartLightboxImgWrap"></div>
+    <button type="button" class="btn-ghost" style="width:100%;margin-top:14px;" onclick="closeChartLightbox();return false;">Close</button>
   </div>
 </div>
 
@@ -2577,16 +2588,18 @@ ${hasImage ? `
 CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.
 Also give "setup_x1_pct" and "setup_x2_pct" — the HORIZONTAL span (0=left edge, 100=right edge of the image) that the entry/stop/target/fib lines should be drawn across. These must bound only the relevant candles for this setup (roughly from where it formed up to the current/rightmost candle) — NEVER the full image width. These lines are drawn as bounded segments, not infinite rays, so a real horizontal extent is required here, not a placeholder default.
 
-CHART MARKERS FOR CHECKLIST ITEMS: for every checklist item you marked "present" whose id is in the list below, also add one entry to "chart_markers" giving its position on the image (same 0–100 top-to-bottom / left-to-right percentage convention, read directly off the chart — never guessed). Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it:
-- Single horizontal level (give "y_pct" for the price, AND "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at (or just before) the candle that actually set this level and x2_pct at the current/rightmost candle; never span the full image width, this must render as a bounded segment, not a ray): bos, choch, smc_bos, smc_choch, eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
-- Price zone/box (give "y_pct" as the zone's top edge, "y2_pct" as its bottom edge, AND "x1_pct"/"x2_pct" bounding it to the actual candles that formed the zone — a real rectangle over those candles only, never the full image width): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand
-- Diagonal trendline (give "x1_pct"/"y1_pct" for its first anchor point and "x2_pct"/"y2_pct" for its second — a bounded segment between the two swing points, never extended past them): trendline
-- Horizontal time band (give "x1_pct" and "x2_pct" marking the session's left/right extent along the image; leave y fields null): killzone
-Never add a chart_markers entry for an id that isn't in one of those four groups, or for an id not marked "present" in the checklist. Every shape drawn on the chart — lines, zones, and trendlines alike — must be a bounded object anchored to real candles on both ends. Do not let any line behave like an infinite ray in either direction.` : ''}
+CHART MARKERS FOR CHECKLIST ITEMS: for EVERY checklist item you marked "present" whose id is in one of the groups below, add one matching entry to "chart_markers" — don't skip any of them; a "present" item with no marker just vanishes from the chart, so if you called it present, place it. Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it (same 0–100 top-to-bottom / left-to-right percentage convention throughout, read directly off the chart — never guessed):
+- Point-to-point line — drawn between two real anchor points on the chart, like a TRENDLINE tool, never a flat ray in either direction (give "x1_pct"/"y1_pct" for the first anchor point and "x2_pct"/"y2_pct" for the second): trendline, bos, choch, smc_bos, smc_choch — for BOS/CHoCH specifically, anchor point 1 at the swing high/low that got broken and point 2 at the candle that broke it (the two points can share a y value if that reads more naturally, but both x1_pct and x2_pct AND both y1_pct and y2_pct are still required fields — never leave y1_pct/y2_pct null for these ids, that silently drops the marker)
+- Single horizontal level — a bounded SEGMENT, never a full-width ray (give "y_pct" for the price, plus "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at, or just before, the candle that actually set this level, and x2_pct at the current/rightmost candle): eqhigh, eqlow, liquiditygrab, liquiditysweep, supres
+- Price zone/box — a real RECTANGLE, bounded on all four sides (give "y_pct" as the top edge, "y2_pct" as the bottom edge, "x1_pct"/"x2_pct" bounding it left/right to the exact candles that formed it — never the full image width): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand, chartpattern
+- Horizontal time band (give "x1_pct" and "x2_pct" marking the left/right extent along the image; leave y fields null): killzone, volume
+- Single point marker at the exact candle it fired on (give "x1_pct" for its horizontal position and "y_pct" for its vertical position; leave other fields null): indicator, macross
+Never add a chart_markers entry for an id that isn't in one of those five groups, or for an id not marked "present" in the checklist. Every shape drawn on the chart — trendlines, segments, rectangles, bands, and points alike — must be a bounded object anchored to real candles. Do not let any line behave like an infinite ray in either direction.
+CRITICAL COMPLETENESS RULE: for the checklist ids covered by the five groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
 {"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
-trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is fine if nothing qualified.' : ''}`;
+trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -2684,6 +2697,16 @@ function closeChartLightbox(){
   const overlay = document.getElementById('chartLightboxOverlay');
   if(overlay) overlay.classList.remove('show');
 }
+// Defensive backup binding — guarantees the close button works even if the
+// inline onclick attribute is ever stripped by a host page/CSP. Runs once,
+// guarded so re-running this script block doesn't double-bind.
+(function bindChartLightboxCloseBackup(){
+  const btn = document.getElementById('chartLightboxCloseBtn');
+  if(btn && !btn.dataset.boundBackup){
+    btn.dataset.boundBackup = '1';
+    btn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); closeChartLightbox(); });
+  }
+})();
 async function analyzeSignal(){
   if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
   // Weekly scan gate — sits here, before any provider is picked, so it's a
@@ -2752,7 +2775,7 @@ async function analyzeSignal(){
     // per-item note on each, plus levels/entry_idea/risk_note — the previous
     // 1100 budget was tight enough that longer checklists (GMC has 10 items)
     // could get cut off mid-JSON, which surfaced as a generic parse failure.
-    const opts = { temperature:0.3, maxTokens:1800 };
+    const opts = { temperature:0.3, maxTokens:2600 };
     if(sigChartImage) opts.image = sigChartImage;
     const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias, desiredRR);
     const userTurn = [{ role:'user', content:userMsg }];
@@ -2968,11 +2991,17 @@ function sigOvTrendlineHTML(label, x1, y1, x2, y2, colorVar){
 // category they belong to. Ids not listed here (fibonacci/ote — already
 // covered by the dedicated fib zone — plus chartpattern/indicator/macross/
 // volume/fundamentals, none of which map to a simple shape) are skipped.
+// Shape convention follows real charting-platform tools: order blocks/FVGs/
+// supply-demand/chart patterns are RECTANGLES (zone, bounded box); BOS/CHoCH/
+// trendlines are drawn point-to-point as TRENDLINES, never a flat ray;
+// single-price levels (equal high/low, liquidity, S/R) are bounded
+// horizontal SEGMENTS; killzones/volume are vertical time BANDS; indicator/
+// MA-cross signals are POINT markers at the exact candle they fired on.
 const SIG_MARKER_STYLES = {
-  bos:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
-  choch:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
-  smc_bos:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
-  smc_choch:{cat:'BOS / CHoCH', kind:'hline', color:'var(--amber)', dashed:true},
+  bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
+  choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
+  smc_bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
+  smc_choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
   eqhigh:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
   eqlow:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
   liquiditygrab:{cat:'Liquidity Sweep', kind:'hline', color:'var(--amber)', dashed:true},
@@ -2989,8 +3018,19 @@ const SIG_MARKER_STYLES = {
   hiddensupply:{cat:'Supply Zone', kind:'zone', color:'var(--loss-bright)', bg:'rgba(255,93,122,0.14)'},
   hiddendemand:{cat:'Demand Zone', kind:'zone', color:'var(--win)', bg:'rgba(43,224,138,0.14)'},
   trendline:{cat:'Trendline', kind:'trendline', color:'var(--platinum)'},
-  killzone:{cat:'Killzone', kind:'vband', color:'var(--slate-dim)', bg:'rgba(143,166,160,0.10)'}
+  killzone:{cat:'Killzone', kind:'vband', color:'var(--slate-dim)', bg:'rgba(143,166,160,0.10)'},
+  chartpattern:{cat:'Chart Pattern', kind:'zone', color:'var(--gold-bright)', bg:'rgba(255,223,158,0.10)'},
+  indicator:{cat:'Indicator Signal', kind:'point', color:'var(--platinum)'},
+  macross:{cat:'MA Cross', kind:'point', color:'var(--gold-bright)'},
+  volume:{cat:'Volume Confirmation', kind:'vband', color:'var(--slate)', bg:'rgba(143,166,160,0.14)'}
 };
+function sigOvPointHTML(label, xPct, yPct, colorVar){
+  if(xPct==null || yPct==null || isNaN(xPct) || isNaN(yPct)) return '';
+  const x = sigOvClamp(xPct), y = sigOvClamp(yPct);
+  const dot = `<div class="sig-ov-dot" style="left:${x}%;top:${y}%;--ov-color:${colorVar};"></div>`;
+  const tag = `<span class="sig-ov-point-tag" style="left:${x}%;top:${y}%;--ov-color:${colorVar};transform:translate(-50%, 9px);">${sigEsc(label)}</span>`;
+  return dot + tag;
+}
 function sigOvMarkerHTML(id, label, m){
   const style = SIG_MARKER_STYLES[id];
   if(!style || !m) return '';
@@ -2998,6 +3038,7 @@ function sigOvMarkerHTML(id, label, m){
   if(style.kind === 'zone') return sigOvZoneHTML(label, m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct);
   if(style.kind === 'vband') return sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg);
   if(style.kind === 'trendline') return sigOvTrendlineHTML(label, m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color);
+  if(style.kind === 'point') return sigOvPointHTML(label, m.x1_pct, m.y_pct, style.color);
   return '';
 }
 function sigOvLegendHTML(categoriesUsed){
@@ -3040,13 +3081,15 @@ async function toggleChartOverlay(btn){
   const markers = Array.isArray(r.chart_markers) ? r.chart_markers : [];
   const markerById = {};
   markers.forEach(m=>{ if(m && m.id && !markerById[m.id]) markerById[m.id] = m; });
+  let missingCount = 0;
   checklist.forEach(c=>{
     if(!c || c.status !== 'present') return;
     const style = SIG_MARKER_STYLES[c.id];
+    if(!style) return; // not a drawable concept (e.g. swings, fibonacci) — expected, not a gap
     const m = markerById[c.id];
-    if(!style || !m) return;
-    const html = sigOvMarkerHTML(c.id, (c.label || c.id || '').toUpperCase(), m);
+    const html = m ? sigOvMarkerHTML(c.id, (c.label || c.id || '').toUpperCase(), m) : '';
     if(html){ pieces.push(html); legendCats.set(style.cat, style.color); }
+    else missingCount++;
   });
   if(!pieces.length){
     showToast("SciFe couldn't confidently place anything from this read on the chart image — try re-analyzing.");
@@ -3067,6 +3110,15 @@ async function toggleChartOverlay(btn){
     const legendHTML = sigOvLegendHTML(legendCats);
     if(legendEl) legendEl.outerHTML = legendHTML;
     else if(legendHTML) frame.insertAdjacentHTML('afterend', legendHTML);
+    const oldMissingNote = thumb.querySelector('.sig-ov-missing-note');
+    if(oldMissingNote) oldMissingNote.remove();
+    if(missingCount > 0){
+      const note = document.createElement('div');
+      note.className = 'hint sig-ov-missing-note';
+      note.style.marginTop = '6px';
+      note.textContent = `${missingCount} confluence${missingCount>1?'s':''} marked present but couldn't be precisely located on this image, so ${missingCount>1?"they aren't":"it isn't"} drawn.`;
+      (thumb.querySelector('.sig-ov-legend') || frame).after(note);
+    }
     thumb.classList.add('overlay-on');
     btn.textContent = '🙈 Hide chart overlay';
   }catch(e){
@@ -3168,6 +3220,10 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
     thumb.classList.remove('overlay-on');
     const oldToggle = thumb.querySelector('.sig-overlay-toggle');
     if(oldToggle) oldToggle.remove();
+    const oldLegend = thumb.querySelector('.sig-ov-legend');
+    if(oldLegend) oldLegend.remove();
+    const oldMissingNote = thumb.querySelector('.sig-ov-missing-note');
+    if(oldMissingNote) oldMissingNote.remove();
     if(biasClass !== 'no_trade'){
       const frame = thumb.querySelector('.sig-scan-frame');
       const removeBtn = thumb.querySelector('.sig-chart-remove');
