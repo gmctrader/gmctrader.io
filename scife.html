@@ -490,6 +490,29 @@ body{position:relative;}
   box-shadow:0 0 6px var(--bronze-bright);margin-right:6px;animation:scanDotPulse 1s ease-in-out infinite;}
 @keyframes scanDotPulse{0%,100%{opacity:.4;}50%{opacity:1;}}
 
+/* ---- draw-analysis-on-chart overlay: entry/SL/TP/fib lines rendered
+   directly on top of the uploaded chart image. Line/tag colors stay fixed
+   to the app's semantic palette (gold=entry, red=stop, green=target,
+   bronze=fib zone) but the glow/outline behind every line and tag is
+   picked at build time from the chart image's own average brightness, so
+   the same colors stay legible whether the trader's chart is a bright
+   white-background platform or a near-black one. ---- */
+.sig-overlay-toggle{margin-top:8px;width:auto;padding:7px 13px;font-size:12px;border-radius:8px;display:inline-flex;}
+.sig-analysis-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s ease;}
+.sig-chart-thumb.overlay-on .sig-analysis-overlay{opacity:1;}
+.sig-ov-zone{position:absolute;left:0;right:0;pointer-events:none;
+  background:var(--ov-zonebg, rgba(242,200,119,0.14));
+  border-top:1.5px dashed var(--ov-color, var(--gold));border-bottom:1.5px dashed var(--ov-color, var(--gold));}
+.sig-ov-line{position:absolute;left:0;right:0;top:0;height:0;border-top:2px solid var(--ov-color, var(--gold));
+  filter:drop-shadow(0 0 3px var(--ov-halo,rgba(0,0,0,.65))) drop-shadow(0 0 5px var(--ov-halo,rgba(0,0,0,.35)));}
+.sig-ov-tag{position:absolute;right:6px;top:-10px;transform:translateY(-50%);
+  background:var(--ov-color, var(--gold));color:#04070a;font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:3px 7px;border-radius:5px;white-space:nowrap;
+  box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55)), 0 2px 8px rgba(0,0,0,.55);}
+.sig-ov-zone-tag{position:absolute;left:6px;top:2px;background:var(--ov-color, var(--gold));color:#04070a;
+  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:2px 6px;border-radius:4px;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55));}
+
 /* ---- redesigned results panel ---- */
 .sig-result-card{position:relative;border-radius:var(--r-lg);overflow:hidden;padding:24px 20px 22px;
   background:var(--panel);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
@@ -2516,10 +2539,12 @@ Factor any imminent high-impact release into risk_note — flag it plainly if on
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
+${hasImage ? `
+CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
-trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.`;
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key).' : ''}`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -2797,6 +2822,102 @@ function sigLevelRow(name, lvl, i){
     <div class="sig-level-value${structural?' structural':''}">${text}</div>
   </div>`;
 }
+/* ============ DRAW ANALYSIS ON CHART (overlay) ============
+   Renders the entry/stop/TP/fib levels SciFe returned as horizontal lines
+   directly on top of the uploaded chart thumbnail, positioned using the
+   chart_positions percentages the model read off the image itself. Colors
+   are fixed to the app's own semantic palette; only the glow/outline behind
+   each line is picked from the chart's own average brightness so it stays
+   readable on any chart theme (dark platform, light platform, whatever). */
+function sigOvShortLevel(v){
+  if(v==null || v==='') return '';
+  const s = String(v);
+  return s.length > 16 ? s.slice(0,16)+'…' : s;
+}
+function sigOvClamp(n){ return Math.max(0, Math.min(100, n)); }
+function computeImageBrightness(dataUrl){
+  return new Promise((resolve)=>{
+    try{
+      const img = new Image();
+      img.onload = ()=>{
+        try{
+          const c = document.createElement('canvas');
+          const w = c.width = 32, h = c.height = 32;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const data = ctx.getImageData(0, 0, w, h).data;
+          let sum = 0, n = 0;
+          for(let i=0; i<data.length; i+=4){
+            sum += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+            n++;
+          }
+          resolve(n ? sum/n : 128);
+        }catch(e){ resolve(128); } // e.g. canvas tainted — fall back to a neutral mid value
+      };
+      img.onerror = ()=>resolve(128);
+      img.src = dataUrl;
+    }catch(e){ resolve(128); }
+  });
+}
+function sigOvLineHTML(label, yPct, colorVar){
+  if(yPct==null || isNaN(yPct)) return '';
+  return `<div class="sig-ov-line" style="top:${sigOvClamp(yPct)}%;--ov-color:${colorVar};"><span class="sig-ov-tag">${sigEsc(label)}</span></div>`;
+}
+function sigOvZoneHTML(label, topPct, botPct, colorVar, bgVar){
+  if(topPct==null || botPct==null || isNaN(topPct) || isNaN(botPct)) return '';
+  const top = sigOvClamp(Math.min(topPct, botPct));
+  const bot = sigOvClamp(Math.max(topPct, botPct));
+  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0, bot-top)}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-zone-tag">${sigEsc(label)}</span></div>`;
+}
+async function toggleChartOverlay(btn){
+  const thumb = document.getElementById('sigChartThumb');
+  const frame = thumb && thumb.querySelector('.sig-scan-frame');
+  if(!thumb || !frame) return;
+  const existing = thumb.querySelector('.sig-analysis-overlay');
+  if(existing){
+    const on = thumb.classList.toggle('overlay-on');
+    btn.textContent = on ? '🙈 Hide chart overlay' : '📐 Draw analysis on chart';
+    return;
+  }
+  if(!lastSignal || !lastSignal.result){ showToast('No analysis to draw yet'); return; }
+  const r = lastSignal.result;
+  const cp = r.chart_positions || {};
+  const imgEl = frame.querySelector('img');
+  if(!imgEl){ showToast('Chart image is gone — re-upload to draw an overlay'); return; }
+  const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
+  const pieces = [
+    sigOvZoneHTML('OTE', cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)'),
+    r.entry && cp.entry_y_pct != null ? sigOvLineHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)') : '',
+    r.stop_loss && cp.stop_loss_y_pct != null ? sigOvLineHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)') : '',
+    tps[0] && cp.tp1_y_pct != null ? sigOvLineHTML('TP1 '+sigOvShortLevel(tps[0].level), cp.tp1_y_pct, 'var(--win)') : '',
+    tps[1] && cp.tp2_y_pct != null ? sigOvLineHTML('TP2 '+sigOvShortLevel(tps[1].level), cp.tp2_y_pct, 'var(--win)') : '',
+    tps[2] && cp.tp3_y_pct != null ? sigOvLineHTML('TP3 '+sigOvShortLevel(tps[2].level), cp.tp3_y_pct, 'var(--win)') : ''
+  ].filter(Boolean);
+  if(!pieces.length){
+    showToast("SciFe couldn't confidently place any level on this chart image — try re-analyzing.");
+    return;
+  }
+  btn.disabled = true;
+  const origLabel = btn.textContent;
+  btn.textContent = 'Rendering…';
+  try{
+    const brightness = await computeImageBrightness(imgEl.currentSrc || imgEl.src);
+    const halo = brightness < 130 ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.72)'; // dark chart -> light glow, light chart -> dark glow
+    const overlay = document.createElement('div');
+    overlay.className = 'sig-analysis-overlay';
+    overlay.style.setProperty('--ov-halo', halo);
+    overlay.innerHTML = pieces.join('');
+    frame.appendChild(overlay);
+    thumb.classList.add('overlay-on');
+    btn.textContent = '🙈 Hide chart overlay';
+  }catch(e){
+    showToast("Couldn't build the chart overlay");
+    btn.textContent = origLabel;
+  }finally{
+    btn.disabled = false;
+  }
+}
+
 let lastSignal = null; // { result, strategy, styleKey, pair } — feeds "Place on Order Book"
 function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   const biasClass = ['long','short','no_trade'].includes(r.bias) ? r.bias : 'no_trade';
@@ -2876,6 +2997,31 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
     const fill = el.querySelector('.sig-confbar-fill');
     if(fill) requestAnimationFrame(()=>{ fill.style.width = fill.dataset.target + '%'; });
   });
+  // "Draw analysis on chart" toggle — only worth offering when there's an
+  // actual chart image sitting in the thumbnail to draw on top of. Any
+  // overlay/toggle left over from a previous analysis of this same image
+  // is torn down first, since re-running analysis can return different
+  // coordinates that the stale overlay wouldn't reflect.
+  const thumb = document.getElementById('sigChartThumb');
+  if(thumb){
+    const oldOverlay = thumb.querySelector('.sig-analysis-overlay');
+    if(oldOverlay) oldOverlay.remove();
+    thumb.classList.remove('overlay-on');
+    const oldToggle = thumb.querySelector('.sig-overlay-toggle');
+    if(oldToggle) oldToggle.remove();
+    if(biasClass !== 'no_trade'){
+      const frame = thumb.querySelector('.sig-scan-frame');
+      const removeBtn = thumb.querySelector('.sig-chart-remove');
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn-ghost sig-overlay-toggle';
+      toggleBtn.textContent = '📐 Draw analysis on chart';
+      toggleBtn.onclick = function(){ toggleChartOverlay(toggleBtn); };
+      if(removeBtn) thumb.insertBefore(toggleBtn, removeBtn);
+      else if(frame) frame.after(toggleBtn);
+      else thumb.appendChild(toggleBtn);
+    }
+  }
   el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 function copySignalSummary(btn){
