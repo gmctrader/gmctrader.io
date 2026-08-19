@@ -442,7 +442,7 @@ body{position:relative;}
 .sig-chart-expand{margin-top:8px;width:auto;padding:6px 12px;font-size:12px;border-radius:8px;}
 /* ---- chart lightbox: enlarged, close-up view of the (optionally scanned)
    chart image, reusing the same .overlay/.modal scaffolding as settings ---- */
-.chart-lightbox-modal{max-width:min(94vw, 920px);width:100%;padding:20px;max-height:92vh;overflow-x:hidden;}
+.chart-lightbox-modal{max-width:min(97vw, 1480px);width:100%;padding:18px;max-height:96vh;overflow-x:hidden;}
 /* The close button is pinned to the VIEWPORT (not the modal's scroll box) so
    it can never scroll out of reach on a tall chart image, and sits on its
    own stacking layer above everything else in the lightbox. */
@@ -451,8 +451,10 @@ body{position:relative;}
   background:var(--panel-solid);box-shadow:0 6px 18px -4px rgba(0,0,0,0.6);}
 .chart-lightbox-overlay{z-index:99999;pointer-events:auto;}
 .chart-lightbox-overlay .modal{pointer-events:auto;}
-.chart-lightbox-imgwrap{position:relative;display:block;max-width:100%;line-height:0;border-radius:12px;overflow:hidden;}
-.chart-lightbox-imgwrap img{display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
+.chart-lightbox-stage{display:flex;align-items:stretch;gap:0;position:relative;}
+.chart-lightbox-imgwrap{position:relative;display:block;flex:1 1 auto;min-width:0;line-height:0;border-radius:12px;overflow:hidden;}
+.chart-lightbox-imgwrap img{display:block;width:100%;max-height:90vh;object-fit:contain;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
+@media (min-width:640px){ .chart-lightbox-modal{padding:24px;} }
 .sig-style-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
   padding:4px 10px;border-radius:99px;background:rgba(45,212,168,0.12);color:var(--bronze-bright);border:1px solid rgba(45,212,168,0.3);margin-left:8px;}
 .sig-level-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--steel);gap:12px;}
@@ -512,22 +514,42 @@ body{position:relative;}
    the same colors stay legible whether the trader's chart is a bright
    white-background platform or a near-black one. ---- */
 .sig-overlay-toggle{margin-top:8px;width:auto;padding:7px 13px;font-size:12px;border-radius:8px;display:inline-flex;}
-.sig-analysis-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;transition:opacity .3s ease;}
+/* ---- overlay stage: chart image + a dedicated "rail" to its right that
+   holds every text label. Shapes (lines/zones/trendlines) are drawn ON the
+   chart with NO embedded text, so nothing ever sits on top of candles —
+   every label lives in the rail and points back to its level with a thin
+   leader line, the way a real trading platform's price-scale annotations
+   work. The rail only claims space once the overlay is switched on. ---- */
+.sig-ov-stage{display:flex;align-items:stretch;gap:0;position:relative;}
+.sig-ov-rail{flex:0 0 0;width:0;position:relative;overflow:visible;transition:flex-basis .25s ease, width .25s ease, margin-left .25s ease;}
+.sig-chart-thumb.overlay-on .sig-ov-rail,
+.chart-lightbox-stage.rail-on .sig-ov-rail{flex:0 0 112px;width:112px;margin-left:10px;}
+@media (min-width:520px){
+  .sig-chart-thumb.overlay-on .sig-ov-rail,
+  .chart-lightbox-stage.rail-on .sig-ov-rail{flex-basis:128px;width:128px;}
+}
+@media (min-width:820px){ .chart-lightbox-stage.rail-on .sig-ov-rail{flex-basis:150px;width:150px;margin-left:14px;} }
+.sig-ov-rail-chip{position:absolute;left:0;right:0;top:0;transform:translateY(-50%);display:flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;
+  letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+  background:var(--ov-color, var(--gold));color:#04070a;cursor:default;
+  box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55)), 0 2px 8px rgba(0,0,0,.55);
+  opacity:0;animation:sigOvChipIn .3s ease forwards;}
+@keyframes sigOvChipIn{to{opacity:1;}}
+.sig-ov-rail-chip .dot{width:5px;height:5px;border-radius:50%;background:#04070a;opacity:.5;flex:none;}
+.sig-ov-leader-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:visible;}
+.sig-ov-leader-svg line{stroke-width:1.25;stroke-dasharray:1.5 3;opacity:.8;}
+.sig-analysis-overlay{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .3s ease;}
 .sig-chart-thumb.overlay-on .sig-analysis-overlay{opacity:1;}
-.sig-ov-zone{position:absolute;left:58%;width:39%;pointer-events:none;
+.sig-ov-zone{position:absolute;left:58%;width:39%;pointer-events:none;border-radius:2px;
   background:var(--ov-zonebg, rgba(242,200,119,0.14));
   border-top:1.5px dashed var(--ov-color, var(--gold));border-bottom:1.5px dashed var(--ov-color, var(--gold));
   border-left:1.5px dashed var(--ov-color, var(--gold));border-right:1.5px dashed var(--ov-color, var(--gold));}
 .sig-ov-line{position:absolute;left:58%;width:39%;top:0;height:0;border-top:2px solid var(--ov-color, var(--gold));
   filter:drop-shadow(0 0 3px var(--ov-halo,rgba(0,0,0,.65))) drop-shadow(0 0 5px var(--ov-halo,rgba(0,0,0,.35)));}
-.sig-ov-tag{position:absolute;right:6px;top:-10px;transform:translateY(-50%);
-  background:var(--ov-color, var(--gold));color:#04070a;font-family:'IBM Plex Mono',monospace;
-  font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:3px 7px;border-radius:5px;white-space:nowrap;
-  box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55)), 0 2px 8px rgba(0,0,0,.55);}
-.sig-ov-zone-tag{position:absolute;left:6px;top:2px;background:var(--ov-color, var(--gold));color:#04070a;
-  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
-  padding:2px 6px;border-radius:4px;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55));}
 .sig-ov-line.dashed{border-top-style:dashed;}
+.sig-ov-anchor-dot{position:absolute;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);
+  background:var(--ov-color, var(--gold));box-shadow:0 0 0 2px rgba(4,7,10,.7), 0 0 6px var(--ov-color, var(--gold));}
 .sig-ov-vband{position:absolute;top:0;bottom:0;pointer-events:none;
   background:var(--ov-zonebg, rgba(143,166,160,0.10));
   border-left:1.5px dashed var(--ov-color, var(--slate));border-right:1.5px dashed var(--ov-color, var(--slate));}
@@ -536,15 +558,14 @@ body{position:relative;}
   padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55));}
 .sig-ov-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
 .sig-ov-svg line{filter:drop-shadow(0 0 3px var(--ov-halo,rgba(0,0,0,.65)));}
-.sig-ov-point-tag{position:absolute;transform:translate(-50%,-50%);background:var(--ov-color, var(--platinum));
-  color:#04070a;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.02em;
-  padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 0 0 1.5px var(--ov-halo,rgba(0,0,0,.55)), 0 2px 6px rgba(0,0,0,.5);}
 .sig-ov-dot{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);
   background:var(--ov-color, var(--platinum));box-shadow:0 0 0 2px rgba(4,7,10,.75), 0 0 0 3.5px var(--ov-halo,rgba(0,0,0,.5)), 0 0 6px var(--ov-color, var(--platinum));}
-.sig-ov-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px;}
+.sig-ov-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:10px;}
 .sig-chart-thumb:not(.overlay-on) .sig-ov-legend{display:none;}
 .sig-ov-legend-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--slate);font-family:'IBM Plex Mono',monospace;}
 .sig-ov-legend-chip .sw{width:9px;height:9px;border-radius:3px;flex:none;background:var(--sw-color);}
+.sig-ov-style-note{font-size:11px;color:var(--slate-dim);margin-top:6px;font-style:italic;}
+.sig-chart-thumb:not(.overlay-on) .sig-ov-style-note{display:none;}
 
 /* ---- redesigned results panel ---- */
 .sig-result-card{position:relative;border-radius:var(--r-lg);overflow:hidden;padding:24px 20px 22px;
@@ -943,7 +964,11 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   <div class="modal chart-lightbox-modal" role="dialog" aria-modal="true" aria-labelledby="chartLightboxTitle">
     <button class="modal-close" id="chartLightboxCloseBtn" onclick="closeChartLightbox();return false;" aria-label="Exit full-size chart view">✕</button>
     <h3 class="serif" id="chartLightboxTitle" style="font-size:16px;">Chart — full size</h3>
-    <div class="chart-lightbox-imgwrap" id="chartLightboxImgWrap"></div>
+    <div class="chart-lightbox-stage" id="chartLightboxStage">
+      <div class="chart-lightbox-imgwrap" id="chartLightboxImgWrap"></div>
+      <div class="sig-ov-rail" id="chartLightboxRail"></div>
+    </div>
+    <div class="sig-ov-legend" id="chartLightboxLegend" style="display:none;"></div>
     <button type="button" class="btn-ghost" style="width:100%;margin-top:14px;" onclick="closeChartLightbox();return false;">Close</button>
   </div>
 </div>
@@ -2654,11 +2679,14 @@ function onChartFileChange(e){
       sha256Hex(sigChartImage.data).then(h=>{ if(sigChartImage) sigChartImage.hash = h; });
       document.getElementById('sig_chartPreview').innerHTML = `
         <div class="sig-chart-thumb" id="sigChartThumb">
-          <div class="sig-scan-frame">
-            <img src="${outDataUrl}" alt="Uploaded chart">
-            <div class="sig-scan-sweep"></div>
-            <div class="sig-scan-hud"><i></i><i></i><i></i><i></i></div>
-            <div class="sig-scan-readout"><span class="dot"></span>READING CHART…</div>
+          <div class="sig-ov-stage" id="sigOvStage">
+            <div class="sig-scan-frame">
+              <img src="${outDataUrl}" alt="Uploaded chart">
+              <div class="sig-scan-sweep"></div>
+              <div class="sig-scan-hud"><i></i><i></i><i></i><i></i></div>
+              <div class="sig-scan-readout"><span class="dot"></span>READING CHART…</div>
+            </div>
+            <div class="sig-ov-rail" id="sigOvRail"></div>
           </div>
           <button type="button" class="btn-ghost sig-chart-expand" onclick="openChartLightbox()">🔍 View full size</button>
           <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
@@ -2687,15 +2715,37 @@ function openChartLightbox(){
   const frame = thumb && thumb.querySelector('.sig-scan-frame');
   const imgEl = frame && frame.querySelector('img');
   if(!imgEl){ showToast('No chart image to view'); return; }
+  const stage = document.getElementById('chartLightboxStage');
   const wrap = document.getElementById('chartLightboxImgWrap');
-  const liveOverlay = thumb.classList.contains('overlay-on') ? thumb.querySelector('.sig-analysis-overlay') : null;
-  wrap.innerHTML = `<img src="${imgEl.currentSrc || imgEl.src}" alt="Chart, enlarged">`
+  const rail = document.getElementById('chartLightboxRail');
+  const legendBox = document.getElementById('chartLightboxLegend');
+  const overlayOn = thumb.classList.contains('overlay-on');
+  const liveOverlay = overlayOn ? thumb.querySelector('.sig-analysis-overlay') : null;
+  const liveRail = overlayOn ? document.getElementById('sigOvRail') : null;
+  const liveLegend = overlayOn ? thumb.querySelector('.sig-ov-legend') : null;
+  const src = imgEl.currentSrc || imgEl.src;
+  wrap.innerHTML = `<img id="chartLightboxImg" src="${src}" alt="Chart, enlarged">`
     + (liveOverlay ? `<div class="sig-analysis-overlay" style="opacity:1;">${liveOverlay.innerHTML}</div>` : '');
+  rail.innerHTML = liveRail ? liveRail.innerHTML : '';
+  stage.classList.toggle('rail-on', !!(liveRail && liveRail.innerHTML));
+  if(legendBox){
+    legendBox.innerHTML = liveLegend ? liveLegend.innerHTML : '';
+    legendBox.style.display = liveLegend ? 'flex' : 'none';
+  }
   document.getElementById('chartLightboxOverlay').classList.add('show');
+  const relayout = ()=>resolveOverlayRail(stage, wrap, rail);
+  const imgTag = document.getElementById('chartLightboxImg');
+  if(imgTag && imgTag.complete) relayout(); else if(imgTag) imgTag.onload = relayout;
+  requestAnimationFrame(relayout); // covers the no-overlay / already-cached case
+  window.addEventListener('resize', relayout);
+  document.getElementById('chartLightboxOverlay')._relayout = relayout;
 }
 function closeChartLightbox(){
   const overlay = document.getElementById('chartLightboxOverlay');
-  if(overlay) overlay.classList.remove('show');
+  if(overlay){
+    overlay.classList.remove('show');
+    if(overlay._relayout) window.removeEventListener('resize', overlay._relayout);
+  }
 }
 // Defensive backup binding — guarantees the close button works even if the
 // inline onclick attribute is ever stripped by a host page/CSP. Runs once,
@@ -2922,6 +2972,62 @@ function sigOvShortLevel(v){
   return s.length > 16 ? s.slice(0,16)+'…' : s;
 }
 function sigOvClamp(n){ return Math.max(0, Math.min(100, n)); }
+// ---- rail label system: text never sits on the chart. Every labeled
+// shape gets a small anchor dot on the chart, plus a chip in the rail
+// (positioned via data-y-pct) connected back to that dot with a leader
+// line. resolveOverlayRail() runs a top-to-bottom decluttering pass so
+// chips never overlap each other, however tightly the levels are packed.
+function sigOvRailChipHTML(label, yPct, colorVar){
+  if(yPct==null || isNaN(yPct)) return '';
+  return `<div class="sig-ov-rail-chip" data-y-pct="${sigOvClamp(yPct)}" data-color="${colorVar}" title="${sigEsc(label)}"><span class="dot"></span>${sigEsc(sigOvShortLevel(label))}</div>`;
+}
+function sigOvAnchorDotHTML(xPct, yPct, colorVar){
+  if(xPct==null || yPct==null || isNaN(xPct) || isNaN(yPct)) return '';
+  return `<div class="sig-ov-anchor-dot" style="left:${sigOvClamp(xPct)}%;top:${sigOvClamp(yPct)}%;--ov-color:${colorVar};"></div>`;
+}
+function resolveOverlayRail(stageEl, frameEl, railEl){
+  if(!stageEl || !frameEl || !railEl) return;
+  const H = frameEl.getBoundingClientRect().height;
+  const oldSvg = stageEl.querySelector('.sig-ov-leader-svg');
+  if(oldSvg) oldSvg.remove();
+  if(!H) return;
+  railEl.style.height = H + 'px';
+  const chips = Array.from(railEl.querySelectorAll('.sig-ov-rail-chip'));
+  if(!chips.length) return;
+  const CHIP_GAP = 21; // min px between chip centers
+  let items = chips.map(c => ({ el:c, y: (parseFloat(c.dataset.yPct)||0)/100*H }));
+  items.sort((a,b)=>a.y-b.y);
+  for(let i=1;i<items.length;i++){
+    if(items[i].y - items[i-1].y < CHIP_GAP) items[i].y = items[i-1].y + CHIP_GAP;
+  }
+  const first = items[0].y, last = items[items.length-1].y, span = last-first, avail = Math.max(0, H-16);
+  if(span > avail && span > 0){
+    const scale = avail/span;
+    items.forEach(it=>{ it.y = 8 + (it.y-first)*scale; });
+  }else{
+    const overshoot = last - (H-8);
+    if(overshoot > 0) items.forEach(it=>it.y -= overshoot);
+    const undershoot = 8 - items[0].y;
+    if(undershoot > 0) items.forEach(it=>it.y += undershoot);
+  }
+  items.forEach(it=>{ it.el.style.top = it.y+'px'; });
+  // leader lines: chart-edge anchor -> rail chip, drawn in stage-local px
+  const stageRect = stageEl.getBoundingClientRect();
+  const frameRect = frameEl.getBoundingClientRect();
+  const lines = items.map(it=>{
+    const yPct = parseFloat(it.el.dataset.yPct)||0;
+    const color = it.el.dataset.color || 'var(--gold)';
+    const ax = frameRect.right - stageRect.left, ay = frameRect.top - stageRect.top + (yPct/100)*frameRect.height;
+    const cx = it.el.getBoundingClientRect().left - stageRect.left, cy = frameRect.top - stageRect.top + it.y;
+    return `<line x1="${ax}" y1="${ay}" x2="${cx}" y2="${cy}" style="stroke:${color}"/><circle cx="${ax}" cy="${ay}" r="2.2" style="fill:${color}"/>`;
+  }).join('');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','sig-ov-leader-svg');
+  svg.setAttribute('width', String(stageRect.width));
+  svg.setAttribute('height', String(stageRect.height));
+  svg.innerHTML = lines;
+  stageEl.appendChild(svg);
+}
 function computeImageBrightness(dataUrl){
   return new Promise((resolve)=>{
     try{
@@ -2961,17 +3067,19 @@ function sigOvXBounds(x1Pct, x2Pct){
   const left = Math.min(x1, x2), right = Math.max(x1, x2);
   return { left, width: Math.max(2, right - left) };
 }
-function sigOvLineHTML(label, yPct, colorVar, dashed, x1Pct, x2Pct){
+function sigOvLineHTML(yPct, colorVar, dashed, x1Pct, x2Pct){
   if(yPct==null || isNaN(yPct)) return '';
   const { left, width } = sigOvXBounds(x1Pct, x2Pct);
-  return `<div class="sig-ov-line${dashed?' dashed':''}" style="top:${sigOvClamp(yPct)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};"><span class="sig-ov-tag">${sigEsc(label)}</span></div>`;
+  const anchorX = left + width; // right edge of the segment — where the leader line starts
+  return `<div class="sig-ov-line${dashed?' dashed':''}" style="top:${sigOvClamp(yPct)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};"></div>` + sigOvAnchorDotHTML(anchorX, yPct, colorVar);
 }
-function sigOvZoneHTML(label, topPct, botPct, colorVar, bgVar, x1Pct, x2Pct){
+function sigOvZoneHTML(topPct, botPct, colorVar, bgVar, x1Pct, x2Pct){
   if(topPct==null || botPct==null || isNaN(topPct) || isNaN(botPct)) return '';
   const top = sigOvClamp(Math.min(topPct, botPct));
   const bot = sigOvClamp(Math.max(topPct, botPct));
   const { left, width } = sigOvXBounds(x1Pct, x2Pct);
-  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0.6, bot-top)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-zone-tag">${sigEsc(label)}</span></div>`;
+  const anchorX = left + width, anchorY = (top+bot)/2;
+  return `<div class="sig-ov-zone" style="top:${top}%;height:${Math.max(0.6, bot-top)}%;left:${left}%;width:${width}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"></div>` + sigOvAnchorDotHTML(anchorX, anchorY, colorVar);
 }
 function sigOvVBandHTML(label, x1Pct, x2Pct, colorVar, bgVar){
   if(x1Pct==null || x2Pct==null || isNaN(x1Pct) || isNaN(x2Pct)) return '';
@@ -2979,13 +3087,12 @@ function sigOvVBandHTML(label, x1Pct, x2Pct, colorVar, bgVar){
   const right = sigOvClamp(Math.max(x1Pct, x2Pct));
   return `<div class="sig-ov-vband" style="left:${left}%;width:${Math.max(0.6, right-left)}%;--ov-color:${colorVar};--ov-zonebg:${bgVar};"><span class="sig-ov-vband-tag">${sigEsc(label)}</span></div>`;
 }
-function sigOvTrendlineHTML(label, x1, y1, x2, y2, colorVar){
+function sigOvTrendlineHTML(x1, y1, x2, y2, colorVar){
   if([x1,y1,x2,y2].some(v=>v==null || isNaN(v))) return '';
   x1=sigOvClamp(x1); y1=sigOvClamp(y1); x2=sigOvClamp(x2); y2=sigOvClamp(y2);
   const svg = `<svg class="sig-ov-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorVar}" stroke-width="0.6" vector-effect="non-scaling-stroke"/></svg>`;
-  const midX = (x1+x2)/2, midY = (y1+y2)/2;
-  const tag = `<span class="sig-ov-point-tag" style="left:${midX}%;top:${midY}%;--ov-color:${colorVar};">${sigEsc(label)}</span>`;
-  return svg + tag;
+  const endX = Math.max(x1,x2), endY = x1>x2 ? y1 : y2; // anchor at the rightmost point of the break
+  return svg + sigOvAnchorDotHTML(endX, endY, colorVar);
 }
 // Which checklist ids can be drawn, what shape they need, and what color
 // category they belong to. Ids not listed here (fibonacci/ote — already
@@ -3024,22 +3131,38 @@ const SIG_MARKER_STYLES = {
   macross:{cat:'MA Cross', kind:'point', color:'var(--gold-bright)'},
   volume:{cat:'Volume Confirmation', kind:'vband', color:'var(--slate)', bg:'rgba(143,166,160,0.14)'}
 };
-function sigOvPointHTML(label, xPct, yPct, colorVar){
+function sigOvPointHTML(xPct, yPct, colorVar){
   if(xPct==null || yPct==null || isNaN(xPct) || isNaN(yPct)) return '';
   const x = sigOvClamp(xPct), y = sigOvClamp(yPct);
-  const dot = `<div class="sig-ov-dot" style="left:${x}%;top:${y}%;--ov-color:${colorVar};"></div>`;
-  const tag = `<span class="sig-ov-point-tag" style="left:${x}%;top:${y}%;--ov-color:${colorVar};transform:translate(-50%, 9px);">${sigEsc(label)}</span>`;
-  return dot + tag;
+  return `<div class="sig-ov-dot" style="left:${x}%;top:${y}%;--ov-color:${colorVar};"></div>`;
 }
+// Returns {shape, rail}: shape is the HTML drawn ON the chart (no text —
+// ever), rail is the matching labeled chip HTML for the side rail. This
+// split is what keeps every label off the candles: shapes mark WHERE,
+// the rail says WHAT, and a leader line (drawn later, once real pixel
+// positions are known) ties the two together.
 function sigOvMarkerHTML(id, label, m){
   const style = SIG_MARKER_STYLES[id];
-  if(!style || !m) return '';
-  if(style.kind === 'hline') return sigOvLineHTML(label, m.y_pct, style.color, style.dashed, m.x1_pct, m.x2_pct);
-  if(style.kind === 'zone') return sigOvZoneHTML(label, m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct);
-  if(style.kind === 'vband') return sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg);
-  if(style.kind === 'trendline') return sigOvTrendlineHTML(label, m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color);
-  if(style.kind === 'point') return sigOvPointHTML(label, m.x1_pct, m.y_pct, style.color);
-  return '';
+  if(!style || !m) return { shape:'', rail:'' };
+  if(style.kind === 'hline'){
+    return { shape: sigOvLineHTML(m.y_pct, style.color, style.dashed, m.x1_pct, m.x2_pct),
+             rail: sigOvRailChipHTML(label, m.y_pct, style.color) };
+  }
+  if(style.kind === 'zone'){
+    const mid = (m.y_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y_pct)+parseFloat(m.y2_pct))/2 : m.y_pct;
+    return { shape: sigOvZoneHTML(m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct),
+             rail: sigOvRailChipHTML(label, mid, style.color) };
+  }
+  if(style.kind === 'vband') return { shape: sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg), rail:'' };
+  if(style.kind === 'trendline'){
+    const mid = (m.y1_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(m.y2_pct))/2 : m.y1_pct;
+    return { shape: sigOvTrendlineHTML(m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color),
+             rail: sigOvRailChipHTML(label, mid, style.color) };
+  }
+  if(style.kind === 'point'){
+    return { shape: sigOvPointHTML(m.x1_pct, m.y_pct, style.color), rail: sigOvRailChipHTML(label, m.y_pct, style.color) };
+  }
+  return { shape:'', rail:'' };
 }
 function sigOvLegendHTML(categoriesUsed){
   if(!categoriesUsed.size) return '';
@@ -3047,14 +3170,26 @@ function sigOvLegendHTML(categoriesUsed){
     `<span class="sig-ov-legend-chip"><span class="sw" style="--sw-color:${color};"></span>${sigEsc(cat)}</span>`).join('');
   return `<div class="sig-ov-legend">${chips}</div>`;
 }
+// Which structure concepts actually get drawn is already scoped correctly
+// by strategy (SIGNAL_LOGIC_SETS/SIG_MARKER_STYLES, keyed by GMC/SMC/ICT/TA
+// id — a scalp SMC read never pulls in TA indicator markers, etc). This
+// note just makes that visible to the trader on the chart itself, and
+// flags the R:R lens the levels were judged against.
+function sigOvStyleNoteHTML(styleKey){
+  const st = SIGNAL_TRADE_STYLES[styleKey] || SIGNAL_TRADE_STYLES.intraday;
+  return `<div class="sig-ov-style-note">📐 Drawn for a <strong style="color:var(--bronze-bright);font-style:normal;">${sigEsc(st.label)}</strong> read — targets judged against a ${sigEsc(st.tpRange)}R lens.</div>`;
+}
 async function toggleChartOverlay(btn){
   const thumb = document.getElementById('sigChartThumb');
+  const stage = document.getElementById('sigOvStage');
   const frame = thumb && thumb.querySelector('.sig-scan-frame');
-  if(!thumb || !frame) return;
+  const rail = document.getElementById('sigOvRail');
+  if(!thumb || !frame || !stage || !rail) return;
   const existing = thumb.querySelector('.sig-analysis-overlay');
   if(existing){
     const on = thumb.classList.toggle('overlay-on');
     btn.textContent = on ? '🙈 Hide chart overlay' : '📐 Draw analysis on chart';
+    if(on) requestAnimationFrame(()=>resolveOverlayRail(stage, frame, rail));
     return;
   }
   if(!lastSignal || !lastSignal.result){ showToast('No analysis to draw yet'); return; }
@@ -3065,18 +3200,24 @@ async function toggleChartOverlay(btn){
   const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
   const legendCats = new Map(); // category label -> color, de-duped, insertion order
   const setupX1 = cp.setup_x1_pct, setupX2 = cp.setup_x2_pct;
-  const pieces = [
-    sigOvZoneHTML('OTE', cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)', setupX1, setupX2),
-    r.entry && cp.entry_y_pct != null ? sigOvLineHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)', false, setupX1, setupX2) : '',
-    r.stop_loss && cp.stop_loss_y_pct != null ? sigOvLineHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)', false, setupX1, setupX2) : '',
-    tps[0] && cp.tp1_y_pct != null ? sigOvLineHTML('TP1 '+sigOvShortLevel(tps[0].level), cp.tp1_y_pct, 'var(--win)', false, setupX1, setupX2) : '',
-    tps[1] && cp.tp2_y_pct != null ? sigOvLineHTML('TP2 '+sigOvShortLevel(tps[1].level), cp.tp2_y_pct, 'var(--win)', false, setupX1, setupX2) : '',
-    tps[2] && cp.tp3_y_pct != null ? sigOvLineHTML('TP3 '+sigOvShortLevel(tps[2].level), cp.tp3_y_pct, 'var(--win)', false, setupX1, setupX2) : ''
-  ].filter(Boolean);
-  if(cp.fib_top_y_pct != null && cp.fib_bottom_y_pct != null) legendCats.set('Entry / SL / TP / OTE', 'var(--gold)');
-  else if(pieces.length) legendCats.set('Entry / SL / TP', 'var(--gold-bright)');
+  const shapes = [], railChips = [];
+  const addPiece = (shape, rail_, cat, color)=>{ if(shape){ shapes.push(shape); if(rail_) railChips.push(rail_); if(cat) legendCats.set(cat, color); } };
+  if(cp.fib_top_y_pct != null && cp.fib_bottom_y_pct != null){
+    const mid = (parseFloat(cp.fib_top_y_pct)+parseFloat(cp.fib_bottom_y_pct))/2;
+    addPiece(sigOvZoneHTML(cp.fib_top_y_pct, cp.fib_bottom_y_pct, 'var(--gold)', 'rgba(242,200,119,0.14)', setupX1, setupX2),
+      sigOvRailChipHTML('OTE / Fib zone', mid, 'var(--gold)'), 'Fibonacci OTE zone', 'var(--gold)');
+  }
+  if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--gold-bright)', false, setupX1, setupX2),
+    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)'), 'Entry / SL / TP', 'var(--gold-bright)');
+  if(r.stop_loss && cp.stop_loss_y_pct != null) addPiece(sigOvLineHTML(cp.stop_loss_y_pct, 'var(--loss-bright)', false, setupX1, setupX2),
+    sigOvRailChipHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)'), 'Entry / SL / TP', 'var(--gold-bright)');
+  [['tp1_y_pct',0],['tp2_y_pct',1],['tp3_y_pct',2]].forEach(([key,i])=>{
+    if(tps[i] && cp[key] != null) addPiece(sigOvLineHTML(cp[key], 'var(--win)', false, setupX1, setupX2),
+      sigOvRailChipHTML('TP'+(i+1)+' '+sigOvShortLevel(tps[i].level), cp[key], 'var(--win)'), 'Entry / SL / TP', 'var(--gold-bright)');
+  });
   // Structure markers: only for checklist items the model actually marked
-  // "present" AND returned a matching, locatable chart_markers entry.
+  // "present" AND returned a matching, locatable chart_markers entry —
+  // already scoped to whichever strategy (GMC/SMC/ICT/TA) the trader picked.
   const checklist = Array.isArray(r.checklist) ? r.checklist : [];
   const markers = Array.isArray(r.chart_markers) ? r.chart_markers : [];
   const markerById = {};
@@ -3087,11 +3228,11 @@ async function toggleChartOverlay(btn){
     const style = SIG_MARKER_STYLES[c.id];
     if(!style) return; // not a drawable concept (e.g. swings, fibonacci) — expected, not a gap
     const m = markerById[c.id];
-    const html = m ? sigOvMarkerHTML(c.id, (c.label || c.id || '').toUpperCase(), m) : '';
-    if(html){ pieces.push(html); legendCats.set(style.cat, style.color); }
+    const built = m ? sigOvMarkerHTML(c.id, (c.label || c.id || '').toUpperCase(), m) : null;
+    if(built && built.shape) addPiece(built.shape, built.rail, style.cat, style.color);
     else missingCount++;
   });
-  if(!pieces.length){
+  if(!shapes.length){
     showToast("SciFe couldn't confidently place anything from this read on the chart image — try re-analyzing.");
     return;
   }
@@ -3104,12 +3245,16 @@ async function toggleChartOverlay(btn){
     const overlay = document.createElement('div');
     overlay.className = 'sig-analysis-overlay';
     overlay.style.setProperty('--ov-halo', halo);
-    overlay.innerHTML = pieces.join('');
+    overlay.innerHTML = shapes.join('');
     frame.appendChild(overlay);
+    rail.innerHTML = railChips.join('');
     const legendEl = thumb.querySelector('.sig-ov-legend');
     const legendHTML = sigOvLegendHTML(legendCats);
     if(legendEl) legendEl.outerHTML = legendHTML;
-    else if(legendHTML) frame.insertAdjacentHTML('afterend', legendHTML);
+    else if(legendHTML) stage.insertAdjacentHTML('afterend', legendHTML);
+    const oldNote = thumb.querySelector('.sig-ov-style-note');
+    if(oldNote) oldNote.remove();
+    (thumb.querySelector('.sig-ov-legend') || stage).insertAdjacentHTML('afterend', sigOvStyleNoteHTML(lastSignal.styleKey));
     const oldMissingNote = thumb.querySelector('.sig-ov-missing-note');
     if(oldMissingNote) oldMissingNote.remove();
     if(missingCount > 0){
@@ -3117,10 +3262,11 @@ async function toggleChartOverlay(btn){
       note.className = 'hint sig-ov-missing-note';
       note.style.marginTop = '6px';
       note.textContent = `${missingCount} confluence${missingCount>1?'s':''} marked present but couldn't be precisely located on this image, so ${missingCount>1?"they aren't":"it isn't"} drawn.`;
-      (thumb.querySelector('.sig-ov-legend') || frame).after(note);
+      (thumb.querySelector('.sig-ov-style-note') || stage).after(note);
     }
     thumb.classList.add('overlay-on');
     btn.textContent = '🙈 Hide chart overlay';
+    requestAnimationFrame(()=>resolveOverlayRail(stage, frame, rail));
   }catch(e){
     showToast("Couldn't build the chart overlay");
     btn.textContent = origLabel;
