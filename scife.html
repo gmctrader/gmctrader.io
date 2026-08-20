@@ -495,6 +495,24 @@ body{position:relative;}
 .chart-lightbox-frame{position:relative;display:inline-block;line-height:0;max-width:100%;}
 .chart-lightbox-frame img{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;border-radius:12px;border:1px solid var(--steel-hi);background:#000;}
 @media (min-width:640px){ .chart-lightbox-modal{padding:24px;} }
+/* ---- "What's your read?" long/unsure/short toggle — was firing correctly
+   in JS (setTraderBias) but had NO css at all, so the three <button>s just
+   sat there as unstyled inline default buttons with no active-state
+   feedback: clicking one did nothing visible, which read as "broken". ---- */
+.sig-bias-toggle{display:flex;gap:8px;}
+.sig-bias-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 10px;border-radius:11px;border:1px solid var(--steel);background:var(--panel);
+  color:var(--slate);font-family:inherit;font-size:13px;font-weight:650;cursor:pointer;
+  transition:background .15s, border-color .15s, color .15s, transform .15s;}
+.sig-bias-opt:hover{color:var(--platinum);border-color:var(--steel-hi);}
+.sig-bias-opt:active{transform:scale(.97);}
+.sig-bias-opt-dot{width:7px;height:7px;border-radius:50%;background:var(--slate-dim);flex:none;transition:background .15s, box-shadow .15s;}
+.sig-bias-opt[data-val="long"].active{background:rgba(43,224,138,0.14);border-color:rgba(43,224,138,0.45);color:var(--win);}
+.sig-bias-opt[data-val="long"].active .sig-bias-opt-dot{background:var(--win);box-shadow:0 0 8px var(--win);}
+.sig-bias-opt[data-val="short"].active{background:rgba(255,93,122,0.14);border-color:rgba(255,93,122,0.45);color:var(--loss-bright);}
+.sig-bias-opt[data-val="short"].active .sig-bias-opt-dot{background:var(--loss-bright);box-shadow:0 0 8px var(--loss-bright);}
+.sig-bias-opt[data-val="unsure"].active{background:rgba(240,169,78,0.14);border-color:rgba(240,169,78,0.45);color:var(--amber);}
+.sig-bias-opt[data-val="unsure"].active .sig-bias-opt-dot{background:var(--amber);box-shadow:0 0 8px var(--amber);}
 .sig-style-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
   padding:4px 10px;border-radius:99px;background:rgba(45,212,168,0.12);color:var(--bronze-bright);border:1px solid rgba(45,212,168,0.3);margin-left:8px;}
 .sig-level-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--steel);gap:12px;}
@@ -2597,6 +2615,7 @@ const SIGNAL_LOGIC_DEFS = {
   geopolitical: 'Geopolitical Event — any relevant geopolitical development affecting this instrument, if known.',
   earnings: 'Earnings Report — a scheduled or recent earnings release, for equity/index instruments.'
 };
+const SIG_ORDER_TYPE_LABELS = { market:'Market', buy_limit:'Buy Limit', sell_limit:'Sell Limit', buy_stop:'Buy Stop', sell_stop:'Sell Stop' };
 let sigTraderBias = 'unsure';
 function setTraderBias(val){
   sigTraderBias = val;
@@ -2700,11 +2719,14 @@ ${summarizeStrategyPerformance(strategy.id)}
 ${summarizeEconomicCalendar()}
 Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this trade style.
 
-LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
+LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness, never round a trailing digit off for a "cleaner" number, and never collapse a precise level to the nearest round number just because it looks tidier. Copy the digits exactly as they read on the axis/candle, including trailing zeros. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
-FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Identify the current leg's real anchor points from the candles themselves, then state the resulting 0.618–0.79 zone (the "golden pocket"/OTE) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
+ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level. A vague or padded entry defeats the purpose of a precise read. Also decide and return "order_type": if price is already trading at/through the entry level right now, use "market"; if the entry level sits away from current price and the trade is waiting for price to come back to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. Don't default to "market" out of habit — most real sniper entries at a structural level ARE pending orders waiting for price to return, so actually judge current price against the entry level rather than assuming market.
+
+FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Use the standard retracement levels only — 0, 0.236, 0.382, 0.5, 0.618, 0.786, 1 (no extension levels like 1.618/2.618/3.618, those aren't part of this zone). Identify the current leg's real anchor points from the candles themselves (the exact swing high and swing low, not an approximation), then state the resulting 0.618–0.786 zone (the "golden pocket"/OTE, bounded by those exact two levels from the set above) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. Double-check the two anchor points against the actual candle wicks before committing to the zone — an OTE zone anchored a candle or two off from the real swing point is a common, avoidable error. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 ${hasImage ? `
 CHART OVERLAY POSITIONS: for every numeric level above (entry, stop_loss, each take-profit, and the fib zone edges if numeric), also read off its VERTICAL position on the actual uploaded image as a percentage of the image's total height measured from the TOP edge — 0 meaning the very top pixel row, 100 meaning the very bottom pixel row. Judge this the same way you judged the prices: against the chart's own visible price axis and candle positions, not a guess. Only fill in a "*_y_pct" field when you're genuinely confident of that placement; set it to null instead of guessing if you're not, or if the corresponding level itself wasn't numeric.
+PRECISION CHECK before finalizing any *_y_pct: cross-reference it against the price axis labels, not just "roughly where it looks right" — find the two nearest labeled price ticks above and below the level, and interpolate its y_pct proportionally between them the same way you'd read a ruler. A zone or line that's off by even one candle's height reads as "in the wrong place" to the trader even when the price value itself is correct, so this proportional check matters as much as getting the price number right. Apply the same tick-interpolation logic to the fib zone's top/bottom edges specifically — they must land exactly on the swing-high/swing-low candles you identified, not a few pixels off from them.
 Also give "setup_x1_pct" and "setup_x2_pct" — the HORIZONTAL span (0=left edge, 100=right edge of the image) that the entry/stop/target/fib lines should be drawn across. These must bound only the relevant candles for this setup (roughly from where it formed up to the current/rightmost candle) — NEVER the full image width. These lines are drawn as bounded segments, not infinite rays, so a real horizontal extent is required here, not a placeholder default.
 
 CHART MARKERS FOR CHECKLIST ITEMS: for EVERY checklist item you marked "present" whose id is in one of the groups below, add one matching entry to "chart_markers" — don't skip any of them; a "present" item with no marker just vanishes from the chart, so if you called it present, place it. Give ONLY the fields listed for that id's group, leave the rest null, and only include an entry at all if you can confidently place it (same 0–100 top-to-bottom / left-to-right percentage convention throughout, read directly off the chart — never guessed). SELF-CHECK BEFORE YOU ANSWER: for every checklist item you're about to mark "present" that belongs to one of the groups below, confirm you can actually give it real, non-null coordinates. If you can't confidently place it on the image, that's a sign your read of it is shakier than "present" implies — downgrade that item's status to "unclear" instead, and say why in its note. Never leave a checklist item marked "present" with no matching chart_markers entry when it belongs to a drawable group; a trader who sees something ticked in the checklist and then missing from the chart has no way to trust either one.
@@ -2718,7 +2740,7 @@ Never add a chart_markers entry for an id that isn't in one of those six groups,
 CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}`;
 }
 function extractJson(text){
@@ -2896,7 +2918,12 @@ async function analyzeSignal(){
   const memKey = chartMemoryKey(pair);
   scife.chartMemory = scife.chartMemory || {};
   const memEntry = scife.chartMemory[memKey];
-  if(sigChartImage && sigChartImage.hash && memEntry && memEntry.hash === sigChartImage.hash){
+  // Admins are exempt from the "same chart -> replay cached read" guard too —
+  // otherwise the weekly-limit and 24h-cooldown bypasses above meant nothing
+  // the moment an admin re-uploaded the identical image, since this cache hit
+  // would still silently short-circuit a real rescan and hand back the old
+  // result. Admin = always a genuine fresh model call, no exceptions.
+  if(!scife.usage.isAdmin && sigChartImage && sigChartImage.hash && memEntry && memEntry.hash === sigChartImage.hash){
     hideSkeleton();
     renderSignalResult(memEntry.result, strategy, styleKey, pair, null);
     showToast('Same chart as last scan — showing the same read (no coordinates changed)');
@@ -3444,8 +3471,8 @@ async function toggleChartOverlay(btn){
     addPiece(sigOvLineHTML(eq, 'var(--gold)', true, setupX1, setupX2),
       sigOvRailChipHTML('EQ 50%', eq, 'var(--gold)'), 'Premium / Discount', 'var(--gold)');
   }
-  if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--gold-bright)', false, setupX1, setupX2),
-    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--gold-bright)'), 'Entry / SL / TP', 'var(--gold-bright)');
+  if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--win)', false, setupX1, setupX2),
+    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--win)'), 'Entry / SL / TP', 'var(--win)');
   if(r.stop_loss && cp.stop_loss_y_pct != null) addPiece(sigOvLineHTML(cp.stop_loss_y_pct, 'var(--loss-bright)', false, setupX1, setupX2),
     sigOvRailChipHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)'), 'Entry / SL / TP', 'var(--gold-bright)');
   [['tp1_y_pct',0],['tp2_y_pct',1],['tp3_y_pct',2]].forEach(([key,i])=>{
@@ -3575,8 +3602,9 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   while(tps.length < 3) tps.push({ level:'', rr:'', numeric:false });
   const styleLabel = (SIGNAL_TRADE_STYLES[styleKey]||SIGNAL_TRADE_STYLES.intraday).label;
   const icon = { present:'✓', absent:'✕', unclear:'?' };
+  const orderTypeLabel = SIG_ORDER_TYPE_LABELS[r.order_type] || null;
   const levelRows = [
-    sigLevelRow('Entry', r.entry, 0),
+    sigLevelRow(orderTypeLabel ? `Entry (${orderTypeLabel})` : 'Entry', r.entry, 0),
     sigLevelRow('Stop loss', r.stop_loss, 1),
     ...tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(String(tp.rr))+'R)':''}`, tp, 2+i))
   ].join('');
@@ -3628,12 +3656,18 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       <div class="sig-block" style="animation-delay:.45s;"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
       <div class="sig-block" style="animation-delay:.5s;"><div class="sig-block-label">Risk note</div><div class="sig-block-text">${sigEsc(r.risk_note||'—')}</div></div>
       <div class="sig-block" style="animation-delay:.55s;margin-bottom:14px;"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:700;font-size:15px;">${sigEsc(r.verdict||'—')}</div></div>
+      ${biasClass!=='no_trade' ? `
+      <div class="field" style="margin:0 0 10px;">
+        <label>Place against which account?</label>
+        <select id="sig_orderAccount"></select>
+      </div>` : ''}
       <div class="sig-action-row">
         ${biasClass!=='no_trade' ? `<button type="button" class="btn" onclick="placeSignalOnOrderBook(this)">🎫 Place on Order Book</button>` : ''}
         <button type="button" class="btn-ghost sig-copy-btn" title="Copy summary" onclick="copySignalSummary(this)">⧉</button>
       </div>
     </div>
   `;
+  if(biasClass!=='no_trade') populateSignalOrderAccountSelect();
   el.style.display = 'block';
   document.getElementById('sig_orderPlaced').style.display = 'none';
   // animate the confidence bar fill in on the next frame so the CSS transition actually plays
@@ -3679,7 +3713,7 @@ function copySignalSummary(btn){
   const lines = [
     `SciFe · ${strategy.name}${pair ? ' · '+pair : ''}`,
     `Bias: ${(r.bias||'—').toUpperCase()} (${r.confidence||0}/100 confidence)`,
-    `Entry: ${r.entry && r.entry.level || '—'}`,
+    `Entry: ${r.entry && r.entry.level || '—'}${SIG_ORDER_TYPE_LABELS[r.order_type] ? ' ('+SIG_ORDER_TYPE_LABELS[r.order_type]+')' : ''}`,
     `Stop loss: ${r.stop_loss && r.stop_loss.level || '—'}`,
     ...tps.map((tp,i)=>`TP${i+1}: ${tp.level}${tp.rr?' ('+tp.rr+'R)':''}`),
     r.fib_zone && r.fib_zone.zone ? `Fib/OTE zone: ${r.fib_zone.zone}` : null,
@@ -3691,6 +3725,26 @@ function copySignalSummary(btn){
   }).catch(()=>{ showToast('Could not copy — select and copy manually'); });
 }
 
+/* ============ ORDER BOOK ACCOUNT PICKER (for "Place on Order Book") ============
+   Same account list as the Order Book room in index.html (Personal + every
+   configured Prop Firm account) — read straight off traderRow.prop_firm so
+   it's never out of sync with what's actually been set up in Prop Firm
+   Compliance. Falls back to just "Personal" if trader has no prop accounts
+   or hasn't loaded yet. */
+function signalOrderAccountOptions(){
+  const raw = (traderRow && traderRow.prop_firm) || [];
+  const list = Array.isArray(raw) ? raw : (raw && typeof raw==='object' && raw.firmName ? [raw] : []);
+  return list.filter(pf => pf && pf.id);
+}
+function populateSignalOrderAccountSelect(){
+  const sel = document.getElementById('sig_orderAccount');
+  if(!sel) return;
+  const accounts = signalOrderAccountOptions();
+  sel.innerHTML = ['<option value="personal">Personal</option>']
+    .concat(accounts.map(pf=>`<option value="${pf.id}">Prop Firm — ${sigEsc(pf.firmName || 'Unnamed account')}</option>`))
+    .join('');
+  sel.value = 'personal';
+}
 /* ============ PLACE ON ORDER BOOK (pending signal) ============
    Writes straight into the same trader_data.psychology.orders array the
    Order Book room in index.html reads and renders — same shape as the order
@@ -3704,6 +3758,11 @@ async function placeSignalOnOrderBook(btn){
   const { result: r, strategy, styleKey, pair } = lastSignal;
   const biasClass = ['long','short'].includes(r.bias) ? r.bias : null;
   if(!biasClass){ showToast('No trade — nothing to place'); return; }
+  // Which account this order is tagged to — Personal by default, or
+  // whichever Prop Firm account the trader picked from the selector added
+  // alongside this button.
+  const acctSel = document.getElementById('sig_orderAccount');
+  const account = acctSel && acctSel.value ? acctSel.value : 'personal';
   if(btn){ btn.disabled = true; btn.textContent = 'Placing…'; }
   try{
     const { data, error } = await sb.from('trader_data').select('psychology').eq('user_id', currentUser.id).maybeSingle();
@@ -3714,14 +3773,19 @@ async function placeSignalOnOrderBook(btn){
     const trader = traders[0] ? traders[0].id : null;
     // Levels are locked/read-only in the UI now, so the order is placed
     // straight from what SciFe returned — not from anything the trader
-    // could have hand-edited in a field.
+    // could have hand-edited in a field. Never round: parseFloat here only
+    // parses the exact digits the model already returned (full precision,
+    // no truncation) into a number the Order Book's own math can use — it
+    // does not shorten or re-round anything.
     const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
     const firstTp = tps[0] || null;
     const entryNum = (r.entry && r.entry.numeric && r.entry.level != null && !isNaN(parseFloat(r.entry.level))) ? parseFloat(r.entry.level) : null;
     const slNum = (r.stop_loss && r.stop_loss.numeric && r.stop_loss.level != null && !isNaN(parseFloat(r.stop_loss.level))) ? parseFloat(r.stop_loss.level) : null;
     const tpNum = (firstTp && firstTp.numeric && firstTp.level != null && !isNaN(parseFloat(firstTp.level))) ? parseFloat(firstTp.level) : null;
     const rrPlanned = firstTp && firstTp.rr ? String(firstTp.rr).replace(/[^\d.]/g,'') : null;
+    const orderTypeLabel = SIG_ORDER_TYPE_LABELS[r.order_type] || null;
     const noteParts = [];
+    if(orderTypeLabel) noteParts.push('Order type: ' + orderTypeLabel);
     if(r.entry_idea) noteParts.push(r.entry_idea);
     if(r.fib_zone && r.fib_zone.zone) noteParts.push('Fib/OTE zone: ' + r.fib_zone.zone);
     if(entryNum==null && r.entry && r.entry.level) noteParts.push('Entry (structural): ' + r.entry.level);
@@ -3734,16 +3798,17 @@ async function placeSignalOnOrderBook(btn){
       trader, strategy: strategy.id, strategyType: strategy.type, style: styleKey,
       logics: strategy.logics || [], pair: pair || null, direction: biasClass==='long' ? 'buy' : 'sell',
       entry: entryNum, sl: slNum, tp: tpNum, rrPlanned, notes: noteParts.join(' — ').slice(0, 500),
-      status: 'pending', account: 'personal'
+      status: 'pending', account: account
     });
     const { error: upErr } = await sb.from('trader_data').upsert({ user_id: currentUser.id, psychology }, { onConflict: 'user_id' });
     if(upErr) throw upErr;
     if(traderRow) traderRow.psychology = psychology;
+    const acctLabel = account==='personal' ? 'Personal' : ('Prop Firm — ' + ((signalOrderAccountOptions().find(pf=>pf.id===account)||{}).firmName || 'Unnamed account'));
     const placedEl = document.getElementById('sig_orderPlaced');
-    placedEl.textContent = '✓ Placed on Order Book as a pending ' + (biasClass==='long'?'BUY':'SELL') + (pair?' — '+pair:'') + '. Close it out from Ghost Discipline once it resolves.';
+    placedEl.textContent = '✓ Placed on Order Book (' + acctLabel + ') as a pending ' + (biasClass==='long'?'BUY':'SELL') + (pair?' — '+pair:'') + '. Close it out from Ghost Discipline once it resolves.';
     placedEl.style.display = 'block';
     if(btn){ btn.textContent = '✓ Placed on Order Book'; }
-    logAction('placed_pending_order', { pair: pair || null, direction: biasClass, strategy: strategy.name }, true);
+    logAction('placed_pending_order', { pair: pair || null, direction: biasClass, strategy: strategy.name, account }, true);
   }catch(e){
     showToast('Could not place order: ' + (e.message||e.code||'unknown error'));
     if(btn){ btn.disabled = false; btn.textContent = '🎫 Place on Order Book'; }
