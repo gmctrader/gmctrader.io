@@ -520,7 +520,6 @@ body{position:relative;}
 .sig-level-name{font-size:12.5px;color:var(--slate);flex:none;}
 .sig-level-val{font-size:14px;font-weight:600;text-align:right;}
 .sig-level-val.structural{font-weight:500;font-style:italic;color:var(--slate);}
-.sig-level-subnote{font-size:11px;color:var(--slate);margin-top:2px;font-style:italic;}
 
 /* ---- 3D chart scan effect — plays while analyzeSignal() is running ---- */
 .sig-chart-thumb{perspective:900px;}
@@ -595,13 +594,33 @@ body{position:relative;}
    work. The rail only claims space once the overlay is switched on. ---- */
 .sig-ov-stage{display:flex;align-items:stretch;gap:0;position:relative;}
 .sig-ov-rail{flex:0 0 0;width:0;position:relative;overflow:visible;transition:flex-basis .25s ease, width .25s ease, margin-left .25s ease;}
-.sig-chart-thumb.overlay-on .sig-ov-rail,
-.chart-lightbox-stage.rail-on .sig-ov-rail{flex:0 0 112px;width:112px;margin-left:10px;}
-@media (min-width:520px){
+/* Desktop/tablet (≥640px): rail sits beside the chart as its own column,
+   same as before — there's enough width to spare it without crushing the
+   chart image. */
+@media (min-width:640px){
   .sig-chart-thumb.overlay-on .sig-ov-rail,
-  .chart-lightbox-stage.rail-on .sig-ov-rail{flex-basis:128px;width:128px;}
+  .chart-lightbox-stage.rail-on .sig-ov-rail{flex:0 0 128px;width:128px;margin-left:10px;}
 }
 @media (min-width:820px){ .chart-lightbox-stage.rail-on .sig-ov-rail{flex-basis:150px;width:150px;margin-left:14px;} }
+/* Mobile (<640px): a side column stealing 110-150px from a ~360-400px
+   viewport crushes the chart itself down to a barely-readable sliver.
+   Instead the rail becomes a floating strip pinned over the chart's own
+   right edge — same compact price-tag chips, same leader lines back to
+   their level, but the chart image now gets the full width of the
+   screen. A left-fading scrim keeps the tags legible over any candle
+   color without needing to reserve real layout space for them. */
+@media (max-width:639px){
+  .sig-chart-thumb.overlay-on .sig-ov-rail,
+  .chart-lightbox-stage.rail-on .sig-ov-rail{
+    flex:0 0 0;width:0;margin-left:0;
+    position:absolute;top:0;right:0;bottom:0;width:38%;max-width:132px;min-width:92px;
+    z-index:6;pointer-events:none;
+    background:linear-gradient(to right, transparent, rgba(3,5,10,0.5) 30%, rgba(3,5,10,0.72) 100%);
+    border-radius:0 12px 12px 0;
+  }
+  .sig-ov-stage,.chart-lightbox-stage.rail-on{position:relative;}
+  .sig-ov-rail-chip{font-size:9px;padding:3px 6px;}
+}
 .sig-ov-rail-chip{position:absolute;left:0;right:0;top:0;transform:translateY(-50%);display:flex;align-items:center;gap:5px;
   padding:3px 8px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;
   letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
@@ -741,9 +760,8 @@ body{position:relative;}
   animation:scanDotPulse 1s ease-in-out infinite;}
 
 /* ---- editable levels (entry/SL/TP become real inputs before placing) ---- */
-.sig-level-edit{padding:9px 0;border-bottom:1px solid var(--steel);}
+.sig-level-edit{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--steel);gap:12px;}
 .sig-level-edit:last-child{border-bottom:none;}
-.sig-level-row-top{display:flex;justify-content:space-between;align-items:center;gap:12px;}
 .sig-level-edit label{font-size:12.5px;color:var(--slate);flex:none;}
 .sig-level-edit input{width:130px;text-align:right;padding:7px 10px;border-radius:9px;border:1px solid var(--steel-hi);
   background:rgba(255,255,255,0.03);color:var(--platinum);font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
@@ -753,7 +771,6 @@ body{position:relative;}
 .sig-level-hint{font-size:11px;color:var(--slate-dim);margin-top:-8px;margin-bottom:14px;font-style:italic;}
 .sig-level-value{font-size:14.5px;font-weight:700;color:var(--platinum);text-align:right;font-family:'IBM Plex Mono',monospace;letter-spacing:.01em;word-break:break-word;}
 .sig-level-value.structural{font-weight:500;font-style:italic;color:var(--slate);font-family:inherit;text-align:right;}
-.sig-level-subnote{font-size:11px;color:var(--cyan);margin-top:5px;font-style:italic;text-align:right;}
 .sig-rr-banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:rgba(240,169,78,0.1);border:1px solid rgba(240,169,78,0.35);margin-bottom:14px;font-size:13px;line-height:1.5;color:var(--platinum);}
 .sig-rr-banner .glyph{flex:none;font-size:16px;line-height:1.2;}
 .sig-invalid-banner{padding:12px 14px;border-radius:12px;background:rgba(255,93,122,0.08);border:1px solid rgba(255,93,122,0.3);margin-bottom:14px;font-size:12.5px;line-height:1.6;color:var(--slate);}
@@ -2724,9 +2741,9 @@ Factor any imminent high-impact release into risk_note — flag it plainly if on
 
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness, never round a trailing digit off for a "cleaner" number, and never collapse a precise level to the nearest round number just because it looks tidier. Copy the digits exactly as they read on the axis/candle, including trailing zeros. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
-ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level, and never a number that's merely "close enough" to the structure. A vague or padded entry defeats the purpose of a precise read.
-SELF-CHECK BEFORE YOU ANSWER: before finalizing "entry", name the ONE specific piece of structure it sits on (which order block edge, which exact swing point, which exact fib level) — if you can't name one specific thing, the entry isn't a sniper entry, it's a guess, and you need to either find the real level or mark it structural (numeric:false) instead of inventing a number. Also check the entry digit-for-digit against that structure's own price: if the entry is a suspiciously round number (e.g. a flat 4300.00) that doesn't independently match a real printed price on the chart, that's a strong sign it was rounded rather than read — go back and read the actual level again rather than keeping the rounded one, unless that round number genuinely is the real printed price. Put that ONE specific piece of structure in "entry_structure" (e.g. "lower edge of the 4h bullish order block at 4288" or "0.618 fib retracement of the May-Jun leg") — a short, specific phrase, not a restatement of the checklist. If the entry is numeric:false (no real level available), leave "entry_structure" empty rather than inventing one.
-Also decide and return "order_type": if price is already trading at/through the entry level right now, use "market"; if the entry level sits away from current price and the trade is waiting for price to come back to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. Don't default to "market" out of habit — most real sniper entries at a structural level ARE pending orders waiting for price to return, so actually judge current price against the entry level rather than assuming market.
+ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level. A vague or padded entry defeats the purpose of a precise read. Also decide and return "order_type": if price is already trading at/through the entry level right now, use "market"; if the entry level sits away from current price and the trade is waiting for price to come back to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. Don't default to "market" out of habit — most real sniper entries at a structural level ARE pending orders waiting for price to return, so actually judge current price against the entry level rather than assuming market.
+
+STOP LOSS PLACEMENT — TIED TO THE ACTUAL REVERSAL POINT: the stop must sit just beyond the real structural level whose break would invalidate this setup's thesis — the opposite edge of the order block/FVG the entry is built on, beyond the swing high/low that defines the current structure, or beyond the wick that swept liquidity — never an arbitrary round-number distance, never padded far "for safety", and never placed so tight it sits inside normal wick noise for this timeframe/instrument. Identify that exact level FIRST as the point of reversal (the price point where, if traded through, the setup is simply wrong), then place the stop a small, realistic buffer beyond it — enough to survive a routine wick through the level, not a fixed percentage chosen without reference to the chart. State that same level in "invalidation" in concrete structural terms (e.g. "a close below the order block low at X" or "price trading through the swept low with no reaction"), so the stop and the invalidation description describe the same real point on the chart, not two different ideas. If the realistic stop (placed at the true invalidation point, not squeezed) results in a below-minimum R:R for this trade style, say so plainly in "risk_note" rather than moving the stop closer just to make the numbers work.
 
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Use the standard retracement levels only — 0, 0.236, 0.382, 0.5, 0.618, 0.786, 1 (no extension levels like 1.618/2.618/3.618, those aren't part of this zone). Identify the current leg's real anchor points from the candles themselves (the exact swing high and swing low, not an approximation), then state the resulting 0.618–0.786 zone (the "golden pocket"/OTE, bounded by those exact two levels from the set above) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. Double-check the two anchor points against the actual candle wicks before committing to the zone — an OTE zone anchored a candle or two off from the real swing point is a common, avoidable error. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 ${hasImage ? `
@@ -2745,7 +2762,7 @@ Never add a chart_markers entry for an id that isn't in one of those six groups,
 CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","entry_structure":"","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}`;
 }
 function extractJson(text){
@@ -3110,7 +3127,7 @@ function renderScanHistory(){
     return `<div class="sig-history-chip ${bias}"><span class="dot"></span>${sigEsc(d.pair || d.strategy || '')} · ${biasShort}${d.confidence!=null?' · '+d.confidence+'%':''}</div>`;
   }).join('');
 }
-function sigLevelRow(name, lvl, i, subNote){
+function sigLevelRow(name, lvl, i){
   lvl = lvl || {};
   const hasVal = lvl.level != null && lvl.level !== '';
   const structural = hasVal && lvl.numeric === false;
@@ -3118,18 +3135,9 @@ function sigLevelRow(name, lvl, i, subNote){
   // round-trip, no slicing/truncation. This is the read-only coordinate the
   // trader locks in on; it is never fed back through an editable field.
   const text = hasVal ? sigEsc(String(lvl.level)) : 'not given';
-  // Sniper-check subnote (currently only used for Entry): if the model
-  // named a specific structure for this level, show it right under the
-  // row so a vague/unstructured entry is visible to the trader instead of
-  // silently passing as if it were precise. Wraps the row in a column so
-  // the subnote sits full-width below the label/value line, not squeezed
-  // into the same flex row as a third item.
-  return `<div class="sig-level-edit${subNote?' has-subnote':''}" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;">
-    <div class="sig-level-row-top">
-      <label>${sigEsc(name)}</label>
-      <div class="sig-level-value${structural?' structural':''}">${text}</div>
-    </div>
-    ${subNote ? `<div class="sig-level-subnote">🎯 ${sigEsc(subNote)}</div>` : ''}
+  return `<div class="sig-level-edit" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;">
+    <label>${sigEsc(name)}</label>
+    <div class="sig-level-value${structural?' structural':''}">${text}</div>
   </div>`;
 }
 /* ============ DRAW ANALYSIS ON CHART (overlay) ============
@@ -3151,7 +3159,7 @@ function sigOvClamp(n){ return Math.max(0, Math.min(100, n)); }
 // (positioned via data-y-pct) connected back to that dot with a leader
 // line. resolveOverlayRail() runs a top-to-bottom decluttering pass so
 // chips never overlap each other, however tightly the levels are packed.
-function sigOvRailChipHTML(label, yPct, colorVar){
+function sigOvRailChipHTML(label, yPct, colorVar, xPct){
   if(yPct==null || isNaN(yPct)) return '';
   // FIX: the chip's own background was always falling back to gold — the
   // color param was only ever wired into the leader line (via data-color,
@@ -3159,7 +3167,13 @@ function sigOvRailChipHTML(label, yPct, colorVar){
   // element's own --ov-color, so every label (Entry/SL/TP/zones/BOS/etc)
   // rendered as an identical gold pill no matter what it was. Setting it
   // inline here is what makes each chip actually show its real color.
-  return `<div class="sig-ov-rail-chip" data-y-pct="${sigOvClamp(yPct)}" data-color="${colorVar}" style="--ov-color:${colorVar};" title="${sigEsc(label)}"><span class="dot"></span>${sigEsc(sigOvShortLevel(label))}</div>`;
+  // data-x-pct records where this label's underlying shape actually sits
+  // on the chart horizontally — resolveOverlayRail() uses it to stagger
+  // each chip's fade-in left-to-right, so the labels read as the same
+  // chronological story the price action tells (structure first, entry
+  // decision last), not a random simultaneous pop of tags.
+  const x = (xPct==null || isNaN(xPct)) ? 50 : sigOvClamp(xPct);
+  return `<div class="sig-ov-rail-chip" data-y-pct="${sigOvClamp(yPct)}" data-x-pct="${x}" data-color="${colorVar}" style="--ov-color:${colorVar};" title="${sigEsc(label)}"><span class="dot"></span>${sigEsc(sigOvShortLevel(label))}</div>`;
 }
 function sigOvAnchorDotHTML(xPct, yPct, colorVar){
   if(xPct==null || yPct==null || isNaN(xPct) || isNaN(yPct)) return '';
@@ -3174,6 +3188,14 @@ function resolveOverlayRail(stageEl, frameEl, railEl){
   railEl.style.height = H + 'px';
   const chips = Array.from(railEl.querySelectorAll('.sig-ov-rail-chip'));
   if(!chips.length) return;
+  // Left-to-right stagger: fade each chip in during the same sequence its
+  // shape draws in on the chart (structure first, entry/SL/TP last), so
+  // the rail tells the same chronological story as the price action
+  // instead of every label popping in at once.
+  const STAGGER_STEP_MS = 90;
+  Array.from(chips)
+    .sort((a,b) => (parseFloat(a.dataset.xPct)||50) - (parseFloat(b.dataset.xPct)||50))
+    .forEach((c,i) => { c.style.animationDelay = (i*STAGGER_STEP_MS)+'ms'; });
   const CHIP_GAP = 21; // min px between chip centers
   let items = chips.map(c => ({ el:c, y: (parseFloat(c.dataset.yPct)||0)/100*H }));
   items.sort((a,b)=>a.y-b.y);
@@ -3414,27 +3436,31 @@ function sigOvMarkerHTML(id, label, m){
   const style = SIG_MARKER_STYLES[id];
   if(!style || !m) return { shape:'', rail:'' };
   if(style.kind === 'hline'){
+    const midX = (m.x1_pct!=null && m.x2_pct!=null) ? (parseFloat(m.x1_pct)+parseFloat(m.x2_pct))/2 : m.x1_pct;
     return { shape: sigOvLineHTML(m.y_pct, style.color, style.dashed, m.x1_pct, m.x2_pct),
-             rail: sigOvRailChipHTML(label, m.y_pct, style.color) };
+             rail: sigOvRailChipHTML(label, m.y_pct, style.color, midX) };
   }
   if(style.kind === 'zone'){
     const mid = (m.y_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y_pct)+parseFloat(m.y2_pct))/2 : m.y_pct;
+    const midX = (m.x1_pct!=null && m.x2_pct!=null) ? (parseFloat(m.x1_pct)+parseFloat(m.x2_pct))/2 : m.x1_pct;
     return { shape: sigOvZoneHTML(m.y_pct, m.y2_pct, style.color, style.bg, m.x1_pct, m.x2_pct, true),
-             rail: sigOvRailChipHTML(label, mid, style.color) };
+             rail: sigOvRailChipHTML(label, mid, style.color, midX) };
   }
   if(style.kind === 'vband') return { shape: sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg), rail:'' };
   if(style.kind === 'trendline'){
     const mid = (m.y1_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(m.y2_pct))/2 : m.y1_pct;
+    const midX = (m.x1_pct!=null && m.x2_pct!=null) ? (parseFloat(m.x1_pct)+parseFloat(m.x2_pct))/2 : m.x1_pct;
     return { shape: sigOvTrendlineHTML(m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color),
-             rail: sigOvRailChipHTML(label, mid, style.color) };
+             rail: sigOvRailChipHTML(label, mid, style.color, midX) };
   }
   if(style.kind === 'arrow'){
     const mid = (m.y1_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(m.y2_pct))/2 : m.y1_pct;
+    const midX = (m.x1_pct!=null && m.x2_pct!=null) ? (parseFloat(m.x1_pct)+parseFloat(m.x2_pct))/2 : m.x1_pct;
     return { shape: sigOvArrowHTML(m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color),
-             rail: sigOvRailChipHTML(label, mid, style.color) };
+             rail: sigOvRailChipHTML(label, mid, style.color, midX) };
   }
   if(style.kind === 'point'){
-    return { shape: sigOvPointHTML(m.x1_pct, m.y_pct, style.color), rail: sigOvRailChipHTML(label, m.y_pct, style.color) };
+    return { shape: sigOvPointHTML(m.x1_pct, m.y_pct, style.color), rail: sigOvRailChipHTML(label, m.y_pct, style.color, m.x1_pct) };
   }
   return { shape:'', rail:'' };
 }
@@ -3484,23 +3510,30 @@ async function toggleChartOverlay(btn){
     // below is Discount (cheap — favor buying from it). Two distinctly-
     // tinted zones plus a labeled EQ line reads exactly like a trader's own
     // fib-tool annotation, instead of one undifferentiated OTE band.
+    const fibMidX = (setupX1 != null && setupX2 != null) ? (sigOvClamp(setupX1)+sigOvClamp(setupX2))/2 : null;
     addPiece(sigOvZoneHTML(top, eq, 'var(--loss-bright)', 'rgba(255,93,122,0.10)', setupX1, setupX2),
-      sigOvRailChipHTML('Premium', (top+eq)/2, 'var(--loss-bright)'), 'Premium / Discount', 'var(--gold)');
+      sigOvRailChipHTML('Premium', (top+eq)/2, 'var(--loss-bright)', fibMidX), 'Premium / Discount', 'var(--gold)');
     addPiece(sigOvZoneHTML(eq, bot, 'var(--win)', 'rgba(43,224,138,0.10)', setupX1, setupX2),
-      sigOvRailChipHTML('Discount', (eq+bot)/2, 'var(--win)'), 'Premium / Discount', 'var(--gold)');
+      sigOvRailChipHTML('Discount', (eq+bot)/2, 'var(--win)', fibMidX), 'Premium / Discount', 'var(--gold)');
     addPiece(sigOvLineHTML(eq, 'var(--gold)', true, setupX1, setupX2),
-      sigOvRailChipHTML('EQ 50%', eq, 'var(--gold)'), 'Premium / Discount', 'var(--gold)');
+      sigOvRailChipHTML('EQ 50%', eq, 'var(--gold)', fibMidX), 'Premium / Discount', 'var(--gold)');
   }
   // Entry gets its own distinct color (cyan) — it used to share green with
   // Take Profit, which made the two lines (often close together, e.g. a
   // 4300 entry and a 4350 TP1) visually indistinguishable on the chart.
+  // Entry/SL/TP chips are pinned to the setup's own right edge (setupX2)
+  // for their left-to-right stagger position — the entry decision is the
+  // most recent thing on the chart, so it's correct for it (and the stop
+  // and targets that follow from it) to be the last labels to resolve in,
+  // after the structural markers to their left have already appeared.
+  const entrySlTpX = setupX2 != null ? sigOvClamp(setupX2) : SIG_OV_DEFAULT_X2;
   if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--cyan)', false, setupX1, setupX2),
-    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--cyan)'), 'Entry / SL / TP', 'var(--cyan)');
+    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--cyan)', entrySlTpX), 'Entry / SL / TP', 'var(--cyan)');
   if(r.stop_loss && cp.stop_loss_y_pct != null) addPiece(sigOvLineHTML(cp.stop_loss_y_pct, 'var(--loss-bright)', false, setupX1, setupX2),
-    sigOvRailChipHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)'), 'Entry / SL / TP', 'var(--cyan)');
+    sigOvRailChipHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)', entrySlTpX), 'Entry / SL / TP', 'var(--cyan)');
   [['tp1_y_pct',0],['tp2_y_pct',1],['tp3_y_pct',2]].forEach(([key,i])=>{
     if(tps[i] && cp[key] != null) addPiece(sigOvLineHTML(cp[key], 'var(--win)', false, setupX1, setupX2),
-      sigOvRailChipHTML('TP'+(i+1)+' '+sigOvShortLevel(tps[i].level), cp[key], 'var(--win)'), 'Entry / SL / TP', 'var(--cyan)');
+      sigOvRailChipHTML('TP'+(i+1)+' '+sigOvShortLevel(tps[i].level), cp[key], 'var(--win)', entrySlTpX), 'Entry / SL / TP', 'var(--cyan)');
   });
   // Compact Long/Short Position box (like TradingView's Long/Short Position
   // tool) — a small two-tone block right at the entry showing red risk
@@ -3646,7 +3679,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   const icon = { present:'✓', absent:'✕', unclear:'?' };
   const orderTypeLabel = SIG_ORDER_TYPE_LABELS[r.order_type] || null;
   const levelRows = [
-    sigLevelRow(orderTypeLabel ? `Entry (${orderTypeLabel})` : 'Entry', r.entry, 0, r.entry_structure),
+    sigLevelRow(orderTypeLabel ? `Entry (${orderTypeLabel})` : 'Entry', r.entry, 0),
     sigLevelRow('Stop loss', r.stop_loss, 1),
     ...tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(String(tp.rr))+'R)':''}`, tp, 2+i))
   ].join('');
