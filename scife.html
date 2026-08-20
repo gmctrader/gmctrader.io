@@ -2741,7 +2741,7 @@ Factor any imminent high-impact release into risk_note — flag it plainly if on
 
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness, never round a trailing digit off for a "cleaner" number, and never collapse a precise level to the nearest round number just because it looks tidier. Copy the digits exactly as they read on the axis/candle, including trailing zeros. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
-ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level. A vague or padded entry defeats the purpose of a precise read. Also decide and return "order_type": if price is already trading at/through the entry level right now, use "market"; if the entry level sits away from current price and the trade is waiting for price to come back to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. Don't default to "market" out of habit — most real sniper entries at a structural level ARE pending orders waiting for price to return, so actually judge current price against the entry level rather than assuming market.
+ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level. A vague or padded entry defeats the purpose of a precise read. Also decide and return "order_type" by comparing CURRENT price (the chart's actual last/most-recent price, not an older candle) against that exact entry level, judged fresh each time with no default either way: if current price is already trading at or through the entry level right now, use "market" — a close signal is a completely normal, common outcome and should never be talked out of just because a pending order sounds more precise or more "sniper." If the entry level genuinely sits away from current price and the trade is waiting for price to return to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. The split between market and pending should track the real chart roughly evenly over many setups — if you notice yourself reaching for a pending order by habit, stop and re-check current price against the level before deciding.
 
 STOP LOSS PLACEMENT — TIED TO THE ACTUAL REVERSAL POINT: the stop must sit just beyond the real structural level whose break would invalidate this setup's thesis — the opposite edge of the order block/FVG the entry is built on, beyond the swing high/low that defines the current structure, or beyond the wick that swept liquidity — never an arbitrary round-number distance, never padded far "for safety", and never placed so tight it sits inside normal wick noise for this timeframe/instrument. Identify that exact level FIRST as the point of reversal (the price point where, if traded through, the setup is simply wrong), then place the stop a small, realistic buffer beyond it — enough to survive a routine wick through the level, not a fixed percentage chosen without reference to the chart. State that same level in "invalidation" in concrete structural terms (e.g. "a close below the order block low at X" or "price trading through the swept low with no reaction"), so the stop and the invalidation description describe the same real point on the chart, not two different ideas. If the realistic stop (placed at the true invalidation point, not squeezed) results in a below-minimum R:R for this trade style, say so plainly in "risk_note" rather than moving the stop closer just to make the numbers work.
 
@@ -3340,10 +3340,10 @@ function sigOvArrowHTML(x1, y1, x2, y2, colorVar){
 // horizontal SEGMENTS; killzones/volume are vertical time BANDS; indicator/
 // MA-cross signals are POINT markers at the exact candle they fired on.
 const SIG_MARKER_STYLES = {
-  bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
-  choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
-  smc_bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
-  smc_choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)'},
+  bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
+  choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
+  smc_bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
+  smc_choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
   eqhigh:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
   eqlow:{cat:'Equal High/Low', kind:'hline', color:'var(--gold)', dashed:true},
   liquiditygrab:{cat:'Liquidity Sweep', kind:'arrow', color:'var(--amber)'},
@@ -3448,9 +3448,15 @@ function sigOvMarkerHTML(id, label, m){
   }
   if(style.kind === 'vband') return { shape: sigOvVBandHTML(label, m.x1_pct, m.x2_pct, style.color, style.bg), rail:'' };
   if(style.kind === 'trendline'){
-    const mid = (m.y1_pct!=null && m.y2_pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(m.y2_pct))/2 : m.y1_pct;
+    // BOS/CHoCH are real trading-platform break markers, which are always
+    // drawn as a flat horizontal line from the broken swing level across
+    // to the candle that broke it — never a diagonal. Snap y2 to y1 for
+    // any style flagged "horizontal" so the model's own x1/x2 break-span
+    // is kept (that's real information), but the line itself stays flat.
+    const y2Pct = style.horizontal ? m.y1_pct : m.y2_pct;
+    const mid = (m.y1_pct!=null && y2Pct!=null) ? (parseFloat(m.y1_pct)+parseFloat(y2Pct))/2 : m.y1_pct;
     const midX = (m.x1_pct!=null && m.x2_pct!=null) ? (parseFloat(m.x1_pct)+parseFloat(m.x2_pct))/2 : m.x1_pct;
-    return { shape: sigOvTrendlineHTML(m.x1_pct, m.y1_pct, m.x2_pct, m.y2_pct, style.color),
+    return { shape: sigOvTrendlineHTML(m.x1_pct, m.y1_pct, m.x2_pct, y2Pct, style.color),
              rail: sigOvRailChipHTML(label, mid, style.color, midX) };
   }
   if(style.kind === 'arrow'){
@@ -3600,7 +3606,13 @@ async function toggleChartOverlay(btn){
     overlay.innerHTML = shapes.join('');
     frame.appendChild(overlay);
     animateOverlayDrawIn(overlay);
-    rail.innerHTML = railChips.join('');
+    // The rail (per-level pill labels floating on the right, with dotted
+    // leader lines pointing back to the price axis) is intentionally left
+    // empty — the trader asked for the on-chart color-coded legend below
+    // the chart to stay, but the individual right-side labels and their
+    // leader lines removed. Leaving `rail` empty means resolveOverlayRail
+    // finds no chips to build leader lines for, so both go away together.
+    rail.innerHTML = '';
     const legendEl = thumb.querySelector('.sig-ov-legend');
     const legendHTML = sigOvLegendHTML(legendCats);
     if(legendEl) legendEl.outerHTML = legendHTML;
