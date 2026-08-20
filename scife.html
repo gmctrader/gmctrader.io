@@ -520,6 +520,7 @@ body{position:relative;}
 .sig-level-name{font-size:12.5px;color:var(--slate);flex:none;}
 .sig-level-val{font-size:14px;font-weight:600;text-align:right;}
 .sig-level-val.structural{font-weight:500;font-style:italic;color:var(--slate);}
+.sig-level-subnote{font-size:11px;color:var(--slate);margin-top:2px;font-style:italic;}
 
 /* ---- 3D chart scan effect — plays while analyzeSignal() is running ---- */
 .sig-chart-thumb{perspective:900px;}
@@ -740,8 +741,9 @@ body{position:relative;}
   animation:scanDotPulse 1s ease-in-out infinite;}
 
 /* ---- editable levels (entry/SL/TP become real inputs before placing) ---- */
-.sig-level-edit{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--steel);gap:12px;}
+.sig-level-edit{padding:9px 0;border-bottom:1px solid var(--steel);}
 .sig-level-edit:last-child{border-bottom:none;}
+.sig-level-row-top{display:flex;justify-content:space-between;align-items:center;gap:12px;}
 .sig-level-edit label{font-size:12.5px;color:var(--slate);flex:none;}
 .sig-level-edit input{width:130px;text-align:right;padding:7px 10px;border-radius:9px;border:1px solid var(--steel-hi);
   background:rgba(255,255,255,0.03);color:var(--platinum);font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
@@ -751,6 +753,7 @@ body{position:relative;}
 .sig-level-hint{font-size:11px;color:var(--slate-dim);margin-top:-8px;margin-bottom:14px;font-style:italic;}
 .sig-level-value{font-size:14.5px;font-weight:700;color:var(--platinum);text-align:right;font-family:'IBM Plex Mono',monospace;letter-spacing:.01em;word-break:break-word;}
 .sig-level-value.structural{font-weight:500;font-style:italic;color:var(--slate);font-family:inherit;text-align:right;}
+.sig-level-subnote{font-size:11px;color:var(--cyan);margin-top:5px;font-style:italic;text-align:right;}
 .sig-rr-banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:rgba(240,169,78,0.1);border:1px solid rgba(240,169,78,0.35);margin-bottom:14px;font-size:13px;line-height:1.5;color:var(--platinum);}
 .sig-rr-banner .glyph{flex:none;font-size:16px;line-height:1.2;}
 .sig-invalid-banner{padding:12px 14px;border-radius:12px;background:rgba(255,93,122,0.08);border:1px solid rgba(255,93,122,0.3);margin-bottom:14px;font-size:12.5px;line-height:1.6;color:var(--slate);}
@@ -2721,7 +2724,9 @@ Factor any imminent high-impact release into risk_note — flag it plainly if on
 
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness, never round a trailing digit off for a "cleaner" number, and never collapse a precise level to the nearest round number just because it looks tidier. Copy the digits exactly as they read on the axis/candle, including trailing zeros. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
 
-ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level. A vague or padded entry defeats the purpose of a precise read. Also decide and return "order_type": if price is already trading at/through the entry level right now, use "market"; if the entry level sits away from current price and the trade is waiting for price to come back to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. Don't default to "market" out of habit — most real sniper entries at a structural level ARE pending orders waiting for price to return, so actually judge current price against the entry level rather than assuming market.
+ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level, and never a number that's merely "close enough" to the structure. A vague or padded entry defeats the purpose of a precise read.
+SELF-CHECK BEFORE YOU ANSWER: before finalizing "entry", name the ONE specific piece of structure it sits on (which order block edge, which exact swing point, which exact fib level) — if you can't name one specific thing, the entry isn't a sniper entry, it's a guess, and you need to either find the real level or mark it structural (numeric:false) instead of inventing a number. Also check the entry digit-for-digit against that structure's own price: if the entry is a suspiciously round number (e.g. a flat 4300.00) that doesn't independently match a real printed price on the chart, that's a strong sign it was rounded rather than read — go back and read the actual level again rather than keeping the rounded one, unless that round number genuinely is the real printed price. Put that ONE specific piece of structure in "entry_structure" (e.g. "lower edge of the 4h bullish order block at 4288" or "0.618 fib retracement of the May-Jun leg") — a short, specific phrase, not a restatement of the checklist. If the entry is numeric:false (no real level available), leave "entry_structure" empty rather than inventing one.
+Also decide and return "order_type": if price is already trading at/through the entry level right now, use "market"; if the entry level sits away from current price and the trade is waiting for price to come back to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. Don't default to "market" out of habit — most real sniper entries at a structural level ARE pending orders waiting for price to return, so actually judge current price against the entry level rather than assuming market.
 
 FIBONACCI ZONE: place this yourself using your own swing-high/swing-low read of the chart — do not rely on a fib tool or any other drawing that may already be on the image, since a pre-drawn tool can be stale, mis-anchored, or simply wrong. Use the standard retracement levels only — 0, 0.236, 0.382, 0.5, 0.618, 0.786, 1 (no extension levels like 1.618/2.618/3.618, those aren't part of this zone). Identify the current leg's real anchor points from the candles themselves (the exact swing high and swing low, not an approximation), then state the resulting 0.618–0.786 zone (the "golden pocket"/OTE, bounded by those exact two levels from the set above) as a price range if the anchors are visible/numeric, or structurally (e.g. "OTE zone between the last swing high and the sweep low") if not. Double-check the two anchor points against the actual candle wicks before committing to the zone — an OTE zone anchored a candle or two off from the real swing point is a common, avoidable error. If the anchor points genuinely aren't identifiable from what's given, set "numeric" to false and say so in the note rather than guessing.
 ${hasImage ? `
@@ -2740,7 +2745,7 @@ Never add a chart_markers entry for an id that isn't in one of those six groups,
 CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","entry_structure":"","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a clean Fibonacci reaction alone, or just a fresh BOS with no order block behind it), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}`;
 }
 function extractJson(text){
@@ -3105,7 +3110,7 @@ function renderScanHistory(){
     return `<div class="sig-history-chip ${bias}"><span class="dot"></span>${sigEsc(d.pair || d.strategy || '')} · ${biasShort}${d.confidence!=null?' · '+d.confidence+'%':''}</div>`;
   }).join('');
 }
-function sigLevelRow(name, lvl, i){
+function sigLevelRow(name, lvl, i, subNote){
   lvl = lvl || {};
   const hasVal = lvl.level != null && lvl.level !== '';
   const structural = hasVal && lvl.numeric === false;
@@ -3113,9 +3118,18 @@ function sigLevelRow(name, lvl, i){
   // round-trip, no slicing/truncation. This is the read-only coordinate the
   // trader locks in on; it is never fed back through an editable field.
   const text = hasVal ? sigEsc(String(lvl.level)) : 'not given';
-  return `<div class="sig-level-edit" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;">
-    <label>${sigEsc(name)}</label>
-    <div class="sig-level-value${structural?' structural':''}">${text}</div>
+  // Sniper-check subnote (currently only used for Entry): if the model
+  // named a specific structure for this level, show it right under the
+  // row so a vague/unstructured entry is visible to the trader instead of
+  // silently passing as if it were precise. Wraps the row in a column so
+  // the subnote sits full-width below the label/value line, not squeezed
+  // into the same flex row as a third item.
+  return `<div class="sig-level-edit${subNote?' has-subnote':''}" style="animation-delay:${0.35+i*0.06}s;opacity:0;animation:sigBlockIn .4s ease forwards;">
+    <div class="sig-level-row-top">
+      <label>${sigEsc(name)}</label>
+      <div class="sig-level-value${structural?' structural':''}">${text}</div>
+    </div>
+    ${subNote ? `<div class="sig-level-subnote">🎯 ${sigEsc(subNote)}</div>` : ''}
   </div>`;
 }
 /* ============ DRAW ANALYSIS ON CHART (overlay) ============
@@ -3632,7 +3646,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   const icon = { present:'✓', absent:'✕', unclear:'?' };
   const orderTypeLabel = SIG_ORDER_TYPE_LABELS[r.order_type] || null;
   const levelRows = [
-    sigLevelRow(orderTypeLabel ? `Entry (${orderTypeLabel})` : 'Entry', r.entry, 0),
+    sigLevelRow(orderTypeLabel ? `Entry (${orderTypeLabel})` : 'Entry', r.entry, 0, r.entry_structure),
     sigLevelRow('Stop loss', r.stop_loss, 1),
     ...tps.map((tp,i)=>sigLevelRow(`TP${i+1}${tp.rr?' ('+sigEsc(String(tp.rr))+'R)':''}`, tp, 2+i))
   ].join('');
