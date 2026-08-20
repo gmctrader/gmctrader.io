@@ -580,7 +580,7 @@ body{position:relative;}
 
 /* ---- draw-analysis-on-chart overlay: entry/SL/TP/fib lines rendered
    directly on top of the uploaded chart image. Line/tag colors stay fixed
-   to the app's semantic palette (gold=entry, red=stop, green=target,
+   to the app's semantic palette (cyan=entry, red=stop, green=target,
    bronze=fib zone) but the glow/outline behind every line and tag is
    picked at build time from the chart image's own average brightness, so
    the same colors stay legible whether the trader's chart is a bright
@@ -3139,7 +3139,13 @@ function sigOvClamp(n){ return Math.max(0, Math.min(100, n)); }
 // chips never overlap each other, however tightly the levels are packed.
 function sigOvRailChipHTML(label, yPct, colorVar){
   if(yPct==null || isNaN(yPct)) return '';
-  return `<div class="sig-ov-rail-chip" data-y-pct="${sigOvClamp(yPct)}" data-color="${colorVar}" title="${sigEsc(label)}"><span class="dot"></span>${sigEsc(sigOvShortLevel(label))}</div>`;
+  // FIX: the chip's own background was always falling back to gold — the
+  // color param was only ever wired into the leader line (via data-color,
+  // read by resolveOverlayRail), never actually applied to the chip
+  // element's own --ov-color, so every label (Entry/SL/TP/zones/BOS/etc)
+  // rendered as an identical gold pill no matter what it was. Setting it
+  // inline here is what makes each chip actually show its real color.
+  return `<div class="sig-ov-rail-chip" data-y-pct="${sigOvClamp(yPct)}" data-color="${colorVar}" style="--ov-color:${colorVar};" title="${sigEsc(label)}"><span class="dot"></span>${sigEsc(sigOvShortLevel(label))}</div>`;
 }
 function sigOvAnchorDotHTML(xPct, yPct, colorVar){
   if(xPct==null || yPct==null || isNaN(xPct) || isNaN(yPct)) return '';
@@ -3471,14 +3477,36 @@ async function toggleChartOverlay(btn){
     addPiece(sigOvLineHTML(eq, 'var(--gold)', true, setupX1, setupX2),
       sigOvRailChipHTML('EQ 50%', eq, 'var(--gold)'), 'Premium / Discount', 'var(--gold)');
   }
-  if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--win)', false, setupX1, setupX2),
-    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--win)'), 'Entry / SL / TP', 'var(--win)');
+  // Entry gets its own distinct color (cyan) — it used to share green with
+  // Take Profit, which made the two lines (often close together, e.g. a
+  // 4300 entry and a 4350 TP1) visually indistinguishable on the chart.
+  if(r.entry && cp.entry_y_pct != null) addPiece(sigOvLineHTML(cp.entry_y_pct, 'var(--cyan)', false, setupX1, setupX2),
+    sigOvRailChipHTML('ENTRY '+sigOvShortLevel(r.entry.level), cp.entry_y_pct, 'var(--cyan)'), 'Entry / SL / TP', 'var(--cyan)');
   if(r.stop_loss && cp.stop_loss_y_pct != null) addPiece(sigOvLineHTML(cp.stop_loss_y_pct, 'var(--loss-bright)', false, setupX1, setupX2),
-    sigOvRailChipHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)'), 'Entry / SL / TP', 'var(--gold-bright)');
+    sigOvRailChipHTML('SL '+sigOvShortLevel(r.stop_loss.level), cp.stop_loss_y_pct, 'var(--loss-bright)'), 'Entry / SL / TP', 'var(--cyan)');
   [['tp1_y_pct',0],['tp2_y_pct',1],['tp3_y_pct',2]].forEach(([key,i])=>{
     if(tps[i] && cp[key] != null) addPiece(sigOvLineHTML(cp[key], 'var(--win)', false, setupX1, setupX2),
-      sigOvRailChipHTML('TP'+(i+1)+' '+sigOvShortLevel(tps[i].level), cp[key], 'var(--win)'), 'Entry / SL / TP', 'var(--gold-bright)');
+      sigOvRailChipHTML('TP'+(i+1)+' '+sigOvShortLevel(tps[i].level), cp[key], 'var(--win)'), 'Entry / SL / TP', 'var(--cyan)');
   });
+  // Compact Long/Short Position box (like TradingView's Long/Short Position
+  // tool) — a small two-tone block right at the entry showing red risk
+  // (entry->SL) and green reward (entry->TP1) at a glance. Deliberately
+  // narrow (a few % wide) and pinned just past the setup's own right edge,
+  // clamped to sigOvClamp's 0–100 range — it can never stretch wide or spill
+  // outside the chart image, unlike the wider OB/FVG zone boxes elsewhere.
+  if(cp.entry_y_pct != null){
+    const rrX1 = Math.min(96, (setupX2 != null ? sigOvClamp(setupX2) : SIG_OV_DEFAULT_X2) + 5);
+    const rrX2 = Math.min(99, rrX1 + 4);
+    if(cp.stop_loss_y_pct != null){
+      addPiece(sigOvZoneHTML(cp.entry_y_pct, cp.stop_loss_y_pct, 'var(--loss-bright)', 'rgba(255,93,122,0.24)', rrX1, rrX2),
+        '', 'Risk / Reward box', 'var(--loss-bright)');
+    }
+    const firstTpKey = ['tp1_y_pct','tp2_y_pct','tp3_y_pct'].find((k,idx)=> tps[idx] && cp[k] != null);
+    if(firstTpKey){
+      addPiece(sigOvZoneHTML(cp.entry_y_pct, cp[firstTpKey], 'var(--win)', 'rgba(43,224,138,0.24)', rrX1, rrX2),
+        '', 'Risk / Reward box', 'var(--win)');
+    }
+  }
   // Directional arrow — entry toward the furthest reachable TP, showing
   // expected price delivery at a glance (the "Arrow/Ray: direction from
   // entry toward target" tool). Placed just right of the level lines so it
