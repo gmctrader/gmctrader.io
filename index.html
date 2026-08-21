@@ -147,6 +147,42 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
 .view.active .grid > .card:nth-child(n+5){animation-delay:.2s;}
 @keyframes cardRise{from{opacity:0;transform:translateY(10px) scale(.99);}to{opacity:1;transform:translateY(0) scale(1);}}
 
+/* ---- equity curve card: forced dark "instrument panel" theme, matching the
+   reference design, regardless of the app's light/dark mode setting ---- */
+.card.eq-dark-card{
+  --steel:rgba(240,244,242,0.09); --steel-hi:rgba(240,244,242,0.18);
+  --platinum:#eef6f2; --slate:#93a6a1; --slate-dim:#6c827c;
+  --neon-green:#2dd4a8; --neon-cyan:#2dd4c8; --bronze-bright:#2dd4a8;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  background:
+    radial-gradient(ellipse 700px 420px at 18% -10%, rgba(45,212,168,0.10), transparent 60%),
+    radial-gradient(ellipse 620px 380px at 100% 100%, rgba(255,255,255,0.03), transparent 55%),
+    #0a1119;
+  border-color:rgba(240,244,242,0.09);
+  color:var(--platinum);
+}
+.card.eq-dark-card .equity-sub{
+  display:inline-block;margin-top:8px;padding:5px 12px;border-radius:20px;
+  background:rgba(240,244,242,0.06);border:1px solid rgba(240,244,242,0.1);
+  font-size:10px;letter-spacing:0.08em;color:var(--slate);
+}
+.card.eq-dark-card .equity-total.neg{
+  background:none;-webkit-text-fill-color:var(--loss-bright);color:var(--loss-bright);filter:none;animation:none;
+}
+.card.eq-dark-card .equity-total.pos{
+  background:none;-webkit-text-fill-color:var(--win-bright);color:var(--win-bright);filter:none;animation:none;
+}
+.card.eq-dark-card .equity-total-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate);margin-top:4px;text-align:right;}
+.eq-stat-row{display:flex;gap:26px;flex-wrap:wrap;margin-top:20px;}
+.eq-stat{display:flex;align-items:center;gap:10px;}
+.eq-stat-ico{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;}
+.eq-stat-ico.up{background:rgba(45,212,168,0.14);color:#2dd4a8;}
+.eq-stat-ico.down{background:rgba(255,93,122,0.14);color:#ff5d7a;}
+.eq-stat-ico svg{width:16px;height:16px;}
+.eq-stat b{display:block;font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:var(--platinum);line-height:1.15;}
+.eq-stat span{font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate);}
+.card.eq-dark-card .eq-footer-row{border-top-color:rgba(240,244,242,0.1);}
+
 /* ---- equity curve footer: best streak / win rate donut / worst streak ---- */
 .eq-footer-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding-top:16px;border-top:1px solid var(--steel);}
 .eq-footer-item{display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;}
@@ -2101,7 +2137,7 @@ setTimeout(function(){
         </div>
       </div>
 
-      <div class="card tilt fs-target" data-fs-label="Equity Curve">
+      <div class="card eq-dark-card fs-target" data-fs-label="Equity Curve">
         <button class="card-expand-btn" onclick="openCardFullscreen(this)" title="View fullscreen" aria-label="View fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
         <div class="equity-head">
           <div>
@@ -2110,13 +2146,14 @@ setTimeout(function(){
           </div>
           <div style="text-align:right">
             <div class="equity-total" id="equityTotal">$0</div>
-            <div class="equity-stats" style="margin-top:8px">
-              <div class="es"><b id="es_profitFactor">—</b><span>Profit factor</span></div>
-              <div class="es"><b id="es_avgWin">$0</b><span>Avg win</span></div>
-              <div class="es"><b id="es_avgLoss">$0</b><span>Avg loss</span></div>
-              <div class="es"><b id="es_maxDD">$0</b><span>Max drawdown</span></div>
-            </div>
+            <div class="equity-total-label">Total P/L</div>
           </div>
+        </div>
+        <div class="eq-stat-row">
+          <div class="eq-stat"><div class="eq-stat-ico up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></div><div><b id="es_profitFactor">—</b><span>Profit factor</span></div></div>
+          <div class="eq-stat"><div class="eq-stat-ico up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></div><div><b id="es_avgWin">$0</b><span>Avg win</span></div></div>
+          <div class="eq-stat"><div class="eq-stat-ico down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></div><div><b id="es_avgLoss">$0</b><span>Avg loss</span></div></div>
+          <div class="eq-stat"><div class="eq-stat-ico down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 11v6h-6"/></svg></div><div><b id="es_maxDD">$0</b><span>Max drawdown</span></div></div>
         </div>
         <div class="equity-wrap"><div class="equity-inner" id="equityChart"></div></div>
         <div class="eq-footer-row" id="eqFooterRow">
@@ -6988,7 +7025,10 @@ function renderEquityChart(containerId, totalId, subId){
   let glowSegs = '', coreSegs = '', hotSegs = '';
   for(let i=0;i<sampled.length-1;i++){
     const [x1,y1] = sampled[i], [x2,y2] = sampled[i+1];
-    const up = y2 <= y1;
+    // Color by position relative to the zero baseline (matches the reference
+    // design), not by local up/down slope — so a dip while still in profit
+    // stays green, and only crossing $0 actually flips the line to red.
+    const up = ((y1+y2)/2) <= baseY;
     const c = up ? NEON_UP : NEON_DOWN;
     glowSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="6.5" stroke-linecap="round"/>`;
     coreSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`;
