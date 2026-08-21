@@ -3510,12 +3510,21 @@ function renderScanHistory(){
   const wk = getWeekKey();
   const log = (scife.actionLog || []).filter(a => a.type === 'signal_analysis' && getWeekKey(new Date(a.at)) === wk);
   if(!log.length){ strip.innerHTML = ''; return; }
-  strip.innerHTML = log.slice(-10).reverse().map(a=>{
+  strip.innerHTML = log.slice(-8).reverse().map(a=>{
     const d = a.details || {};
-    if(!a.ok) return `<div class="sig-history-chip fail"><span class="dot"></span>${sigEsc(d.pair || d.strategy || 'scan')} · failed</div>`;
+    // All the inputs that went into this scan, so hovering (or the chip
+    // itself) tells the trader exactly what was run, not just what came out.
+    const inputBits = [d.strategy, d.pair, d.style, d.hadChart ? 'chart' : null].filter(Boolean);
+    const inputTitle = inputBits.join(' · ');
+    if(!a.ok){
+      const failTitle = sigEsc([...inputBits, d.error ? 'error: '+d.error : 'failed'].join(' · '));
+      return `<div class="sig-history-chip fail" title="${failTitle}"><span class="dot"></span>${sigEsc(d.pair || d.strategy || 'scan')} · failed</div>`;
+    }
     const bias = ['long','short','no_trade'].includes(d.bias) ? d.bias : 'no_trade';
     const biasShort = { long:'LONG', short:'SHORT', no_trade:'NO TRADE' }[bias];
-    return `<div class="sig-history-chip ${bias}"><span class="dot"></span>${sigEsc(d.pair || d.strategy || '')} · ${biasShort}${d.confidence!=null?' · '+d.confidence+'%':''}</div>`;
+    const label = [d.pair || d.strategy || '', d.style, d.hadChart ? 'chart' : null].filter(Boolean).join(' · ');
+    const fullTitle = sigEsc([inputTitle, biasShort + (d.confidence!=null?' · '+d.confidence+'%':'')].filter(Boolean).join(' → '));
+    return `<div class="sig-history-chip ${bias}" title="${fullTitle}"><span class="dot"></span>${sigEsc(label)} · ${biasShort}${d.confidence!=null?' · '+d.confidence+'%':''}</div>`;
   }).join('');
 }
 function sigLevelRow(name, lvl, i){
