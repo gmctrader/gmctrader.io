@@ -2691,76 +2691,59 @@ function setTraderBias(val){
     btn.classList.toggle('active', btn.dataset.val===val);
   });
 }
-/* ============ SESSION / KILLZONE PICKER ============
-   Standard UTC session windows (approximate — not DST-adjusted, flagged as
-   such in the UI). Selection persists in localStorage per-browser since it's
-   a personal trading-hours preference, not journal data that needs to sync
-   across devices. Feeds both the system prompt (so the model's own killzone
-   judgment and risk_note are session-aware) and a client-side "executable
-   right now" check computed straight off the real clock — deterministic,
-   not dependent on the model getting the current time right. */
-const SIGNAL_SESSIONS = {
-  sydney:  { label:'Sydney',   startUTC:21, endUTC:6  },
-  tokyo:   { label:'Tokyo',    startUTC:0,  endUTC:9  },
-  london:  { label:'London',   startUTC:7,  endUTC:16 },
-  newyork: { label:'New York', startUTC:12, endUTC:21 }
-};
-let sigSelectedSessions = [];
-function loadSignalSessionPrefs(){
-  try{
-    const raw = JSON.parse(localStorage.getItem('gd_sig_sessions')||'[]');
-    sigSelectedSessions = Array.isArray(raw) ? raw.filter(k=>SIGNAL_SESSIONS[k]) : [];
-  }catch(e){ sigSelectedSessions = []; }
+/* ============ SESSION AWARENESS (reads the real Session settings) ============
+   Ghost Discipline already has one authoritative session definition — the
+   Session screen in index.html, stored as trader_data.session = {start,end,
+   restrict} and enforced there via isInSession()/getActiveMarketSessions().
+   SciFe reuses that same row (traderRow.session, loaded with the rest of
+   trader_data) and the exact same time logic rather than asking the trader
+   to set a second, separate session preference in here — one source of
+   truth, same as the sidebar pill on the main app. */
+const SIG_DEFAULT_SESSION = { start:"09:00", end:"11:00", restrict:false };
+function sigCurrentSession(){
+  return (traderRow && traderRow.session) || SIG_DEFAULT_SESSION;
 }
-function saveSignalSessionPrefs(){
-  try{ localStorage.setItem('gd_sig_sessions', JSON.stringify(sigSelectedSessions)); }catch(e){}
+function sigTimeToMinutes(t){ const [h,m]=String(t||'0:0').split(':').map(Number); return (h||0)*60+(m||0); }
+function sigIsInSession(session){
+  const now = new Date();
+  const cur = now.getHours()*60+now.getMinutes();
+  const start = sigTimeToMinutes(session.start);
+  const end = sigTimeToMinutes(session.end);
+  return start<=end ? (cur>=start && cur<=end) : (cur>=start || cur<=end);
 }
-function renderSignalSessionPicker(){
-  const wrap = document.getElementById('sig_sessionPicker');
-  if(!wrap) return;
-  wrap.innerHTML = Object.entries(SIGNAL_SESSIONS).map(([key,s])=>
-    `<button type="button" class="sig-sess-chip${sigSelectedSessions.includes(key)?' active':''}" data-key="${key}" onclick="toggleSignalSession('${key}')">
-      <span class="dot"></span>${s.label} <span style="opacity:.6;">${String(s.startUTC).padStart(2,'0')}:00–${String(s.endUTC).padStart(2,'0')}:00 UTC</span>
-    </button>`).join('');
+// Same standard UTC market-session hours as getActiveMarketSessions() in
+// index.html — kept identical so the two pages never disagree.
+function sigGetActiveMarketSessions(){
+  const h = new Date().getUTCHours();
+  const sessions = [];
+  if(h>=22 || h<7) sessions.push('Sydney');
+  if(h>=0 && h<9) sessions.push('Tokyo');
+  if(h>=8 && h<17) sessions.push('London');
+  if(h>=13 && h<22) sessions.push('New York');
+  return sessions;
 }
-function toggleSignalSession(key){
-  const i = sigSelectedSessions.indexOf(key);
-  if(i===-1) sigSelectedSessions.push(key); else sigSelectedSessions.splice(i,1);
-  saveSignalSessionPrefs();
-  renderSignalSessionPicker();
+// Minutes until the trader's own window next opens (0 if already inside it).
+function sigMinutesUntilSessionStart(session){
+  const now = new Date();
+  const cur = now.getHours()*60+now.getMinutes();
+  const start = sigTimeToMinutes(session.start);
+  const d = start - cur;
+  return d >= 0 ? d : d + 1440;
 }
-// Is the given UTC hour (0-23, can be fractional) inside a session window,
-// handling windows that wrap past midnight (e.g. Sydney 21:00-06:00)?
-function hourInWindow(hour, start, end){
-  return start < end ? (hour >= start && hour < end) : (hour >= start || hour < end);
-}
-// Hours until `hour` next reaches `target` (0 if already there).
-function hoursUntil(hour, target){
-  const d = target - hour;
-  return d >= 0 ? d : d + 24;
-}
-function formatHoursMins(h){
-  const totalMin = Math.round(h*60);
+function formatHoursMins(totalMin){
+  totalMin = Math.round(totalMin);
   const hh = Math.floor(totalMin/60), mm = totalMin%60;
   return (hh>0 ? hh+'h ' : '') + mm+'m';
 }
-// Returns { inSession:bool, activeLabel, nextLabel, hoursToNext } evaluated
-// against the trader's selected sessions and the real current UTC time.
+// Single call the result card and the order-placement note both use.
 function computeSessionExecutability(){
-  if(!sigSelectedSessions.length) return null;
-  const now = new Date();
-  const hour = now.getUTCHours() + now.getUTCMinutes()/60;
-  let active = null, best = null;
-  sigSelectedSessions.forEach(key=>{
-    const s = SIGNAL_SESSIONS[key];
-    if(!s) return;
-    if(hourInWindow(hour, s.startUTC, s.endUTC) && !active) active = s.label;
-    const wait = hoursUntil(hour, s.startUTC);
-    if(!hourInWindow(hour, s.startUTC, s.endUTC) && (best===null || wait < best.hoursToNext)) best = { label:s.label, hoursToNext:wait };
-  });
-  return active
-    ? { inSession:true, activeLabel:active }
-    : { inSession:false, nextLabel: best ? best.label : null, hoursToNext: best ? best.hoursToNext : null };
+  const session = sigCurrentSession();
+  const inWindow = sigIsInSession(session);
+  return {
+    start: session.start, end: session.end, restrict: !!session.restrict,
+    inWindow, activeMarket: sigGetActiveMarketSessions(),
+    minutesToStart: inWindow ? 0 : sigMinutesUntilSessionStart(session)
+  };
 }
 
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
