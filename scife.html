@@ -2646,17 +2646,22 @@ function summarizeEconomicCalendar(){
    the trader hands it a trade to log or edit. We pull that block out of the
    reply, act on it against the same `trades` array index.html uses, persist
    it, and strip the block itself out of what's shown/spoken. */
-// Tolerant of a variable number of trailing '>' — models occasionally emit
-// '<<<ACTION>>' instead of the specified '<<<ACTION>>>'. Matching only the
-// exact three-bracket form means that block leaks into the visible/spoken
-// reply as raw JSON AND the action itself silently never gets applied.
-const ACTION_RE = /<<<ACTION>+\s*([\s\S]*?)<<<END>+/;
+// Tolerant of the model varying the number of '<'/'>' on either marker
+// (e.g. '<<ACTION>>>', '<<<ACTION>>') and of casing drift — models are
+// inconsistent about this even when the prompt spells it out exactly.
+// Global flag + a loop below strips EVERY action-shaped block found, so a
+// model that accidentally emits one mid-reply (instead of only at the very
+// end) never leaks raw JSON into the visible/spoken reply.
+const ACTION_RE = /<{2,4}\s*ACTION\s*>{2,4}\s*([\s\S]*?)<{2,4}\s*END\s*>{2,4}/gi;
 function extractTradeAction(replyText){
-  const m = replyText.match(ACTION_RE);
-  if(!m) return { text: replyText.trim(), action: null };
-  const text = replyText.replace(ACTION_RE, '').trim();
+  const matches = [...replyText.matchAll(ACTION_RE)];
+  const text = replyText.replace(ACTION_RE, '').replace(/\n{3,}/g, '\n\n').trim();
+  if(!matches.length) return { text, action: null };
+  // Only ever act on the first block — if the model emitted more than one,
+  // that's already a prompt-following failure and we don't want to apply
+  // several actions off a single turn.
   let action = null;
-  try{ action = JSON.parse(m[1].trim()); }catch(e){ action = null; }
+  try{ action = JSON.parse(matches[0][1].trim()); }catch(e){ action = null; }
   return { text, action };
 }
 /* ============ ACTION LOG (audit trail for anything SciFe edits/saves) ============
@@ -2712,7 +2717,7 @@ async function applyTradeAction(action){
     traderRow.trades.push(trade);
     const ok = await saveTrades();
     logAction('log_trade', { id: trade.id, result: trade.result, amount, pair: trade.pair, date: trade.date }, ok);
-    return ok ? `[Logged: ${trade.result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}]` : '[Could not save that trade — try again in a moment.]';
+    return ok ? { ok:true, message:`Logged: ${trade.result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}` } : { ok:false, message:'Could not save that trade — try again in a moment.' };
   }
   if(action.type === 'edit_rule'){
     return await applyRuleAction(action);
@@ -2720,7 +2725,7 @@ async function applyTradeAction(action){
   if(action.type === 'edit_trade'){
     const id = action.id!=null ? Number(action.id) : null;
     const idx = id!=null ? traderRow.trades.findIndex(t=>Number(t.id)===id) : -1;
-    if(idx === -1) return '[Could not find that trade to edit.]';
+    if(idx === -1) return { ok:false, message:'Could not find that trade to edit.' };
     const t = traderRow.trades[idx];
     if(action.result==='win' || action.result==='loss') t.result = action.result;
     if(action.pnl!=null && !isNaN(parseFloat(action.pnl))){
@@ -2735,7 +2740,7 @@ async function applyTradeAction(action){
     if(['calm','confident','fomo','revenge','bored','anxious'].includes(action.mood)) t.mood = action.mood;
     const ok = await saveTrades();
     logAction('edit_trade', { id: t.id, date: t.date, pair: t.pair }, ok);
-    return ok ? `[Updated trade ${t.date} ${t.pair||''}]` : '[Could not save that edit — try again in a moment.]';
+    return ok ? { ok:true, message:`Updated trade ${t.date} ${t.pair||''}` } : { ok:false, message:'Could not save that edit — try again in a moment.' };
   }
   return null;
 }
@@ -2770,7 +2775,7 @@ async function applyRuleAction(action){
   const key = normalizeRuleKey(action.rule);
   if(!key){
     logAction('edit_rule', { rule: action.rule, reason: 'unrecognized rule name' }, false);
-    return `[Could not recognize "${action.rule||''}" as a rule to edit.]`;
+    return { ok:false, message:`Could not recognize "${action.rule||''}" as a rule to edit.` };
   }
   traderRow.rules = traderRow.rules || {};
   const prev = traderRow.rules[key];
@@ -2779,14 +2784,14 @@ async function applyRuleAction(action){
     value = (value===null || value==='') ? null : parseFloat(value);
     if(value!=null && isNaN(value)){
       logAction('edit_rule', { rule: key, attemptedValue: action.value, reason: 'non-numeric value' }, false);
-      return `[That value for ${RULE_LABELS[key]} did not look like a number.]`;
+      return { ok:false, message:`That value for ${RULE_LABELS[key]} did not look like a number.` };
     }
   }
   traderRow.rules[key] = value;
   const ok = await saveRulesField();
-  if(!ok){ traderRow.rules[key] = prev; logAction('edit_rule', { rule: key, from: prev, to: value }, false); return `[Could not save the change to ${RULE_LABELS[key]} — try again in a moment.]`; }
+  if(!ok){ traderRow.rules[key] = prev; logAction('edit_rule', { rule: key, from: prev, to: value }, false); return { ok:false, message:`Could not save the change to ${RULE_LABELS[key]} — try again in a moment.` }; }
   logAction('edit_rule', { rule: key, from: prev, to: value }, true);
-  return `[Updated ${RULE_LABELS[key]}: ${prev ?? '—'} → ${value ?? '—'}]`;
+  return { ok:true, message:`Updated ${RULE_LABELS[key]}: ${prev ?? '—'} → ${value ?? '—'}` };
 }
 
 function buildSystemPrompt(){
@@ -4541,9 +4546,15 @@ async function sendMessage(text){
     await ensureEconomicCalendar();
     const rawReply = await chatCompletion(buildSystemPrompt(), history.slice(-12));
     const { text: cleanReply, action } = extractTradeAction(rawReply);
-    let confirmation = null;
-    if(action) confirmation = await applyTradeAction(action);
-    const displayReply = confirmation ? `${cleanReply}\n\n${confirmation}` : cleanReply;
+    let result = null;
+    if(action) result = await applyTradeAction(action);
+    // Only surface the confirmation note when something went wrong — a
+    // successful action is already narrated in plain language by the model
+    // itself (see buildSystemPrompt's instructions), so bolting a second,
+    // bracket-formatted "[Updated X]" line onto every reply just reads as
+    // leaked internal state. Failures still need to be visible so the
+    // trader knows a change didn't actually save.
+    const displayReply = (result && !result.ok) ? `${cleanReply}\n\n${result.message}` : cleanReply;
     removeTyping();
     addBubble('assistant', displayReply);
     history.push({ role:'assistant', content: cleanReply });
