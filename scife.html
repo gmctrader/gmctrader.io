@@ -1260,7 +1260,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false }, chartMemory:{} };
+let scife = { provider:'openai', apiKeys:{}, model:'gpt-4o-mini', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false }, chartMemory:{}, sigSessions:[] };
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -2109,7 +2109,8 @@ async function loadTraderRow(){
     handsFree: !!s.handsFree,
     voiceURI: s.voiceURI || '',
     usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin },
-    chartMemory: (s.chartMemory && typeof s.chartMemory === 'object') ? s.chartMemory : {}
+    chartMemory: (s.chartMemory && typeof s.chartMemory === 'object') ? s.chartMemory : {},
+    sigSessions: Array.isArray(s.sigSessions) ? s.sigSessions.filter(k=>SIGNAL_SESSIONS[k]) : []
   };
   rolloverUsageWeek();
   updateScanBanner();
@@ -2616,6 +2617,16 @@ const SIGNAL_TRADE_STYLES = {
   intraday: { label:'Intraday', good:1.5, warn:1,   tpRange:'2',   blurb:'Intraday setups carry it for hours, so they generally want at least 1–1.5R to be worth the screen time and spread.' },
   swing:    { label:'Swing',    good:2,   warn:1.3, tpRange:'2–3', blurb:'Swing trades tie up margin and carry overnight risk for days, so the reward needs to clear a higher bar — 2R or better.' }
 };
+// Standard UTC killzone hours (not DST-adjusted) — same windows used by
+// getActiveMarketSessions() in index.html, kept here so the Signal page can
+// label the trader's own session picker and pass readable names into the
+// system prompt.
+const SIGNAL_SESSIONS = {
+  sydney:  { label:'Sydney',    startUTC:22, endUTC:7  },
+  tokyo:   { label:'Tokyo',     startUTC:0,  endUTC:9  },
+  london:  { label:'London',    startUTC:8,  endUTC:17 },
+  newyork: { label:'New York',  startUTC:13, endUTC:22 }
+};
 // Expert-level definitions for every checklist concept across all strategy
 // types, keyed by id (ids are unique across GMC/SMC/ICT/TA — no collisions).
 // These get woven into the system prompt so the model judges each concept
@@ -2747,6 +2758,7 @@ function computeSessionExecutability(){
 }
 
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
+let sigSelectedSessions = []; // array of SIGNAL_SESSIONS keys the trader has toggled on, persisted in scife.sigSessions
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
 // Reads the vision:true/false flag set per-model in PROVIDERS above, so
@@ -2773,6 +2785,32 @@ function openSignalPage(){
 function closeSignalPage(){
   document.getElementById('signalPage').style.display='none';
   document.getElementById('app').style.display='flex';
+}
+// Pulls the trader's saved session selection (scife.sigSessions, synced via
+// trader_data same as everything else in `scife`) into the in-memory
+// sigSelectedSessions array the picker and analyzeSignal() both read.
+function loadSignalSessionPrefs(){
+  sigSelectedSessions = Array.isArray(scife.sigSessions) ? scife.sigSessions.filter(k=>SIGNAL_SESSIONS[k]) : [];
+}
+// Renders the "Sessions you trade" chip row and wires up toggling. Rebuilt
+// each time the Signal page opens so it always reflects the latest saved
+// selection (e.g. after a sync from another device).
+function renderSignalSessionPicker(){
+  const el = document.getElementById('sig_sessionPicker');
+  if(!el) return;
+  el.innerHTML = Object.keys(SIGNAL_SESSIONS).map(key=>{
+    const s = SIGNAL_SESSIONS[key];
+    const active = sigSelectedSessions.includes(key);
+    return `<div class="sig-sess-chip${active?' active':''}" data-session="${key}" role="button" tabindex="0" onclick="toggleSignalSession('${key}')" onkeydown="if(event.key==='Enter')toggleSignalSession('${key}')"><span class="dot"></span>${sigEsc(s.label)}</div>`;
+  }).join('');
+}
+async function toggleSignalSession(key){
+  if(!SIGNAL_SESSIONS[key]) return;
+  const i = sigSelectedSessions.indexOf(key);
+  if(i === -1) sigSelectedSessions.push(key); else sigSelectedSessions.splice(i,1);
+  renderSignalSessionPicker();
+  scife.sigSessions = sigSelectedSessions.slice();
+  await saveScife();
 }
 function populateSignalStrategySelect(){
   const sel = document.getElementById('sig_strategy');
