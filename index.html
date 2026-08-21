@@ -210,9 +210,10 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
 .card-expand-btn svg{width:15px;height:15px;}
 .card.fs-target > h2, .card.fs-target > .equity-head, .card.fs-target > .cal-head{padding-right:44px;}
 body.card-fs-open{overflow:hidden;}
-.card.fs-active{position:fixed !important;inset:0;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;
-  max-width:100vw;max-height:100dvh;margin:0 !important;border-radius:0;z-index:2000;
-  overflow-y:auto;-webkit-overflow-scrolling:touch;
+.card.fs-active{position:fixed !important;inset:0 !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;
+  width:100vw !important;height:100vh !important;height:100dvh !important;
+  max-width:100vw !important;max-height:100dvh !important;margin:0 !important;border-radius:0 !important;z-index:2000;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
   padding:calc(env(safe-area-inset-top) + 66px) 20px calc(env(safe-area-inset-bottom) + 28px);
   animation:cardFsIn .32s cubic-bezier(.2,.8,.2,1);}
 .card.fs-active::after{display:none;}
@@ -6944,7 +6945,7 @@ function triggerAnalyticsOpenFeel(){
 }
 
 /* ============ EQUITY RIBBON / CURVE CHART ============ */
-function renderEquityChart(containerId, totalId, subId){
+function renderEquityChart(containerId, totalId, subId, tallPx){
   const container = document.getElementById(containerId);
   const totalEl = document.getElementById(totalId);
   if(!container) return;
@@ -6966,7 +6967,7 @@ function renderEquityChart(containerId, totalId, subId){
     points.push({x:i+1,y:cum,label:t.date});
   });
 
-  const W = 720, H = 230, padL = 46, padR = 20, padT = 44, padB = 34;
+  const W = 720, H = tallPx || 230, padL = 46, padR = 20, padT = 44, padB = 34;
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const sx = i => padL + (points.length<=1?0:(i/(points.length-1))*plotW);
 
@@ -7058,12 +7059,18 @@ function renderEquityChart(containerId, totalId, subId){
   container.innerHTML = `
     <svg width="100%" viewBox="0 0 ${W} ${H+6}" style="overflow:visible">
       <defs>
-        <linearGradient id="areaGrad-${containerId}" gradientUnits="userSpaceOnUse" x1="0" y1="${padT-18}" x2="0" y2="${baseY+plotH*0.35}">
-          <stop offset="0%" stop-color="${overallUp?'rgba(16,185,129,0.30)':'rgba(244,63,94,0.26)'}"/>
-          <stop offset="30%" stop-color="${overallUp?'rgba(16,185,129,0.16)':'rgba(244,63,94,0.14)'}"/>
-          <stop offset="65%" stop-color="${overallUp?'rgba(16,185,129,0.05)':'rgba(244,63,94,0.05)'}"/>
-          <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+        <linearGradient id="areaGradUp-${containerId}" gradientUnits="userSpaceOnUse" x1="0" y1="${padT-18}" x2="0" y2="${baseY}">
+          <stop offset="0%" stop-color="rgba(16,185,129,0.32)"/>
+          <stop offset="45%" stop-color="rgba(16,185,129,0.14)"/>
+          <stop offset="100%" stop-color="rgba(16,185,129,0.02)"/>
         </linearGradient>
+        <linearGradient id="areaGradDown-${containerId}" gradientUnits="userSpaceOnUse" x1="0" y1="${baseY}" x2="0" y2="${padT+plotH}">
+          <stop offset="0%" stop-color="rgba(244,63,94,0.02)"/>
+          <stop offset="55%" stop-color="rgba(244,63,94,0.16)"/>
+          <stop offset="100%" stop-color="rgba(244,63,94,0.30)"/>
+        </linearGradient>
+        <clipPath id="clipAbove-${containerId}"><rect x="0" y="${padT-24}" width="${W}" height="${Math.max(0,baseY-(padT-24))}"/></clipPath>
+        <clipPath id="clipBelow-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,(padT+plotH+24)-baseY)}"/></clipPath>
         <radialGradient id="endBloom-${containerId}" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.45"/>
           <stop offset="100%" stop-color="${lastColor}" stop-opacity="0"/>
@@ -7097,7 +7104,8 @@ function renderEquityChart(containerId, totalId, subId){
       <g clip-path="url(#eqReveal-${containerId})">
         <g mask="url(#topFadeMask-${containerId})">
           <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.4">${coreSegs}</g>
-          <path d="${areaPath}" fill="url(#areaGrad-${containerId})"/>
+          <path d="${areaPath}" fill="url(#areaGradUp-${containerId})" clip-path="url(#clipAbove-${containerId})"/>
+          <path d="${areaPath}" fill="url(#areaGradDown-${containerId})" clip-path="url(#clipBelow-${containerId})"/>
           <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="28" fill="url(#endBloom-${containerId})"/>
           <g filter="url(#eqGlow-${containerId})" opacity="0.75">${glowSegs}</g>
           <g>${coreSegs}</g>
@@ -7194,6 +7202,16 @@ function setEquityStats(trades, maxDD){
    needles, the score dial and the calendar's live bindings/animations
    keep running exactly as they were — nothing is re-rendered. */
 let fsCardEl = null, fsCardPlaceholder = null;
+// The equity SVG has a fixed internal aspect ratio, so simply stretching its
+// box with CSS left most of a phone screen empty below a short, letterboxed
+// chart. Instead, when the Equity Curve card goes fullscreen, the chart is
+// redrawn taller (using the same draw function) so it actually fills the
+// screen; closing it redraws back to the normal card height.
+function eqChartIdsForCard(card){
+  if(card.querySelector('#equityChart')) return ['equityChart','equityTotal','equitySub'];
+  if(card.querySelector('#equityChartOverview')) return ['equityChartOverview','equityTotalOverview','equitySubOverview'];
+  return null;
+}
 function openCardFullscreen(btn){
   const card = btn.closest('.card');
   if(!card || fsCardEl) return;
@@ -7216,6 +7234,15 @@ function openCardFullscreen(btn){
   exitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   exitBtn.onclick = closeCardFullscreen;
   document.body.appendChild(exitBtn);
+  const eqIds = eqChartIdsForCard(card);
+  if(eqIds){
+    // Give it a viewBox height proportional to the real available screen
+    // height so the redrawn chart fills the phone edge-to-edge instead of
+    // sitting letterboxed in a mostly-empty panel.
+    const availH = window.innerHeight - 300;
+    const tallPx = Math.max(300, Math.min(620, availH));
+    requestAnimationFrame(()=>renderEquityChart(eqIds[0], eqIds[1], eqIds[2], tallPx));
+  }
   window.dispatchEvent(new Event('resize'));
 }
 function closeCardFullscreen(){
@@ -7228,6 +7255,8 @@ function closeCardFullscreen(){
   if(fsCardPlaceholder && fsCardPlaceholder.parentNode){
     fsCardPlaceholder.parentNode.replaceChild(card, fsCardPlaceholder);
   }
+  const eqIds = eqChartIdsForCard(card);
+  if(eqIds) renderEquityChart(eqIds[0], eqIds[1], eqIds[2]);
   fsCardEl = null; fsCardPlaceholder = null;
   window.dispatchEvent(new Event('resize'));
 }
