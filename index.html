@@ -6974,10 +6974,32 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const sx = i => padL + (points.length<=1?0:(i/(points.length-1))*plotW);
 
-  // Use the actual equity points directly. The reference uses one continuous
-  // smooth curve without synthetic drawdown/retest points.
-  const minY = Math.min(0, ...points.map(p=>p.y));
-  const maxY = Math.max(0, ...points.map(p=>p.y));
+  // "Nice" rounded axis scale (400/200/0/-200 instead of odd numbers like
+  // 379/218/57/-104) — the standard d3-style nice-number algorithm, so grid
+  // lines land on clean round values regardless of the actual data range.
+  function niceNum(range, round){
+    if(!isFinite(range) || range<=0) range = 1;
+    const exponent = Math.floor(Math.log10(range));
+    const fraction = range / Math.pow(10, exponent);
+    let niceFraction;
+    if(round){
+      if(fraction < 1.5) niceFraction = 1;
+      else if(fraction < 3) niceFraction = 2;
+      else if(fraction < 7) niceFraction = 5;
+      else niceFraction = 10;
+    } else {
+      if(fraction <= 1) niceFraction = 1;
+      else if(fraction <= 2) niceFraction = 2;
+      else if(fraction <= 5) niceFraction = 5;
+      else niceFraction = 10;
+    }
+    return niceFraction * Math.pow(10, exponent);
+  }
+  const rawMinY = Math.min(0, ...points.map(p=>p.y));
+  const rawMaxY = Math.max(0, ...points.map(p=>p.y));
+  const niceStep = niceNum((rawMaxY-rawMinY)/4 || 1, true);
+  const minY = Math.floor(rawMinY/niceStep)*niceStep;
+  const maxY = Math.max(niceStep, Math.ceil(rawMaxY/niceStep)*niceStep);
   const spanY = (maxY-minY) || 1;
   const sy = v => padT + plotH - ((v-minY)/spanY)*plotH;
   const baseY = sy(0);
@@ -6989,41 +7011,44 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const segs = catmullRomSegments(curvePts);
   const sampled = curvePts.length>1 ? sampleSegs(segs, 12) : curvePts;
 
-  // Exact reference palette: mint-green above zero, warm red below zero.
-  const NEON_UP = '#32d3aa', NEON_DOWN = '#ef5965';
+  // Refined, slightly desaturated palette — reads as premium rather than neon.
+  const NEON_UP = '#2dd4a8', NEON_DOWN = '#e8536a';
 
   // Grid lines + $ / trade-number axis labels — required by the SVG template
   // below (${floorLines} / ${axisLabels}); must be built before that template
   // runs or the chart throws and the whole card falls back to its zero state.
+  // Ticks now land on the nice/rounded values computed above.
   let floorLines = '', axisLabels = '';
   for(let g=0; g<=4; g++){
-    const gy = padT + plotH*(g/4);
-    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="1,3"/>`;
-    const val = maxY - (maxY-minY)*(g/4);
+    const val = maxY - niceStep*g;
+    const gy = sy(val);
+    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="1,4"/>`;
     const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val));
-    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${lbl}</text>`;
+    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="0.02em" fill="rgba(150,164,159,0.62)">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
     const gx = padL + plotW*(g/6);
-    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="1,3"/>`;
+    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.035)" stroke-width="1" stroke-dasharray="1,4"/>`;
   }
   const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
   for(let i=0;i<points.length;i++){
     if(i!==0 && i%xStep!==0 && i!==points.length-1) continue;
-    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${i}</text>`;
+    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(150,164,159,0.62)">${i}</text>`;
   }
-  axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.14em" font-weight="600" fill="rgba(140,155,150,0.55)">TRADE NUMBER</text>`;
+  axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.16em" font-weight="600" fill="rgba(150,164,159,0.5)">TRADE NUMBER</text>`;
 
+  // Line stroked ~5x thinner than before, with a matching lighter glow/blur
+  // so the halo stays proportionate to the finer line instead of swamping it.
   const linePath = sampled.map((p,i)=>`${i?'L':'M'}${p[0]},${p[1]}`).join(' ');
   let glowSegs = '';
   let coreSegs = '';
   let hotSegs = '';
-  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
-  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
-  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="2.65" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
-  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="2.65" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
-  hotSegs += `<path d="${linePath}" fill="none" stroke="#7ae6c8" stroke-width="0.72" stroke-linecap="round" stroke-linejoin="round" opacity="0.72" clip-path="url(#clipAbove-${containerId})"/>`;
-  hotSegs += `<path d="${linePath}" fill="none" stroke="#ff9aa2" stroke-width="0.62" stroke-linecap="round" stroke-linejoin="round" opacity="0.48" clip-path="url(#clipBelow-${containerId})"/>`;
+  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
+  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
+  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
+  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
+  hotSegs += `<path d="${linePath}" fill="none" stroke="#a8f0da" stroke-width="0.15" stroke-linecap="round" stroke-linejoin="round" opacity="0.65" clip-path="url(#clipAbove-${containerId})"/>`;
+  hotSegs += `<path d="${linePath}" fill="none" stroke="#ffc2cb" stroke-width="0.13" stroke-linecap="round" stroke-linejoin="round" opacity="0.4" clip-path="url(#clipBelow-${containerId})"/>`;
 
   const areaPath = `M${sampled[0][0]},${baseY} ` + sampled.map(p=>`L${p[0]},${p[1]}`).join(' ') + ` L${sampled[sampled.length-1][0]},${baseY} Z`;
 
@@ -7031,13 +7056,13 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   let markers = '';
   topPts.forEach((p,i)=>{
     if(i%showEvery!==0 && i!==topPts.length-1) return;
-    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="#f5f8f7" stroke="#07090a" stroke-width="1.2" class="eq-marker" data-i="${i}"/>`;
+    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#f5f8f7" stroke="#07090a" stroke-width="0.8" class="eq-marker" data-i="${i}"/>`;
   });
   const lastPt = topPts[topPts.length-1];
   const lastColor = overallUp ? NEON_UP : NEON_DOWN;
   const endGlow = `
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="16" fill="${lastColor}" opacity="0.18" class="eq-pulse-ring"/>
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="4.4" fill="#f5f8f7" stroke="#07090a" stroke-width="1.4" class="eq-pulse-dot"/>`;
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="14" fill="${lastColor}" opacity="0.16" class="eq-pulse-ring"/>
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.2" fill="#f5f8f7" stroke="#07090a" stroke-width="1" class="eq-pulse-dot"/>`;
 
   // faint mirrored reflection of the line beneath the baseline, fading out —
   // gives the panel a glassy, "trading terminal" depth instead of a flat plot.
@@ -7069,13 +7094,18 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
         </linearGradient>
         <mask id="reflMask-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,H+6-baseY)}" fill="url(#reflFade-${containerId})"/></mask>
         <filter id="eqGlow-${containerId}" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="5.2" result="blurWide"/>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.9" result="blurTight"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.15" result="blurWide"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" result="blurTight"/>
           <feMerge><feMergeNode in="blurWide"/><feMergeNode in="blurTight"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <filter id="eqLineShadow-${containerId}" x="-40%" y="-40%" width="180%" height="180%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.4" flood-color="#000000" flood-opacity="0.55"/>
+          <feDropShadow dx="0" dy="2" stdDeviation="2.6" flood-color="#000000" flood-opacity="0.4"/>
         </filter>
+        <radialGradient id="vignette-${containerId}" cx="50%" cy="38%" r="75%">
+          <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+          <stop offset="78%" stop-color="#000" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#000" stop-opacity="0.35"/>
+        </radialGradient>
         <clipPath id="eqReveal-${containerId}"><rect id="eqRevealRect-${containerId}" x="0" y="0" width="0" height="${H+6}"/></clipPath>
         <!-- Fades the very top strip of the chart to nothing so the glow
              dissolves smoothly into the panel instead of hitting a hard
@@ -7089,9 +7119,10 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
           <rect x="0" y="${padT+18}" width="${W}" height="${H+6-(padT+18)}" fill="#fff"/>
         </mask>
       </defs>
+      <rect x="0" y="0" width="${W}" height="${H+6}" fill="url(#vignette-${containerId})" pointer-events="none"/>
       ${floorLines}
       ${axisLabels}
-      <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="2,4"/>
       <g clip-path="url(#eqReveal-${containerId})">
         <g clip-path="url(#plotBounds-${containerId})">
           <g mask="url(#topFadeMask-${containerId})">
