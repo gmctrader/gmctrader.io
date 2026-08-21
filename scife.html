@@ -850,6 +850,38 @@ html.motion-reduced .stream-caret{animation:none !important;opacity:.7;}
 .sig-history-chip.short .dot{background:var(--loss-bright);box-shadow:0 0 6px var(--loss-bright);}
 .sig-history-chip.no_trade .dot{background:var(--amber);box-shadow:0 0 6px var(--amber);}
 .sig-history-chip.fail .dot{background:var(--slate-dim);}
+.sig-history-viewall{flex:none;font-size:11px;font-weight:650;color:var(--bronze-bright);cursor:pointer;white-space:nowrap;
+  padding:6px 4px 14px 0;transition:.15s;}
+.sig-history-viewall:hover{color:var(--gold-bright);}
+
+/* ---- scan history modal — expandable rows, one per scan ---- */
+.scan-history-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.scan-history-empty{color:var(--slate);font-size:13px;padding:10px 2px;}
+.scan-history-row{border:1px solid var(--steel-hi);border-radius:12px;background:rgba(255,255,255,0.02);overflow:hidden;transition:border-color .15s;}
+.scan-history-row.expanded{border-color:var(--steel-hi);background:rgba(255,255,255,0.035);}
+.scan-history-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none;}
+.scan-history-head .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.scan-history-row.long .dot{background:var(--win);box-shadow:0 0 6px var(--win);}
+.scan-history-row.short .dot{background:var(--loss-bright);box-shadow:0 0 6px var(--loss-bright);}
+.scan-history-row.no_trade .dot{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.scan-history-row.fail .dot{background:var(--slate-dim);}
+.scan-history-title{flex:1;min-width:0;}
+.scan-history-title .name{font-weight:650;font-size:13px;color:var(--platinum);}
+.scan-history-title .meta{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--slate);margin-top:1px;}
+.scan-history-badge{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:650;padding:3px 8px;border-radius:99px;flex:none;
+  background:rgba(255,255,255,0.05);color:var(--slate);}
+.scan-history-row.long .scan-history-badge{color:var(--win);}
+.scan-history-row.short .scan-history-badge{color:var(--loss-bright);}
+.scan-history-row.no_trade .scan-history-badge{color:var(--amber);}
+.scan-history-row.fail .scan-history-badge{color:var(--loss-bright);}
+.scan-history-chevron{flex:none;font-size:11px;color:var(--slate-dim);transition:transform .2s;}
+.scan-history-row.expanded .scan-history-chevron{transform:rotate(90deg);}
+.scan-history-detail{display:none;padding:0 13px 13px;border-top:1px solid var(--steel-hi);margin-top:0;}
+.scan-history-row.expanded .scan-history-detail{display:block;animation:sigBlockIn .25s ease both;}
+.scan-history-detail-grid{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:12px;padding-top:11px;}
+.scan-history-detail-grid dt{color:var(--slate);font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;align-self:start;}
+.scan-history-detail-grid dd{margin:0;color:var(--platinum);word-break:break-word;}
+.scan-history-detail-grid dd.error{color:var(--loss-bright);}
 
 /* ---- skeleton loader — shown in the result slot while a scan is running ---- */
 .sig-skeleton{border-radius:var(--r-lg);padding:24px 20px;background:var(--panel);border:1px solid var(--steel-hi);}
@@ -1206,7 +1238,10 @@ setTimeout(function(){
     <span id="sig_scanBannerText">Scans remaining this week: —</span>
     <span class="icon-btn" role="button" tabindex="0" style="width:26px;height:26px;font-size:13px;" title="Settings" aria-label="Open settings" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()">⚙</span>
   </div>
-  <div id="sig_historyStrip" class="sig-history-strip"></div>
+  <div class="sig-history-row" style="display:flex;align-items:center;gap:8px;">
+    <div id="sig_historyStrip" class="sig-history-strip" style="flex:1;"></div>
+    <span id="sig_historyViewAll" class="sig-history-viewall mono" role="button" tabindex="0" onclick="openScanHistory()" onkeydown="if(event.key==='Enter')openScanHistory()" style="display:none;">View all →</span>
+  </div>
 
   <div class="field">
     <label>Strategy</label>
@@ -1404,6 +1439,19 @@ setTimeout(function(){
       <button class="btn-ghost" style="flex:1;" onclick="closeSettings()">Close</button>
       <button class="btn" style="flex:1;" onclick="saveSettings()">Save</button>
     </div>
+  </div>
+</div>
+
+<!-- SCAN HISTORY MODAL — lists every scan this week and lets the trader
+     expand any one of them to see every input that went into it (strategy,
+     pair, style, chart, description, desired R:R, pre-analysis bias) next
+     to what SciFe returned. -->
+<div class="overlay" id="scanHistoryOverlay" onclick="if(event.target===this)closeScanHistory();">
+  <div class="modal" style="max-width:460px;" role="dialog" aria-modal="true" aria-labelledby="scanHistoryTitle">
+    <button class="modal-close" onclick="closeScanHistory()" aria-label="Close scan history">✕</button>
+    <h3 class="serif" id="scanHistoryTitle">Scan history</h3>
+    <div class="sub" id="scanHistorySub">This week's scans, with every input.</div>
+    <div id="scanHistoryList" class="scan-history-list"></div>
   </div>
 </div>
 
@@ -3340,7 +3388,7 @@ async function analyzeSignal(){
     hideSkeleton();
     renderSignalResult(memEntry.result, strategy, styleKey, pair, null);
     showToast('Same chart as last scan — showing the same read (no coordinates changed)');
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: true, bias: memEntry.result.bias, confidence: memEntry.result.confidence, cached: true }, true);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: true, desc: desc || null, desiredRR, traderBias: sigTraderBias, bias: memEntry.result.bias, confidence: memEntry.result.confidence, cached: true }, true);
     renderScanHistory();
     return;
   }
@@ -3446,7 +3494,7 @@ async function analyzeSignal(){
     scife.chartMemory[memKey] = { hash: (sigChartImage && sigChartImage.hash) || null, result: parsed, at: Date.now() };
     saveScife();
     renderSignalResult(parsed, strategy, styleKey, pair, invalidated);
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, bias: parsed.bias, confidence: parsed.confidence }, true);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, desc: desc || null, desiredRR, traderBias: sigTraderBias, bias: parsed.bias, confidence: parsed.confidence }, true);
     renderScanHistory();
   }catch(e){
     hideSkeleton();
@@ -3459,7 +3507,7 @@ async function analyzeSignal(){
       msg += ' — this looks like a provider-side outage/overload rather than anything wrong on your end. Try again shortly, or switch provider in settings.';
     }
     showSigError(msg, true);
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, error: e.message||'unknown' }, false);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, desc: desc || null, desiredRR, traderBias: sigTraderBias, error: e.message||'unknown' }, false);
     renderScanHistory();
   }finally{
     btn.disabled = false; btn.textContent = 'Analyze setup'; btn.classList.remove('btn-analyzing');
@@ -3509,6 +3557,9 @@ function renderScanHistory(){
   if(!strip) return;
   const wk = getWeekKey();
   const log = (scife.actionLog || []).filter(a => a.type === 'signal_analysis' && getWeekKey(new Date(a.at)) === wk);
+  const viewAll = document.getElementById('sig_historyViewAll');
+  if(viewAll) viewAll.style.display = log.length ? '' : 'none';
+  if(document.getElementById('scanHistoryOverlay')?.classList.contains('show')) renderScanHistoryModal();
   if(!log.length){ strip.innerHTML = ''; return; }
   strip.innerHTML = log.slice(-8).reverse().map(a=>{
     const d = a.details || {};
@@ -3526,6 +3577,71 @@ function renderScanHistory(){
     const fullTitle = sigEsc([inputTitle, biasShort + (d.confidence!=null?' · '+d.confidence+'%':'')].filter(Boolean).join(' → '));
     return `<div class="sig-history-chip ${bias}" title="${fullTitle}"><span class="dot"></span>${sigEsc(label)} · ${biasShort}${d.confidence!=null?' · '+d.confidence+'%':''}</div>`;
   }).join('');
+}
+/* Full scan history modal — every scanned pair this week, each row
+   expandable to reveal every input that went into that scan (strategy,
+   pair, style, chart, description, desired R:R, pre-analysis bias) next
+   to what SciFe returned, not just the bias/confidence shown on the chip. */
+function openScanHistory(){
+  renderScanHistoryModal();
+  document.getElementById('scanHistoryOverlay').classList.add('show');
+}
+function closeScanHistory(){
+  document.getElementById('scanHistoryOverlay').classList.remove('show');
+}
+function renderScanHistoryModal(){
+  const listEl = document.getElementById('scanHistoryList');
+  const subEl = document.getElementById('scanHistorySub');
+  if(!listEl) return;
+  const wk = getWeekKey();
+  const log = (scife.actionLog || []).filter(a => a.type === 'signal_analysis' && getWeekKey(new Date(a.at)) === wk);
+  if(subEl) subEl.textContent = log.length ? `${log.length} scan${log.length===1?'':'s'} this week, with every input.` : 'No scans yet this week.';
+  if(!log.length){ listEl.innerHTML = '<div class="scan-history-empty">Run a scan and it\'ll show up here.</div>'; return; }
+  const RR_LABEL = { long:'LONG', short:'SHORT', no_trade:'NO TRADE' };
+  listEl.innerHTML = log.slice().reverse().map((a, idx)=>{
+    const d = a.details || {};
+    const bias = a.ok ? (['long','short','no_trade'].includes(d.bias) ? d.bias : 'no_trade') : null;
+    const rowClass = a.ok ? bias : 'fail';
+    const badge = a.ok ? (RR_LABEL[bias] + (d.confidence!=null ? ' · '+d.confidence+'%' : '')) : 'FAILED';
+    const when = a.at ? new Date(a.at).toLocaleString() : '';
+    const name = d.pair || d.strategy || 'Scan';
+    const metaBits = [d.strategy, d.style, d.hadChart ? 'chart attached' : 'text only'].filter(Boolean);
+    let detailRows = [
+      ['Strategy', d.strategy || '—'],
+      ['Pair', d.pair || '—'],
+      ['Style', d.style || '—'],
+      ['Chart attached', d.hadChart ? 'Yes' : 'No'],
+      ['Trader\'s bias', d.traderBias ? (d.traderBias === 'unsure' ? 'Not committed / unsure' : d.traderBias.toUpperCase()) : '—'],
+      ['Desired R:R', d.desiredRR != null ? d.desiredRR : '—'],
+      ['What trader saw', d.desc || '(chart image only)'],
+      ['Scanned', when]
+    ];
+    if(a.ok){
+      detailRows.push(['Result', badge]);
+      if(d.cached) detailRows.push(['Note', 'Replayed cached read — identical chart already scanned']);
+    } else {
+      detailRows.push(['Error', d.error || 'unknown']);
+    }
+    const detailHtml = detailRows.map(([k,v])=>`<dt>${sigEsc(k)}</dt><dd${k==='Error'?' class="error"':''}>${sigEsc(String(v))}</dd>`).join('');
+    return `<div class="scan-history-row ${rowClass}" id="scanHistRow${idx}">
+      <div class="scan-history-head" role="button" tabindex="0" onclick="toggleScanHistoryRow(${idx})" onkeydown="if(event.key==='Enter')toggleScanHistoryRow(${idx})">
+        <span class="dot"></span>
+        <div class="scan-history-title">
+          <div class="name">${sigEsc(name)}</div>
+          <div class="meta">${sigEsc(metaBits.join(' · '))}</div>
+        </div>
+        <span class="scan-history-badge">${sigEsc(badge)}</span>
+        <span class="scan-history-chevron">▶</span>
+      </div>
+      <div class="scan-history-detail">
+        <dl class="scan-history-detail-grid">${detailHtml}</dl>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleScanHistoryRow(idx){
+  const row = document.getElementById('scanHistRow'+idx);
+  if(row) row.classList.toggle('expanded');
 }
 function sigLevelRow(name, lvl, i){
   lvl = lvl || {};
