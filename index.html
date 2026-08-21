@@ -948,8 +948,34 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 
 /* ============ ORDER BOOK ============ */
 .trade-badge.pending{background:rgba(45,212,191,0.14);color:var(--neon-cyan);box-shadow:inset 0 0 0 1px rgba(45,212,191,0.3);}
-.order-row{display:flex;flex-direction:column;gap:10px;padding:13px 14px;border:1px solid var(--steel);border-radius:14px;background:rgba(15,23,22,0.025);transition:border-color .15s ease;}
-.order-row:hover{border-color:var(--steel-hi);}
+#ordersList,#ordersListOverview{perspective:1400px;}
+.order-row{
+  position:relative;border:1px solid var(--steel);border-radius:16px;overflow:hidden;
+  background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.008) 55%), rgba(15,23,22,0.025);
+  box-shadow:0 14px 28px rgba(15,23,22,0.10), 0 1px 0 rgba(255,255,255,0.55) inset;
+  transition:border-color .3s ease, box-shadow .35s cubic-bezier(.2,.8,.2,1), transform .25s cubic-bezier(.2,.8,.2,1);
+}
+.order-row::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);}
+.order-row::after{content:'';position:absolute;top:-40%;left:-60%;width:45%;height:220%;z-index:2;pointer-events:none;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,0.09), transparent);
+  transform:rotate(12deg) translateX(0);transition:transform 1.2s cubic-bezier(.2,.8,.2,1);}
+.order-row:hover::after{transform:rotate(12deg) translateX(260%);}
+.order-row:hover{border-color:var(--steel-hi);box-shadow:0 22px 44px rgba(15,23,22,0.18), 0 0 28px rgba(16,185,129,0.12);}
+.order-row:active{transform:scale(0.977);}
+.order-row[data-dir="sell"]:hover{box-shadow:0 22px 44px rgba(15,23,22,0.18), 0 0 28px rgba(244,63,94,0.14);}
+.order-row-3d{
+  display:flex;flex-direction:column;gap:10px;padding:13px 14px;position:relative;z-index:1;
+  transform-style:preserve-3d;will-change:transform;
+  animation:orderFloat 7.5s ease-in-out infinite;
+}
+@keyframes orderFloat{
+  0%,100%{transform:translateY(0) rotateX(0deg) rotateY(0deg);}
+  25%{transform:translateY(-3px) rotateX(1deg) rotateY(-1.1deg);}
+  50%{transform:translateY(-6px) rotateX(0deg) rotateY(0.7deg);}
+  75%{transform:translateY(-3px) rotateX(-1deg) rotateY(1deg);}
+}
+@media(prefers-reduced-motion:reduce){.order-row-3d{animation:none;}}
 .order-row-top{display:flex;align-items:center;gap:11px;}
 .order-row-top .trade-badge{width:34px;height:34px;flex-shrink:0;font-size:11px;}
 .order-row-info{flex:1;min-width:0;}
@@ -1037,34 +1063,54 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .footer-note{text-align:center;color:var(--slate-dim);font-size:11px;margin-top:22px;letter-spacing:0.02em;}
 
 /* ============ SITE FOOTER — socials ============ */
-.site-footer{margin-top:46px;}
-.footer-divider{height:1px;background:linear-gradient(90deg, transparent, var(--steel-hi) 20%, var(--bronze-dim) 50%, var(--steel-hi) 80%, transparent);margin-bottom:28px;}
-.footer-social{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
+.site-footer{margin-top:54px;}
+.footer-divider{height:1px;background:linear-gradient(90deg, transparent, var(--steel-hi) 20%, var(--bronze-dim) 50%, var(--steel-hi) 80%, transparent);margin-bottom:22px;}
+.footer-eyebrow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:0.18em;text-transform:uppercase;color:var(--slate-dim);margin-bottom:16px;}
+.footer-social{display:flex;flex-direction:column;gap:11px;max-width:440px;margin:0 auto;perspective:1400px;}
 .social-pill{
-  display:flex;align-items:center;gap:11px;text-decoration:none;
-  background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01) 60%), var(--panel);
-  border:1px solid var(--steel);border-radius:100px;padding:10px 18px 10px 10px;
+  display:flex;align-items:center;gap:14px;text-decoration:none;
+  background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.008) 60%), var(--panel);
+  border:1px solid var(--steel);border-radius:18px;padding:12px 16px;
   backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
-  transition:transform .25s cubic-bezier(.2,.8,.2,1), border-color .25s ease, box-shadow .25s ease;
-  position:relative;overflow:hidden;
+  box-shadow:0 14px 28px rgba(15,23,22,0.10), 0 1px 0 rgba(255,255,255,0.55) inset;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s ease, box-shadow .3s ease;
+  position:relative;overflow:hidden;transform-style:preserve-3d;will-change:transform;
+  animation:socialFloat 8s ease-in-out infinite;
 }
+.social-pill:nth-child(1){animation-delay:-.4s;}
+.social-pill:nth-child(2){animation-delay:-3.1s;}
+.social-pill:nth-child(3){animation-delay:-5.8s;}
+@keyframes socialFloat{
+  0%,100%{transform:translateY(0) rotateX(0deg);}
+  50%{transform:translateY(-4px) rotateX(0.8deg);}
+}
+@media(prefers-reduced-motion:reduce){.social-pill{animation:none;}}
 .social-pill::before{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
-  background:linear-gradient(100deg, transparent, rgba(255,255,255,0.16), transparent);
-  transform:skewX(-20deg);transition:left .6s ease;}
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform:skewX(-20deg);transition:left .6s ease;pointer-events:none;}
 .social-pill:hover::before{left:130%;}
-.social-pill:hover{transform:translateY(-3px);border-color:rgba(52,211,153,0.4);
-  box-shadow:0 14px 30px rgba(0,0,0,0.4), 0 0 24px rgba(16,185,129,0.18);}
-.social-ico{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+.social-pill:hover{border-color:rgba(52,211,153,0.4);
+  box-shadow:0 22px 42px rgba(15,23,22,0.16), 0 0 28px rgba(16,185,129,0.16);}
+.social-pill:active{transform:scale(0.98) !important;animation-play-state:paused;}
+.social-ico{width:42px;height:42px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(circle at 32% 28%, rgba(134,239,172,0.28), transparent 60%), linear-gradient(155deg,#142823,#0d1815 60%,#0a1210);
   border:1px solid rgba(52,211,153,0.25);color:var(--bronze-bright);box-shadow:inset 0 0 10px rgba(0,0,0,0.5);}
-.social-ico svg{width:18px;height:18px;}
-.social-txt{display:flex;flex-direction:column;line-height:1.3;}
-.social-txt b{font-size:12.5px;color:var(--platinum);font-weight:650;letter-spacing:0.01em;}
-.social-txt small{font-size:10px;color:var(--slate);letter-spacing:0.03em;}
+.social-ico svg{width:19px;height:19px;}
+.social-pill[data-brand="instagram"] .social-ico{
+  background:radial-gradient(circle at 30% 25%, rgba(251,191,36,0.32), transparent 55%), linear-gradient(150deg,#3a1f3a,#1f1128 55%,#150c1c);
+  border-color:rgba(236,72,153,0.35);color:#f2abe0;}
+.social-pill[data-brand="instagram"]:hover{border-color:rgba(236,72,153,0.4);box-shadow:0 22px 42px rgba(15,23,22,0.16), 0 0 28px rgba(236,72,153,0.18);}
+.social-txt{flex:1;display:flex;flex-direction:column;line-height:1.35;min-width:0;}
+.social-txt b{font-size:13.5px;color:var(--platinum);font-weight:650;letter-spacing:0.01em;}
+.social-txt small{font-size:11px;color:var(--slate);letter-spacing:0.02em;margin-top:1px;}
+.social-arrow{flex-shrink:0;width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--slate-dim);border:1px solid var(--steel);transition:transform .3s cubic-bezier(.2,.8,.2,1), color .3s ease, border-color .3s ease;}
+.social-arrow svg{width:14px;height:14px;}
+.social-pill:hover .social-arrow{transform:translateX(3px);color:var(--bronze-bright);border-color:rgba(52,211,153,0.35);}
+.social-pill[data-brand="instagram"]:hover .social-arrow{color:#f2abe0;border-color:rgba(236,72,153,0.4);}
 @media(max-width:600px){
-  .footer-social{gap:9px;}
-  .social-pill{padding:8px 14px 8px 8px;}
-  .social-txt small{display:none;}
+  .social-pill{padding:11px 14px;}
 }
 
 /* ============ PLAYBOOK: strategy flip cards + trader chips ============ */
@@ -2535,24 +2581,28 @@ setTimeout(function(){
 
     <footer class="site-footer">
       <div class="footer-divider"></div>
+      <div class="footer-eyebrow">Stay Connected</div>
       <div class="footer-social">
-        <a class="social-pill" href="https://t.me/gmcfreesignals" target="_blank" rel="noopener">
+        <a class="social-pill" data-brand="telegram" href="https://t.me/gmcfreesignals" target="_blank" rel="noopener">
           <span class="social-ico">
             <svg viewBox="0 0 24 24" fill="none"><path d="M21.2 3.3L2.8 10.6c-1.2.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.1-2.1 4.4 3.3c.8.5 1.4.2 1.6-.7l3-14.2c.3-1.2-.4-1.7-1.8-1.5z" fill="currentColor"/><path d="M8.9 14.5l9.3-8.4c.4-.4-.1-.6-.7-.2L6.9 13" fill="var(--panel-solid)"/></svg>
           </span>
           <span class="social-txt"><b>Free Signals</b><small>@gmcfreesignals</small></span>
+          <span class="social-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </a>
-        <a class="social-pill" href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">
+        <a class="social-pill" data-brand="telegram" href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">
           <span class="social-ico">
             <svg viewBox="0 0 24 24" fill="none"><path d="M21.2 3.3L2.8 10.6c-1.2.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.1-2.1 4.4 3.3c.8.5 1.4.2 1.6-.7l3-14.2c.3-1.2-.4-1.7-1.8-1.5z" fill="currentColor"/><path d="M8.9 14.5l9.3-8.4c.4-.4-.1-.6-.7-.2L6.9 13" fill="var(--panel-solid)"/></svg>
           </span>
           <span class="social-txt"><b>Ghost Traders Empire</b><small>@GhostTradersEmpire</small></span>
+          <span class="social-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </a>
-        <a class="social-pill" href="https://instagram.com/mr.ghost_fx" target="_blank" rel="noopener">
+        <a class="social-pill" data-brand="instagram" href="https://instagram.com/mr.ghost_fx" target="_blank" rel="noopener">
           <span class="social-ico">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
           </span>
           <span class="social-txt"><b>Instagram</b><small>@mr.ghost_fx</small></span>
+          <span class="social-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </a>
       </div>
       <div class="footer-note">© <span id="footerYear">2026</span> GMC Traders — Ghost Discipline. A private tool for those who keep their word.</div>
@@ -7601,12 +7651,15 @@ async function placeOrder(){
   showToast('Order placed — close it out once you know the result');
 }
 function buildOrderRowsHTML(orders){
-  return orders.map(o=>{
+  return orders.map((o,idx)=>{
     const typeInfo = STRATEGY_TYPES[o.strategyType];
     const styleInfo = TRADE_STYLES[o.style];
     const hasLevels = o.entry!=null || o.sl!=null || o.tp!=null;
+    const dir = o.direction==='sell' ? 'sell' : 'buy';
+    const delay = ((idx % 6) * 0.35).toFixed(2);
     return `
-    <div class="order-row">
+    <div class="order-row" data-dir="${dir}">
+      <div class="order-row-3d" style="animation-delay:-${delay}s">
       <div class="order-row-top">
         <div class="trade-badge pending">${o.direction==='sell'?'SELL':'BUY'}</div>
         <div class="order-row-info">
@@ -7632,6 +7685,7 @@ function buildOrderRowsHTML(orders){
       <div class="order-actions">
         <button class="btn btn-sm btn-win" onclick="closeOrder('${o.id}','win')">Won</button>
         <button class="btn btn-sm btn-loss" onclick="closeOrder('${o.id}','loss')">Lost</button>
+      </div>
       </div>
     </div>`;
   }).join('');
