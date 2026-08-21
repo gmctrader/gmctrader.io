@@ -520,6 +520,32 @@ body{position:relative;}
 .sig-level-name{font-size:12.5px;color:var(--slate);flex:none;}
 .sig-level-val{font-size:14px;font-weight:600;text-align:right;}
 .sig-level-val.structural{font-weight:500;font-style:italic;color:var(--slate);}
+/* ---- session/killzone chip picker (which sessions the trader actually trades) ---- */
+.sig-sess-row{display:flex;flex-wrap:wrap;gap:7px;}
+.sig-sess-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:99px;border:1px solid var(--steel);
+  background:var(--panel);color:var(--slate);font-family:inherit;font-size:12.5px;font-weight:650;cursor:pointer;
+  transition:background .15s, border-color .15s, color .15s;}
+.sig-sess-chip:hover{color:var(--platinum);border-color:var(--steel-hi);}
+.sig-sess-chip.active{background:rgba(45,212,168,0.14);border-color:rgba(45,212,168,0.45);color:var(--bronze-bright);}
+.sig-sess-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--slate-dim);flex:none;}
+.sig-sess-chip.active .dot{background:var(--bronze-bright);box-shadow:0 0 6px var(--bronze-bright);}
+/* ---- executable-now banner (session-time gate on the returned setup) ---- */
+.sig-exec-banner{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:11px;margin-bottom:12px;font-size:12.5px;line-height:1.5;}
+.sig-exec-banner.live{background:rgba(43,224,138,0.10);border:1px solid rgba(43,224,138,0.35);color:var(--win);}
+.sig-exec-banner.wait{background:rgba(240,169,78,0.10);border:1px solid rgba(240,169,78,0.35);color:var(--amber);}
+.sig-exec-banner .glyph{flex:none;font-size:14px;line-height:1.3;}
+/* ---- risk calculator (position size against the selected account) ---- */
+.sig-risk-calc{border:1px solid var(--steel);border-radius:12px;padding:12px 13px;margin:10px 0;background:var(--panel);}
+.sig-risk-row{display:flex;gap:10px;margin-bottom:9px;}
+.sig-risk-row:last-child{margin-bottom:0;}
+.sig-risk-field{flex:1;display:flex;flex-direction:column;gap:4px;}
+.sig-risk-field label{font-size:11px;color:var(--slate);font-weight:650;}
+.sig-risk-field input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--steel);background:var(--void-2);color:var(--platinum);font-family:inherit;font-size:13px;}
+.sig-risk-out{margin-top:9px;padding-top:9px;border-top:1px solid var(--steel);display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;}
+.sig-risk-out div{font-size:12px;color:var(--slate);}
+.sig-risk-out strong{display:block;font-size:14px;color:var(--platinum);font-weight:700;margin-top:1px;}
+.sig-risk-remember{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:11.5px;color:var(--slate);}
+.sig-risk-remember input{margin:0;}
 
 /* ---- 3D chart scan effect — plays while analyzeSignal() is running ---- */
 .sig-chart-thumb{perspective:900px;}
@@ -1042,6 +1068,12 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
     <label>Your target R:R <span style="font-weight:400;color:var(--slate);">(optional)</span></label>
     <input type="number" id="sig_desiredRR" step="0.1" min="0.1" placeholder="e.g. 2 for 1:2">
     <div class="hint">TP1 and TP2 are laid out as intermediate targets on the way there; TP3 is the main target built around this R:R. Leave blank and SciFe picks a sensible target for the trade style instead. If the chart's own structure genuinely can't support the R:R you ask for, SciFe will tell you rather than force a level that isn't really there.</div>
+  </div>
+
+  <div class="field">
+    <label>Sessions you trade <span style="font-weight:400;color:var(--slate);">(used to check if a setup is executable right now)</span></label>
+    <div class="sig-sess-row" id="sig_sessionPicker"></div>
+    <div class="hint">SciFe factors these into the read and tells you whether this setup falls inside one of your windows right now, or how long until it does. Times are approximate standard UTC session hours (not DST-adjusted) — treat the "opens in" estimate as a rough guide, not to the minute.</div>
   </div>
 
   <div class="field">
@@ -2659,6 +2691,78 @@ function setTraderBias(val){
     btn.classList.toggle('active', btn.dataset.val===val);
   });
 }
+/* ============ SESSION / KILLZONE PICKER ============
+   Standard UTC session windows (approximate — not DST-adjusted, flagged as
+   such in the UI). Selection persists in localStorage per-browser since it's
+   a personal trading-hours preference, not journal data that needs to sync
+   across devices. Feeds both the system prompt (so the model's own killzone
+   judgment and risk_note are session-aware) and a client-side "executable
+   right now" check computed straight off the real clock — deterministic,
+   not dependent on the model getting the current time right. */
+const SIGNAL_SESSIONS = {
+  sydney:  { label:'Sydney',   startUTC:21, endUTC:6  },
+  tokyo:   { label:'Tokyo',    startUTC:0,  endUTC:9  },
+  london:  { label:'London',   startUTC:7,  endUTC:16 },
+  newyork: { label:'New York', startUTC:12, endUTC:21 }
+};
+let sigSelectedSessions = [];
+function loadSignalSessionPrefs(){
+  try{
+    const raw = JSON.parse(localStorage.getItem('gd_sig_sessions')||'[]');
+    sigSelectedSessions = Array.isArray(raw) ? raw.filter(k=>SIGNAL_SESSIONS[k]) : [];
+  }catch(e){ sigSelectedSessions = []; }
+}
+function saveSignalSessionPrefs(){
+  try{ localStorage.setItem('gd_sig_sessions', JSON.stringify(sigSelectedSessions)); }catch(e){}
+}
+function renderSignalSessionPicker(){
+  const wrap = document.getElementById('sig_sessionPicker');
+  if(!wrap) return;
+  wrap.innerHTML = Object.entries(SIGNAL_SESSIONS).map(([key,s])=>
+    `<button type="button" class="sig-sess-chip${sigSelectedSessions.includes(key)?' active':''}" data-key="${key}" onclick="toggleSignalSession('${key}')">
+      <span class="dot"></span>${s.label} <span style="opacity:.6;">${String(s.startUTC).padStart(2,'0')}:00–${String(s.endUTC).padStart(2,'0')}:00 UTC</span>
+    </button>`).join('');
+}
+function toggleSignalSession(key){
+  const i = sigSelectedSessions.indexOf(key);
+  if(i===-1) sigSelectedSessions.push(key); else sigSelectedSessions.splice(i,1);
+  saveSignalSessionPrefs();
+  renderSignalSessionPicker();
+}
+// Is the given UTC hour (0-23, can be fractional) inside a session window,
+// handling windows that wrap past midnight (e.g. Sydney 21:00-06:00)?
+function hourInWindow(hour, start, end){
+  return start < end ? (hour >= start && hour < end) : (hour >= start || hour < end);
+}
+// Hours until `hour` next reaches `target` (0 if already there).
+function hoursUntil(hour, target){
+  const d = target - hour;
+  return d >= 0 ? d : d + 24;
+}
+function formatHoursMins(h){
+  const totalMin = Math.round(h*60);
+  const hh = Math.floor(totalMin/60), mm = totalMin%60;
+  return (hh>0 ? hh+'h ' : '') + mm+'m';
+}
+// Returns { inSession:bool, activeLabel, nextLabel, hoursToNext } evaluated
+// against the trader's selected sessions and the real current UTC time.
+function computeSessionExecutability(){
+  if(!sigSelectedSessions.length) return null;
+  const now = new Date();
+  const hour = now.getUTCHours() + now.getUTCMinutes()/60;
+  let active = null, best = null;
+  sigSelectedSessions.forEach(key=>{
+    const s = SIGNAL_SESSIONS[key];
+    if(!s) return;
+    if(hourInWindow(hour, s.startUTC, s.endUTC) && !active) active = s.label;
+    const wait = hoursUntil(hour, s.startUTC);
+    if(!hourInWindow(hour, s.startUTC, s.endUTC) && (best===null || wait < best.hoursToNext)) best = { label:s.label, hoursToNext:wait };
+  });
+  return active
+    ? { inSession:true, activeLabel:active }
+    : { inSession:false, nextLabel: best ? best.label : null, hoursToNext: best ? best.hoursToNext : null };
+}
+
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
@@ -2675,6 +2779,8 @@ function openSignalPage(){
   populateSignalStrategySelect();
   onSignalStyleChange();
   setTraderBias('unsure');
+  loadSignalSessionPrefs();
+  renderSignalSessionPicker();
   document.getElementById('app').style.display='none';
   document.getElementById('signalPage').style.display='flex';
   updateScanBanner();
@@ -2719,7 +2825,7 @@ function summarizeStrategyPerformance(strategyId){
   const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
 }
-function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR){
+function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR, selectedSessions){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
   const logicList = set
     ? set.map(l=>`- ${l.id} (${l.label}): ${SIGNAL_LOGIC_DEFS[l.id] || 'Use standard trading definition for this concept.'}`).join('\n')
@@ -2757,9 +2863,22 @@ ${summarizeStrategyPerformance(strategy.id)}
 ${summarizeEconomicCalendar()}
 Factor any imminent high-impact release into risk_note — flag it plainly if one falls inside a normal hold time for this trade style.
 
+${(function(){
+  const now = new Date();
+  const nowUTC = now.toISOString().slice(11,16)+' UTC';
+  if(!selectedSessions || !selectedSessions.length){
+    return `SESSION TIMING: the trader hasn't set a session preference, so don't factor session timing into risk_note beyond what the chart itself shows (e.g. a visible killzone marker).`;
+  }
+  const names = selectedSessions.map(k=>(SIGNAL_SESSIONS[k]||{}).label).filter(Boolean).join(', ');
+  return `SESSION TIMING: the trader only trades these sessions: ${names}. Current real time is ${nowUTC}. This is handled precisely by the app's own clock, not by you — you don't need to compute whether it's in-session (the app shows that separately) — but DO factor it into "risk_note" if it's relevant to the setup: e.g. if the OTE/entry zone looks like it's still forming and typically completes during a session the trader doesn't trade, or if the killzone checklist item you identified doesn't line up with the trader's own session list, say so plainly rather than treating session choice as irrelevant to the read.`;
+})()}
+
 LEVELS (entry / stop_loss / take_profits): use an exact numeric price ONLY if it is actually visible in the chart image or stated in the trader's text. Give the FULL precision actually printed on the chart's price axis (e.g. if the axis shows 4-decimal forex pricing, don't round or truncate to fewer decimals) — never shorten a real number for tidiness, never round a trailing digit off for a "cleaner" number, and never collapse a precise level to the nearest round number just because it looks tidier. Copy the digits exactly as they read on the axis/candle, including trailing zeros. If no real number is available, describe the level structurally instead (e.g. "below the last swing low shown on chart") and set "numeric" to false for that field — never invent a price that wasn't shown or given. These levels are locked and shown to the trader as read-only once returned, so get them right the first time rather than treating them as a rough draft. ${tpBlock}
+${hasImage ? `
+AXIS CALIBRATION — DO THIS BEFORE ASSIGNING ANY NUMBER: don't eyeball prices off candle shapes alone. First, find at least three labeled price ticks on the visible y-axis spanning the region you're about to price (e.g. one near the top of the setup, one near the middle, one near the bottom) and note their exact printed values. From those, work out the price-per-row scale (how much price moves between two adjacent labeled ticks, and over what proportion of the image height that represents) and use THAT scale — not a visual guess — to read off every entry/stop/TP/fib price and every *_y_pct below. If the visible ticks aren't evenly spaced in price (some axes compress), calibrate locally between the two nearest ticks to whatever level you're placing, not off a single global scale. A level that's visually "about right" but doesn't match the calibrated scale is wrong even if it looks fine at a glance — this is the most common source of a setup reading off-scale to the trader, so treat it as a required step, not an optional check.` : ''}
 
 ENTRY PRECISION — SNIPER ENTRIES ONLY: the entry must sit exactly at the real reactive edge of the structure backing it (the exact edge of the order block/FVG, the exact swing point, the exact fib level) — never a few pips/points padded in "for safety", never a round number chosen for tidiness instead of the real level. A vague or padded entry defeats the purpose of a precise read. Also decide and return "order_type" by comparing CURRENT price (the chart's actual last/most-recent price, not an older candle) against that exact entry level, judged fresh each time with no default either way: if current price is already trading at or through the entry level right now, use "market" — a close signal is a completely normal, common outcome and should never be talked out of just because a pending order sounds more precise or more "sniper." If the entry level genuinely sits away from current price and the trade is waiting for price to return to it, use a pending order instead — "buy_limit"/"sell_limit" when entry is a better (cheaper for longs/richer for shorts) price than current, or "buy_stop"/"sell_stop" when entry requires a breakout confirmation through a level before current price. The split between market and pending should track the real chart roughly evenly over many setups — if you notice yourself reaching for a pending order by habit, stop and re-check current price against the level before deciding.
+ORDER TYPE MUST BE JUSTIFIED BY THE CONFLUENCES YOU FOUND, not by the price comparison alone: "entry_idea" must name the specific checklist item(s) this order_type decision rests on — e.g. a buy_limit because the real demand zone (the order block/FVG your checklist marked present) still sits below current price and inducement hasn't swept it yet, or a market entry because price is already trading through the zone with control already confirmed on your side. Two setups with identical current-price-vs-entry math can still warrant a different order_type read if their underlying confluence is different (e.g. inducement unswept argues for waiting on the limit rather than chasing) — say which confluence tipped the decision, don't just report the mechanical price comparison.
 
 STOP LOSS PLACEMENT — TIED TO THE ACTUAL REVERSAL POINT: the stop must sit just beyond the real structural level whose break would invalidate this setup's thesis — the opposite edge of the order block/FVG the entry is built on, beyond the swing high/low that defines the current structure, or beyond the wick that swept liquidity — never an arbitrary round-number distance, never padded far "for safety", and never placed so tight it sits inside normal wick noise for this timeframe/instrument. Identify that exact level FIRST as the point of reversal (the price point where, if traded through, the setup is simply wrong), then place the stop a small, realistic buffer beyond it — enough to survive a routine wick through the level, not a fixed percentage chosen without reference to the chart. State that same level in "invalidation" in concrete structural terms (e.g. "a close below the order block low at X" or "price trading through the swept low with no reaction"), so the stop and the invalidation description describe the same real point on the chart, not two different ideas. If the realistic stop (placed at the true invalidation point, not squeezed) results in a below-minimum R:R for this trade style, say so plainly in "risk_note" rather than moving the stop closer just to make the numbers work.
 
@@ -3027,7 +3146,7 @@ async function analyzeSignal(){
     // could get cut off mid-JSON, which surfaced as a generic parse failure.
     const opts = { temperature:0.3, maxTokens:2600 };
     if(sigChartImage) opts.image = sigChartImage;
-    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias, desiredRR);
+    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias, desiredRR, sigSelectedSessions);
     const userTurn = [{ role:'user', content:userMsg }];
 
     let raw, parsed, lastErr;
@@ -3734,6 +3853,14 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
     oldTps.forEach((tp,i)=>{ if(tp && tp.level) parts.push(`TP${i+1} <span class="old-level">${sigEsc(String(tp.level))}</span>`); });
     return `<div class="sig-invalid-banner"><strong>Chart has moved — previous read is now invalid.</strong><br>Old: ${parts.join(' · ')}</div>`;
   })() : '';
+  // Executable-right-now check — computed off the real clock against the
+  // trader's own selected sessions, not left to the model to estimate.
+  const execInfo = biasClass!=='no_trade' ? computeSessionExecutability() : null;
+  const execBanner = execInfo
+    ? (execInfo.inSession
+        ? `<div class="sig-exec-banner live"><span class="glyph">✅</span><div><strong>Executable right now</strong> — you're inside your ${sigEsc(execInfo.activeLabel)} session.</div></div>`
+        : `<div class="sig-exec-banner wait"><span class="glyph">⏸</span><div><strong>Not in one of your selected sessions right now.</strong>${execInfo.nextLabel ? ' Next window: '+sigEsc(execInfo.nextLabel)+' opens in '+formatHoursMins(execInfo.hoursToNext)+'.' : ''} The setup can still be placed as a pending order for when your session opens.</div></div>`)
+    : '';
   lastSignal = { result:r, strategy, styleKey, pair: pair || '' };
   const el = document.getElementById('sig_result');
   el.innerHTML = `
@@ -3743,6 +3870,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
         <span class="sig-style-badge">${sigEsc(styleLabel)}</span>
       </div>
       ${invalidBanner}
+      ${execBanner}
       <div class="sig-block" style="animation-delay:.05s;">
         <div class="sig-block-label">Confidence</div>
         <div class="sig-confbar"><div class="sig-confbar-fill" style="width:0%;" data-target="${conf}"></div></div>
@@ -3753,6 +3881,10 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
         <div class="sig-block-label">Levels — locked, read-only</div>
         ${rrBanner}
         ${levelRows}
+      </div>
+      <div class="sig-block" style="animation-delay:.18s;">
+        <div class="sig-block-label">Risk calculator</div>
+        <div class="sig-risk-calc" id="sig_riskCalc"></div>
       </div>` : ''}
       <div class="sig-block" style="animation-delay:.25s;">
         <div class="sig-block-label">Confluence checklist</div>
@@ -3773,7 +3905,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       ${biasClass!=='no_trade' ? `
       <div class="field" style="margin:0 0 10px;">
         <label>Place against which account?</label>
-        <select id="sig_orderAccount"></select>
+        <select id="sig_orderAccount" onchange="renderSignalRiskCalc()"></select>
       </div>` : ''}
       <div class="sig-action-row">
         ${biasClass!=='no_trade' ? `<button type="button" class="btn" onclick="placeSignalOnOrderBook(this)">🎫 Place on Order Book</button>` : ''}
@@ -3781,7 +3913,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       </div>
     </div>
   `;
-  if(biasClass!=='no_trade') populateSignalOrderAccountSelect();
+  if(biasClass!=='no_trade') { populateSignalOrderAccountSelect(); renderSignalRiskCalc(); }
   el.style.display = 'block';
   document.getElementById('sig_orderPlaced').style.display = 'none';
   // animate the confidence bar fill in on the next frame so the CSS transition actually plays
@@ -3859,6 +3991,109 @@ function populateSignalOrderAccountSelect(){
     .join('');
   sel.value = 'personal';
 }
+/* ============ RISK CALCULATOR (position size against the selected account) ============
+   Purely arithmetic, computed client-side from the account balance + risk%
+   the trader enters against the (already locked, read-only) entry/stop the
+   model returned — never re-derives or second-guesses those levels. Account
+   balance defaults: "personal" pulls from the trader's own rules.accountBalance
+   (the same field the Rules screen and chat rule-editing both use); a Prop
+   Firm account has no known balance field in this app's data model, so it
+   falls back to whatever the trader last typed for that specific account id
+   (remembered locally, not synced — this app doesn't expose a Prop Firm
+   balance field to write to). Risk % defaults to rules.riskPerTrade/
+   maxRiskPerTrade if set, else 1%. Recomputes live on every keystroke. */
+function sigRiskAccountBalanceDefault(accountId){
+  if(accountId==='personal' || !accountId){
+    const v = traderRow && traderRow.rules && traderRow.rules.accountBalance;
+    return (v!=null && !isNaN(parseFloat(v))) ? parseFloat(v) : null;
+  }
+  try{
+    const raw = localStorage.getItem('gd_sig_pfbal_'+accountId);
+    return raw!=null && !isNaN(parseFloat(raw)) ? parseFloat(raw) : null;
+  }catch(e){ return null; }
+}
+function sigRiskPctDefault(){
+  const rules = (traderRow && traderRow.rules) || {};
+  const v = rules.riskPerTrade!=null ? rules.riskPerTrade : rules.maxRiskPerTrade;
+  return (v!=null && !isNaN(parseFloat(v))) ? parseFloat(v) : 1;
+}
+function renderSignalRiskCalc(){
+  const wrap = document.getElementById('sig_riskCalc');
+  if(!wrap || !lastSignal || !lastSignal.result) return;
+  const acctSel = document.getElementById('sig_orderAccount');
+  const accountId = acctSel && acctSel.value ? acctSel.value : 'personal';
+  const currency = (traderRow && traderRow.rules && traderRow.rules.currency) || '';
+  const balanceDefault = sigRiskAccountBalanceDefault(accountId);
+  const riskDefault = sigRiskPctDefault();
+  wrap.innerHTML = `
+    <div class="sig-risk-row">
+      <div class="sig-risk-field">
+        <label>Account balance${currency ? ' ('+sigEsc(currency)+')' : ''}</label>
+        <input type="number" id="sig_riskBalance" min="0" step="any" value="${balanceDefault!=null ? balanceDefault : ''}" placeholder="${accountId==='personal' ? 'Set in Rules, or type here' : 'This account has no balance on file — type it'}" oninput="updateSignalRiskCalc()">
+      </div>
+      <div class="sig-risk-field">
+        <label>Risk this trade (%)</label>
+        <input type="number" id="sig_riskPct" min="0" step="0.1" value="${riskDefault}" oninput="updateSignalRiskCalc()">
+      </div>
+    </div>
+    <div class="sig-risk-out" id="sig_riskOut"></div>
+    <label class="sig-risk-remember"><input type="checkbox" id="sig_riskRemember">Remember these as my defaults for this account</label>
+  `;
+  document.getElementById('sig_riskRemember').onchange = function(){
+    if(this.checked) saveSignalRiskDefaults(accountId);
+  };
+  updateSignalRiskCalc();
+}
+function updateSignalRiskCalc(){
+  const out = document.getElementById('sig_riskOut');
+  if(!out || !lastSignal || !lastSignal.result) return;
+  const r = lastSignal.result;
+  const balance = parseFloat(document.getElementById('sig_riskBalance').value);
+  const riskPct = parseFloat(document.getElementById('sig_riskPct').value);
+  const currency = (traderRow && traderRow.rules && traderRow.rules.currency) || '';
+  const entryNum = r.entry && r.entry.numeric ? parseFloat(r.entry.level) : NaN;
+  const slNum = r.stop_loss && r.stop_loss.numeric ? parseFloat(r.stop_loss.level) : NaN;
+  if(isNaN(balance) || balance<=0 || isNaN(riskPct) || riskPct<=0){
+    out.innerHTML = `<div style="grid-column:1/-1;">Enter a balance and risk % to size this trade.</div>`;
+    return;
+  }
+  const riskAmount = balance * riskPct / 100;
+  if(isNaN(entryNum) || isNaN(slNum) || entryNum===slNum){
+    out.innerHTML = `
+      <div>Risk amount<strong>${riskAmount.toFixed(2)}${currency ? ' '+sigEsc(currency) : ''}</strong></div>
+      <div style="grid-column:2/3;">Position size<strong style="font-style:italic;font-weight:500;color:var(--slate);">— entry/stop aren't both numeric, so size can't be derived</strong></div>`;
+    return;
+  }
+  const stopDistance = Math.abs(entryNum - slNum);
+  const positionSize = riskAmount / stopDistance;
+  const tps = Array.isArray(r.take_profits) ? r.take_profits : [];
+  const tpRows = tps.map((tp,i)=>{
+    const tpNum = tp && tp.numeric ? parseFloat(tp.level) : NaN;
+    let reward = null;
+    if(tp && tp.rr && !isNaN(parseFloat(tp.rr))) reward = riskAmount * parseFloat(tp.rr);
+    else if(!isNaN(tpNum)) reward = Math.abs(tpNum - entryNum) / stopDistance * riskAmount;
+    return reward!=null ? `<div>Reward at TP${i+1}<strong>+${reward.toFixed(2)}${currency ? ' '+sigEsc(currency) : ''}</strong></div>` : '';
+  }).join('');
+  out.innerHTML = `
+    <div>Risk amount<strong>${riskAmount.toFixed(2)}${currency ? ' '+sigEsc(currency) : ''}</strong></div>
+    <div>Position size<strong>${positionSize.toFixed(4)}<span style="font-weight:500;font-size:11px;color:var(--slate);"> units of price movement</span></strong></div>
+    ${tpRows}
+    <div style="grid-column:1/-1;font-size:11px;color:var(--slate);margin-top:2px;">"Units of price movement" = risk amount ÷ stop distance in price. Convert to lots/contracts using your broker's own pip/contract value — this doesn't know your instrument's contract size.</div>
+  `;
+}
+async function saveSignalRiskDefaults(accountId){
+  const balance = parseFloat(document.getElementById('sig_riskBalance').value);
+  const riskPct = parseFloat(document.getElementById('sig_riskPct').value);
+  if(accountId==='personal' || !accountId){
+    if(!isNaN(balance)) await applyRuleAction({ rule:'accountBalance', value: balance });
+    if(!isNaN(riskPct)) await applyRuleAction({ rule:'riskPerTrade', value: riskPct });
+  }else{
+    try{ if(!isNaN(balance)) localStorage.setItem('gd_sig_pfbal_'+accountId, String(balance)); }catch(e){}
+    if(!isNaN(riskPct)) await applyRuleAction({ rule:'riskPerTrade', value: riskPct });
+  }
+  showToast('Saved as your default for this account');
+}
+
 /* ============ PLACE ON ORDER BOOK (pending signal) ============
    Writes straight into the same trader_data.psychology.orders array the
    Order Book room in index.html reads and renders — same shape as the order
@@ -3905,6 +4140,20 @@ async function placeSignalOnOrderBook(btn){
     if(entryNum==null && r.entry && r.entry.level) noteParts.push('Entry (structural): ' + r.entry.level);
     if(slNum==null && r.stop_loss && r.stop_loss.level) noteParts.push('SL (structural): ' + r.stop_loss.level);
     if(tps.length > 1) noteParts.push('Further TPs: ' + tps.slice(1).map(tp=>tp.level).join(', '));
+    // Fold in whatever the trader has dialed into the risk calculator right
+    // now (if it produced a real number) so the sizing that was actually
+    // decided at placement time travels with the order, not just the raw
+    // entry/stop/TP levels.
+    const riskBalEl = document.getElementById('sig_riskBalance');
+    const riskPctEl = document.getElementById('sig_riskPct');
+    const riskBal = riskBalEl ? parseFloat(riskBalEl.value) : NaN;
+    const riskPctVal = riskPctEl ? parseFloat(riskPctEl.value) : NaN;
+    if(!isNaN(riskBal) && riskBal>0 && !isNaN(riskPctVal) && riskPctVal>0){
+      const riskAmt = riskBal * riskPctVal / 100;
+      noteParts.push(`Risk: ${riskPctVal}% of ${riskBal} = ${riskAmt.toFixed(2)}` + (entryNum!=null && slNum!=null && entryNum!==slNum ? ` (size ${(riskAmt/Math.abs(entryNum-slNum)).toFixed(4)} units)` : ''));
+    }
+    const execCheck = computeSessionExecutability();
+    if(execCheck) noteParts.push(execCheck.inSession ? `Executable now (${execCheck.activeLabel} session)` : `Placed outside selected sessions — next window ${execCheck.nextLabel||'—'} in ${execCheck.hoursToNext!=null?formatHoursMins(execCheck.hoursToNext):'—'}`);
     noteParts.push('Placed from SciFe scan — ' + (r.verdict || ''));
     const now = new Date();
     psychology.orders.push({
