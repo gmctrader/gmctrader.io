@@ -184,13 +184,16 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
 .card.eq-dark-card .eq-footer-row{border-top-color:rgba(240,244,242,0.1);}
 
 /* ---- equity curve footer: best streak / win rate donut / worst streak ---- */
-.eq-footer-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding-top:16px;border-top:1px solid var(--steel);}
-.eq-footer-item{display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;}
-.eq-footer-item.center{flex-direction:column;gap:6px;}
+.eq-footer-row{display:flex;align-items:stretch;justify-content:space-between;gap:14px;margin-top:20px;padding-top:20px;border-top:1px solid var(--steel);}
+.eq-footer-item{display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;flex:1;min-width:0;
+  background:rgba(255,255,255,0.025);border:1px solid rgba(240,244,242,0.07);border-radius:14px;padding:12px 16px;
+  box-shadow:0 10px 22px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);}
+.eq-footer-item.center{flex-direction:row;justify-content:center;gap:12px;flex:0 0 auto;}
 .eq-footer-item.right{flex-direction:row-reverse;text-align:right;}
 .eq-footer-item b{display:block;font-size:16px;line-height:1.15;color:var(--platinum);font-weight:700;}
 .eq-footer-item span{display:block;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--slate);margin-top:1px;}
 .eq-footer-item.center span{margin-top:0;}
+@media(max-width:600px){.eq-footer-row{flex-wrap:wrap;}.eq-footer-item{min-width:100%;}.eq-footer-item.center{order:-1;min-width:100%;justify-content:center;}}
 .eq-footer-dot{width:9px;height:9px;border-radius:50%;flex:none;}
 .eq-footer-dot.win{background:var(--win);box-shadow:0 0 8px var(--win);}
 .eq-footer-dot.loss{background:var(--loss);box-shadow:0 0 8px var(--loss);}
@@ -6967,7 +6970,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
     points.push({x:i+1,y:cum,label:t.date});
   });
 
-  const W = 720, H = tallPx || 230, padL = 46, padR = 20, padT = 44, padB = 34;
+  const W = 720, H = tallPx || 230, padL = 46, padR = 20, padT = 44, padB = 44;
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const sx = i => padL + (points.length<=1?0:(i/(points.length-1))*plotW);
 
@@ -7007,20 +7010,21 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   let floorLines = '', axisLabels = '';
   for(let g=0; g<=4; g++){
     const gy = padT + plotH*(g/4);
-    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.045)" stroke-width="1"/>`;
+    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="1,3"/>`;
     const val = maxY - (maxY-minY)*(g/4);
     const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val));
     axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
     const gx = padL + plotW*(g/6);
-    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>`;
+    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="1,3"/>`;
   }
   const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
   for(let i=0;i<points.length;i++){
     if(i!==0 && i%xStep!==0 && i!==points.length-1) continue;
     axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${i}</text>`;
   }
+  axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.14em" font-weight="600" fill="rgba(140,155,150,0.55)">TRADE NUMBER</text>`;
 
   // 2D neon line, colored per-segment by local direction (glow green up / blood red down)
   let glowSegs = '', coreSegs = '', hotSegs = '';
@@ -7042,15 +7046,13 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   let markers = '';
   topPts.forEach((p,i)=>{
     if(i%showEvery!==0 && i!==topPts.length-1) return;
-    const val = points[i].y;
-    const c = val>=0 ? NEON_UP : NEON_DOWN;
-    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${c}" stroke="#07090a" stroke-width="1.4" class="eq-marker" data-i="${i}"/>`;
+    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="#f5f8f7" stroke="#07090a" stroke-width="1.2" class="eq-marker" data-i="${i}"/>`;
   });
   const lastPt = topPts[topPts.length-1];
   const lastColor = overallUp ? NEON_UP : NEON_DOWN;
   const endGlow = `
     <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="16" fill="${lastColor}" opacity="0.18" class="eq-pulse-ring"/>
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="4.2" fill="${lastColor}" stroke="#07090a" stroke-width="1.6" class="eq-pulse-dot"/>`;
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="4.4" fill="#f5f8f7" stroke="#07090a" stroke-width="1.4" class="eq-pulse-dot"/>`;
 
   // faint mirrored reflection of the line beneath the baseline, fading out —
   // gives the panel a glassy, "trading terminal" depth instead of a flat plot.
