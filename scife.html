@@ -932,9 +932,15 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   .gate-card{padding:32px 22px;}
   .modal{padding:22px 18px;}
 }
+/* ============ ACCESSIBILITY: focus visibility + skip link ============ */
+.skip-link{position:fixed;top:-48px;left:12px;z-index:9999;background:var(--bronze-bright,#10b981);color:#03110c;font-weight:700;font-size:13px;padding:10px 16px;border-radius:8px;transition:top .15s ease;text-decoration:none;}
+.skip-link:focus{top:12px;}
+:focus-visible{outline:2px solid var(--bronze-bright,#10b981);outline-offset:2px;}
+.icon-btn:focus-visible, .switch:focus-visible, .settings-tab:focus-visible{outline:2px solid var(--bronze-bright,#10b981);outline-offset:2px;}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#app">Skip to main content</a>
 <div class="grain-overlay" aria-hidden="true"></div>
 
 <!-- ============ AMBIENT 3D PARTICLE FIELD (three.js) ============
@@ -949,7 +955,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 <script type="module">
 (async function(){
   try{
-    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || (window.gdMotionLevel && window.gdMotionLevel()==='reduced');
     var canvas = document.getElementById('tjParticles');
     if(reduceMotion || !canvas){ if(canvas) canvas.remove(); return; }
     var THREE = await import('three');
@@ -1153,7 +1159,7 @@ setTimeout(function(){
      returns a structured, honest readout — not an auto-signal. -->
 <div id="signalPage" style="display:none;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 24px;position:relative;z-index:1;min-height:100vh;min-height:100dvh;">
   <div class="topbar">
-    <div class="icon-btn" onclick="closeSignalPage()" title="Back to chat">←</div>
+    <div class="icon-btn" role="button" tabindex="0" onclick="closeSignalPage()" onkeydown="if(event.key==='Enter')closeSignalPage()" title="Back to chat" aria-label="Back to chat">←</div>
     <div class="title serif">Signal</div>
     <div style="width:36px;"></div>
   </div>
@@ -1164,7 +1170,7 @@ setTimeout(function(){
 
   <div id="sig_scanBanner" class="sig-scan-banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 13px;border-radius:11px;background:var(--panel-2,rgba(255,255,255,0.04));border:1px solid var(--steel);margin:-4px 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;">
     <span id="sig_scanBannerText">Scans remaining this week: —</span>
-    <span class="icon-btn" style="width:26px;height:26px;font-size:13px;" title="Settings" onclick="openSettings()">⚙</span>
+    <span class="icon-btn" role="button" tabindex="0" style="width:26px;height:26px;font-size:13px;" title="Settings" aria-label="Open settings" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()">⚙</span>
   </div>
   <div id="sig_historyStrip" class="sig-history-strip"></div>
 
@@ -1259,13 +1265,14 @@ setTimeout(function(){
     <div class="sub">Your key and preferences, synced to your account. Appearance follows the theme set on the main app.</div>
 
     <div class="settings-tabs" role="tablist">
-      <div class="settings-tab active" data-pane="ai" onclick="switchSettingsTab('ai')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('ai')">AI</div>
-      <div class="settings-tab" data-pane="voice" onclick="switchSettingsTab('voice')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('voice')">Voice</div>
-      <div class="settings-tab" data-pane="memory" onclick="switchSettingsTab('memory')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('memory')">Memory</div>
-      <div class="settings-tab" data-pane="scans" onclick="switchSettingsTab('scans')" role="tab" tabindex="0" onkeydown="if(event.key==='Enter')switchSettingsTab('scans')">Scans</div>
+      <div class="settings-tab active" data-pane="ai" onclick="switchSettingsTab('ai')" role="tab" tabindex="0" aria-selected="true" onkeydown="if(event.key==='Enter')switchSettingsTab('ai')">AI</div>
+      <div class="settings-tab" data-pane="voice" onclick="switchSettingsTab('voice')" role="tab" tabindex="0" aria-selected="false" onkeydown="if(event.key==='Enter')switchSettingsTab('voice')">Voice</div>
+      <div class="settings-tab" data-pane="memory" onclick="switchSettingsTab('memory')" role="tab" tabindex="0" aria-selected="false" onkeydown="if(event.key==='Enter')switchSettingsTab('memory')">Memory</div>
+      <div class="settings-tab" data-pane="scans" onclick="switchSettingsTab('scans')" role="tab" tabindex="0" aria-selected="false" onkeydown="if(event.key==='Enter')switchSettingsTab('scans')">Scans</div>
+      <div class="settings-tab" data-pane="display" onclick="switchSettingsTab('display')" role="tab" tabindex="0" aria-selected="false" onkeydown="if(event.key==='Enter')switchSettingsTab('display')">Display</div>
     </div>
 
-    <div class="settings-pane active" id="paneAi">
+    <div class="settings-pane active" id="paneAi" role="tabpanel">
       <div class="field">
         <label>AI provider</label>
         <div class="provider-search"><input type="text" id="settingsProviderSearch" placeholder="Search 25+ providers…" autocomplete="off" oninput="filterProviders('settings', this.value)"><span class="p-count" id="settingsProviderCount"></span></div>
@@ -1289,7 +1296,7 @@ setTimeout(function(){
       </div>
     </div>
 
-    <div class="settings-pane" id="paneVoice">
+    <div class="settings-pane" id="paneVoice" role="tabpanel">
       <div class="toggle-row">
         <div style="font-weight:600;font-size:13.5px;">Voice replies</div>
         <div class="switch" id="settingsVoiceSwitch" onclick="this.classList.toggle('on')"></div>
@@ -1316,7 +1323,7 @@ setTimeout(function(){
       </div>
     </div>
 
-    <div class="settings-pane" id="paneMemory">
+    <div class="settings-pane" id="paneMemory" role="tabpanel">
       <div class="toggle-row">
         <div>
           <div style="font-weight:600;font-size:13.5px;">Memory</div>
@@ -1334,7 +1341,7 @@ setTimeout(function(){
          password lifts the cap for this account. This is still a fully
          client-side static page with no server to verify the password against
          — see the note in saveSettings()/unlockAdmin() in the script below. -->
-    <div class="settings-pane" id="paneScans">
+    <div class="settings-pane" id="paneScans" role="tabpanel">
       <div class="field" style="margin-top:2px;">
         <div class="hint" id="settingsScanHint">—</div>
         <div id="settingsAdminLocked">
@@ -1346,6 +1353,17 @@ setTimeout(function(){
           <button class="btn-ghost" style="width:auto;margin-left:8px;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="lockAdmin()">Lock</button>
         </div>
       </div>
+    </div>
+
+    <div class="settings-pane" id="paneDisplay" role="tabpanel">
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:600;font-size:13.5px;">Reduce motion</div>
+          <div class="hint" style="margin-top:2px;" id="scifeMotionHint">Full stage tilt and parallax</div>
+        </div>
+        <div class="switch" id="settingsMotionSwitch" role="switch" tabindex="0" aria-checked="false" aria-label="Reduce motion" onclick="toggleGdMotionScife()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGdMotionScife();}"></div>
+      </div>
+      <div class="hint" style="margin-top:8px;">Turns off the pointer/tilt parallax on the voice stage. Shared with Ghost Discipline's own Display setting, and your browser's reduced-motion setting is always respected too.</div>
     </div>
 
     <div style="display:flex;gap:10px;margin-top:18px;">
@@ -1391,6 +1409,33 @@ let handsFreeArmed = false;         // set true right after a reply finishes, so
 let audioCtx = null;
 let micAnalyser = null;
 let micStream = null;
+let micSource = null;
+
+/* ============ SHARED MOTION PREFERENCE (same key as Ghost Discipline) ============ */
+window.gdMotionLevel = function(){
+  let v = null;
+  try{ v = localStorage.getItem('gd_motion'); }catch(e){}
+  if(v === 'reduced' || v === 'full') return v;
+  const sys = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return sys ? 'reduced' : 'full';
+};
+function initGdMotionScifeUI(){
+  const sw = document.getElementById('settingsMotionSwitch');
+  const hint = document.getElementById('scifeMotionHint');
+  if(!sw) return;
+  const reduced = window.gdMotionLevel() === 'reduced';
+  sw.classList.toggle('on', reduced);
+  sw.setAttribute('aria-checked', String(reduced));
+  if(hint) hint.textContent = reduced ? 'Motion reduced — stage tilt off' : 'Full stage tilt and parallax';
+}
+function toggleGdMotionScife(){
+  const sw = document.getElementById('settingsMotionSwitch');
+  if(!sw) return;
+  const nowReduced = !sw.classList.contains('on');
+  try{ localStorage.setItem('gd_motion', nowReduced ? 'reduced' : 'full'); }catch(e){}
+  initGdMotionScifeUI();
+  showToast(nowReduced ? 'Motion reduced. Reload to fully retire the stage parallax.' : 'Motion restored. Reload to bring stage parallax back.');
+}
 let waveRAF = null;
 let ttsQueue = [];                  // queued {text, emotion} sentence chunks for the current reply
 let ttsCancelled = false;
@@ -1966,7 +2011,11 @@ setTimeout(initTilt3D, 300);
 
 /* ============ SETTINGS TABS ============ */
 function switchSettingsTab(name){
-  document.querySelectorAll('.settings-tab').forEach(t=>t.classList.toggle('active', t.dataset.pane===name));
+  document.querySelectorAll('.settings-tab').forEach(t=>{
+    const active = t.dataset.pane===name;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', String(active));
+  });
   document.querySelectorAll('.settings-pane').forEach(p=>p.classList.toggle('active', p.id === 'pane'+name.charAt(0).toUpperCase()+name.slice(1)));
 }
 
@@ -2178,7 +2227,9 @@ document.addEventListener('keydown', (e)=>{
   const overlay = document.getElementById('settingsOverlay');
   if(overlay && overlay.classList.contains('show')){ closeSettings(); return; }
   const sigPage = document.getElementById('signalPage');
-  if(sigPage && sigPage.style.display !== 'none'){ closeSignalPage(); }
+  if(sigPage && sigPage.style.display !== 'none'){ closeSignalPage(); return; }
+  const videoGate = document.getElementById('videoAdminOverlay');
+  if(videoGate && videoGate.classList.contains('show')){ closeVideoAdminGate(); }
 });
 
 /* ============ BOOT SPLASH — show/hide ============ */
@@ -2397,6 +2448,7 @@ function openSettings(){
   document.getElementById('settingsModelSelect').value = scife.model;
   document.getElementById('settingsVoiceSwitch').classList.toggle('on', scife.voiceOn);
   document.getElementById('settingsHandsFreeSwitch').classList.toggle('on', scife.handsFree);
+  initGdMotionScifeUI();
   populateVoiceSelect();
   document.getElementById('memoryCountHint').textContent = scife.memory.length + ' notes remembered';
   renderAdminSection();
@@ -4070,7 +4122,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       </div>` : ''}
       <div class="sig-action-row">
         ${biasClass!=='no_trade' ? `<button type="button" class="btn" onclick="placeSignalOnOrderBook(this)">🎫 Place on Order Book</button>` : ''}
-        <button type="button" class="btn-ghost sig-copy-btn" title="Copy summary" onclick="copySignalSummary(this)">⧉</button>
+        <button type="button" class="btn-ghost sig-copy-btn" title="Copy summary" aria-label="Copy summary" onclick="copySignalSummary(this)">⧉</button>
       </div>
     </div>
   `;
@@ -4662,7 +4714,7 @@ function setupStageParallax(){
   const wrap = document.getElementById('stage3dWrap');
   const stage = document.getElementById('stage');
   if(!wrap || !stage) return;
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || window.gdMotionLevel() === 'reduced';
   if(reduceMotion) return;
   let curRx=0, curRy=0, targetRx=0, targetRy=0, curZ=0, targetZ=0, raf=null;
   function apply(){
@@ -4691,16 +4743,23 @@ function setupStageParallax(){
   }, {passive:true});
 }
 
-/* Real mic-amplitude visualization while listening, via Web Audio's AnalyserNode. */
+/* Real mic-amplitude visualization while listening, via Web Audio's AnalyserNode.
+   Every call used to create a fresh MediaStreamAudioSourceNode + AnalyserNode
+   without ever disconnecting the previous pair — in hands-free mode this
+   re-fires on every reply, so a long session silently built up a growing
+   chain of connected-but-unused audio nodes (rising memory + CPU the longer
+   the conversation ran). stopMicVisualizer now tears the graph back down. */
 async function startMicVisualizer(){
   try{
     if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if(audioCtx.state === 'suspended') await audioCtx.resume();
     if(!micStream) micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
-    const source = audioCtx.createMediaStreamSource(micStream);
+    if(micSource){ try{ micSource.disconnect(); }catch(e){} micSource = null; }
+    if(micAnalyser){ try{ micAnalyser.disconnect(); }catch(e){} micAnalyser = null; }
+    micSource = audioCtx.createMediaStreamSource(micStream);
     micAnalyser = audioCtx.createAnalyser();
     micAnalyser.fftSize = 64;
-    source.connect(micAnalyser);
+    micSource.connect(micAnalyser);
     const data = new Uint8Array(micAnalyser.frequencyBinCount);
     const loop = ()=>{
       micAnalyser.getByteFrequencyData(data);
@@ -4711,7 +4770,11 @@ async function startMicVisualizer(){
     loop();
   }catch(e){ /* mic visualization is cosmetic-only; recognition still works without it */ }
 }
-function stopMicVisualizer(){ stopWaveAnimation(); }
+function stopMicVisualizer(){
+  stopWaveAnimation();
+  if(micSource){ try{ micSource.disconnect(); }catch(e){} micSource = null; }
+  if(micAnalyser){ try{ micAnalyser.disconnect(); }catch(e){} micAnalyser = null; }
+}
 
 /* Simulated speaking pulse (browsers don't expose raw TTS audio for analysis),
    driven by the utterance's word-boundary events so the bars still move in
@@ -5039,7 +5102,7 @@ function stopBargeInListener(){
    containers since cards are rebuilt via innerHTML whenever the provider
    list changes — a direct per-card listener would go stale. */
 (function(){
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || (window.gdMotionLevel && window.gdMotionLevel()==='reduced');
   if(reduceMotion) return;
   var current = null, raf = null;
   function onMove(e){
@@ -5065,6 +5128,16 @@ function stopBargeInListener(){
     grid.addEventListener('pointerleave', onLeave, true);
   });
 })();
+</script>
+<script>
+/* Offline app-shell caching, shared with the main app (same sw.js/scope). */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
 </script>
 </body>
 </html>

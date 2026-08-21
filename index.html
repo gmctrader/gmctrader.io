@@ -553,6 +553,19 @@ html[data-theme="dark"] #bootSplash{
 .shell-blob-b{width:500px;height:500px;background:var(--neon-cyan);bottom:-200px;left:-140px;opacity:0.1;animation:driftB 32s ease-in-out infinite;}
 .shell-blob-c{width:400px;height:400px;background:var(--neon-purple);top:40%;left:50%;opacity:0.06;animation:driftC 26s ease-in-out infinite;}
 @media(max-width:600px){.shell-blob{width:320px !important;height:320px !important;filter:blur(80px);}}
+/* Display & Motion toggle + OS prefers-reduced-motion: stop continuous
+   decorative animation loops. Functional transitions (menus, toasts,
+   modals) are untouched — this only targets always-on ambient motion. */
+html.motion-reduced .shell-blob,
+html.motion-reduced #authMedallion .medallion-plate{ animation:none !important; }
+@media(prefers-reduced-motion:reduce){
+  .shell-blob, #authMedallion .medallion-plate{ animation:none !important; }
+}
+/* ============ ACCESSIBILITY: focus visibility + skip link ============ */
+.skip-link{position:fixed;top:-48px;left:12px;z-index:9999;background:var(--neon-green,#10b981);color:#03110c;font-weight:700;font-size:13px;padding:10px 16px;border-radius:8px;transition:top .15s ease;text-decoration:none;}
+.skip-link:focus{top:12px;}
+:focus-visible{outline:2px solid var(--neon-green,#10b981);outline-offset:2px;}
+.side-navbtn:focus-visible, .switch:focus-visible{outline:2px solid var(--neon-green,#10b981);outline-offset:2px;}
 
 .sidebar{
   width:256px;flex-shrink:0;min-height:100vh;position:sticky;top:0;align-self:flex-start;
@@ -1326,9 +1339,23 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .pf-account-chip button:hover{color:var(--loss);}
 .pf-account-add{display:flex;align-items:center;gap:6px;border:1px dashed var(--steel-hi);border-radius:100px;padding:7px 14px;font-size:12.5px;color:var(--slate);cursor:pointer;background:transparent;}
 .pf-account-add:hover{color:var(--bronze-bright);border-color:var(--bronze-dim);}
-</style>
-</head>
+</style></head>
 <body>
+<script>
+/* ============ SHARED MOTION PREFERENCE (Display & Motion toggle) ============
+   Local-device-only (localStorage, not synced) preference layered on top of
+   the OS-level prefers-reduced-motion query. Read by the particle field,
+   the pointer-tilt script, and the drifting background blobs below. */
+window.gdMotionLevel = function(){
+  var v = null;
+  try{ v = localStorage.getItem('gd_motion'); }catch(e){}
+  if(v === 'reduced' || v === 'full') return v;
+  var sys = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return sys ? 'reduced' : 'full';
+};
+if(window.gdMotionLevel() === 'reduced') document.documentElement.classList.add('motion-reduced');
+</script>
+<a class="skip-link" href="#hud">Skip to main content</a>
 <!-- ============ AMBIENT 3D PARTICLE FIELD (three.js) ============
      Deepest layer of the whole app (z-index -4), sits behind the video
      glow, the drifting blobs, and every screen. Low-opacity bronze/gold
@@ -1342,7 +1369,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 <script type="module">
 (async function(){
   try{
-    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceMotion = window.gdMotionLevel() === 'reduced';
     var canvas = document.getElementById('tjParticles');
     if(reduceMotion || !canvas){ if(canvas) canvas.remove(); return; }
     var THREE = await import('three');
@@ -1690,62 +1717,62 @@ setTimeout(function(){
       <div class="sdp-divider"></div>
       <div class="sdp-col"><span class="sdp-col-label">Discipline</span><span class="sdp-col-val" id="sdpScore">—</span></div>
     </div>
-    <nav class="side-nav" id="sideNav">
-      <button class="side-navbtn active" data-view="dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    <nav class="side-nav" id="sideNav" aria-label="Primary">
+      <button class="side-navbtn active" data-view="dashboard" aria-current="page">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Overview
       </button>
       <button class="side-navbtn" data-view="brief">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
         Daily Brief
       </button>
       <button class="side-navbtn" data-view="analytics">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
         Analytics
       </button>
       <button class="side-navbtn" data-view="calendar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
         Calendar
       </button>
       <button class="side-navbtn" data-view="journal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3z"/><path d="M8 9h9M8 13h9"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3z"/><path d="M8 9h9M8 13h9"/></svg>
         Journal
       </button>
       <button class="side-navbtn" data-view="orders">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
         Order Book
       </button>
       <button class="side-navbtn" data-view="playbook">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Playbook
       </button>
       <button class="side-navbtn" data-view="rules">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/></svg>
         Rule Builder
       </button>
       <button class="side-navbtn" data-view="propfirm">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l5-4 5 4v11"/><path d="M15 21v-7l4-3v10"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l5-4 5 4v11"/><path d="M15 21v-7l4-3v10"/></svg>
         Prop Firm
       </button>
       <button class="side-navbtn" data-view="session">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         Session
       </button>
       <button class="side-navbtn" data-view="psychology">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
         Psychology
       </button>
       <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
         SciFe
         <span style="margin-left:auto;font-size:9px;letter-spacing:.04em;padding:2px 6px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--bronze-bright);font-weight:700;">VOICE</span>
       </button>
       <button class="side-navbtn" data-view="about">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
         About &amp; Reset
       </button>
       <button class="side-navbtn" id="getAppBtn" onclick="handleGetApp()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M9 18h6"/><path d="M12 6v6l3 2"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M9 18h6"/><path d="M12 6v6l3 2"/></svg>
         Get App
       </button>
     </nav>
@@ -2484,6 +2511,19 @@ setTimeout(function(){
           <button class="btn btn-ghost" onclick="requestManualReview('monthly')">Review Last Month</button>
         </div>
       </div>
+      <div class="card tilt" style="margin-top:18px;">
+        <h2>Display &amp; <span class="accent">Motion</span></h2>
+        <p style="color:var(--slate);line-height:1.7;margin:0 0 14px;">
+          Turns down the particle field and 3D tilt effects across the app if they're distracting, draining your battery, or triggering motion sensitivity. Your browser's own reduced-motion setting is respected automatically either way.
+        </p>
+        <div class="toggle-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-weight:600;font-size:13.5px;color:var(--platinum);">Reduce motion</div>
+            <div class="hint" style="margin-top:2px;color:var(--slate);font-size:12px;" id="gdMotionHint">Full particle field and 3D tilt</div>
+          </div>
+          <div class="switch" id="gdMotionSwitch" role="switch" tabindex="0" aria-checked="false" aria-label="Reduce motion" onclick="toggleGdMotion()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGdMotion();}"></div>
+        </div>
+      </div>
       <div class="card tilt" style="margin-top:18px;border-color:rgba(244,63,94,0.3);">
         <h2 style="color:var(--loss-bright)">Danger Zone</h2>
         <p style="color:var(--slate);line-height:1.7;margin:0;">
@@ -2987,6 +3027,27 @@ function getCheckedLogics(containerId){
   return Array.from(document.querySelectorAll('#'+containerId+' .logic-chip.checked')).map(e=>e.dataset.id);
 }
 
+/* ============ DISPLAY & MOTION TOGGLE ============ */
+function initGdMotionUI(){
+  const sw = document.getElementById('gdMotionSwitch');
+  const hint = document.getElementById('gdMotionHint');
+  if(!sw) return;
+  const reduced = window.gdMotionLevel() === 'reduced';
+  sw.classList.toggle('on', reduced);
+  sw.setAttribute('aria-checked', String(reduced));
+  if(hint) hint.textContent = reduced ? 'Motion reduced — particle field off, tilt disabled' : 'Full particle field and 3D tilt';
+}
+function toggleGdMotion(){
+  const sw = document.getElementById('gdMotionSwitch');
+  if(!sw) return;
+  const nowReduced = !sw.classList.contains('on');
+  try{ localStorage.setItem('gd_motion', nowReduced ? 'reduced' : 'full'); }catch(e){}
+  document.documentElement.classList.toggle('motion-reduced', nowReduced);
+  initGdMotionUI();
+  showToast(nowReduced ? 'Motion reduced. Reload to fully retire the particle field.' : 'Motion restored. Reload to bring the particle field back.');
+}
+document.addEventListener('DOMContentLoaded', initGdMotionUI);
+
 /* ============ MOBILE SIDEBAR ============ */
 function toggleSidebar(force){
   const sbEl = document.getElementById('sidebar');
@@ -3154,6 +3215,7 @@ async function onAuthed(user){
     document.getElementById('appShell').classList.add('show');
     renderAll();
     maybeShowPeriodicReview();
+    routeFromShortcutParams();
   }
   renderDemoStatus();
   hideBootSplash();
@@ -3304,6 +3366,7 @@ async function startDemo(){
     document.getElementById('gateScreen').classList.remove('show');
     document.getElementById('appShell').classList.add('show');
     renderAll();
+    routeFromShortcutParams();
   }
   renderDemoStatus();
   applyDemoLocks();
@@ -4191,6 +4254,7 @@ async function submitGateRules(){
   document.getElementById('appShell').classList.add('show');
   renderAll();
   showToast('Rules locked in. Trade the plan.');
+  routeFromShortcutParams();
 }
 function numOrNullFrom(id){
   const v = document.getElementById(id).value;
@@ -4423,6 +4487,19 @@ async function submitResetCode(){
   document.getElementById('gateScreen').classList.add('show');
 }
 
+/* ============ HOME SCREEN SHORTCUTS (manifest "shortcuts" -> ?view=) ============ */
+function routeFromShortcutParams(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    if(!view) return;
+    const btn = document.querySelector('.side-navbtn[data-view="'+view+'"]');
+    if(btn) btn.click();
+    // Strip the param so a refresh or share of the URL doesn't re-trigger it.
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+  }catch(e){ /* non-fatal — just skip the deep link */ }
+}
+
 /* ============ NAV (left sidebar) ============ */
 document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -4431,9 +4508,10 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
       toggleSidebar(false);
       return;
     }
-    document.querySelectorAll('.side-navbtn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.side-navbtn').forEach(b=>{ b.classList.remove('active'); b.removeAttribute('aria-current'); });
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     btn.classList.add('active');
+    btn.setAttribute('aria-current', 'page');
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
     if(btn.dataset.view==='calendar') renderCalendar();
     if(btn.dataset.view==='brief') renderBrief();
@@ -8145,7 +8223,7 @@ function toggleGdTheme(){
      and re-scans the DOM for cards injected later by the app itself. -->
 <script>
 (function(){
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || window.gdMotionLevel() === 'reduced';
   if(reduceMotion) return;
 
   function attachTilt(el, opts){
@@ -8229,6 +8307,17 @@ function toggleGdTheme(){
 #authMedallion{ --tilt-x:0deg; --tilt-y:0deg; }
 #authMedallion .medallion-plate{ transition:transform .4s cubic-bezier(.2,.8,.2,1); transform:rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(14px); transform-style:preserve-3d; }
 </style>
+<script>
+/* Offline app-shell caching. Bump CACHE_VERSION in sw.js on every deploy
+   so returning users pick up the new build instead of a stale cached one. */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+</script>
 
 </body>
 </html>

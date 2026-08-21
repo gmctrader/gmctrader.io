@@ -12,5 +12,14 @@
     { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Ghost Discipline",
+      "short_name": "Terminal",
+      "description": "Back to the trading terminal and journal",
+      "url": "./index.html",
+      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }

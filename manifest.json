@@ -12,5 +12,35 @@
     { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Journal Entry",
+      "short_name": "Journal",
+      "description": "Jump straight to your trade journal",
+      "url": "./index.html?view=journal",
+      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Order Book",
+      "short_name": "Orders",
+      "description": "Open the order book",
+      "url": "./index.html?view=orders",
+      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "Check your performance analytics",
+      "url": "./index.html?view=analytics",
+      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Voice Companion",
+      "short_name": "SciFe",
+      "description": "Talk through setups with SciFe",
+      "url": "./scife.html",
+      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }
