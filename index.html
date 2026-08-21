@@ -246,6 +246,71 @@ a{color:var(--bronze-bright);}
     0 14px 30px rgba(0,0,0,0.5);
 }
 
+/* ============ BOOT SPLASH — motion graphics loading/transition screen ============ */
+/* Covers cold page load (session check) and re-appears briefly as a
+   transition wash whenever we hand off from the auth screen into the app
+   shell, so that flow never feels like an abrupt jump-cut. Pure CSS/SVG
+   motion — no external video asset required. */
+#bootSplash{
+  position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(ellipse 900px 620px at 50% 20%, rgba(16,185,129,0.10), transparent 60%),
+    radial-gradient(ellipse 800px 640px at 100% 100%, rgba(161,98,7,0.06), transparent 55%),
+    var(--void, #ffffff);
+  transition:opacity .6s cubic-bezier(.2,.8,.2,1), visibility .6s;
+  overflow:hidden;
+}
+html[data-theme="dark"] #bootSplash{
+  background:
+    radial-gradient(ellipse 900px 620px at 50% 20%, rgba(45,212,168,0.12), transparent 60%),
+    radial-gradient(ellipse 800px 640px at 100% 100%, rgba(242,200,119,0.07), transparent 55%),
+    var(--void, #03050a);
+}
+#bootSplash.boot-splash-hide{opacity:0;visibility:hidden;pointer-events:none;}
+#bootSplash::before{
+  /* faint perspective floor grid drifting toward the viewer, echoing the
+     rest of the app's "instrument panel" language */
+  content:'';position:absolute;inset:-10% -10% 30% -10%;pointer-events:none;
+  background-image:linear-gradient(var(--steel-hi) 1px, transparent 1px), linear-gradient(90deg, var(--steel-hi) 1px, transparent 1px);
+  background-size:46px 46px;transform:perspective(600px) rotateX(62deg) scale(1.6);transform-origin:50% 100%;
+  -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,0.6), transparent 75%);
+  mask-image:linear-gradient(to top, rgba(0,0,0,0.6), transparent 75%);
+  opacity:.5;animation:bootGridDrift 9s linear infinite;
+}
+@keyframes bootGridDrift{from{background-position:0 0,0 0;}to{background-position:0 46px,46px 0;}}
+.boot-splash-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:22px;transform:translateY(-2vh);}
+.boot-emblem{position:relative;width:128px;height:128px;display:flex;align-items:center;justify-content:center;}
+.boot-emblem .ping{position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--bronze-bright);opacity:0;animation:bootPing 2.6s cubic-bezier(.2,.7,.3,1) infinite;}
+.boot-emblem .ping:nth-child(2){animation-delay:.65s;}
+.boot-emblem .ping:nth-child(3){animation-delay:1.3s;}
+@keyframes bootPing{0%{transform:scale(.55);opacity:.55;}80%{opacity:0;}100%{transform:scale(1.55);opacity:0;}}
+.boot-emblem-ring{position:absolute;inset:10px;border-radius:50%;padding:2px;
+  background:conic-gradient(from 0deg, var(--neon-green), var(--neon-cyan), var(--gold-bright), var(--neon-green));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;animation:foilRotate2 2.4s linear infinite;}
+@keyframes foilRotate2{to{transform:rotate(360deg);}}
+.boot-emblem-plate{position:relative;width:76px;height:76px;border-radius:22px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;background:var(--panel-solid);
+  box-shadow:0 18px 36px -10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+  animation:bootPlatePulse 2.4s ease-in-out infinite;}
+@keyframes bootPlatePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+.boot-emblem-plate img{width:92%;height:92%;object-fit:contain;}
+.boot-word{font-family:'Fraunces',serif;font-weight:650;font-size:20px;letter-spacing:.02em;text-align:center;margin:0;
+  background:linear-gradient(100deg, var(--platinum) 20%, var(--gold-bright) 45%, var(--bronze-bright) 65%, var(--gold-bright) 85%, var(--platinum) 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:bootShimmer 2.8s ease-in-out infinite;}
+@keyframes bootShimmer{0%,100%{background-position:0% 0;}50%{background-position:100% 0;}}
+.boot-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);display:flex;align-items:center;gap:2px;}
+.boot-sub .dot{animation:bootDotFade 1.4s ease-in-out infinite;opacity:.2;}
+.boot-sub .dot:nth-child(2){animation-delay:.18s;}
+.boot-sub .dot:nth-child(3){animation-delay:.36s;}
+@keyframes bootDotFade{0%,100%{opacity:.2;}50%{opacity:1;}}
+.boot-bar{width:150px;height:2px;border-radius:99px;background:var(--steel-hi);overflow:hidden;position:relative;}
+.boot-bar::after{content:'';position:absolute;top:0;bottom:0;width:40%;border-radius:99px;
+  background:linear-gradient(90deg, transparent, var(--bronze-bright), var(--gold-bright), transparent);
+  animation:bootBarSweep 1.3s ease-in-out infinite;}
+@keyframes bootBarSweep{0%{left:-40%;}100%{left:100%;}}
+
 /* ============ AUTH SCREEN ============ */
 #authScreen{ min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:transparent; }
 .auth-video-bg{position:absolute;inset:0;z-index:0;overflow:hidden;perspective:1400px;opacity:0.34;}
@@ -1248,6 +1313,31 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 </style>
 </head>
 <body>
+<!-- ============ BOOT SPLASH ============ -->
+<div id="bootSplash" aria-hidden="true">
+  <div class="boot-splash-inner">
+    <div class="boot-emblem">
+      <span class="ping"></span>
+      <span class="ping"></span>
+      <span class="ping"></span>
+      <div class="boot-emblem-ring"></div>
+      <div class="boot-emblem-plate"><img src="logo.png" alt=""></div>
+    </div>
+    <div>
+      <p class="boot-word">Ghost Discipline</p>
+      <div class="boot-sub"><span id="bootSubText">Loading terminal</span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+    </div>
+    <div class="boot-bar"></div>
+  </div>
+</div>
+<script>
+// Hard safety net: if the main boot script ever throws before it can hide
+// the splash, don't leave the user staring at it forever.
+setTimeout(function(){
+  var el = document.getElementById('bootSplash');
+  if(el && el.style.display !== 'none'){ el.classList.add('boot-splash-hide'); setTimeout(function(){ el.style.display='none'; }, 650); }
+}, 8000);
+</script>
 <div class="theme-toggle-fab" id="themeToggleFab" onclick="toggleGdTheme()" title="Toggle dark / light theme">
   <span class="ico-wrap">
     <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>
@@ -2914,7 +3004,34 @@ async function resetDeviceForNewAccount(){
   location.reload();
 }
 
+/* ============ BOOT SPLASH — show/hide ============ */
+// Visible by default in the markup so it covers the very first paint; this
+// just tracks when it went up so hideBootSplash() can guarantee a minimum
+// on-screen time (avoids an ugly flash-then-gone on fast connections) and
+// lets it be re-shown as a transition wash for any later auth hand-off.
+let bootSplashShownAt = Date.now();
+const BOOT_SPLASH_MIN_MS = 850;
+function showBootSplash(label){
+  const el = document.getElementById('bootSplash');
+  if(!el) return;
+  const sub = document.getElementById('bootSubText');
+  if(sub && label) sub.textContent = label;
+  el.style.display = 'flex';
+  el.classList.remove('boot-splash-hide');
+  bootSplashShownAt = Date.now();
+}
+function hideBootSplash(){
+  const el = document.getElementById('bootSplash');
+  if(!el || el.classList.contains('boot-splash-hide')) return;
+  const wait = Math.max(0, BOOT_SPLASH_MIN_MS - (Date.now() - bootSplashShownAt));
+  setTimeout(()=>{
+    el.classList.add('boot-splash-hide');
+    setTimeout(()=>{ el.style.display = 'none'; }, 650);
+  }, wait);
+}
+
 async function onAuthed(user){
+  showBootSplash('Preparing your terminal');
   currentUser = user;
   isDemoMode = false;
   document.getElementById('authScreen').style.display = 'none';
@@ -2930,6 +3047,7 @@ async function onAuthed(user){
     maybeShowPeriodicReview();
   }
   renderDemoStatus();
+  hideBootSplash();
 }
 
 /* ============ PROVING GROUND: server-gated demo trial ============ */
@@ -7635,20 +7753,30 @@ function toggleGdTheme(){
 
 /* ============ BOOT ============ */
 (async function boot(){
-  const hashParams = getHashParams();
-  const linkType = hashParams.get('type'); // 'invite' or 'recovery' when arriving from an email link
-  const { data } = await sb.auth.getSession();
-  if(data.session){
-    if(linkType === 'invite' || linkType === 'recovery'){
-      showSetPasswordScreen(data.session.user, linkType);
+  try{
+    const hashParams = getHashParams();
+    const linkType = hashParams.get('type'); // 'invite' or 'recovery' when arriving from an email link
+    const { data } = await sb.auth.getSession();
+    if(data.session){
+      if(linkType === 'invite' || linkType === 'recovery'){
+        showSetPasswordScreen(data.session.user, linkType);
+        hideBootSplash();
+      } else {
+        await onAuthed(data.session.user); // hides the splash itself once the app is ready
+      }
+    } else if(localStorage.getItem(DEMO_START_KEY) && !isDemoExpired()){
+      // Resume an in-progress Proving Ground trial so closing the tab doesn't lose your place.
+      await startDemo();
+      hideBootSplash();
+    } else if(isDemoExpired()){
+      renderDemoStatus();
+      hideBootSplash();
     } else {
-      await onAuthed(data.session.user);
+      hideBootSplash();
     }
-  } else if(localStorage.getItem(DEMO_START_KEY) && !isDemoExpired()){
-    // Resume an in-progress Proving Ground trial so closing the tab doesn't lose your place.
-    await startDemo();
-  } else if(isDemoExpired()){
-    renderDemoStatus();
+  }catch(e){
+    console.error(e);
+    hideBootSplash();
   }
 })();
 </script>
