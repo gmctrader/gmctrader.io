@@ -540,7 +540,7 @@ body{position:relative;}
 .sig-risk-row:last-child{margin-bottom:0;}
 .sig-risk-field{flex:1;display:flex;flex-direction:column;gap:4px;}
 .sig-risk-field label{font-size:11px;color:var(--slate);font-weight:650;}
-.sig-risk-field input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--steel);background:var(--void-2);color:var(--platinum);font-family:inherit;font-size:13px;}
+.sig-risk-field input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--steel);background:rgba(255,255,255,0.03);color:var(--platinum);font-family:inherit;font-size:13px;}
 .sig-risk-out{margin-top:9px;padding-top:9px;border-top:1px solid var(--steel);display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;}
 .sig-risk-out div{font-size:12px;color:var(--slate);}
 .sig-risk-out strong{display:block;font-size:14px;color:var(--platinum);font-weight:700;margin-top:1px;}
@@ -855,7 +855,8 @@ html[data-theme="light"] body::after{
 }
 html[data-theme="light"] .field input,
 html[data-theme="light"] .field select,
-html[data-theme="light"] .sig-textarea{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .sig-textarea,
+html[data-theme="light"] .sig-risk-field input{background:rgba(15,60,50,0.045);}
 html[data-theme="light"] .sig-disclaimer{color:var(--slate);}
 html[data-theme="light"] .field select option{background:#ffffff;color:var(--platinum);}
 html[data-theme="light"] .btn-ghost{background:rgba(15,60,50,0.045);}
@@ -4017,17 +4018,33 @@ function populateSignalOrderAccountSelect(){
    the trader enters against the (already locked, read-only) entry/stop the
    model returned — never re-derives or second-guesses those levels. Account
    balance defaults: "personal" pulls from the trader's own rules.accountBalance
-   (the same field the Rules screen and chat rule-editing both use); a Prop
-   Firm account has no known balance field in this app's data model, so it
-   falls back to whatever the trader last typed for that specific account id
-   (remembered locally, not synced — this app doesn't expose a Prop Firm
-   balance field to write to). Risk % defaults to rules.riskPerTrade/
+   (the same field the Rules screen and chat rule-editing both use, static —
+   matches how index.html's Order Book treats it too). A Prop Firm account's
+   balance is the LIVE balance — starting balance plus every trade logged
+   against that account id, same formula as propFirmLiveBalance() in
+   index.html's Order Book/Compliance room — so it stays true to the actual
+   challenge account instead of guessing. Only falls back to a manually
+   remembered value (local to this device, not synced) if that account has
+   no starting balance on file yet. Risk % defaults to rules.riskPerTrade/
    maxRiskPerTrade if set, else 1%. Recomputes live on every keystroke. */
+// Live prop-firm balance = starting balance + sum of every trade's raw P/L
+// logged against this account id. Mirrors propFirmLiveBalance() in
+// index.html (pf.startingBalance + trades filtered by t.account===pf.id),
+// just without the full drawdown/compliance metrics this page doesn't need.
+function sigPropFirmLiveBalance(pf){
+  if(!pf || pf.startingBalance==null || isNaN(parseFloat(pf.startingBalance))) return null;
+  const trades = ((traderRow && traderRow.trades) || []).filter(t=>t.account===pf.id);
+  const pnlSum = trades.reduce((a,t)=>a+pnlOf(t),0);
+  return parseFloat(pf.startingBalance) + pnlSum;
+}
 function sigRiskAccountBalanceDefault(accountId){
   if(accountId==='personal' || !accountId){
     const v = traderRow && traderRow.rules && traderRow.rules.accountBalance;
     return (v!=null && !isNaN(parseFloat(v))) ? parseFloat(v) : null;
   }
+  const pf = signalOrderAccountOptions().find(p=>p.id===accountId);
+  const live = sigPropFirmLiveBalance(pf);
+  if(live!=null) return live;
   try{
     const raw = localStorage.getItem('gd_sig_pfbal_'+accountId);
     return raw!=null && !isNaN(parseFloat(raw)) ? parseFloat(raw) : null;
@@ -4043,14 +4060,18 @@ function renderSignalRiskCalc(){
   if(!wrap || !lastSignal || !lastSignal.result) return;
   const acctSel = document.getElementById('sig_orderAccount');
   const accountId = acctSel && acctSel.value ? acctSel.value : 'personal';
-  const currency = (traderRow && traderRow.rules && traderRow.rules.currency) || '';
+  const pf = accountId!=='personal' ? signalOrderAccountOptions().find(p=>p.id===accountId) : null;
+  const currency = (pf && pf.currency) || (traderRow && traderRow.rules && traderRow.rules.currency) || '';
   const balanceDefault = sigRiskAccountBalanceDefault(accountId);
   const riskDefault = sigRiskPctDefault();
+  const balancePlaceholder = accountId==='personal'
+    ? 'Set in Rules, or type here'
+    : (pf && pf.startingBalance!=null ? 'Live balance — override if needed' : 'This account has no starting balance on file — type it');
   wrap.innerHTML = `
     <div class="sig-risk-row">
       <div class="sig-risk-field">
         <label>Account balance${currency ? ' ('+sigEsc(currency)+')' : ''}</label>
-        <input type="number" id="sig_riskBalance" min="0" step="any" value="${balanceDefault!=null ? balanceDefault : ''}" placeholder="${accountId==='personal' ? 'Set in Rules, or type here' : 'This account has no balance on file — type it'}" oninput="updateSignalRiskCalc()">
+        <input type="number" id="sig_riskBalance" min="0" step="any" value="${balanceDefault!=null ? balanceDefault : ''}" placeholder="${balancePlaceholder}" oninput="updateSignalRiskCalc()">
       </div>
       <div class="sig-risk-field">
         <label>Risk this trade (%)</label>
@@ -4071,7 +4092,10 @@ function updateSignalRiskCalc(){
   const r = lastSignal.result;
   const balance = parseFloat(document.getElementById('sig_riskBalance').value);
   const riskPct = parseFloat(document.getElementById('sig_riskPct').value);
-  const currency = (traderRow && traderRow.rules && traderRow.rules.currency) || '';
+  const acctSel = document.getElementById('sig_orderAccount');
+  const accountId = acctSel && acctSel.value ? acctSel.value : 'personal';
+  const pf = accountId!=='personal' ? signalOrderAccountOptions().find(p=>p.id===accountId) : null;
+  const currency = (pf && pf.currency) || (traderRow && traderRow.rules && traderRow.rules.currency) || '';
   const entryNum = r.entry && r.entry.numeric ? parseFloat(r.entry.level) : NaN;
   const slNum = r.stop_loss && r.stop_loss.numeric ? parseFloat(r.stop_loss.level) : NaN;
   if(isNaN(balance) || balance<=0 || isNaN(riskPct) || riskPct<=0){
