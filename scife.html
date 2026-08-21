@@ -112,6 +112,46 @@ body{position:relative;}
 .gate-mark::after{content:'';position:absolute;inset:8px;border-radius:50%;
   background:radial-gradient(circle, rgba(45,212,168,0.9), rgba(45,212,168,0.1) 60%, transparent 75%);
   filter:blur(1px);animation:coreBreathe 3.4s ease-in-out infinite;}
+
+/* ============ BOOT SPLASH — motion graphics loading screen ============ */
+/* Replaces the plain "Connecting…" text loader with a small animated
+   sequence: emanating pings, a rotating bronze/gold ring, a shimmering
+   wordmark, and a sweeping progress hairline. Faster and terser than the
+   Ghost Discipline splash on index.html since this page usually opens
+   with a session already warm from there. */
+#bootLoader{transition:opacity .45s cubic-bezier(.2,.8,.2,1), visibility .45s;}
+#bootLoader.boot-splash-hide{opacity:0;visibility:hidden;pointer-events:none;}
+.boot-splash-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:18px;}
+.boot-emblem{position:relative;width:104px;height:104px;display:flex;align-items:center;justify-content:center;}
+.boot-emblem .ping{position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--bronze-bright);opacity:0;animation:bootPing 2.1s cubic-bezier(.2,.7,.3,1) infinite;}
+.boot-emblem .ping:nth-child(2){animation-delay:.5s;}
+.boot-emblem .ping:nth-child(3){animation-delay:1s;}
+@keyframes bootPing{0%{transform:scale(.55);opacity:.55;}80%{opacity:0;}100%{transform:scale(1.5);opacity:0;}}
+.boot-emblem-ring{position:absolute;inset:6px;border-radius:50%;padding:2px;
+  background:conic-gradient(from 0deg, var(--bronze), var(--bronze-bright), var(--gold-bright), var(--gold), var(--bronze));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;animation:foilRotate 1.9s linear infinite;}
+.boot-emblem-plate{position:relative;width:64px;height:64px;border-radius:18px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;background:var(--panel-solid);
+  border:1px solid rgba(45,212,168,0.3);box-shadow:0 16px 32px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+  animation:bootPlatePulse 2.1s ease-in-out infinite;}
+@keyframes bootPlatePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+.boot-emblem-plate img{width:88%;height:88%;object-fit:contain;}
+.boot-word{font-family:'Fraunces',serif;font-weight:650;font-size:19px;letter-spacing:.01em;text-align:center;margin:0;
+  background:linear-gradient(100deg, var(--platinum) 20%, var(--gold-bright) 45%, var(--bronze-bright) 65%, var(--gold-bright) 85%, var(--platinum) 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:bootShimmer 2.1s ease-in-out infinite;}
+@keyframes bootShimmer{0%,100%{background-position:0% 0;}50%{background-position:100% 0;}}
+.boot-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate-dim);display:flex;align-items:center;gap:2px;}
+.boot-sub .dot{animation:bootDotFade 1.1s ease-in-out infinite;opacity:.2;}
+.boot-sub .dot:nth-child(2){animation-delay:.15s;}
+.boot-sub .dot:nth-child(3){animation-delay:.3s;}
+@keyframes bootDotFade{0%,100%{opacity:.2;}50%{opacity:1;}}
+.boot-bar{width:130px;height:2px;border-radius:99px;background:var(--steel-hi);overflow:hidden;position:relative;}
+.boot-bar::after{content:'';position:absolute;top:0;bottom:0;width:44%;border-radius:99px;
+  background:linear-gradient(90deg, transparent, var(--bronze-bright), var(--gold-bright), transparent);
+  animation:bootBarSweep 1s ease-in-out infinite;}
+@keyframes bootBarSweep{0%{left:-44%;}100%{left:100%;}}
 .gate-card h1{font-family:'Fraunces',serif;font-weight:650;font-size:27px;margin:0 0 10px;
   background:linear-gradient(100deg, var(--platinum) 20%, var(--gold-bright) 45%, var(--bronze-bright) 65%, var(--gold-bright) 85%, var(--platinum) 100%);
   background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
@@ -894,11 +934,30 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 
 <!-- ============ BOOT LOADER (avoids a blank flash while the session check resolves) ============ -->
 <div class="center-screen" id="bootLoader">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
-    <div class="gate-mark" aria-hidden="true"></div>
-    <div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--slate-dim);text-transform:uppercase;">Connecting…</div>
+  <div class="center-orb o1"></div><div class="center-orb o2"></div><div class="center-orb o3"></div>
+  <div class="boot-splash-inner">
+    <div class="boot-emblem">
+      <span class="ping"></span>
+      <span class="ping"></span>
+      <span class="ping"></span>
+      <div class="boot-emblem-ring"></div>
+      <div class="boot-emblem-plate"><img src="logo.png" alt=""></div>
+    </div>
+    <div>
+      <p class="boot-word">SciFe</p>
+      <div class="boot-sub"><span id="bootSubText">Waking up your voice terminal</span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+    </div>
+    <div class="boot-bar"></div>
   </div>
 </div>
+<script>
+// Hard safety net: if the main boot script ever throws before it can hide
+// the loader, don't leave the user staring at it forever.
+setTimeout(function(){
+  var el = document.getElementById('bootLoader');
+  if(el && el.style.display !== 'none'){ el.classList.add('boot-splash-hide'); setTimeout(function(){ el.style.display='none'; }, 450); }
+}, 8000);
+</script>
 
 <!-- ============ NOT SIGNED IN ============ -->
 <div class="center-screen" id="authGate" style="display:none;">
@@ -2062,20 +2121,37 @@ document.addEventListener('keydown', (e)=>{
   if(sigPage && sigPage.style.display !== 'none'){ closeSignalPage(); }
 });
 
+/* ============ BOOT SPLASH — show/hide ============ */
+let bootSplashShownAt = Date.now();
+const BOOT_SPLASH_MIN_MS = 550; // shorter than Ghost Discipline's splash — this page usually opens with a session already warm
+function hideBootLoader(){
+  const el = document.getElementById('bootLoader');
+  if(!el || el.classList.contains('boot-splash-hide')) return;
+  const wait = Math.max(0, BOOT_SPLASH_MIN_MS - (Date.now() - bootSplashShownAt));
+  setTimeout(()=>{
+    el.classList.add('boot-splash-hide');
+    setTimeout(()=>{ el.style.display = 'none'; }, 450);
+  }, wait);
+}
+function setBootLoaderText(label){
+  const sub = document.getElementById('bootSubText');
+  if(sub) sub.textContent = label;
+}
+
 /* ============ BOOT ============ */
 (async function boot(){
   let data;
   try{
     ({ data } = await sb.auth.getSession());
   }catch(e){
-    document.getElementById('bootLoader').style.display='none';
+    hideBootLoader();
     document.getElementById('authGate').style.display='flex';
     showToast('Could not reach the server — check your connection');
     return;
   }
-  document.getElementById('bootLoader').style.display='none';
-  if(!data.session){ document.getElementById('authGate').style.display='flex'; return; }
+  if(!data.session){ hideBootLoader(); document.getElementById('authGate').style.display='flex'; return; }
   currentUser = data.session.user;
+  setBootLoaderText('Loading your journal');
   await loadTraderRow();
   populateProviderSelects();
   ensureEconomicCalendar(); // fire-and-forget: don't block app start on a third-party feed
@@ -2084,8 +2160,11 @@ document.addEventListener('keydown', (e)=>{
     document.getElementById('setupProviderSelect').value = scife.provider;
     buildProviderGrid('setup');
     onProviderChange('setup');
+    hideBootLoader();
     document.getElementById('setupScreen').style.display='flex';
   } else {
+    setBootLoaderText('Tuning the voice');
+    hideBootLoader();
     startApp();
   }
 })();
