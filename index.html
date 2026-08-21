@@ -6991,6 +6991,29 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
 
   // Exact reference palette: mint-green above zero, warm red below zero.
   const NEON_UP = '#32d3aa', NEON_DOWN = '#ef5965';
+
+  // Grid lines + $ / trade-number axis labels — required by the SVG template
+  // below (${floorLines} / ${axisLabels}); must be built before that template
+  // runs or the chart throws and the whole card falls back to its zero state.
+  let floorLines = '', axisLabels = '';
+  for(let g=0; g<=4; g++){
+    const gy = padT + plotH*(g/4);
+    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="1,3"/>`;
+    const val = maxY - (maxY-minY)*(g/4);
+    const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val));
+    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${lbl}</text>`;
+  }
+  for(let g=0; g<=6; g++){
+    const gx = padL + plotW*(g/6);
+    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="1,3"/>`;
+  }
+  const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
+  for(let i=0;i<points.length;i++){
+    if(i!==0 && i%xStep!==0 && i!==points.length-1) continue;
+    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${i}</text>`;
+  }
+  axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.14em" font-weight="600" fill="rgba(140,155,150,0.55)">TRADE NUMBER</text>`;
+
   const linePath = sampled.map((p,i)=>`${i?'L':'M'}${p[0]},${p[1]}`).join(' ');
   let glowSegs = '';
   let coreSegs = '';
@@ -7035,6 +7058,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
         </linearGradient>
         <clipPath id="clipAbove-${containerId}"><rect x="0" y="${padT-24}" width="${W}" height="${Math.max(0,baseY-(padT-24))}"/></clipPath>
         <clipPath id="clipBelow-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,(padT+plotH+24)-baseY)}"/></clipPath>
+        <clipPath id="plotBounds-${containerId}"><rect x="${padL}" y="0" width="${plotW}" height="${padT+plotH}"/></clipPath>
         <radialGradient id="endBloom-${containerId}" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.45"/>
           <stop offset="100%" stop-color="${lastColor}" stop-opacity="0"/>
@@ -7048,6 +7072,9 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
           <feGaussianBlur in="SourceGraphic" stdDeviation="5.2" result="blurWide"/>
           <feGaussianBlur in="SourceGraphic" stdDeviation="1.9" result="blurTight"/>
           <feMerge><feMergeNode in="blurWide"/><feMergeNode in="blurTight"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="eqLineShadow-${containerId}" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="3" stdDeviation="2.4" flood-color="#000000" flood-opacity="0.55"/>
         </filter>
         <clipPath id="eqReveal-${containerId}"><rect id="eqRevealRect-${containerId}" x="0" y="0" width="0" height="${H+6}"/></clipPath>
         <!-- Fades the very top strip of the chart to nothing so the glow
@@ -7066,17 +7093,21 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       ${axisLabels}
       <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
       <g clip-path="url(#eqReveal-${containerId})">
-        <g mask="url(#topFadeMask-${containerId})">
-          <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.32">${coreSegs}</g>
-          <path d="${areaPath}" fill="url(#areaGradUp-${containerId})" clip-path="url(#clipAbove-${containerId})"/>
-          <path d="${areaPath}" fill="url(#areaGradDown-${containerId})" clip-path="url(#clipBelow-${containerId})"/>
-          <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="28" fill="url(#endBloom-${containerId})"/>
-          <g filter="url(#eqGlow-${containerId})" opacity="0.75">${glowSegs}</g>
-          <g>${coreSegs}</g>
-          <g opacity="0.9">${hotSegs}</g>
+        <g clip-path="url(#plotBounds-${containerId})">
+          <g mask="url(#topFadeMask-${containerId})">
+            <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.32">${coreSegs}</g>
+            <path d="${areaPath}" fill="url(#areaGradUp-${containerId})" clip-path="url(#clipAbove-${containerId})"/>
+            <path d="${areaPath}" fill="url(#areaGradDown-${containerId})" clip-path="url(#clipBelow-${containerId})"/>
+            <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="28" fill="url(#endBloom-${containerId})"/>
+            <g filter="url(#eqLineShadow-${containerId})">
+              <g filter="url(#eqGlow-${containerId})" opacity="0.75">${glowSegs}</g>
+              <g>${coreSegs}</g>
+              <g opacity="0.9">${hotSegs}</g>
+            </g>
+          </g>
+          ${markers}
+          ${endGlow}
         </g>
-        ${markers}
-        ${endGlow}
       </g>
       <rect id="eqhit-${containerId}" x="${padL}" y="0" width="${plotW}" height="${H+6}" fill="transparent" style="cursor:crosshair"/>
     </svg>`;
