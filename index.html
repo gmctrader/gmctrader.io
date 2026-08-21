@@ -976,15 +976,25 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
   75%{transform:translateY(-3px) rotateX(-1deg) rotateY(1deg);}
 }
 @media(prefers-reduced-motion:reduce){.order-row-3d{animation:none;}}
-.order-row-top{display:flex;align-items:center;gap:11px;}
+.order-row-top{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none;}
 .order-row-top .trade-badge{width:34px;height:34px;flex-shrink:0;font-size:11px;}
-.order-row-info{flex:1;min-width:0;}
-.order-row-info .top{font-size:13px;color:var(--platinum);font-weight:600;}
-.order-row-info .bottom{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.order-row-info{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;}
+.order-row-info .top{font-size:14px;color:var(--platinum);font-weight:650;}
+.order-row-info .sub-hint{font-size:11px;color:var(--slate-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.order-chevron{flex-shrink:0;width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  color:var(--slate-dim);transition:transform .32s cubic-bezier(.2,.8,.2,1), color .2s ease;}
+.order-chevron svg{width:14px;height:14px;}
+.order-row.expanded .order-chevron{transform:rotate(180deg);color:var(--bronze-bright);}
 .order-cancel-btn{flex-shrink:0;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:9px;}
 .order-row .trade-tags{margin-top:0;}
 .order-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0;}
 .order-actions .btn-sm{width:100%;padding:9px 10px;font-size:12.5px;}
+.order-details{max-height:0;opacity:0;overflow:hidden;
+  transition:max-height .42s cubic-bezier(.2,.8,.2,1), opacity .3s ease, margin-top .42s cubic-bezier(.2,.8,.2,1);}
+.order-row.expanded .order-details{max-height:520px;opacity:1;margin-top:12px;}
+.order-details-inner{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px dashed var(--steel);}
+.order-meta-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11.5px;color:var(--slate);}
+.order-meta-row .order-notes{color:var(--slate);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .btn-win{background:transparent;border-color:var(--win);color:var(--win);}
 .btn-win:hover{background:rgba(16,185,129,0.1);}
 .btn-loss{background:transparent;border-color:var(--loss);color:var(--loss);}
@@ -2292,8 +2302,11 @@ setTimeout(function(){
           <button class="btn btn-primary btn-block" onclick="placeOrder()">Place Order</button>
         </div>
         <div class="card tilt">
-          <h2>Pending <span class="accent">Orders</span><span class="eyebrow" id="ordersCount"></span></h2>
-          <div class="trade-list" id="ordersList"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <h2 style="margin-bottom:0;">Pending <span class="accent">Orders</span><span class="eyebrow" id="ordersCount"></span></h2>
+            <button class="btn btn-sm btn-ghost" onclick="openLotCalc()" title="Lot size calculator" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">🧮 <span class="lot-calc-btn-label">Lot Calc</span></button>
+          </div>
+          <div class="trade-list" id="ordersList" style="margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
         </div>
       </div>
     </div>
@@ -2726,6 +2739,44 @@ setTimeout(function(){
   </div>
 </div>
 
+<!-- LOT SIZE CALCULATOR -->
+<div class="overlay" id="lotCalcOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div>
+        <h3 style="margin-bottom:2px;">Lot Size <span class="accent">Calculator</span></h3>
+        <div class="sub" style="margin-bottom:0;">Set your risk, get the exact position size — no mental math.</div>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="closeModal('lotCalcOverlay')" style="flex-shrink:0;">✕</button>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Account balance</label><input type="number" step="any" min="0" id="lc_balance" placeholder="e.g. 25000" oninput="updateLotCalc()"></div>
+      <div class="field"><label>Currency</label><select id="lc_currency" onchange="updateLotCalc()"></select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Risk basis</label>
+        <select id="lc_riskMode" onchange="updateLotCalc()">
+          <option value="pct">% of balance</option>
+          <option value="fixed">Fixed amount</option>
+        </select>
+      </div>
+      <div class="field"><label id="lc_riskValueLabel">Risk %</label><input type="number" step="any" min="0" id="lc_riskValue" placeholder="e.g. 1" oninput="updateLotCalc()"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Pair / Instrument</label>
+        <input type="text" id="lc_pair" list="pairSuggestions" placeholder="e.g. EURUSD, XAUUSD" oninput="updateLotCalc()">
+      </div>
+      <div class="field"><label>Account type</label><select id="lc_accountType" onchange="updateLotCalc()"></select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Entry price</label><input type="number" step="any" id="lc_entry" placeholder="e.g. 1.0850" oninput="updateLotCalc()"></div>
+      <div class="field"><label>Stop loss</label><input type="number" step="any" id="lc_sl" placeholder="e.g. 1.0820" oninput="updateLotCalc()"></div>
+    </div>
+    <div class="card tilt" id="lotCalcResult" style="margin-top:6px;padding:18px;"></div>
+  </div>
+</div>
+
 <!-- SCREENSHOT LIGHTBOX -->
 <div class="overlay" id="shotOverlay" onclick="if(event.target===this) closeScreenshotLightbox()">
   <div class="modal">
@@ -2739,6 +2790,7 @@ setTimeout(function(){
 <div class="toast" id="toast"></div>
 <div class="chart-tooltip" id="chartTooltip"></div>
 <div id="confettiLayer"></div>
+
 
 <script>
 /* ============ SUPABASE CONFIG ============ */
@@ -2983,6 +3035,108 @@ function computeOrderMoney(entry, sl, tp, pair, lot, accountType, acctCcy){
   const reward = (rewardQuote!=null && fxRate!=null) ? +(rewardQuote*fxRate).toFixed(2) : null;
   return { risk, reward, quoteCcy, acctCcy, fxRate, fxStatus };
 }
+
+/* ============ LOT SIZE CALCULATOR ============
+   The reverse of computeOrderMoney() above: instead of "here's a lot size,
+   what does it risk", this solves "here's what I want to risk, what lot
+   size gets me there" — the actual position-sizing question traders ask.
+   Reuses the exact same units-per-lot / FX-conversion helpers so the two
+   tools can never disagree with each other. */
+function openLotCalc(){
+  const balEl = document.getElementById('lc_balance');
+  const curEl = document.getElementById('lc_currency');
+  const acctTypeEl = document.getElementById('lc_accountType');
+  if(curEl && !curEl.dataset.filled){ curEl.innerHTML = CURRENCY_OPTIONS_HTML; curEl.dataset.filled='1'; }
+  if(acctTypeEl && !acctTypeEl.dataset.filled){ acctTypeEl.innerHTML = ACCOUNT_TYPE_OPTIONS_HTML; acctTypeEl.dataset.filled='1'; }
+  if(balEl && !balEl.value && state.rules.accountBalance) balEl.value = state.rules.accountBalance;
+  if(curEl) curEl.value = state.rules.currency || 'USD';
+  if(acctTypeEl) acctTypeEl.value = state.rules.accountType || 'standard';
+  const riskValEl = document.getElementById('lc_riskValue');
+  if(riskValEl && !riskValEl.value && state.rules.riskPerTrade) riskValEl.value = state.rules.riskPerTrade;
+  ensureFxRatesLoaded();
+  updateLotCalc();
+  document.getElementById('lotCalcOverlay').classList.add('show');
+}
+function updateLotCalc(){
+  const panel = document.getElementById('lotCalcResult');
+  if(!panel) return;
+  const riskMode = document.getElementById('lc_riskMode').value;
+  const riskLabel = document.getElementById('lc_riskValueLabel');
+  const acctCcy = document.getElementById('lc_currency').value || 'USD';
+  if(riskLabel) riskLabel.textContent = riskMode==='pct' ? 'Risk %' : `Risk amount (${acctCcy})`;
+  document.getElementById('lc_riskValue').placeholder = riskMode==='pct' ? 'e.g. 1' : 'e.g. 250';
+
+  const balance = parseFloat(document.getElementById('lc_balance').value);
+  const riskValue = parseFloat(document.getElementById('lc_riskValue').value);
+  const pair = document.getElementById('lc_pair').value;
+  const acctType = document.getElementById('lc_accountType').value || 'standard';
+  const entry = parseFloat(document.getElementById('lc_entry').value);
+  const sl = parseFloat(document.getElementById('lc_sl').value);
+  delete panel.dataset.lot;
+
+  if(isNaN(entry) || isNaN(sl) || entry===sl){
+    panel.innerHTML = '<div class="hint">Enter an entry price and stop loss to calculate a lot size.</div>';
+    return;
+  }
+  if(isNaN(riskValue) || riskValue<=0){
+    panel.innerHTML = '<div class="hint">Enter how much you want to risk — as a % of balance or a fixed amount.</div>';
+    return;
+  }
+  const riskAcctCcy = riskMode==='pct' ? (isNaN(balance) || balance<=0 ? null : balance*riskValue/100) : riskValue;
+  if(riskAcctCcy==null){
+    panel.innerHTML = '<div class="hint">Enter your account balance to calculate a % risk.</div>';
+    return;
+  }
+  const quoteCcy = pairQuoteCurrency(pair);
+  let fxRate = 1, fxStatus = 'same';
+  if(quoteCcy !== acctCcy){
+    const cached = getCachedFxRate(acctCcy, quoteCcy);
+    if(cached!=null){ fxRate = cached; fxStatus = 'live'; }
+    else { fxRate = null; fxStatus = 'loading'; ensureFxRatesLoaded(); }
+  }
+  if(fxRate==null){
+    panel.innerHTML = `<div class="hint">Fetching the live ${acctCcy}→${quoteCcy} rate for this pair — this'll fill in automatically.</div>`;
+    return;
+  }
+  const riskQuoteCcy = riskAcctCcy * fxRate;
+  const distance = Math.abs(entry - sl);
+  const acct = ACCOUNT_TYPES[acctType] || ACCOUNT_TYPES.standard;
+  const perLot = unitsPerStandardLot(pair) * acct.mult;
+  const units = riskQuoteCcy / distance;
+  const lot = units / perLot;
+  const sym = (CURRENCIES[acctCcy] || CURRENCIES.USD).symbol;
+  const distStr = distance.toFixed(6).replace(/0+$/,'').replace(/\.$/,'');
+  panel.dataset.lot = lot.toFixed(2);
+  panel.innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Recommended lot size</div>
+    <div style="font-family:'Fraunces',serif;font-size:34px;font-weight:650;color:var(--platinum);line-height:1;">${lot.toFixed(2)} <span style="font-size:15px;color:var(--slate);font-family:'Instrument Sans',sans-serif;font-weight:500;">lots</span></div>
+    <div class="order-levels" style="margin-top:14px;">
+      <span class="lv-entry">Risking <b>${sym}${riskAcctCcy.toFixed(2)}</b></span>
+      <span class="lv-sl">Distance <b>${distStr}</b></span>
+      <span class="lv-rr">Units <b>${Math.round(units).toLocaleString()}</b></span>
+    </div>
+    ${fxStatus==='live' ? `<div class="hint" style="margin-top:10px;">${pair ? escapeHtml(pair.toUpperCase()) : 'This instrument'} settles in ${quoteCcy}, converted live to your ${acctCcy} account.</div>` : ''}
+    <button class="btn btn-sm btn-secondary btn-block" style="margin-top:14px;" onclick="applyLotCalcToOrder()">Use this in Place Order</button>
+  `;
+}
+function applyLotCalcToOrder(){
+  const panel = document.getElementById('lotCalcResult');
+  const lot = panel && panel.dataset.lot;
+  if(!lot) return;
+  const pair = document.getElementById('lc_pair').value;
+  const entry = document.getElementById('lc_entry').value;
+  const sl = document.getElementById('lc_sl').value;
+  const oLot = document.getElementById('o_lot'); if(oLot) oLot.value = lot;
+  const oPair = document.getElementById('o_pair'); if(oPair && !oPair.value) oPair.value = pair;
+  const oEntry = document.getElementById('o_entry'); if(oEntry && !oEntry.value) oEntry.value = entry;
+  const oSl = document.getElementById('o_sl'); if(oSl && !oSl.value) oSl.value = sl;
+  closeModal('lotCalcOverlay');
+  const ordersNav = document.querySelector('.side-navbtn[data-view="orders"]');
+  if(ordersNav) ordersNav.click();
+  if(typeof updateOrderRRPreview==='function') updateOrderRRPreview();
+  showToast('Lot size applied to Place Order');
+}
+
 // Fired the instant either currency dropdown changes, so every $ label and the
 // "at risk per trade" previews reflect the new currency immediately, without
 // waiting for a form save. Both dropdowns are kept in sync since there's only
@@ -7650,6 +7804,15 @@ async function placeOrder(){
   await saveState(); renderOrders();
   showToast('Order placed — close it out once you know the result');
 }
+let expandedOrderIds = new Set();
+function toggleOrderCard(id, ev){
+  if(ev){ ev.stopPropagation(); }
+  const row = document.querySelector(`.order-row[data-id="${cssEscape(String(id))}"]`);
+  if(!row) return;
+  const nowExpanded = row.classList.toggle('expanded');
+  if(nowExpanded) expandedOrderIds.add(String(id)); else expandedOrderIds.delete(String(id));
+}
+function cssEscape(s){ return (window.CSS && CSS.escape) ? CSS.escape(s) : s.replace(/[^a-zA-Z0-9_-]/g,'\\$&'); }
 function buildOrderRowsHTML(orders){
   return orders.map((o,idx)=>{
     const typeInfo = STRATEGY_TYPES[o.strategyType];
@@ -7657,34 +7820,43 @@ function buildOrderRowsHTML(orders){
     const hasLevels = o.entry!=null || o.sl!=null || o.tp!=null;
     const dir = o.direction==='sell' ? 'sell' : 'buy';
     const delay = ((idx % 6) * 0.35).toFixed(2);
+    const isExpanded = expandedOrderIds.has(String(o.id));
     return `
-    <div class="order-row" data-dir="${dir}">
+    <div class="order-row${isExpanded ? ' expanded' : ''}" data-dir="${dir}" data-id="${escapeHtml(String(o.id))}">
       <div class="order-row-3d" style="animation-delay:-${delay}s">
-      <div class="order-row-top">
+      <div class="order-row-top" onclick="toggleOrderCard('${o.id}', event)">
         <div class="trade-badge pending">${o.direction==='sell'?'SELL':'BUY'}</div>
         <div class="order-row-info">
-          <div class="top">${o.pair ? `<span class="order-pair-badge">${escapeHtml(o.pair)}</span> · ` : ''}${o.date} · ${o.time}</div>
-          <div class="bottom">${o.notes ? escapeHtml(o.notes) : 'No notes'}</div>
+          <span class="top">${o.pair ? escapeHtml(o.pair) : 'No pair set'}</span>
         </div>
-        <button class="btn btn-sm btn-ghost order-cancel-btn" onclick="cancelOrder('${o.id}')" title="Cancel order">✕</button>
+        <span class="order-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        <button class="btn btn-sm btn-ghost order-cancel-btn" onclick="event.stopPropagation(); cancelOrder('${o.id}')" title="Cancel order">✕</button>
       </div>
-      ${hasLevels ? `<div class="order-levels">
-        ${o.entry!=null ? `<span class="lv-entry">Entry <b>${o.entry}</b></span>` : ''}
-        ${o.sl!=null ? `<span class="lv-sl">SL <b>${o.sl}</b></span>` : ''}
-        ${o.tp!=null ? `<span class="lv-tp">TP <b>${o.tp}</b></span>` : ''}
-        ${o.rrPlanned ? `<span class="lv-rr">Planned <b>${o.rrPlanned} R</b></span>` : ''}
-      </div>` : ''}
-      <div class="trade-tags">
-        <span class="tag-chip trader">${escapeHtml(traderName(o.trader))}</span>
-        ${accountTagHtml(o.account)}
-        ${styleInfo ? `<span class="tag-chip" style="color:${styleInfo.color}">${styleInfo.short}</span>` : ''}
-        ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
-        ${o.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(o.strategy)||'—')}</span>` : ''}
-        ${(o.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
-      </div>
-      <div class="order-actions">
-        <button class="btn btn-sm btn-win" onclick="closeOrder('${o.id}','win')">Won</button>
-        <button class="btn btn-sm btn-loss" onclick="closeOrder('${o.id}','loss')">Lost</button>
+      <div class="order-details">
+        <div class="order-details-inner">
+          <div class="order-meta-row">
+            <span>${o.date} · ${o.time}</span>
+            <span class="order-notes">${o.notes ? escapeHtml(o.notes) : 'No notes'}</span>
+          </div>
+          ${hasLevels ? `<div class="order-levels">
+            ${o.entry!=null ? `<span class="lv-entry">Entry <b>${o.entry}</b></span>` : ''}
+            ${o.sl!=null ? `<span class="lv-sl">SL <b>${o.sl}</b></span>` : ''}
+            ${o.tp!=null ? `<span class="lv-tp">TP <b>${o.tp}</b></span>` : ''}
+            ${o.rrPlanned ? `<span class="lv-rr">Planned <b>${o.rrPlanned} R</b></span>` : ''}
+          </div>` : ''}
+          <div class="trade-tags">
+            <span class="tag-chip trader">${escapeHtml(traderName(o.trader))}</span>
+            ${accountTagHtml(o.account)}
+            ${styleInfo ? `<span class="tag-chip" style="color:${styleInfo.color}">${styleInfo.short}</span>` : ''}
+            ${typeInfo ? `<span class="tag-chip" style="color:${typeInfo.color}">${typeInfo.short}</span>` : ''}
+            ${o.strategy ? `<span class="tag-chip">${escapeHtml(strategyName(o.strategy)||'—')}</span>` : ''}
+            ${(o.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
+          </div>
+          <div class="order-actions">
+            <button class="btn btn-sm btn-win" onclick="event.stopPropagation(); closeOrder('${o.id}','win')">Won</button>
+            <button class="btn btn-sm btn-loss" onclick="event.stopPropagation(); closeOrder('${o.id}','loss')">Lost</button>
+          </div>
+        </div>
       </div>
       </div>
     </div>`;
@@ -7723,6 +7895,7 @@ function renderOrdersOverview(orders){
 }
 async function cancelOrder(id){
   state.psychology.orders = state.psychology.orders.filter(o=>o.id!==id);
+  expandedOrderIds.delete(String(id));
   await saveState(); renderOrders();
   showToast('Order cancelled');
 }
