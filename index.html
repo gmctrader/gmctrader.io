@@ -1264,7 +1264,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
   background:linear-gradient(100deg, #86efac 0%, #10b981 38%, #34d399 62%, #ffe3a3 100%);
   background-size:220% 100%;
   -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 0 18px rgba(244,63,94,0.55)) drop-shadow(0 0 40px rgba(244,63,94,0.28));
+  filter:drop-shadow(0 0 18px rgba(16,185,129,0.5)) drop-shadow(0 0 40px rgba(255,227,163,0.22));
   animation:pnlBlaze 3.4s ease-in-out infinite;
 }
 .equity-total.neg{
@@ -1286,22 +1286,33 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .equity-wrap{
   margin-top:14px;overflow:hidden;border-radius:var(--r-md);position:relative;
   background:
-    radial-gradient(ellipse 620px 320px at 14% 105%, rgba(16,185,129,0.10), transparent 62%),
-    radial-gradient(ellipse 560px 320px at 90% -5%, rgba(45,212,191,0.08), transparent 60%),
-    radial-gradient(ellipse 700px 400px at 50% 50%, rgba(255,255,255,0.02), transparent 70%),
-    #07090a;
-  border:1px solid rgba(255,255,255,0.07);
-  box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 1px rgba(0,0,0,0.4), 0 30px 60px -24px rgba(0,0,0,0.6);
+    radial-gradient(ellipse 620px 320px at 14% 105%, rgba(16,185,129,0.09), transparent 62%),
+    radial-gradient(ellipse 560px 320px at 90% -5%, rgba(45,212,191,0.07), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 50% 50%, rgba(255,255,255,0.018), transparent 70%),
+    #060809;
+  border:1px solid rgba(238,246,242,0.09);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 0 0 1px rgba(0,0,0,0.5),
+    0 1px 0 rgba(238,246,242,0.05),
+    0 40px 80px -32px rgba(0,0,0,0.7),
+    0 14px 30px -16px rgba(0,0,0,0.55);
   padding:4px 2px 0;
 }
+/* fine hairline sheen along the top edge — the "machined bezel" look */
 .equity-wrap::before{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
-  background:linear-gradient(180deg, rgba(255,255,255,0.055), transparent 26%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), transparent 22%),
+    linear-gradient(90deg, rgba(238,246,242,0.05), transparent 6%, transparent 94%, rgba(238,246,242,0.05));
   mix-blend-mode:screen;
 }
 .equity-wrap::after{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
-  background:radial-gradient(ellipse 120% 100% at 50% 40%, transparent 55%, rgba(0,0,0,0.6) 100%);
+  background:
+    radial-gradient(ellipse 120% 100% at 50% 40%, transparent 55%, rgba(0,0,0,0.62) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>");
+  mix-blend-mode:overlay;
 }
 .equity-inner{position:relative;width:100%;}
 .equity-inner.rising{animation:chartRise 950ms cubic-bezier(.16,.9,.2,1) both;}
@@ -7022,13 +7033,13 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   for(let g=0; g<=4; g++){
     const val = maxY - niceStep*g;
     const gy = sy(val);
-    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="1,4"/>`;
+    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.05)" stroke-width="0.6" stroke-dasharray="1,5"/>`;
     const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val));
     axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="0.02em" fill="rgba(150,164,159,0.62)">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
     const gx = padL + plotW*(g/6);
-    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.035)" stroke-width="1" stroke-dasharray="1,4"/>`;
+    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.028)" stroke-width="0.6" stroke-dasharray="1,5"/>`;
   }
   const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
   for(let i=0;i<points.length;i++){
@@ -7037,18 +7048,19 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   }
   axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.16em" font-weight="600" fill="rgba(150,164,159,0.5)">TRADE NUMBER</text>`;
 
-  // Line stroked ~5x thinner than before, with a matching lighter glow/blur
-  // so the halo stays proportionate to the finer line instead of swamping it.
+  // Hairline-thin instrument trace: the core stroke is now a fine 0.28px
+  // line (down from 0.55), with the glow/hot passes scaled down to match so
+  // the halo still reads as a tight, precise line rather than a thick ribbon.
   const linePath = sampled.map((p,i)=>`${i?'L':'M'}${p[0]},${p[1]}`).join(' ');
   let glowSegs = '';
   let coreSegs = '';
   let hotSegs = '';
-  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
-  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
-  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
-  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
-  hotSegs += `<path d="${linePath}" fill="none" stroke="#a8f0da" stroke-width="0.15" stroke-linecap="round" stroke-linejoin="round" opacity="0.65" clip-path="url(#clipAbove-${containerId})"/>`;
-  hotSegs += `<path d="${linePath}" fill="none" stroke="#ffc2cb" stroke-width="0.13" stroke-linecap="round" stroke-linejoin="round" opacity="0.4" clip-path="url(#clipBelow-${containerId})"/>`;
+  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
+  glowSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
+  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_UP}" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipAbove-${containerId})"/>`;
+  coreSegs += `<path d="${linePath}" fill="none" stroke="${NEON_DOWN}" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#clipBelow-${containerId})"/>`;
+  hotSegs += `<path d="${linePath}" fill="none" stroke="#c8f7e8" stroke-width="0.09" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" clip-path="url(#clipAbove-${containerId})"/>`;
+  hotSegs += `<path d="${linePath}" fill="none" stroke="#ffd6dc" stroke-width="0.08" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" clip-path="url(#clipBelow-${containerId})"/>`;
 
   const areaPath = `M${sampled[0][0]},${baseY} ` + sampled.map(p=>`L${p[0]},${p[1]}`).join(' ') + ` L${sampled[sampled.length-1][0]},${baseY} Z`;
 
@@ -7056,13 +7068,14 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   let markers = '';
   topPts.forEach((p,i)=>{
     if(i%showEvery!==0 && i!==topPts.length-1) return;
-    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#f5f8f7" stroke="#07090a" stroke-width="0.8" class="eq-marker" data-i="${i}"/>`;
+    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="1.6" fill="#f5f8f7" stroke="#07090a" stroke-width="0.5" opacity="0.85" class="eq-marker" data-i="${i}"/>`;
   });
   const lastPt = topPts[topPts.length-1];
   const lastColor = overallUp ? NEON_UP : NEON_DOWN;
   const endGlow = `
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="14" fill="${lastColor}" opacity="0.16" class="eq-pulse-ring"/>
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.2" fill="#f5f8f7" stroke="#07090a" stroke-width="1" class="eq-pulse-dot"/>`;
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="12" fill="${lastColor}" opacity="0.14" class="eq-pulse-ring"/>
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.4" fill="none" stroke="${lastColor}" stroke-width="0.6" opacity="0.55"/>
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="2.1" fill="#f5f8f7" stroke="#07090a" stroke-width="0.7" class="eq-pulse-dot"/>`;
 
   // faint mirrored reflection of the line beneath the baseline, fading out —
   // gives the panel a glassy, "trading terminal" depth instead of a flat plot.
@@ -7094,12 +7107,12 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
         </linearGradient>
         <mask id="reflMask-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,H+6-baseY)}" fill="url(#reflFade-${containerId})"/></mask>
         <filter id="eqGlow-${containerId}" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.15" result="blurWide"/>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" result="blurTight"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.85" result="blurWide"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.28" result="blurTight"/>
           <feMerge><feMergeNode in="blurWide"/><feMergeNode in="blurTight"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <filter id="eqLineShadow-${containerId}" x="-40%" y="-40%" width="180%" height="180%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2.6" flood-color="#000000" flood-opacity="0.4"/>
+          <feDropShadow dx="0" dy="1.4" stdDeviation="1.8" flood-color="#000000" flood-opacity="0.42"/>
         </filter>
         <radialGradient id="vignette-${containerId}" cx="50%" cy="38%" r="75%">
           <stop offset="0%" stop-color="#000" stop-opacity="0"/>
@@ -7122,7 +7135,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       <rect x="0" y="0" width="${W}" height="${H+6}" fill="url(#vignette-${containerId})" pointer-events="none"/>
       ${floorLines}
       ${axisLabels}
-      <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="2,4"/>
+      <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(238,246,242,0.16)" stroke-width="0.7" stroke-dasharray="1,3.5"/>
       <g clip-path="url(#eqReveal-${containerId})">
         <g clip-path="url(#plotBounds-${containerId})">
           <g mask="url(#topFadeMask-${containerId})">
