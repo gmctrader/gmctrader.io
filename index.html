@@ -7035,9 +7035,9 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
     // stays green, and only crossing $0 actually flips the line to red.
     const up = ((y1+y2)/2) <= baseY;
     const c = up ? NEON_UP : NEON_DOWN;
-    glowSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="6.5" stroke-linecap="round"/>`;
-    coreSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`;
-    if(up) hotSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#86efac" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>`;
+    glowSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="3.2" stroke-linecap="round"/>`;
+    coreSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`;
+    if(up) hotSegs += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#86efac" stroke-width="0.6" stroke-linecap="round" opacity="0.7"/>`;
   }
 
   const areaPath = `M${sampled[0][0]},${baseY} ` + sampled.map(p=>`L${p[0]},${p[1]}`).join(' ') + ` L${sampled[sampled.length-1][0]},${baseY} Z`;
@@ -7046,13 +7046,13 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   let markers = '';
   topPts.forEach((p,i)=>{
     if(i%showEvery!==0 && i!==topPts.length-1) return;
-    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="#f5f8f7" stroke="#07090a" stroke-width="1.2" class="eq-marker" data-i="${i}"/>`;
+    markers += `<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#f5f8f7" stroke="#07090a" stroke-width="1" class="eq-marker" data-i="${i}"/>`;
   });
   const lastPt = topPts[topPts.length-1];
   const lastColor = overallUp ? NEON_UP : NEON_DOWN;
   const endGlow = `
     <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="16" fill="${lastColor}" opacity="0.18" class="eq-pulse-ring"/>
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="4.4" fill="#f5f8f7" stroke="#07090a" stroke-width="1.4" class="eq-pulse-dot"/>`;
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.6" fill="#f5f8f7" stroke="#07090a" stroke-width="1.2" class="eq-pulse-dot"/>`;
 
   // faint mirrored reflection of the line beneath the baseline, fading out —
   // gives the panel a glassy, "trading terminal" depth instead of a flat plot.
@@ -7073,6 +7073,11 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
         </linearGradient>
         <clipPath id="clipAbove-${containerId}"><rect x="0" y="${padT-24}" width="${W}" height="${Math.max(0,baseY-(padT-24))}"/></clipPath>
         <clipPath id="clipBelow-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,(padT+plotH+24)-baseY)}"/></clipPath>
+        <!-- Hard bounds for the line/glow/markers so nothing can ever bleed
+             into the axis-label gutters, at any zoom level or viewport size —
+             clipped in the same user-space units the chart itself is drawn
+             in, so it scales identically with the rest of the SVG. -->
+        <clipPath id="plotBounds-${containerId}"><rect x="${padL}" y="0" width="${plotW}" height="${padT+plotH}"/></clipPath>
         <radialGradient id="endBloom-${containerId}" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.45"/>
           <stop offset="100%" stop-color="${lastColor}" stop-opacity="0"/>
@@ -7083,9 +7088,14 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
         </linearGradient>
         <mask id="reflMask-${containerId}"><rect x="0" y="${baseY}" width="${W}" height="${Math.max(0,H+6-baseY)}" fill="url(#reflFade-${containerId})"/></mask>
         <filter id="eqGlow-${containerId}" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="6.5" result="blurWide"/>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blurTight"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="blurWide"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.1" result="blurTight"/>
           <feMerge><feMergeNode in="blurWide"/><feMergeNode in="blurTight"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <!-- Real drop shadow behind the whole line stack (glow+core+markers),
+             so the curve visually lifts off the panel instead of sitting flat. -->
+        <filter id="eqLineShadow-${containerId}" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="3" stdDeviation="2.4" flood-color="#000000" flood-opacity="0.55"/>
         </filter>
         <clipPath id="eqReveal-${containerId}"><rect id="eqRevealRect-${containerId}" x="0" y="0" width="0" height="${H+6}"/></clipPath>
         <!-- Fades the very top strip of the chart to nothing so the glow
@@ -7104,17 +7114,21 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       ${axisLabels}
       <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
       <g clip-path="url(#eqReveal-${containerId})">
-        <g mask="url(#topFadeMask-${containerId})">
-          <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.4">${coreSegs}</g>
-          <path d="${areaPath}" fill="url(#areaGradUp-${containerId})" clip-path="url(#clipAbove-${containerId})"/>
-          <path d="${areaPath}" fill="url(#areaGradDown-${containerId})" clip-path="url(#clipBelow-${containerId})"/>
-          <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="28" fill="url(#endBloom-${containerId})"/>
-          <g filter="url(#eqGlow-${containerId})" opacity="0.75">${glowSegs}</g>
-          <g>${coreSegs}</g>
-          <g opacity="0.9">${hotSegs}</g>
+        <g clip-path="url(#plotBounds-${containerId})">
+          <g mask="url(#topFadeMask-${containerId})">
+            <g mask="url(#reflMask-${containerId})" transform="matrix(1,0,0,-1,0,${reflY})" opacity="0.4">${coreSegs}</g>
+            <path d="${areaPath}" fill="url(#areaGradUp-${containerId})" clip-path="url(#clipAbove-${containerId})"/>
+            <path d="${areaPath}" fill="url(#areaGradDown-${containerId})" clip-path="url(#clipBelow-${containerId})"/>
+            <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="28" fill="url(#endBloom-${containerId})"/>
+            <g filter="url(#eqLineShadow-${containerId})">
+              <g filter="url(#eqGlow-${containerId})" opacity="0.55">${glowSegs}</g>
+              <g>${coreSegs}</g>
+              <g opacity="0.9">${hotSegs}</g>
+            </g>
+          </g>
+          ${markers}
+          ${endGlow}
         </g>
-        ${markers}
-        ${endGlow}
       </g>
       <rect id="eqhit-${containerId}" x="${padL}" y="0" width="${plotW}" height="${H+6}" fill="transparent" style="cursor:crosshair"/>
     </svg>`;
