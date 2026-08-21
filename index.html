@@ -355,22 +355,22 @@ html[data-theme="dark"] #bootSplash{
 .auth-blob-purple{width:520px;height:520px;background:var(--neon-cyan);bottom:-200px;right:-160px;animation:driftB 19s ease-in-out infinite;}
 .auth-blob-magenta{width:380px;height:380px;background:var(--neon-purple);bottom:10%;left:8%;animation:driftC 14s ease-in-out infinite;opacity:0.3;}
 @keyframes driftA{
-  0%,100%{transform:translate(0,0) scale(1);border-radius:44% 56% 62% 38%/40% 44% 56% 60%;}
-  25%{transform:translate(34px,26px) scale(1.05);border-radius:52% 48% 50% 50%/46% 52% 48% 54%;}
-  50%{transform:translate(60px,40px) scale(1.12);border-radius:60% 40% 38% 62%/55% 60% 40% 45%;}
-  75%{transform:translate(24px,52px) scale(1.06);border-radius:48% 52% 58% 42%/50% 46% 54% 50%;}
+  0%,100%{transform:perspective(900px) translate(0,0) rotate3d(0.4,0.8,0.1,0deg) scale(1);border-radius:44% 56% 62% 38%/40% 44% 56% 60%;}
+  25%{transform:perspective(900px) translate(34px,26px) rotate3d(0.4,0.8,0.1,9deg) scale(1.05);border-radius:52% 48% 50% 50%/46% 52% 48% 54%;}
+  50%{transform:perspective(900px) translate(60px,40px) rotate3d(0.4,0.8,0.1,18deg) scale(1.12);border-radius:60% 40% 38% 62%/55% 60% 40% 45%;}
+  75%{transform:perspective(900px) translate(24px,52px) rotate3d(0.4,0.8,0.1,8deg) scale(1.06);border-radius:48% 52% 58% 42%/50% 46% 54% 50%;}
 }
 @keyframes driftB{
-  0%,100%{transform:translate(0,0) scale(1);border-radius:38% 62% 55% 45%/50% 45% 55% 50%;}
-  25%{transform:translate(-24px,-14px) scale(1.04);border-radius:46% 54% 48% 52%/48% 50% 50% 52%;}
-  50%{transform:translate(-50px,-30px) scale(1.08);border-radius:55% 45% 40% 60%/40% 55% 45% 60%;}
-  75%{transform:translate(-18px,-42px) scale(1.05);border-radius:50% 50% 52% 48%/54% 46% 50% 50%;}
+  0%,100%{transform:perspective(900px) translate(0,0) rotate3d(0.6,0.3,0.2,0deg) scale(1);border-radius:38% 62% 55% 45%/50% 45% 55% 50%;}
+  25%{transform:perspective(900px) translate(-24px,-14px) rotate3d(0.6,0.3,0.2,-8deg) scale(1.04);border-radius:46% 54% 48% 52%/48% 50% 50% 52%;}
+  50%{transform:perspective(900px) translate(-50px,-30px) rotate3d(0.6,0.3,0.2,-16deg) scale(1.08);border-radius:55% 45% 40% 60%/40% 55% 45% 60%;}
+  75%{transform:perspective(900px) translate(-18px,-42px) rotate3d(0.6,0.3,0.2,-6deg) scale(1.05);border-radius:50% 50% 52% 48%/54% 46% 50% 50%;}
 }
 @keyframes driftC{
-  0%,100%{transform:translate(0,0) scale(1);border-radius:50% 50% 42% 58%/58% 42% 58% 42%;}
-  25%{transform:translate(16px,-18px) scale(1.06);border-radius:46% 54% 50% 50%/50% 50% 46% 54%;}
-  50%{transform:translate(30px,-40px) scale(1.15);border-radius:42% 58% 58% 42%/42% 58% 42% 58%;}
-  75%{transform:translate(-8px,-24px) scale(1.08);border-radius:54% 46% 46% 54%/56% 44% 52% 48%;}
+  0%,100%{transform:perspective(900px) translate(0,0) rotate3d(0.2,0.7,0.5,0deg) scale(1);border-radius:50% 50% 42% 58%/58% 42% 58% 42%;}
+  25%{transform:perspective(900px) translate(16px,-18px) rotate3d(0.2,0.7,0.5,11deg) scale(1.06);border-radius:46% 54% 50% 50%/50% 50% 46% 54%;}
+  50%{transform:perspective(900px) translate(30px,-40px) rotate3d(0.2,0.7,0.5,22deg) scale(1.15);border-radius:42% 58% 58% 42%/42% 58% 42% 58%;}
+  75%{transform:perspective(900px) translate(-8px,-24px) rotate3d(0.2,0.7,0.5,10deg) scale(1.08);border-radius:54% 46% 46% 54%/56% 44% 52% 48%;}
 }
 .auth-wrap{ display:flex;align-items:center;gap:70px;max-width:1000px;width:100%;position:relative;z-index:3; }
 @media(max-width:840px){.auth-wrap{flex-direction:column;gap:34px;}}
@@ -1328,6 +1328,97 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 </style>
 </head>
 <body>
+<!-- ============ AMBIENT 3D PARTICLE FIELD (three.js) ============
+     Deepest layer of the whole app (z-index -4), sits behind the video
+     glow, the drifting blobs, and every screen. Low-opacity bronze/gold
+     motes drifting in a slow parallax field that gently answers pointer
+     movement and device tilt. Purely decorative: wrapped defensively so a
+     blocked CDN or low-power device never breaks the terminal itself. -->
+<canvas id="tjParticles" aria-hidden="true"></canvas>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+(async function(){
+  try{
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canvas = document.getElementById('tjParticles');
+    if(reduceMotion || !canvas){ if(canvas) canvas.remove(); return; }
+    var THREE = await import('three');
+
+    var renderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true, powerPreference:'low-power'});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 2000);
+    camera.position.z = 460;
+
+    // Two interleaved point clouds at different depths/colors for parallax.
+    function makeField(count, spread, color, size, opacity){
+      var geo = new THREE.BufferGeometry();
+      var pos = new Float32Array(count*3);
+      for(var i=0;i<count;i++){
+        pos[i*3]   = (Math.random()-0.5)*spread;
+        pos[i*3+1] = (Math.random()-0.5)*spread;
+        pos[i*3+2] = (Math.random()-0.5)*spread*0.6;
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+      var mat = new THREE.PointsMaterial({color:color, size:size, sizeAttenuation:true, transparent:true, opacity:opacity, depthWrite:false});
+      var pts = new THREE.Points(geo, mat);
+      scene.add(pts);
+      return pts;
+    }
+    var fieldNear = makeField(180, 900, 0x2dd4a8, 2.6, 0.34);
+    var fieldFar  = makeField(260, 1500, 0xf2c877, 1.6, 0.16);
+
+    function resize(){
+      var w = innerWidth, h = innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    var mx=0, my=0, tx=0, ty=0;
+    window.addEventListener('pointermove', function(e){
+      mx = (e.clientX/innerWidth - 0.5);
+      my = (e.clientY/innerHeight - 0.5);
+    }, {passive:true});
+    window.addEventListener('deviceorientation', function(e){
+      if(e.gamma==null) return;
+      mx = Math.max(-0.5, Math.min(0.5, e.gamma/45));
+      my = Math.max(-0.5, Math.min(0.5, e.beta/90));
+    }, {passive:true});
+
+    var running = true;
+    document.addEventListener('visibilitychange', function(){ running = !document.hidden; });
+
+    var clock = new THREE.Clock();
+    function tick(){
+      requestAnimationFrame(tick);
+      if(!running) return;
+      var t = clock.getElapsedTime();
+      tx += (mx - tx) * 0.03;
+      ty += (my - ty) * 0.03;
+      fieldNear.rotation.y = t*0.015 + tx*0.4;
+      fieldNear.rotation.x = t*0.008 + ty*0.25;
+      fieldFar.rotation.y = -t*0.008 - tx*0.2;
+      fieldFar.rotation.x = -t*0.005 - ty*0.15;
+      camera.position.x = tx*40;
+      camera.position.y = -ty*40;
+      camera.lookAt(scene.position);
+      renderer.render(scene, camera);
+    }
+    tick();
+  }catch(err){ /* three.js unavailable or WebGL unsupported — app runs fine without it */
+    var c = document.getElementById('tjParticles'); if(c) c.remove();
+  }
+})();
+</script>
+<style>
+#tjParticles{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:-4;pointer-events:none;opacity:0.85;}
+@media(max-width:600px){#tjParticles{opacity:0.55;}}
+</style>
 <!-- ============ BOOT SPLASH ============ -->
 <div id="bootSplash" aria-hidden="true">
   <div class="boot-splash-inner">
@@ -8044,6 +8135,99 @@ function toggleGdTheme(){
 <div class="cmdk-launcher" id="cmdkLauncher" onclick="window.openCommandPalette && window.openCommandPalette()" title="Command palette">
   <span>Jump to…</span><span class="kbd">⌘K</span>
 </div>
+
+<!-- ============ POINTER-DRIVEN 3D TILT ============
+     Gives every .card.tilt real rotateX/rotateY that tracks the cursor
+     (or device tilt on mobile), instead of just the flat hover sheen it
+     had before. Also drives the auth medallion's tilt on top of its
+     existing autonomous "breathe" animation. Self-contained, defensive,
+     and re-scans the DOM for cards injected later by the app itself. -->
+<script>
+(function(){
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion) return;
+
+  function attachTilt(el, opts){
+    if(!el || el.__tiltBound) return;
+    el.__tiltBound = true;
+    var maxTilt = (opts && opts.maxTilt) || 6;
+    var lift = (opts && opts.lift) || 1.012;
+    var raf = null, curRx=0, curRy=0, targetRx=0, targetRy=0, active=false;
+
+    // Free the element from the one-shot entrance animation once it's
+    // done, so our transform can take over without the animation's
+    // forwards-fill fighting it for the transform property.
+    el.addEventListener('animationend', function(){ el.style.animation = 'none'; }, {once:true});
+
+    function loop(){
+      curRx += (targetRx - curRx) * 0.14;
+      curRy += (targetRy - curRy) * 0.14;
+      el.style.transform = 'perspective(1000px) rotateX('+curRx.toFixed(2)+'deg) rotateY('+curRy.toFixed(2)+'deg) scale('+(active?lift:1)+')';
+      if(active || Math.abs(curRx)>0.05 || Math.abs(curRy)>0.05){ raf = requestAnimationFrame(loop); }
+      else { raf = null; el.style.transform = ''; }
+    }
+    function onMove(e){
+      var r = el.getBoundingClientRect();
+      var x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height;
+      targetRy = (x-0.5)*maxTilt*2;
+      targetRx = (0.5-y)*maxTilt*2;
+      active = true;
+      if(!raf) raf = requestAnimationFrame(loop);
+    }
+    function onLeave(){
+      active = false; targetRx = 0; targetRy = 0;
+      if(!raf) raf = requestAnimationFrame(loop);
+    }
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    el.addEventListener('pointercancel', onLeave);
+  }
+
+  function scanCards(root){
+    (root||document).querySelectorAll('.card.tilt').forEach(function(el){ attachTilt(el, {maxTilt:5, lift:1.012}); });
+  }
+
+  function boot(){
+    scanCards(document);
+    // Auth medallion: layered on top of its CSS "breathe" animation via a
+    // second, independently-animated wrapper so both motions coexist.
+    var medallion = document.getElementById('authMedallion');
+    if(medallion){
+      var mrx=0, mry=0, mtx=0, mty=0, mraf=null;
+      function mloop(){
+        mrx += (mtx - mrx)*0.1; mry += (mty - mry)*0.1;
+        medallion.style.setProperty('--tilt-x', mrx.toFixed(2)+'deg');
+        medallion.style.setProperty('--tilt-y', mry.toFixed(2)+'deg');
+        mraf = requestAnimationFrame(mloop);
+      }
+      mloop();
+      document.addEventListener('pointermove', function(e){
+        mtx = (0.5 - e.clientY/innerHeight) * 14;
+        mty = (e.clientX/innerWidth - 0.5) * 14;
+      }, {passive:true});
+    }
+    // Re-scan for cards the app injects into panels after boot (e.g. the
+    // prop-firm compliance / order-worth panels build their own markup).
+    var mo = new MutationObserver(function(muts){
+      for(var i=0;i<muts.length;i++){
+        var added = muts[i].addedNodes;
+        for(var j=0;j<added.length;j++){
+          if(added[j].nodeType===1) scanCards(added[j].matches && added[j].matches('.card.tilt') ? added[j].parentNode : added[j]);
+        }
+      }
+    });
+    mo.observe(document.body, {childList:true, subtree:true});
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
+})();
+</script>
+<style>
+/* the medallion's own transform is still keyframed by "breathe"; we add a
+   pointer-reactive rotation on top via CSS vars set by the script above,
+   composited using a nested transform so neither motion overwrites the other */
+#authMedallion{ --tilt-x:0deg; --tilt-y:0deg; }
+#authMedallion .medallion-plate{ transition:transform .4s cubic-bezier(.2,.8,.2,1); transform:rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(14px); transform-style:preserve-3d; }
+</style>
 
 </body>
 </html>

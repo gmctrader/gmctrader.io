@@ -934,6 +934,64 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 <body>
 <div class="grain-overlay" aria-hidden="true"></div>
 
+<!-- ============ AMBIENT 3D PARTICLE FIELD (three.js) ============
+     Deepest, always-on layer: a slow drifting cloud of bronze/gold motes
+     behind everything else (blobs, orb, chat). Reacts gently to pointer
+     and device tilt. Defensive: removes itself if WebGL/CDN unavailable
+     or the user prefers reduced motion, so the app is never dependent on it. -->
+<canvas id="tjParticles" aria-hidden="true"></canvas>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+(async function(){
+  try{
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canvas = document.getElementById('tjParticles');
+    if(reduceMotion || !canvas){ if(canvas) canvas.remove(); return; }
+    var THREE = await import('three');
+    var renderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true, powerPreference:'low-power'});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 2000);
+    camera.position.z = 420;
+    function makeField(count, spread, color, size, opacity){
+      var geo = new THREE.BufferGeometry();
+      var pos = new Float32Array(count*3);
+      for(var i=0;i<count;i++){
+        pos[i*3]=(Math.random()-0.5)*spread; pos[i*3+1]=(Math.random()-0.5)*spread; pos[i*3+2]=(Math.random()-0.5)*spread*0.6;
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+      var mat = new THREE.PointsMaterial({color:color, size:size, sizeAttenuation:true, transparent:true, opacity:opacity, depthWrite:false});
+      var pts = new THREE.Points(geo, mat); scene.add(pts); return pts;
+    }
+    var fieldNear = makeField(150, 820, 0x2dd4a8, 2.4, 0.3);
+    var fieldFar  = makeField(220, 1400, 0xf2c877, 1.5, 0.14);
+    function resize(){ var w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+    resize(); window.addEventListener('resize', resize);
+    var mx=0,my=0,tx=0,ty=0;
+    window.addEventListener('pointermove', function(e){ mx=(e.clientX/innerWidth-0.5); my=(e.clientY/innerHeight-0.5); }, {passive:true});
+    window.addEventListener('deviceorientation', function(e){ if(e.gamma==null) return; mx=Math.max(-0.5,Math.min(0.5,e.gamma/45)); my=Math.max(-0.5,Math.min(0.5,e.beta/90)); }, {passive:true});
+    var running=true; document.addEventListener('visibilitychange', function(){ running=!document.hidden; });
+    var clock = new THREE.Clock();
+    function tick(){
+      requestAnimationFrame(tick); if(!running) return;
+      var t = clock.getElapsedTime();
+      tx += (mx-tx)*0.03; ty += (my-ty)*0.03;
+      fieldNear.rotation.y = t*0.015 + tx*0.4; fieldNear.rotation.x = t*0.008 + ty*0.25;
+      fieldFar.rotation.y = -t*0.008 - tx*0.2; fieldFar.rotation.x = -t*0.005 - ty*0.15;
+      camera.position.x = tx*40; camera.position.y = -ty*40; camera.lookAt(scene.position);
+      renderer.render(scene, camera);
+    }
+    tick();
+  }catch(err){ var c=document.getElementById('tjParticles'); if(c) c.remove(); }
+})();
+</script>
+<style>
+#tjParticles{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:-2;pointer-events:none;opacity:0.8;}
+@media(max-width:600px){#tjParticles{opacity:0.5;}}
+</style>
+
 <!-- ============ BOOT LOADER (avoids a blank flash while the session check resolves) ============ -->
 <div class="center-screen" id="bootLoader">
   <div class="center-orb o1"></div><div class="center-orb o2"></div><div class="center-orb o3"></div>
@@ -4594,20 +4652,40 @@ function stopWaveAnimation(){
   setWaveLevels(new Array(WAVE_BAR_COUNT).fill(0.05));
 }
 
-/* Subtle mouse/touch parallax tilt on the stage — pure CSS 3D, no libraries. */
+/* Mouse/touch/device-tilt parallax on the stage — pure CSS 3D, no libraries.
+   Adds a slight translateZ "push toward the viewer" on top of the rotation
+   so the tilt reads as real depth, not just a flat skew. */
 function setupStageParallax(){
   const wrap = document.getElementById('stage3dWrap');
   const stage = document.getElementById('stage');
   if(!wrap || !stage) return;
-  const settle = ()=>{ stage.style.transform = 'rotateX(0deg) rotateY(0deg)'; };
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion) return;
+  let curRx=0, curRy=0, targetRx=0, targetRy=0, curZ=0, targetZ=0, raf=null;
+  function apply(){
+    curRx += (targetRx-curRx)*0.12; curRy += (targetRy-curRy)*0.12; curZ += (targetZ-curZ)*0.12;
+    stage.style.transform = `rotateY(${curRy.toFixed(2)}deg) rotateX(${curRx.toFixed(2)}deg) translateZ(${curZ.toFixed(1)}px)`;
+    if(Math.abs(targetRx-curRx)>0.02 || Math.abs(targetRy-curRy)>0.02 || Math.abs(targetZ-curZ)>0.2){ raf = requestAnimationFrame(apply); }
+    else { raf = null; }
+  }
+  function trigger(){ if(!raf) raf = requestAnimationFrame(apply); }
+  const settle = ()=>{ targetRx=0; targetRy=0; targetZ=0; trigger(); };
   wrap.addEventListener('mousemove', (e)=>{
     const r = wrap.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width - 0.5;
     const py = (e.clientY - r.top) / r.height - 0.5;
-    stage.style.transform = `rotateY(${px*10}deg) rotateX(${-py*8}deg)`;
+    targetRy = px*10; targetRx = -py*8; targetZ = 14;
+    trigger();
   });
   wrap.addEventListener('mouseleave', settle);
   wrap.addEventListener('touchend', settle);
+  window.addEventListener('deviceorientation', (e)=>{
+    if(e.gamma==null) return;
+    targetRy = Math.max(-10, Math.min(10, e.gamma/4));
+    targetRx = Math.max(-8, Math.min(8, -(e.beta-45)/6));
+    targetZ = 10;
+    trigger();
+  }, {passive:true});
 }
 
 /* Real mic-amplitude visualization while listening, via Web Audio's AnalyserNode. */
@@ -4953,6 +5031,37 @@ function stopBargeInListener(){
   if(bargeRecognition){ try{ bargeRecognition.stop(); }catch(e){} }
   bargeActive = false;
 }
+
+/* Pointer-driven 3D tilt for the provider cards, delegated on the two grid
+   containers since cards are rebuilt via innerHTML whenever the provider
+   list changes — a direct per-card listener would go stale. */
+(function(){
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion) return;
+  var current = null, raf = null;
+  function onMove(e){
+    var card = e.target.closest && e.target.closest('.provider-card');
+    if(!card){ return; }
+    current = card;
+    var r = card.getBoundingClientRect();
+    var x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height;
+    var ry = (x-0.5)*10, rx = (0.5-y)*8;
+    if(raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(function(){
+      card.style.transform = 'perspective(600px) rotateX('+rx.toFixed(2)+'deg) rotateY('+ry.toFixed(2)+'deg) translateZ(6px)';
+    });
+  }
+  function onLeave(e){
+    var card = e.target.closest && e.target.closest('.provider-card');
+    if(card){ card.style.transform = ''; }
+  }
+  ['setupProviderGrid','settingsProviderGrid'].forEach(function(id){
+    var grid = document.getElementById(id);
+    if(!grid) return;
+    grid.addEventListener('pointermove', onMove);
+    grid.addEventListener('pointerleave', onLeave, true);
+  });
+})();
 </script>
 </body>
 </html>
