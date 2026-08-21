@@ -147,6 +147,48 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
 .view.active .grid > .card:nth-child(n+5){animation-delay:.2s;}
 @keyframes cardRise{from{opacity:0;transform:translateY(10px) scale(.99);}to{opacity:1;transform:translateY(0) scale(1);}}
 
+/* ---- equity curve footer: best streak / win rate donut / worst streak ---- */
+.eq-footer-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding-top:16px;border-top:1px solid var(--steel);}
+.eq-footer-item{display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;}
+.eq-footer-item.center{flex-direction:column;gap:6px;}
+.eq-footer-item.right{flex-direction:row-reverse;text-align:right;}
+.eq-footer-item b{display:block;font-size:16px;line-height:1.15;color:var(--platinum);font-weight:700;}
+.eq-footer-item span{display:block;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--slate);margin-top:1px;}
+.eq-footer-item.center span{margin-top:0;}
+.eq-footer-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+.eq-footer-dot.win{background:var(--win);box-shadow:0 0 8px var(--win);}
+.eq-footer-dot.loss{background:var(--loss);box-shadow:0 0 8px var(--loss);}
+.eq-winrate-donut-wrap{position:relative;width:52px;height:52px;}
+.eq-winrate-donut-wrap svg{width:100%;height:100%;transform:rotate(-90deg);}
+.eq-winrate-donut-wrap circle{transition:stroke-dasharray .8s cubic-bezier(.16,.9,.2,1);}
+.eq-winrate-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--platinum);}
+
+/* ============ CARD FULLSCREEN (mobile expand) ============
+   Applies to the Equity Curve, Calendar, Risk Console and Discipline
+   Score cards. The card's actual DOM node is relocated (not cloned) so
+   every running animation, timer and chart stays exactly as it was. */
+.card-expand-btn{position:absolute;top:16px;right:16px;z-index:5;width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;border:1px solid var(--steel-hi);
+  background:var(--panel-solid);color:var(--slate);cursor:pointer;transition:transform .18s ease, color .18s ease, background .18s ease;}
+.card-expand-btn:hover{color:var(--bronze-bright);transform:scale(1.08);}
+.card-expand-btn svg{width:15px;height:15px;}
+.card.fs-target > h2, .card.fs-target > .equity-head, .card.fs-target > .cal-head{padding-right:44px;}
+body.card-fs-open{overflow:hidden;}
+.card.fs-active{position:fixed !important;inset:0;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;
+  max-width:100vw;max-height:100dvh;margin:0 !important;border-radius:0;z-index:2000;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(env(safe-area-inset-top) + 66px) 20px calc(env(safe-area-inset-bottom) + 28px);
+  animation:cardFsIn .32s cubic-bezier(.2,.8,.2,1);}
+.card.fs-active::after{display:none;}
+@keyframes cardFsIn{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:scale(1);}}
+.card-fs-exit{position:fixed;top:calc(env(safe-area-inset-top) + 14px);right:18px;z-index:2001;
+  width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--panel-solid);border:1px solid var(--steel-hi);color:var(--platinum);cursor:pointer;
+  box-shadow:0 10px 24px -8px rgba(0,0,0,0.4);}
+.card-fs-exit svg{width:19px;height:19px;}
+.card-fs-label{position:fixed;top:calc(env(safe-area-inset-top) + 20px);left:20px;z-index:2001;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate);}
+
 /* ---- button ripple, delegated so it works on every .btn / .side-navbtn everywhere ---- */
 .btn,.side-navbtn{position:relative;overflow:hidden;}
 .gd-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.45);transform:scale(0);animation:gdRippleAnim .6s ease-out;pointer-events:none;}
@@ -1923,7 +1965,8 @@ setTimeout(function(){
       </div>
 
       <div class="grid" style="margin-top:18px">
-        <div class="card tilt score-card">
+        <div class="card tilt score-card fs-target" data-fs-label="Discipline Score">
+          <button class="card-expand-btn" onclick="openCardFullscreen(this)" title="View fullscreen" aria-label="View fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
           <h2>Discipline <span class="accent">Score</span><span class="eyebrow" id="scoreEyebrow">how closely you're following your own rules, on a 0–100 scale</span></h2>
           <div class="score-dial-wrap">
             <div class="score-dial" id="scoreDial"></div>
@@ -1942,7 +1985,8 @@ setTimeout(function(){
       </div>
 
       <div class="grid" style="margin-top:18px">
-        <div class="card tilt">
+        <div class="card tilt fs-target" data-fs-label="Risk Console">
+          <button class="card-expand-btn" onclick="openCardFullscreen(this)" title="View fullscreen" aria-label="View fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
           <h2>Risk <span class="accent">Console</span><span class="eyebrow">live daily gauges</span></h2>
           <div class="gauge-row" id="gaugeRow"></div>
         </div>
@@ -2057,7 +2101,8 @@ setTimeout(function(){
         </div>
       </div>
 
-      <div class="card tilt">
+      <div class="card tilt fs-target" data-fs-label="Equity Curve">
+        <button class="card-expand-btn" onclick="openCardFullscreen(this)" title="View fullscreen" aria-label="View fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
         <div class="equity-head">
           <div>
             <h2 style="margin-bottom:4px">Equity <span class="accent">Curve</span></h2>
@@ -2074,6 +2119,14 @@ setTimeout(function(){
           </div>
         </div>
         <div class="equity-wrap"><div class="equity-inner" id="equityChart"></div></div>
+        <div class="eq-footer-row" id="eqFooterRow">
+          <div class="eq-footer-item"><span class="eq-footer-dot win"></span><div><b id="eqFooterBestStreak">0</b><span>Best streak</span></div></div>
+          <div class="eq-footer-item center">
+            <div class="eq-winrate-donut-wrap"><svg id="eqWinRateDonut" viewBox="0 0 60 60"></svg><div class="eq-winrate-num" id="eqFooterWinRateNum">0%</div></div>
+            <span>Win rate</span>
+          </div>
+          <div class="eq-footer-item right"><span class="eq-footer-dot loss"></span><div><b id="eqFooterWorstStreak">0</b><span>Worst streak</span></div></div>
+        </div>
       </div>
 
       <div class="card tilt" style="margin-top:18px">
@@ -2153,7 +2206,8 @@ setTimeout(function(){
           <select class="trader-filter" id="globalTraderFilter3" onchange="onTraderFilterChange()"></select>
         </div>
       </div>
-      <div class="card tilt">
+      <div class="card tilt fs-target" data-fs-label="Calendar">
+        <button class="card-expand-btn" onclick="openCardFullscreen(this)" title="View fullscreen" aria-label="View fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
         <div class="cal-head">
           <button class="cal-nav-btn" onclick="calShiftMonth(-1)">‹</button>
           <div class="month-label" id="calMonthLabel"></div>
@@ -6862,6 +6916,7 @@ function renderEquityChart(containerId, totalId, subId){
     container.innerHTML = '<div class="empty-state"><span class="glyph">📈</span>No trades yet — your equity curve will build as you log trades.</div>';
     if(totalEl){ totalEl.textContent=curSym()+'0'; totalEl.className='equity-total'; }
     setEquityStats([]);
+    setEquityFooter([]);
     return;
   }
   let cum = 0;
@@ -6874,7 +6929,7 @@ function renderEquityChart(containerId, totalId, subId){
     points.push({x:i+1,y:cum,label:t.date});
   });
 
-  const W = 720, H = 230, padL = 10, padR = 20, padT = 44, padB = 30;
+  const W = 720, H = 230, padL = 46, padR = 20, padT = 44, padB = 34;
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const sx = i => padL + (points.length<=1?0:(i/(points.length-1))*plotW);
 
@@ -6910,14 +6965,23 @@ function renderEquityChart(containerId, totalId, subId){
   const NEON_UP = '#10b981', NEON_DOWN = '#f43f5e';
 
   // subtle floor grid, neon-tinted (horizontal + faint vertical for an instrument-panel feel)
-  let floorLines = '';
+  // plus $ tick labels on the left and trade-number labels along the bottom.
+  let floorLines = '', axisLabels = '';
   for(let g=0; g<=4; g++){
     const gy = padT + plotH*(g/4);
     floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.045)" stroke-width="1"/>`;
+    const val = maxY - (maxY-minY)*(g/4);
+    const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val));
+    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
     const gx = padL + plotW*(g/6);
     floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>`;
+  }
+  const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
+  for(let i=0;i<points.length;i++){
+    if(i!==0 && i%xStep!==0 && i!==points.length-1) continue;
+    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(140,155,150,0.6)">${i}</text>`;
   }
 
   // 2D neon line, colored per-segment by local direction (glow green up / blood red down)
@@ -6988,6 +7052,7 @@ function renderEquityChart(containerId, totalId, subId){
         </mask>
       </defs>
       ${floorLines}
+      ${axisLabels}
       <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
       <g clip-path="url(#eqReveal-${containerId})">
         <g mask="url(#topFadeMask-${containerId})">
@@ -7042,6 +7107,28 @@ function renderEquityChart(containerId, totalId, subId){
   const subEl = document.getElementById(subId);
   if(subEl) subEl.textContent = `${trades.length} trade${trades.length!==1?'s':''} · ${activeTraderFilter==='all'?'all traders':traderName(activeTraderFilter)}`;
   setEquityStats(trades, maxDD);
+  setEquityFooter(trades);
+}
+// Best/worst consecutive win-loss streak + win rate donut, shown under the
+// Analytics equity curve. Safe no-op if that card's footer isn't on the page.
+function setEquityFooter(trades){
+  const row = document.getElementById('eqFooterRow');
+  if(!row) return;
+  let bestStreak=0, worstStreak=0, curWin=0, curLoss=0, wins=0;
+  trades.forEach(t=>{
+    if(t.result==='win'){ curWin++; curLoss=0; wins++; bestStreak=Math.max(bestStreak,curWin); }
+    else { curLoss++; curWin=0; worstStreak=Math.max(worstStreak,curLoss); }
+  });
+  const winRate = trades.length ? Math.round((wins/trades.length)*100) : 0;
+  const bs = document.getElementById('eqFooterBestStreak'); if(bs) bs.textContent = bestStreak+' win'+(bestStreak!==1?'s':'');
+  const ws = document.getElementById('eqFooterWorstStreak'); if(ws) ws.textContent = worstStreak+' loss'+(worstStreak!==1?'es':'');
+  const numEl = document.getElementById('eqFooterWinRateNum'); if(numEl) numEl.textContent = winRate+'%';
+  const donut = document.getElementById('eqWinRateDonut');
+  if(donut){
+    const r=26, C=2*Math.PI*r, dash=C*(winRate/100);
+    donut.innerHTML = `<circle cx="30" cy="30" r="${r}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+      <circle cx="30" cy="30" r="${r}" fill="none" stroke="var(--bronze-bright)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash} ${C-dash}"/>`;
+  }
 }
 function setEquityStats(trades, maxDD){
   const pfEl = document.getElementById('es_profitFactor');
@@ -7060,6 +7147,51 @@ function setEquityStats(trades, maxDD){
   alEl.textContent = curSym()+(losses.length?(grossLoss/losses.length).toFixed(0):'0');
   if(ddEl) ddEl.textContent = curSym()+Math.round(maxDD||0);
 }
+
+/* ============ CARD FULLSCREEN (mobile expand) ============
+   Relocates the actual card node into <body> as a fixed full-viewport
+   panel instead of cloning it, so the equity chart's SVG, the gauge
+   needles, the score dial and the calendar's live bindings/animations
+   keep running exactly as they were — nothing is re-rendered. */
+let fsCardEl = null, fsCardPlaceholder = null;
+function openCardFullscreen(btn){
+  const card = btn.closest('.card');
+  if(!card || fsCardEl) return;
+  fsCardEl = card;
+  fsCardPlaceholder = document.createComment('fs-placeholder');
+  card.parentNode.insertBefore(fsCardPlaceholder, card);
+  document.body.appendChild(card);
+  card.classList.add('fs-active');
+  document.body.classList.add('card-fs-open');
+  const label = document.createElement('div');
+  label.className = 'card-fs-label';
+  label.textContent = card.dataset.fsLabel || '';
+  label.id = 'cardFsLabel';
+  document.body.appendChild(label);
+  const exitBtn = document.createElement('button');
+  exitBtn.className = 'card-fs-exit';
+  exitBtn.id = 'cardFsExit';
+  exitBtn.title = 'Exit fullscreen';
+  exitBtn.setAttribute('aria-label','Exit fullscreen');
+  exitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  exitBtn.onclick = closeCardFullscreen;
+  document.body.appendChild(exitBtn);
+  window.dispatchEvent(new Event('resize'));
+}
+function closeCardFullscreen(){
+  if(!fsCardEl) return;
+  const card = fsCardEl;
+  card.classList.remove('fs-active');
+  document.body.classList.remove('card-fs-open');
+  const label = document.getElementById('cardFsLabel'); if(label) label.remove();
+  const exitBtn = document.getElementById('cardFsExit'); if(exitBtn) exitBtn.remove();
+  if(fsCardPlaceholder && fsCardPlaceholder.parentNode){
+    fsCardPlaceholder.parentNode.replaceChild(card, fsCardPlaceholder);
+  }
+  fsCardEl = null; fsCardPlaceholder = null;
+  window.dispatchEvent(new Event('resize'));
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape' && fsCardEl) closeCardFullscreen(); });
 
 /* ============ DISCIPLINE SCORE DIAL (large 3D instrument) ============ */
 function scoreDialSVG(score){
@@ -7806,8 +7938,15 @@ async function placeOrder(){
 }
 let expandedOrderIds = new Set();
 function toggleOrderCard(id, ev){
+  // Resolve the row from the element that was actually clicked (ev.currentTarget)
+  // rather than searching the whole document by data-id: the same order can be
+  // rendered twice at once (the dashboard overview list AND the full Order Book
+  // list), and a plain querySelector always grabbed the first — usually hidden —
+  // match, so "view logic and stops" silently expanded the wrong, invisible row.
   if(ev){ ev.stopPropagation(); }
-  const row = document.querySelector(`.order-row[data-id="${cssEscape(String(id))}"]`);
+  const row = (ev && ev.currentTarget && ev.currentTarget.closest)
+    ? ev.currentTarget.closest('.order-row')
+    : document.querySelector(`.order-row[data-id="${cssEscape(String(id))}"]`);
   if(!row) return;
   const nowExpanded = row.classList.toggle('expanded');
   if(nowExpanded) expandedOrderIds.add(String(id)); else expandedOrderIds.delete(String(id));
