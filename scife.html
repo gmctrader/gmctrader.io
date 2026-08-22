@@ -1240,7 +1240,7 @@ setTimeout(function(){
   </div>
   <div class="sig-history-row" style="display:flex;align-items:center;gap:8px;">
     <div id="sig_historyStrip" class="sig-history-strip" style="flex:1;"></div>
-    <span id="sig_historyViewAll" class="sig-history-viewall mono" role="button" tabindex="0" onclick="openScanHistory()" onkeydown="if(event.key==='Enter')openScanHistory()" style="display:none;">View all →</span>
+    <span id="sig_historyViewAll" class="sig-history-viewall mono" role="button" tabindex="0" onclick="openScanHistory()" onkeydown="if(event.key==='Enter')openScanHistory()">View all →</span>
   </div>
 
   <div class="field">
@@ -3558,7 +3558,7 @@ function renderScanHistory(){
   const wk = getWeekKey();
   const log = (scife.actionLog || []).filter(a => a.type === 'signal_analysis' && getWeekKey(new Date(a.at)) === wk);
   const viewAll = document.getElementById('sig_historyViewAll');
-  if(viewAll) viewAll.style.display = log.length ? '' : 'none';
+  if(viewAll) viewAll.style.display = '';
   if(document.getElementById('scanHistoryOverlay')?.classList.contains('show')) renderScanHistoryModal();
   if(!log.length){ strip.innerHTML = ''; return; }
   strip.innerHTML = log.slice(-8).reverse().map(a=>{
