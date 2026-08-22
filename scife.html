@@ -2724,6 +2724,20 @@ function logAction(type, details, ok){
   saveScife();
   console.log('[SciFe action]', type, ok===false ? 'FAILED' : 'ok', details);
 }
+/* Pulls the trade levels out of a signal result (entry/stop/TPs/order type/
+   invalidation) into a flat, loggable shape, so scan history can show the
+   actual coordinates a scan produced — not just its bias/confidence. */
+function extractSignalLevels(r){
+  if(!r) return null;
+  const tps = Array.isArray(r.take_profits) ? r.take_profits.slice(0,3) : [];
+  return {
+    orderType: r.order_type || null,
+    entry: (r.entry && r.entry.level != null && r.entry.level !== '') ? String(r.entry.level) : null,
+    stopLoss: (r.stop_loss && r.stop_loss.level != null && r.stop_loss.level !== '') ? String(r.stop_loss.level) : null,
+    takeProfits: tps.map(tp => (tp && tp.level != null && tp.level !== '') ? { level: String(tp.level), rr: tp.rr != null ? String(tp.rr) : null } : null),
+    invalidation: r.invalidation || null
+  };
+}
 function pnlOf(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0); }
 async function saveTrades(){
   if(!currentUser || !traderRow) return false;
@@ -3388,7 +3402,7 @@ async function analyzeSignal(){
     hideSkeleton();
     renderSignalResult(memEntry.result, strategy, styleKey, pair, null);
     showToast('Same chart as last scan — showing the same read (no coordinates changed)');
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: true, desc: desc || null, desiredRR, traderBias: sigTraderBias, bias: memEntry.result.bias, confidence: memEntry.result.confidence, cached: true }, true);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: true, desc: desc || null, desiredRR, traderBias: sigTraderBias, bias: memEntry.result.bias, confidence: memEntry.result.confidence, levels: extractSignalLevels(memEntry.result), cached: true }, true);
     renderScanHistory();
     return;
   }
@@ -3494,7 +3508,7 @@ async function analyzeSignal(){
     scife.chartMemory[memKey] = { hash: (sigChartImage && sigChartImage.hash) || null, result: parsed, at: Date.now() };
     saveScife();
     renderSignalResult(parsed, strategy, styleKey, pair, invalidated);
-    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, desc: desc || null, desiredRR, traderBias: sigTraderBias, bias: parsed.bias, confidence: parsed.confidence }, true);
+    logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, desc: desc || null, desiredRR, traderBias: sigTraderBias, bias: parsed.bias, confidence: parsed.confidence, levels: extractSignalLevels(parsed) }, true);
     renderScanHistory();
   }catch(e){
     hideSkeleton();
@@ -3618,6 +3632,16 @@ function renderScanHistoryModal(){
     ];
     if(a.ok){
       detailRows.push(['Result', badge]);
+      const lv = d.levels || {};
+      if(lv.orderType) detailRows.push(['Order type', SIG_ORDER_TYPE_LABELS[lv.orderType] || lv.orderType]);
+      if(bias !== 'no_trade'){
+        detailRows.push(['Entry', lv.entry != null ? lv.entry : 'not given']);
+        detailRows.push(['Stop loss', lv.stopLoss != null ? lv.stopLoss : 'not given']);
+        (lv.takeProfits || []).forEach((tp, i) => {
+          if(tp) detailRows.push([`TP${i+1}${tp.rr ? ' ('+tp.rr+'R)' : ''}`, tp.level]);
+        });
+        if(lv.invalidation) detailRows.push(['Invalidation', lv.invalidation]);
+      }
       if(d.cached) detailRows.push(['Note', 'Replayed cached read — identical chart already scanned']);
     } else {
       detailRows.push(['Error', d.error || 'unknown']);
