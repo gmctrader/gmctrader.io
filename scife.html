@@ -279,9 +279,8 @@ body{position:relative;}
   background:linear-gradient(155deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01));
   border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
   transition:border-color .5s ease, box-shadow .5s ease;}
-.stage.speaking .neural-core-plate{border-color:rgba(45,212,168,0.4);box-shadow:0 30px 70px -20px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.08);}
-.stage.listening .neural-core-plate{border-color:rgba(242,169,78,0.35);}
-.stage.thinking .neural-core-plate{border-color:rgba(139,92,246,0.35);}
+.stage.speaking .neural-core-plate,.stage.listening .neural-core-plate,.stage.thinking .neural-core-plate{
+  border-color:var(--core-dim);box-shadow:0 30px 70px -20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);}
 #neuralCore{position:relative;z-index:2;width:100%;height:100%;display:block;}
 /* Fine concentric "targeting" rings etched behind the core — pure CSS, dead
    simple, but reads as instrumentation rather than empty space around the
@@ -340,33 +339,60 @@ html.motion-reduced .stage.thinking .stage-status .dot{animation:none !important
 .stage-emoji.pop{animation:emojiPop .5s ease;}
 @keyframes emojiPop{0%{transform:scale(0.4) rotate(-10deg);}55%{transform:scale(1.25) rotate(6deg);}100%{transform:scale(1) rotate(0deg);}}
 
-/* ============ STAGE — SIMPLIFIED ============
-   The neural-core visualization, nebula background, HUD corner marks, glass
-   glare sweep, wave-ring bar visualizer, status dot and emoji are retired.
-   What's left is a plain, theme-matched text readout: the engine name on
-   the left, live Cognition/Latency metrics on the right. All the JS still
-   targets the same element IDs (so nothing in the render loop breaks),
-   they just no longer paint anything visible. */
-.stage-fallback,.neural-core-wrap,.stage-tint,.stage-glare,.stage-hud,
-.wave-ring,.stage-emoji,.stage-status{display:none !important;}
-.stage-3d-wrap{perspective:none;margin-bottom:20px;}
-.stage{height:auto;min-height:0;background:none;border:none;box-shadow:none;border-radius:0;
-  border-bottom:1px solid var(--steel-hi);padding:14px 2px 16px;
-  display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  transform:none !important;transition:border-color .3s ease;}
-.stage-readout{position:static;padding-left:0;color:var(--slate);}
-.stage-readout::before{display:none;}
-.stage-readout .r2{display:block;margin-top:0;font-size:14px;letter-spacing:.01em;text-transform:none;
-  font-family:'Fraunces',serif;font-weight:650;color:var(--platinum);}
-.stage-metrics{position:static;color:var(--slate-dim);text-align:right;}
-.stage-metrics b{color:var(--bronze-bright);}
-.stage.listening .stage-metrics,.stage.thinking .stage-metrics{color:var(--slate-dim);}
+/* ============ STAGE — MONOCHROME, ORIGINAL LAYOUT RESTORED ============
+   Per feedback: the circle (neural core) and its dots/synapse lines, the
+   HUD corner marks, the wave-ring, and the readout/metrics/status all stay
+   exactly where they were (absolute-positioned over the panel, same as the
+   original design) — only the emoji is gone, and the green/gold/purple
+   palette is replaced with a plain theme-adaptive monochrome (white on the
+   dark theme, dark ink on the light theme) that the canvas render loop
+   below also reads, so the core, lines and dots follow whichever theme is
+   active instead of being tinted green. */
+:root{
+  --core-a: rgba(255,255,255,0.92);
+  --core-b: rgba(214,222,220,0.55);
+  --core-dim: rgba(255,255,255,0.4);
+  --core-faint: rgba(255,255,255,0.14);
+}
+html[data-theme="light"]{
+  --core-a: rgba(14,28,24,0.88);
+  --core-b: rgba(70,90,84,0.55);
+  --core-dim: rgba(14,28,24,0.32);
+  --core-faint: rgba(14,28,24,0.10);
+}
+.stage-emoji{display:none !important;}
 
-/* ---- header hairline: now that the big panel underneath is gone, give the
-   topbar its own crisp separation from the page in both themes ---- */
+/* panel + fallback bloom: neutral graphite/ivory instead of green nebula */
+.stage{background:radial-gradient(ellipse 140% 110% at 50% 8%, var(--graphite-hi) 0%, var(--void-2) 42%, var(--void) 80%, #000 100%);
+  border-color:var(--steel-hi);}
+html[data-theme="light"] .stage{background:radial-gradient(ellipse 140% 110% at 50% 8%, #ffffff 0%, #f3f1e8 45%, #e9e6da 100%);}
+.stage-fallback{background:
+    radial-gradient(60% 50% at 30% 20%, var(--core-faint), transparent 65%),
+    radial-gradient(55% 45% at 75% 70%, var(--core-faint), transparent 65%),
+    radial-gradient(40% 40% at 60% 15%, var(--core-faint), transparent 70%),
+    radial-gradient(80% 70% at 50% 100%, var(--core-faint), transparent 70%);
+  background-size:180% 180%,170% 170%,160% 160%,150% 150%;}
+.stage-tint{background:linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.55));}
+html[data-theme="light"] .stage-tint{background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.45));}
+
+/* HUD corner marks, etch rings, wave-ring, dots — monochrome instead of teal/gold */
+.stage-hud i{border-color:var(--core-dim);filter:none;}
+.neural-core-etch{border-color:var(--core-faint);}
+.neural-core-etch.e2{border-color:var(--core-faint);}
+.neural-core-etch.e3{border-color:var(--core-faint);}
+.wave-bar{background:linear-gradient(180deg, var(--core-a), transparent);box-shadow:none;}
+.stage.listening .wave-bar,.stage.thinking .wave-bar{background:linear-gradient(180deg, var(--core-a), transparent);box-shadow:none;}
+.stage-readout::before{background:var(--core-a);box-shadow:0 0 6px var(--core-dim);}
+.stage-status .dot{background:var(--core-a);box-shadow:0 0 6px var(--core-dim);}
+.stage.listening .stage-status .dot,.stage.thinking .stage-status .dot{background:var(--core-a);box-shadow:0 0 6px var(--core-dim);animation:none;}
+.stage-readout,.stage-status,.stage-metrics{color:var(--core-b);}
+.stage-metrics b{color:var(--core-a);}
+.stage.listening .stage-metrics,.stage.thinking .stage-metrics{color:var(--core-b);}
+.stage-readout .r2{color:var(--core-a);}
+
+/* ---- header hairline: a crisp, theme-adaptive separation under the topbar ---- */
 .topbar{border-bottom:1px solid var(--steel-hi);}
 .topbar .back{color:var(--slate);}
-.topbar .title{filter:none;}
 
 .quick-row-wrap{position:relative;margin-bottom:14px;}
 .quick-row-wrap::after{content:'';position:absolute;top:0;right:0;bottom:4px;width:28px;pointer-events:none;
@@ -4672,14 +4698,16 @@ async function maybeUpdateMemory(){
 
 /* ============ STAGE (neural core render loop) ============ */
 const EMOJI_BY_EMOTION = { warm:'😄', soft:'😌', neutral:'🙂', focused:'🤔', laugh:'😂' };
-const NEURAL_CORE_COLORS = {
-  idle:      { a:[45,212,168],  b:[242,200,119] },
-  listening: { a:[242,169,78],  b:[45,212,168]  },
-  thinking:  { a:[139,92,246],  b:[94,168,214]  },
-  speaking:  { a:[45,212,168],  b:[43,224,138]  },
-  warm:      { a:[242,200,119], b:[45,212,168]  },
-  soft:      { a:[94,168,214],  b:[45,212,168]  }
-};
+/* Monochrome instead of a per-mode color palette: the core, its synapse
+   lines and nodes just follow the active theme (white on dark, dark ink on
+   light) rather than shifting hue with mode/emotion. Mode still changes
+   rotation speed, pulse amplitude and edge density (see draw() below) —
+   just not color. */
+function neuralCoreMono(){
+  return document.documentElement.getAttribute('data-theme') === 'light'
+    ? { a:[14,28,24],   b:[70,90,84]   }
+    : { a:[255,255,255],b:[214,222,220] };
+}
 const neuralCoreState = { mode:'idle', emotion:'neutral', amp:0.08 };
 
 function setStage(mode, emotion){
@@ -4804,12 +4832,9 @@ function initNeuralCore(){
     const persp = radius * 3.1;
 
     const mode = neuralCoreState.mode;
-    const emotion = neuralCoreState.emotion;
-    const palette = NEURAL_CORE_COLORS[mode] || NEURAL_CORE_COLORS.idle;
-    const tintKey = (emotion==='warm'||emotion==='laugh') ? 'warm' : emotion==='soft' ? 'soft' : null;
-    const tint = tintKey ? NEURAL_CORE_COLORS[tintKey] : null;
-    const colA = tint ? lerpColor(palette.a, tint.a, 0.35) : palette.a;
-    const colB = tint ? lerpColor(palette.b, tint.b, 0.35) : palette.b;
+    const mono = neuralCoreMono();
+    const colA = mono.a;
+    const colB = mono.b;
 
     const speedBase = mode==='thinking' ? 0.014 : mode==='speaking' ? 0.009 : mode==='listening' ? 0.006 : 0.0032;
     const amp = mode==='speaking' ? Math.max(0.35, Math.min(1, neuralCoreState.amp*1.6)) : mode==='listening' ? Math.max(0.1, Math.min(1, neuralCoreState.amp*1.6)) : 0.12;
