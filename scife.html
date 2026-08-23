@@ -279,8 +279,10 @@ body{position:relative;}
   background:linear-gradient(155deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01));
   border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
   transition:border-color .5s ease, box-shadow .5s ease;}
+.stage{border:none;box-shadow:none;}
+.neural-core-plate{border:none;box-shadow:none;background:none;}
 .stage.speaking .neural-core-plate,.stage.listening .neural-core-plate,.stage.thinking .neural-core-plate{
-  border-color:var(--core-dim);box-shadow:0 30px 70px -20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);}
+  border:none;box-shadow:none;}
 #neuralCore{position:relative;z-index:2;width:100%;height:100%;display:block;}
 /* Fine concentric "targeting" rings etched behind the core — pure CSS, dead
    simple, but reads as instrumentation rather than empty space around the
