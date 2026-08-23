@@ -341,53 +341,35 @@ html.motion-reduced .stage.thinking .stage-status .dot{animation:none !important
 .stage-emoji.pop{animation:emojiPop .5s ease;}
 @keyframes emojiPop{0%{transform:scale(0.4) rotate(-10deg);}55%{transform:scale(1.25) rotate(6deg);}100%{transform:scale(1) rotate(0deg);}}
 
-/* ============ STAGE — MONOCHROME, ORIGINAL LAYOUT RESTORED ============
-   Per feedback: the circle (neural core) and its dots/synapse lines, the
-   HUD corner marks, the wave-ring, and the readout/metrics/status all stay
-   exactly where they were (absolute-positioned over the panel, same as the
-   original design) — only the emoji is gone, and the green/gold/purple
-   palette is replaced with a plain theme-adaptive monochrome (white on the
-   dark theme, dark ink on the light theme) that the canvas render loop
-   below also reads, so the core, lines and dots follow whichever theme is
-   active instead of being tinted green. */
+/* ============ STAGE — GREEN CORE, NO FRAME/COVER ============
+   Only the neural-core circle/dots visualization and the two text readouts
+   ("SciFe intelligence engine" and Cognition/Latency) remain. Every panel
+   layer that read as a box or cover — the graphite/ivory background, the
+   nebula bloom, the dark tint, the glass glare sweep, the HUD corner marks,
+   and the Ready status line — is switched off. The circle, its synapse
+   lines and nodes are colored green (matching the brand teal-green),
+   adapting slightly between the dark and light themes. */
 :root{
-  --core-a: rgba(255,255,255,0.92);
-  --core-b: rgba(214,222,220,0.55);
-  --core-dim: rgba(255,255,255,0.4);
-  --core-faint: rgba(255,255,255,0.14);
+  --core-a: rgba(45,212,168,0.95);
+  --core-b: rgba(45,212,168,0.55);
+  --core-dim: rgba(45,212,168,0.4);
+  --core-faint: rgba(45,212,168,0.12);
 }
 html[data-theme="light"]{
-  --core-a: rgba(14,28,24,0.88);
-  --core-b: rgba(70,90,84,0.55);
-  --core-dim: rgba(14,28,24,0.32);
-  --core-faint: rgba(14,28,24,0.10);
+  --core-a: rgba(14,163,124,0.92);
+  --core-b: rgba(14,163,124,0.55);
+  --core-dim: rgba(14,163,124,0.38);
+  --core-faint: rgba(14,163,124,0.10);
 }
-.stage-emoji{display:none !important;}
-
-/* panel + fallback bloom: neutral graphite/ivory instead of green nebula */
-.stage{background:radial-gradient(ellipse 140% 110% at 50% 8%, var(--graphite-hi) 0%, var(--void-2) 42%, var(--void) 80%, #000 100%);
-  border-color:var(--steel-hi);}
-html[data-theme="light"] .stage{background:radial-gradient(ellipse 140% 110% at 50% 8%, #ffffff 0%, #f3f1e8 45%, #e9e6da 100%);}
-.stage-fallback{background:
-    radial-gradient(60% 50% at 30% 20%, var(--core-faint), transparent 65%),
-    radial-gradient(55% 45% at 75% 70%, var(--core-faint), transparent 65%),
-    radial-gradient(40% 40% at 60% 15%, var(--core-faint), transparent 70%),
-    radial-gradient(80% 70% at 50% 100%, var(--core-faint), transparent 70%);
-  background-size:180% 180%,170% 170%,160% 160%,150% 150%;}
-.stage-tint{background:linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.55));}
-html[data-theme="light"] .stage-tint{background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.45));}
-
-/* HUD corner marks, etch rings, wave-ring, dots — monochrome instead of teal/gold */
-.stage-hud i{border-color:var(--core-dim);filter:none;}
+.stage-emoji,.stage-fallback,.stage-tint,.stage-glare,.stage-hud,.stage-status{display:none !important;}
+.stage{background:none;}
 .neural-core-etch{border-color:var(--core-faint);}
 .neural-core-etch.e2{border-color:var(--core-faint);}
 .neural-core-etch.e3{border-color:var(--core-faint);}
 .wave-bar{background:linear-gradient(180deg, var(--core-a), transparent);box-shadow:none;}
 .stage.listening .wave-bar,.stage.thinking .wave-bar{background:linear-gradient(180deg, var(--core-a), transparent);box-shadow:none;}
 .stage-readout::before{background:var(--core-a);box-shadow:0 0 6px var(--core-dim);}
-.stage-status .dot{background:var(--core-a);box-shadow:0 0 6px var(--core-dim);}
-.stage.listening .stage-status .dot,.stage.thinking .stage-status .dot{background:var(--core-a);box-shadow:0 0 6px var(--core-dim);animation:none;}
-.stage-readout,.stage-status,.stage-metrics{color:var(--core-b);}
+.stage-readout,.stage-metrics{color:var(--core-b);}
 .stage-metrics b{color:var(--core-a);}
 .stage.listening .stage-metrics,.stage.thinking .stage-metrics{color:var(--core-b);}
 .stage-readout .r2{color:var(--core-a);}
@@ -4700,15 +4682,14 @@ async function maybeUpdateMemory(){
 
 /* ============ STAGE (neural core render loop) ============ */
 const EMOJI_BY_EMOTION = { warm:'😄', soft:'😌', neutral:'🙂', focused:'🤔', laugh:'😂' };
-/* Monochrome instead of a per-mode color palette: the core, its synapse
-   lines and nodes just follow the active theme (white on dark, dark ink on
-   light) rather than shifting hue with mode/emotion. Mode still changes
-   rotation speed, pulse amplitude and edge density (see draw() below) —
-   just not color. */
+/* Green core: the nodes/synapse lines use the brand teal-green, with a
+   slightly deeper shade for the light theme so it still reads against a
+   pale background. Mode still changes rotation speed, pulse amplitude and
+   edge density (see draw() below) — just not hue. */
 function neuralCoreMono(){
   return document.documentElement.getAttribute('data-theme') === 'light'
-    ? { a:[14,28,24],   b:[70,90,84]   }
-    : { a:[255,255,255],b:[214,222,220] };
+    ? { a:[14,163,124], b:[10,110,84] }
+    : { a:[45,212,168], b:[24,150,118] };
 }
 const neuralCoreState = { mode:'idle', emotion:'neutral', amp:0.08 };
 
