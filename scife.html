@@ -340,6 +340,34 @@ html.motion-reduced .stage.thinking .stage-status .dot{animation:none !important
 .stage-emoji.pop{animation:emojiPop .5s ease;}
 @keyframes emojiPop{0%{transform:scale(0.4) rotate(-10deg);}55%{transform:scale(1.25) rotate(6deg);}100%{transform:scale(1) rotate(0deg);}}
 
+/* ============ STAGE — SIMPLIFIED ============
+   The neural-core visualization, nebula background, HUD corner marks, glass
+   glare sweep, wave-ring bar visualizer, status dot and emoji are retired.
+   What's left is a plain, theme-matched text readout: the engine name on
+   the left, live Cognition/Latency metrics on the right. All the JS still
+   targets the same element IDs (so nothing in the render loop breaks),
+   they just no longer paint anything visible. */
+.stage-fallback,.neural-core-wrap,.stage-tint,.stage-glare,.stage-hud,
+.wave-ring,.stage-emoji,.stage-status{display:none !important;}
+.stage-3d-wrap{perspective:none;margin-bottom:20px;}
+.stage{height:auto;min-height:0;background:none;border:none;box-shadow:none;border-radius:0;
+  border-bottom:1px solid var(--steel-hi);padding:14px 2px 16px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  transform:none !important;transition:border-color .3s ease;}
+.stage-readout{position:static;padding-left:0;color:var(--slate);}
+.stage-readout::before{display:none;}
+.stage-readout .r2{display:block;margin-top:0;font-size:14px;letter-spacing:.01em;text-transform:none;
+  font-family:'Fraunces',serif;font-weight:650;color:var(--platinum);}
+.stage-metrics{position:static;color:var(--slate-dim);text-align:right;}
+.stage-metrics b{color:var(--bronze-bright);}
+.stage.listening .stage-metrics,.stage.thinking .stage-metrics{color:var(--slate-dim);}
+
+/* ---- header hairline: now that the big panel underneath is gone, give the
+   topbar its own crisp separation from the page in both themes ---- */
+.topbar{border-bottom:1px solid var(--steel-hi);}
+.topbar .back{color:var(--slate);}
+.topbar .title{filter:none;}
+
 .quick-row-wrap{position:relative;margin-bottom:14px;}
 .quick-row-wrap::after{content:'';position:absolute;top:0;right:0;bottom:4px;width:28px;pointer-events:none;
   background:linear-gradient(90deg, transparent, var(--bg));z-index:1;}
@@ -1125,7 +1153,7 @@ setTimeout(function(){
       <div class="stage-tint"></div>
       <div class="stage-glare" aria-hidden="true"></div>
       <div class="stage-hud"><i></i><i></i><i></i><i></i></div>
-      <div class="stage-readout">Neural core · online<span class="r2">SciFe intelligence engine</span></div>
+      <div class="stage-readout"><span class="r2">SciFe intelligence engine</span></div>
       <div class="stage-metrics" id="stageMetrics">Cognition <b id="stageMetricCog">99.7%</b><br>Latency <b id="stageMetricLat">11ms</b></div>
       <div class="wave-ring" id="waveRing"></div>
       <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
