@@ -263,6 +263,64 @@ body{position:relative;}
 .stage.video-failed video{display:none;}
 .stage-tint{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg, rgba(6,20,16,0.06), rgba(2,8,6,0.7));}
 
+/* ---- AI GLOW TILE — temporary stand-in for the neural-link video: a soft,
+   blurred, breathing glow sitting inside a rounded "squircle" card, in the
+   style of a modern AI-assistant avatar. Occupies the same layer the video
+   used to (z-index:1), so all the existing HUD chrome (corner ticks,
+   readout text, gyro rings, status pill, emoji) still renders on top of it
+   untouched. Sits at its own translateZ inside .stage (which already has
+   transform-style:preserve-3d and tilts toward the pointer via JS), so it
+   reads with real depth and parallaxes along with the rest of the stage.
+   Moves and pulses harder while SciFe is speaking. ---- */
+.ai-tile{position:absolute;left:50%;top:50%;width:64%;height:76%;max-width:340px;
+  transform:translate(-50%,-50%) translateZ(4px);border-radius:32px;
+  background:linear-gradient(155deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+  border:1px solid rgba(255,255,255,0.10);overflow:hidden;z-index:1;
+  box-shadow:0 30px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition:border-color .5s ease, box-shadow .5s ease;}
+.ai-tile-accent{position:absolute;top:-10%;left:-35%;width:80%;height:2px;
+  background:linear-gradient(90deg, transparent, rgba(45,212,168,0.85), transparent);
+  transform:rotate(38deg);filter:drop-shadow(0 0 6px rgba(45,212,168,0.65));opacity:.75;}
+.ai-tile-glow{position:absolute;left:50%;top:50%;width:72%;height:72%;border-radius:50%;
+  transform:translate(-50%,-50%) translateZ(10px) scale(1);
+  background:radial-gradient(circle, rgba(45,212,168,0.85), rgba(45,212,168,0.28) 45%, transparent 72%);
+  filter:blur(22px);animation:aiGlowBreathe 5.5s ease-in-out infinite;}
+.ai-tile-glow-2{width:46%;height:46%;filter:blur(13px);transform:translate(-50%,-50%) translateZ(18px);
+  background:radial-gradient(circle, rgba(242,200,119,0.5), transparent 70%);
+  animation:aiGlowDrift 8s ease-in-out infinite;}
+@keyframes aiGlowBreathe{
+  0%,100%{transform:translate(-50%,-50%) translateZ(10px) scale(0.88);opacity:.75;}
+  50%{transform:translate(-50%,-50%) translateZ(10px) scale(1.1);opacity:1;}
+}
+@keyframes aiGlowDrift{
+  0%,100%{transform:translate(-62%,-56%) translateZ(18px) scale(0.9);}
+  33%{transform:translate(-40%,-62%) translateZ(18px) scale(1.05);}
+  66%{transform:translate(-52%,-42%) translateZ(18px) scale(0.96);}
+}
+/* Speaking: the glow swells and drifts noticeably more, reading as if it's
+   reacting to the words coming out — no audio analyser needed, just a
+   livelier loop swapped in for as long as .stage.speaking is set. */
+.stage.speaking .ai-tile{border-color:rgba(45,212,168,0.4);box-shadow:0 30px 70px -20px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.08);}
+.stage.speaking .ai-tile-glow{animation:aiGlowSpeak 0.9s ease-in-out infinite;}
+.stage.speaking .ai-tile-glow-2{animation:aiGlowDriftFast 2.2s ease-in-out infinite;}
+@keyframes aiGlowSpeak{
+  0%,100%{transform:translate(-50%,-50%) translateZ(10px) scale(0.85);opacity:.8;}
+  50%{transform:translate(-46%,-54%) translateZ(14px) scale(1.24);opacity:1;}
+}
+@keyframes aiGlowDriftFast{
+  0%,100%{transform:translate(-60%,-58%) translateZ(18px) scale(0.85);}
+  50%{transform:translate(-38%,-40%) translateZ(22px) scale(1.16);}
+}
+.stage.listening .ai-tile{border-color:rgba(242,169,78,0.35);}
+.stage.listening .ai-tile-glow{background:radial-gradient(circle, rgba(242,169,78,0.85), rgba(242,169,78,0.25) 45%, transparent 72%);}
+.stage.listening .ai-tile-glow-2{background:radial-gradient(circle, rgba(242,169,78,0.4), transparent 70%);}
+.stage.thinking .ai-tile{border-color:rgba(139,92,246,0.35);}
+.stage.thinking .ai-tile-glow{background:radial-gradient(circle, rgba(139,92,246,0.85), rgba(139,92,246,0.25) 45%, transparent 72%);animation-duration:1.4s;}
+.stage.thinking .ai-tile-glow-2{background:radial-gradient(circle, rgba(139,92,246,0.4), transparent 70%);}
+html.motion-reduced .ai-tile-glow,html.motion-reduced .ai-tile-glow-2{animation:none !important;}
+@media(prefers-reduced-motion:reduce){.ai-tile-glow,.ai-tile-glow-2{animation:none !important;}}
+
+
 /* corner HUD tick marks — reinforces the "interface, not a photo" feeling */
 .stage-video-btn{position:absolute;bottom:12px;right:14px;z-index:6;width:30px;height:30px;border-radius:50%;
   border:1px solid var(--steel-hi);background:rgba(6,16,13,0.55);backdrop-filter:blur(6px);color:var(--platinum);
@@ -1160,10 +1218,18 @@ setTimeout(function(){
   <div class="stage-3d-wrap" id="stage3dWrap">
     <div class="stage" id="stage">
       <div class="stage-fallback" aria-hidden="true"></div>
-      <video id="stageVideo" autoplay muted loop playsinline preload="auto"
+      <!-- TEMP: neural-link video + "change video" controls are disabled — replaced
+           by the AI glow tile below. To restore: remove style="display:none" from
+           #stageVideo, #stageVideoBtn, #stageVideoInput, and STAGE_VIDEO_ENABLED. -->
+      <video id="stageVideo" autoplay muted loop playsinline preload="auto" style="display:none;"
         poster="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><defs><radialGradient id='g' cx='50%25' cy='30%25' r='75%25'><stop offset='0%25' stop-color='%230f2a22'/><stop offset='45%25' stop-color='%23061912'/><stop offset='100%25' stop-color='%23010403'/></radialGradient></defs><rect width='100%25' height='100%25' fill='url(%23g)'/></svg>">
         <source src="gmc.MP4" type="video/mp4">
       </video>
+      <div class="ai-tile" id="aiTile" aria-hidden="true">
+        <div class="ai-tile-accent"></div>
+        <div class="ai-tile-glow"></div>
+        <div class="ai-tile-glow ai-tile-glow-2"></div>
+      </div>
       <div class="stage-tint"></div>
       <div class="stage-glare" aria-hidden="true"></div>
       <div class="stage-hud"><i></i><i></i><i></i><i></i></div>
@@ -1183,7 +1249,7 @@ setTimeout(function(){
       </div>
       <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
       <div class="stage-emoji" id="stageEmoji">🙂</div>
-      <button class="stage-video-btn" id="stageVideoBtn" type="button" onclick="requestStageVideoChange()" title="Change neural-link video (admin only)" aria-label="Change neural-link video">🎬</button>
+      <button class="stage-video-btn" id="stageVideoBtn" type="button" style="display:none;" onclick="requestStageVideoChange()" title="Change neural-link video (admin only)" aria-label="Change neural-link video">🎬</button>
       <input type="file" id="stageVideoInput" accept="video/*" style="display:none;" onchange="if(this.files[0]) chooseStageVideo(this.files[0]); this.value='';">
     </div>
   </div>
@@ -1382,7 +1448,9 @@ setTimeout(function(){
         </div>
         <div class="switch" id="settingsHandsFreeSwitch" onclick="this.classList.toggle('on')"></div>
       </div>
-      <div class="field" style="margin-top:2px;">
+      <!-- TEMP: neural-link video controls disabled — see the note above the
+           #stageVideo element for how to restore this section. -->
+      <div class="field" style="margin-top:2px;display:none;">
         <label>Neural-link video <span style="font-weight:400;color:var(--slate);font-size:11.5px;">— admin only</span></label>
         <div class="hint" style="margin-bottom:8px;">Pick any video from your device to play behind the orb — it's stored right in this browser, so it works even if gmc.MP4 isn't hosted alongside the page. Changing it requires the admin password (same one that unlocks unlimited scans).</div>
         <div style="display:flex;gap:10px;">
@@ -2151,6 +2219,7 @@ function initChatScrollWatch(){
    animation while the tab isn't visible — saves battery/CPU for no visible
    benefit) ============ */
 document.addEventListener('visibilitychange', ()=>{
+  if(!STAGE_VIDEO_ENABLED) return;
   const video = document.getElementById('stageVideo');
   if(!video) return;
   if(document.hidden) video.pause(); else video.play().catch(()=>{});
@@ -2275,8 +2344,13 @@ function resetStageVideo(){
    gmc.MP4 is an optional asset — if it's missing, blocked, or the format
    isn't supported, the stage should still look like a finished, living
    product (the nebula fallback layer) rather than a broken video box. A
-   trader-supplied video (see above) is tried first; gmc.MP4 is the fallback. */
+   trader-supplied video (see above) is tried first; gmc.MP4 is the fallback.
+   TEMP: the neural-link video is disabled in favor of the AI glow tile —
+   flip STAGE_VIDEO_ENABLED back to true (and undo the display:none / hidden
+   settings row above) to bring it back. */
+const STAGE_VIDEO_ENABLED = false;
 (function initStageVideo(){
+  if(!STAGE_VIDEO_ENABLED) return;
   const video = document.getElementById('stageVideo');
   const stage = document.getElementById('stage');
   if(!video || !stage) return;
@@ -5127,8 +5201,36 @@ function femaleBias(v){
   if(FEMALE_VOICE_HINTS.test(n)) return 0;
   return 0.5; // unknown gender — neutral, ranks between confirmed female and confirmed male of the same tier
 }
+/* Named, ordered allow-list of the smooth, well-known female voices each
+   major platform ships out of the box (iOS/macOS Safari, Android Chrome,
+   Windows Edge/Chrome). Checked before the generic quality-tier + gender
+   scoring below, so the very first reply — on any device, before anyone's
+   picked a voice in Settings — lands on a consistent, pleasant female
+   voice instead of whatever a given browser happens to list first. Only
+   one or two of these will actually exist on any single device; the rest
+   are simply skipped. */
+const PREFERRED_VOICE_NAMES = [
+  'Samantha',                          // iOS / macOS Safari default
+  'Microsoft Aria Online (Natural)',   // Windows Edge — top-tier neural
+  'Microsoft Jenny Online (Natural)',
+  'Microsoft Emma Online (Natural)',
+  'Google UK English Female',          // Android Chrome
+  'Google US English',                 // Android Chrome default (female voice)
+  'Karen', 'Moira', 'Tessa', 'Victoria', 'Zira', 'Susan', 'Fiona'
+];
+function preferredNameRank(v){
+  const name = v.name.toLowerCase();
+  const idx = PREFERRED_VOICE_NAMES.findIndex(n => name === n.toLowerCase() || name.includes(n.toLowerCase()));
+  return idx === -1 ? 999 : idx;
+}
 function rankVoices(list){
   return [...list].sort((a,b)=>{
+    // A known-good smooth female voice by name always wins first, in
+    // preference order — this is what keeps the default consistent across
+    // very different devices/browsers rather than relying purely on
+    // whatever quality metadata each engine happens to expose.
+    const pa = preferredNameRank(a), pb = preferredNameRank(b);
+    if(pa !== pb) return pa - pb;
     // Quality tier dominates (an advanced voice always beats a robotic one);
     // female-leaning names break ties within a tier so the smooth, soft,
     // most human-sounding default is female without ever demoting quality.
