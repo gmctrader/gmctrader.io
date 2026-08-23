@@ -205,7 +205,7 @@ body{position:relative;}
 #app{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 16px;position:relative;z-index:1;}
 .topbar{display:flex;align-items:center;justify-content:space-between;
   padding:calc(16px + env(safe-area-inset-top)) 4px 14px;position:sticky;top:0;
-  background:linear-gradient(var(--bg) 70%, transparent);z-index:5;}
+  background:none;z-index:5;}
 .topbar-icons{display:flex;align-items:center;gap:8px;}
 .topbar .back{color:var(--slate);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;
   padding:10px 8px;margin:-10px -8px;border-radius:10px;transition:color .15s,background .15s;}
@@ -379,7 +379,6 @@ html[data-theme="light"] .stage,html[data-theme="dark"] .stage{background:none !
 .stage-readout .r2{color:var(--core-a);}
 
 /* ---- header hairline: a crisp, theme-adaptive separation under the topbar ---- */
-.topbar{border-bottom:1px solid var(--steel-hi);}
 .topbar .back{color:var(--slate);}
 
 .quick-row-wrap{position:relative;margin-bottom:14px;}
