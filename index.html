@@ -2486,10 +2486,18 @@ setTimeout(function(){
       </div>
 
       <div class="card tilt">
-        <h2>Build a <span class="accent">Strategy Checklist</span><span class="eyebrow">your own criteria, no presets</span></h2>
+        <h2>Build a <span class="accent">Strategy Checklist</span><span class="eyebrow">pull in a strategy, or go fully custom</span></h2>
         <div class="field"><label>Strategy name</label><input type="text" id="sn_stratName" placeholder="e.g. My London Open Setup"></div>
         <div class="field">
-          <label>Checklist items <span class="hint-inline">what has to be true before you click buy/sell?</span></label>
+          <label>Base this on <span class="hint-inline">every other strategy's logic is one tap away — or skip to custom</span></label>
+          <select id="sn_baseStrategy" onchange="onSnBaseStrategyChange()"></select>
+        </div>
+        <div class="field" id="snBaseLogicWrap" style="display:none;">
+          <label>Logic concepts from this strategy <span class="hint-inline">tap to include in the checklist</span></label>
+          <div class="logic-check-grid" id="snBaseLogicChoices"></div>
+        </div>
+        <div class="field">
+          <label>Custom items <span class="hint-inline" id="sn_itemInputHint">add your own criteria too — or use this instead of a preset</span></label>
           <div class="row2" style="margin-bottom:0;align-items:flex-end;">
             <div style="flex:1;"><input type="text" id="sn_itemInput" placeholder="e.g. Price swept liquidity first" onkeydown="if(event.key==='Enter'){event.preventDefault();addSnPendingItem();}"></div>
             <button type="button" class="btn btn-ghost" onclick="addSnPendingItem()" style="flex-shrink:0;">+ Add item</button>
@@ -2497,7 +2505,7 @@ setTimeout(function(){
           <div class="chip-row" id="snPendingItemsRow" style="margin-top:10px;"></div>
         </div>
         <button class="btn btn-primary" onclick="saveSnStrategy()">Save Strategy</button>
-        <div class="hint" style="margin-top:8px;">Add at least 2 checklist items, then save. Build as many strategies as you trade styles.</div>
+        <div class="hint" style="margin-top:8px;">Pick a preset strategy's logic, add custom items, or both — just end up with at least 2 checklist items total.</div>
         <div id="snStrategyGrid" style="margin-top:16px;"></div>
       </div>
 
@@ -2521,7 +2529,8 @@ setTimeout(function(){
       </div>
 
       <div class="card tilt" style="margin-top:18px">
-        <h2>Confluence <span class="accent">Score</span><span class="eyebrow">which of your own criteria actually wins</span></h2>
+        <h2>Confluence <span class="accent">Score</span><span class="eyebrow">auto-built from your trade journal + check-ins</span></h2>
+        <div class="page-sub" style="margin-top:-6px;margin-bottom:12px;">Any logic concept pulled from a preset strategy is scored automatically the moment you log a trade using it — no separate check-in required. ⚡ marks items being fed live by your Trade Journal.</div>
         <div id="snConfluenceList"></div>
       </div>
 
@@ -6721,13 +6730,59 @@ function renderConfluence(){
 // Each pre-entry check-in records which items were seen; once the trade
 // closes it's marked Win/Loss/Breakeven, and buildSnConfluenceStats() turns
 // that history into a per-item win rate — the "premium confluence score".
-let snPendingItems = []; // items typed in but not yet saved to a strategy
+let snPendingItems = []; // custom items typed in but not yet saved to a strategy
 
+// Every strategy already in the system — the trader's own Playbook entries
+// plus the five built-in logic systems (GMC/SMC/ICT/TA/Fundamentals) — shows
+// up here so a Strategy Notes checklist can be built from real logic instead
+// of retyping it. Picking "Custom" skips all of that and stays freeform.
+function populateSnBaseStrategySelect(){
+  const sel = document.getElementById('sn_baseStrategy');
+  if(!sel) return;
+  const prev = sel.value;
+  const pbStrategies = state.psychology.strategies || [];
+  let html = '<option value="custom">Custom — type my own criteria</option>';
+  if(pbStrategies.length){
+    html += '<optgroup label="Your Playbook strategies">' + pbStrategies.map(s=>{
+      const t = STRATEGY_TYPES[s.type];
+      return `<option value="pb:${s.id}">${escapeHtml(s.name)}${t?' · '+t.short:''}</option>`;
+    }).join('') + '</optgroup>';
+  }
+  html += '<optgroup label="Strategy systems (all logic)">' + Object.entries(STRATEGY_TYPES).map(([key,t])=>
+    `<option value="type:${key}">${escapeHtml(t.label)}</option>`
+  ).join('') + '</optgroup>';
+  sel.innerHTML = html;
+  if([...sel.options].some(o=>o.value===prev)) sel.value = prev;
+  onSnBaseStrategyChange();
+}
+function onSnBaseStrategyChange(){
+  const sel = document.getElementById('sn_baseStrategy');
+  const wrap = document.getElementById('snBaseLogicWrap');
+  const hint = document.getElementById('sn_itemInputHint');
+  if(!sel || !wrap) return;
+  const val = sel.value;
+  if(!val || val==='custom'){
+    wrap.style.display = 'none';
+    if(hint) hint.textContent = 'What has to be true before you click buy/sell?';
+    return;
+  }
+  let type = null, preselected = [];
+  if(val.startsWith('pb:')){
+    const strat = (state.psychology.strategies||[]).find(s=>s.id===val.slice(3));
+    if(strat){ type = strat.type; preselected = strat.logics || []; }
+  } else if(val.startsWith('type:')){
+    type = val.slice(5);
+    preselected = STRATEGY_TYPES[type] ? STRATEGY_TYPES[type].logics.map(l=>l.id) : [];
+  }
+  wrap.style.display = type ? '' : 'none';
+  if(type) renderLogicChoices('snBaseLogicChoices', type, preselected);
+  if(hint) hint.textContent = 'Add anything extra this strategy needs that isn\'t on the list above.';
+}
 function addSnPendingItem(){
   const input = document.getElementById('sn_itemInput');
   const text = input.value.trim();
   if(!text) return;
-  snPendingItems.push({ id:'it_'+Date.now()+'_'+Math.floor(Math.random()*1000), text });
+  snPendingItems.push({ id:'it_'+Date.now()+'_'+Math.floor(Math.random()*1000), text, source:'custom' });
   input.value = '';
   renderSnPendingItems();
   input.focus();
@@ -6741,16 +6796,36 @@ function renderSnPendingItems(){
   if(!el) return;
   el.innerHTML = snPendingItems.length ? snPendingItems.map(i=>`
     <div class="trader-chip">${escapeHtml(i.text)}<button onclick="removeSnPendingItem('${i.id}')" title="Remove">✕</button></div>
-  `).join('') : '<div class="hint" style="margin:0;">No items yet — type one above and hit + Add item.</div>';
+  `).join('') : '<div class="hint" style="margin:0;">No custom items yet — optional if you picked a preset above.</div>';
 }
 async function saveSnStrategy(){
   const nameEl = document.getElementById('sn_stratName');
   const name = nameEl.value.trim();
   if(!name){ showToast('Give the strategy a name'); return; }
-  if(snPendingItems.length < 2){ showToast('Add at least 2 checklist items first'); return; }
-  state.psychology.strategyNotes.customStrategies.push({ id:'sns_'+Date.now(), name, items: snPendingItems.slice() });
+  const baseSel = document.getElementById('sn_baseStrategy');
+  const baseVal = baseSel ? baseSel.value : 'custom';
+  let sourceType = null;
+  const presetItems = [];
+  if(baseVal && baseVal !== 'custom'){
+    if(baseVal.startsWith('pb:')){
+      const strat = (state.psychology.strategies||[]).find(s=>s.id===baseVal.slice(3));
+      if(strat) sourceType = strat.type;
+    } else if(baseVal.startsWith('type:')){
+      sourceType = baseVal.slice(5);
+    }
+    if(sourceType){
+      getCheckedLogics('snBaseLogicChoices').forEach(id=>{
+        presetItems.push({ id, text: logicLabel(id), source:'preset', sourceType });
+      });
+    }
+  }
+  const items = presetItems.concat(snPendingItems);
+  if(items.length < 2){ showToast('Pick or add at least 2 checklist items first'); return; }
+  state.psychology.strategyNotes.customStrategies.push({ id:'sns_'+Date.now(), name, items, sourceType });
   nameEl.value = '';
   snPendingItems = [];
+  if(baseSel) baseSel.value = 'custom';
+  onSnBaseStrategyChange();
   await saveState();
   renderStrategyNotes();
   showToast('Strategy saved to Strategy Notes');
@@ -6765,16 +6840,18 @@ function renderSnStrategyGrid(){
   const el = document.getElementById('snStrategyGrid');
   if(!el) return;
   const list = state.psychology.strategyNotes.customStrategies;
-  if(!list.length){ el.innerHTML = '<div class="empty-state">No custom strategies yet. Build your first checklist above.</div>'; return; }
-  el.innerHTML = list.map(s=>`
+  if(!list.length){ el.innerHTML = '<div class="empty-state">No strategies yet. Pull one in from a preset or build a custom checklist above.</div>'; return; }
+  el.innerHTML = list.map(s=>{
+    const t = s.sourceType ? STRATEGY_TYPES[s.sourceType] : null;
+    return `
     <div class="card tilt" style="margin-top:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-        <div class="strat-name" style="font-weight:700;">${escapeHtml(s.name)}</div>
+        <div class="strat-name" style="font-weight:700;">${escapeHtml(s.name)}${t?` <span class="tag-chip" style="background:${t.color}22;color:${t.color};">${t.short}</span>`:''}</div>
         <button class="btn btn-sm btn-ghost" onclick="removeSnStrategy('${s.id}')" title="Remove strategy">✕</button>
       </div>
-      <div class="strat-logic-chips" style="margin-top:8px;">${s.items.map(i=>`<span class="tag-chip">${escapeHtml(i.text)}</span>`).join('')}</div>
-    </div>
-  `).join('');
+      <div class="strat-logic-chips" style="margin-top:8px;">${s.items.map(i=>`<span class="tag-chip">${i.source==='preset'?'⚡ ':''}${escapeHtml(i.text)}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
 }
 function populateSnStrategySelect(){
   const sel = document.getElementById('sn_checkStrategy');
@@ -6870,17 +6947,32 @@ function renderSnCheckinLists(){
 }
 function buildSnConfluenceStats(){
   const map = {};
+  // 1) Manual pre-entry check-ins logged on this page.
   state.psychology.strategyNotes.checkIns.forEach(c=>{
     if(c.result==='pending') return;
     c.itemIds.forEach(id=>{
-      if(!map[id]) map[id] = { wins:0, losses:0, trades:0, label: snItemLabel(id) };
+      if(!map[id]) map[id] = { wins:0, losses:0, trades:0, label: snItemLabel(id), auto:false };
       map[id].trades++;
       if(c.result==='win') map[id].wins++;
       else if(c.result==='loss') map[id].losses++;
     });
   });
+  // 2) Auto-detected straight from the real Trade Journal. Any checklist item
+  // pulled in from a preset strategy shares its id with STRATEGY_TYPES logic
+  // (e.g. 'bos', 'choch'), so a closed trade logged with that same logic ticked
+  // feeds this score automatically — no separate check-in needed.
+  (state.trades||[]).forEach(t=>{
+    if(!Array.isArray(t.logics) || !t.logics.length) return;
+    if(t.result!=='win' && t.result!=='loss') return;
+    t.logics.forEach(id=>{
+      if(!map[id]) map[id] = { wins:0, losses:0, trades:0, label: logicLabel(id), auto:false };
+      map[id].trades++;
+      map[id].auto = true;
+      if(t.result==='win') map[id].wins++; else map[id].losses++;
+    });
+  });
   return Object.entries(map).map(([id,v])=>({
-    id, label:v.label, trades:v.trades, wins:v.wins, losses:v.losses,
+    id, label:v.label, trades:v.trades, wins:v.wins, losses:v.losses, auto:v.auto,
     winRate: v.trades ? Math.round(v.wins/v.trades*100) : 0
   })).sort((a,b)=> b.winRate-a.winRate || b.trades-a.trades);
 }
@@ -6889,7 +6981,7 @@ function renderSnConfluence(){
   if(!el) return;
   const rows = buildSnConfluenceStats();
   if(rows.length===0){
-    el.innerHTML = '<div class="empty-state">Mark a few check-ins Win or Loss to see which of your own criteria actually pays.</div>';
+    el.innerHTML = '<div class="empty-state">Mark a few check-ins Win or Loss — or just keep logging trades with logic ticked — and this fills in on its own.</div>';
     return;
   }
   el.innerHTML = rows.map(r=>{
@@ -6898,7 +6990,7 @@ function renderSnConfluence(){
       : 'linear-gradient(90deg,var(--loss),var(--loss-bright))';
     return `
     <div class="confluence-row">
-      <div class="confluence-label">${escapeHtml(r.label)}</div>
+      <div class="confluence-label">${r.auto?'⚡ ':''}${escapeHtml(r.label)}</div>
       <div class="confluence-bar-wrap"><div class="confluence-bar" style="width:${r.winRate}%;background:${barColor}"></div></div>
       <div class="confluence-stats"><b>${r.winRate}%</b><span>${r.wins}W / ${r.losses}L · ${r.trades} logged</span></div>
     </div>`;
@@ -6914,6 +7006,7 @@ async function saveSnJournal(){
 function renderStrategyNotes(){
   if(!state.psychology.strategyNotes) return;
   renderSnPendingItems();
+  populateSnBaseStrategySelect();
   renderSnStrategyGrid();
   populateSnStrategySelect();
   renderSnCheckinLists();
