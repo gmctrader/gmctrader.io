@@ -1000,6 +1000,115 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
 .skip-link:focus{top:12px;}
 :focus-visible{outline:2px solid var(--bronze-bright,#10b981);outline-offset:2px;}
 .icon-btn:focus-visible, .switch:focus-visible, .settings-tab:focus-visible{outline:2px solid var(--bronze-bright,#10b981);outline-offset:2px;}
+
+/* ============================================================
+   SIGNAL PAGE — PREMIUM PASS
+   Everything below is scoped to #signalPage so it never touches
+   chat, settings, or history modal styling elsewhere in the app.
+   ============================================================ */
+
+/* ---- hero: replaces the plain "Signal" topbar with a live console
+   header. Ties into the same neural-core / stage-status vocabulary
+   used on the chat page so the two feel like one intelligence. ---- */
+#signalPage .topbar{position:relative;margin-bottom:6px;}
+#signalPage .sig-hero{position:relative;padding:22px 20px 20px;margin:2px 0 18px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg, rgba(45,212,168,0.09), rgba(10,17,25,0.5) 60%), var(--panel-solid);
+  border:1px solid var(--steel-hi);
+  box-shadow:0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 40px -24px rgba(0,0,0,0.6);}
+#signalPage .sig-hero::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(45,212,168,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,168,0.09) 1px, transparent 1px);
+  background-size:26px 26px; mask-image:radial-gradient(ellipse 100% 100% at 50% 0%, #000 0%, transparent 75%);}
+#signalPage .sig-hero::after{content:'';position:absolute;left:-20%;right:-20%;top:0;height:1px;
+  background:linear-gradient(90deg, transparent, var(--bronze-bright), var(--gold), transparent);
+  opacity:.7; animation:sigHeroSweep 6s ease-in-out infinite;}
+@keyframes sigHeroSweep{0%,100%{transform:translateX(-10%);opacity:.35;}50%{transform:translateX(10%);opacity:.85;}}
+#signalPage .sig-hero-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
+#signalPage .sig-hero-eyebrow{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze-bright);margin-bottom:8px;}
+#signalPage .sig-hero-eyebrow .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--bronze-bright);
+  box-shadow:0 0 8px var(--bronze-bright);animation:scanDotPulse 1.6s ease-in-out infinite;}
+#signalPage .sig-hero-title{font-family:'Fraunces',serif;font-weight:650;font-size:26px;letter-spacing:.005em;
+  color:var(--platinum);position:relative;z-index:1;margin:0;}
+#signalPage .sig-hero-sub{font-size:12.5px;color:var(--slate);margin-top:6px;max-width:46ch;position:relative;z-index:1;line-height:1.55;}
+#signalPage .sig-hero-badge{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  font-family:'IBM Plex Mono',monospace;position:relative;z-index:1;}
+#signalPage .sig-hero-badge .lbl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-dim);}
+#signalPage .sig-hero-badge .val{font-size:13px;font-weight:700;color:var(--gold-bright);}
+
+/* ---- step eyebrows: encode actual sequence (setup inputs → chart →
+   read → analyze), so numbering earns its place here. ---- */
+#signalPage .sig-step{display:flex;align-items:center;gap:8px;margin:26px 0 12px;position:relative;z-index:1;}
+#signalPage .sig-step:first-of-type{margin-top:4px;}
+#signalPage .sig-step .num{flex:none;width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;color:var(--bronze-ink);
+  background:linear-gradient(135deg, var(--bronze-bright), var(--gold));box-shadow:0 0 10px rgba(45,212,168,0.35);}
+#signalPage .sig-step .lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--platinum);}
+#signalPage .sig-step::after{content:'';flex:1;height:1px;background:linear-gradient(90deg, var(--steel-hi), transparent);}
+
+/* ---- glass card wrapper for grouped fields ---- */
+#signalPage .sig-card{position:relative;padding:18px 18px 6px;margin-bottom:4px;border-radius:18px;
+  background:rgba(255,255,255,0.022);border:1px solid var(--steel-hi);
+  box-shadow:0 1px 0 rgba(255,255,255,0.03) inset;}
+
+/* ---- console card for scan banner + history: swaps the flat strip
+   for a readout with an actual usage meter, since "3/5 left" is more
+   legible as a bar than a number alone. ---- */
+#signalPage .sig-console-card{position:relative;padding:14px 16px 10px;margin:-2px 0 16px;border-radius:16px;
+  background:linear-gradient(180deg, rgba(45,212,168,0.05), transparent), var(--panel-solid);
+  border:1px solid var(--steel-hi);}
+#signalPage .sig-meter-track{height:4px;border-radius:99px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:9px;}
+#signalPage .sig-meter-fill{height:100%;border-radius:99px;background:linear-gradient(90deg, var(--bronze), var(--bronze-bright), var(--gold-bright));
+  box-shadow:0 0 8px rgba(45,212,168,0.5);transition:width .5s cubic-bezier(.4,0,.2,1);}
+#signalPage #sig_scanBanner{background:none;border:none;padding:0;margin:0;}
+#signalPage .sig-history-row{margin-top:12px;}
+
+/* ---- inputs / selects: sharper glass, icon-accented labels, a
+   brighter focus glow that reads as "the model is listening". ---- */
+#signalPage .field{margin-bottom:18px;}
+#signalPage .field label{font-size:11px;}
+#signalPage .field input,#signalPage .field select,#signalPage .sig-textarea{
+  background:rgba(4,9,13,0.55);border-color:var(--steel-hi);transition:border-color .18s, box-shadow .18s, background .18s;}
+#signalPage .field input:focus,#signalPage .field select:focus,#signalPage .sig-textarea:focus{
+  border-color:var(--bronze-bright);background:rgba(4,9,13,0.75);
+  box-shadow:0 0 0 3px rgba(45,212,168,0.16), 0 0 22px -6px rgba(45,212,168,0.4);}
+#signalPage .sig-textarea{border-radius:14px;}
+
+/* ---- chart upload: from a plain ghost button to an actual dropzone,
+   the visual center of the "give SciFe eyes" step. ---- */
+#signalPage .sig-upload-zone{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;width:100%;padding:26px 16px;border-radius:16px;cursor:pointer;text-align:center;
+  border:1.5px dashed var(--steel-hi);background:rgba(45,212,168,0.03);
+  color:var(--slate);font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:13.5px;
+  transition:border-color .18s, background .18s, transform .12s;}
+#signalPage .sig-upload-zone:hover{border-color:var(--bronze-bright);background:rgba(45,212,168,0.07);color:var(--platinum);}
+#signalPage .sig-upload-zone:active{transform:scale(.99);}
+#signalPage .sig-upload-zone.drag-over{border-color:var(--gold-bright);background:rgba(242,200,119,0.09);}
+#signalPage .sig-upload-zone .icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:17px;background:linear-gradient(135deg, rgba(45,212,168,0.18), rgba(242,200,119,0.12));
+  border:1px solid var(--steel-hi);margin-bottom:2px;}
+#signalPage .sig-upload-zone .sub{font-size:11px;font-weight:500;color:var(--slate-dim);}
+
+/* ---- bias toggle: slightly richer active states ---- */
+#signalPage .sig-bias-opt{background:rgba(255,255,255,0.02);}
+#signalPage .sig-bias-opt.active{box-shadow:0 0 16px -4px currentColor;}
+
+/* ---- the analyze button: the single moment of maximal boldness on
+   this page. Bigger, gradient-lit, with a slow idle shimmer so it
+   reads as "engine ready" rather than a static form submit. ---- */
+#signalPage #sig_analyzeBtn{position:relative;width:100%;padding:16px 20px;margin-top:4px;font-size:15px;
+  font-weight:700;letter-spacing:.01em;border-radius:16px;
+  background:linear-gradient(135deg, var(--bronze), var(--bronze-bright) 55%, var(--gold));
+  box-shadow:0 1px 0 rgba(255,255,255,0.25) inset, 0 14px 30px -14px rgba(45,212,168,0.55);}
+#signalPage #sig_analyzeBtn .sig-cta-sub{display:block;font-family:'IBM Plex Mono',monospace;font-weight:600;
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.72;margin-top:2px;}
+#signalPage #sig_analyzeBtn:hover{box-shadow:0 1px 0 rgba(255,255,255,0.3) inset, 0 16px 34px -12px rgba(45,212,168,0.7);}
+
+@media (prefers-reduced-motion: reduce){
+  #signalPage .sig-hero::after{animation:none;}
+}
+html[data-theme="light"] #signalPage .sig-hero{background:linear-gradient(180deg, rgba(14,163,124,0.08), rgba(255,255,255,0.4) 60%), var(--panel-solid);}
+html[data-theme="light"] #signalPage .field input,html[data-theme="light"] #signalPage .field select,html[data-theme="light"] #signalPage .sig-textarea{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] #signalPage .sig-upload-zone{background:rgba(14,163,124,0.05);}
 </style>
 </head>
 <body>
@@ -1217,92 +1326,120 @@ setTimeout(function(){
     <div style="width:36px;"></div>
   </div>
 
-  <div class="sig-disclaimer mono" style="font-size:12px;margin:2px 0 20px;">
-    No live chart or price feed — SciFe only reads what's in your chart image and text below, checked against your strategy's own rules. It won't invent a price it can't see. Not financial advice.
-  </div>
-
-  <div id="sig_scanBanner" class="sig-scan-banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 13px;border-radius:11px;background:var(--panel-2,rgba(255,255,255,0.04));border:1px solid var(--steel);margin:-4px 0 10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;">
-    <span id="sig_scanBannerText">Scans remaining this week: —</span>
-    <span class="icon-btn" role="button" tabindex="0" style="width:26px;height:26px;font-size:13px;" title="Settings" aria-label="Open settings" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()">⚙</span>
-  </div>
-  <div class="sig-history-row" style="display:flex;align-items:center;gap:8px;">
-    <div id="sig_historyStrip" class="sig-history-strip" style="flex:1;"></div>
-    <span id="sig_historyViewAll" class="sig-history-viewall mono" role="button" tabindex="0" onclick="openScanHistory()" onkeydown="if(event.key==='Enter')openScanHistory()">View all →</span>
-  </div>
-
-  <div class="field">
-    <label>Strategy</label>
-    <select id="sig_strategy" onchange="onSignalStrategyChange()"></select>
-    <div class="hint" id="sig_strategyChecklist"></div>
-  </div>
-
-  <div class="field">
-    <label>Trade style</label>
-    <select id="sig_style" onchange="onSignalStyleChange()">
-      <option value="scalp">Scalp</option>
-      <option value="intraday" selected>Intraday</option>
-      <option value="swing">Swing</option>
-    </select>
-    <div class="hint" id="sig_styleHint"></div>
-  </div>
-
-  <div class="field">
-    <label>Your target R:R <span style="font-weight:400;color:var(--slate);">(optional)</span></label>
-    <input type="number" id="sig_desiredRR" step="0.1" min="0.1" placeholder="e.g. 2 for 1:2">
-    <div class="hint">TP1 and TP2 are laid out as intermediate targets on the way there; TP3 is the main target built around this R:R. Leave blank and SciFe picks a sensible target for the trade style instead. If the chart's own structure genuinely can't support the R:R you ask for, SciFe will tell you rather than force a level that isn't really there.</div>
-  </div>
-
-  <div class="field">
-    <label>Sessions you trade <span style="font-weight:400;color:var(--slate);">(used to check if a setup is executable right now)</span></label>
-    <div class="sig-sess-row" id="sig_sessionPicker"></div>
-    <div class="hint">SciFe factors these into the read and tells you whether this setup falls inside one of your windows right now, or how long until it does. Times are approximate standard UTC session hours (not DST-adjusted) — treat the "opens in" estimate as a rough guide, not to the minute.</div>
-  </div>
-
-  <div class="field">
-    <label>Pair / instrument</label>
-    <input type="text" id="sig_pair" placeholder="e.g. EURUSD, XAUUSD, NAS100" autocomplete="off">
-  </div>
-
-  <div class="field">
-    <label>Chart screenshot (optional)</label>
-    <input type="file" id="sig_chartInput" accept="image/*" style="display:none;" onchange="onChartFileChange(event)">
-    <button type="button" class="btn-ghost" onclick="document.getElementById('sig_chartInput').click()">🔍 Upload chart image</button>
-    <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. Use a clean chart with no drawn indicators, fib tools, or annotations — SciFe reads raw price action and works out its own swing points, Fibonacci zone, and full confluence logic itself, rather than trusting whatever's already drawn on the image.</div>
-    <div id="sig_chartPreview"></div>
-    <input type="file" id="sig_chartInput2" accept="image/*" style="display:none;" onchange="onChartFileChange2(event)">
-    <div id="sig_chart2Controls" style="display:none;margin-top:10px;">
-      <div class="hint">Need another timeframe for context? Add one and SciFe will use it specifically for higher/lower-timeframe confirmation instead of guessing off one chart alone.</div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <button type="button" class="btn-ghost" style="flex:1;" onclick="addSecondChart('higher')">+ Add Higher Timeframe chart</button>
-        <button type="button" class="btn-ghost" style="flex:1;" onclick="addSecondChart('lower')">+ Add Lower Timeframe chart</button>
+  <div class="sig-hero">
+    <div class="sig-hero-top">
+      <div>
+        <div class="sig-hero-eyebrow"><span class="pulse-dot"></span>AI confluence engine · live</div>
+        <h1 class="sig-hero-title">Read this setup</h1>
+        <div class="sig-hero-sub">No live chart or price feed — SciFe only reads what's in your chart image and text below, checked against your strategy's own rules. It won't invent a price it can't see. Not financial advice.</div>
+      </div>
+      <div class="sig-hero-badge">
+        <span class="lbl">Model</span>
+        <span class="val" id="sig_heroModel">—</span>
       </div>
     </div>
-    <div id="sig_chart2Preview"></div>
-    <div id="sig_chartRequestBanner" style="display:none;"></div>
   </div>
 
-  <div class="field">
-    <label>What are you seeing?</label>
-    <textarea id="sig_desc" class="sig-textarea" rows="6" placeholder="HTF bias, recent structure (BOS/CHoCH), where price sits relative to your key levels (order block, FVG, liquidity), current price... (optional if you attached a chart, but exact numbers you type are more reliable than what SciFe reads off an image)"></textarea>
-  </div>
-
-  <div class="field">
-    <label>What's your read?</label>
-    <div class="sig-bias-toggle" id="sig_traderBias">
-      <button type="button" class="sig-bias-opt" data-val="long" onclick="setTraderBias('long')">
-        <span class="sig-bias-opt-dot"></span>Long
-      </button>
-      <button type="button" class="sig-bias-opt active" data-val="unsure" onclick="setTraderBias('unsure')">
-        <span class="sig-bias-opt-dot"></span>Not sure
-      </button>
-      <button type="button" class="sig-bias-opt" data-val="short" onclick="setTraderBias('short')">
-        <span class="sig-bias-opt-dot"></span>Short
-      </button>
+  <div class="sig-console-card">
+    <div id="sig_scanBanner" class="sig-scan-banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;">
+      <span id="sig_scanBannerText">Scans remaining this week: —</span>
+      <span class="icon-btn" role="button" tabindex="0" style="width:26px;height:26px;font-size:13px;" title="Settings" aria-label="Open settings" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()">⚙</span>
     </div>
-    <div class="hint">SciFe forms its own read independently — if it disagrees with yours, it'll say so and explain why, not just agree with you.</div>
+    <div class="sig-meter-track"><div class="sig-meter-fill" id="sig_scanMeterFill" style="width:100%;"></div></div>
+    <div class="sig-history-row" style="display:flex;align-items:center;gap:8px;">
+      <div id="sig_historyStrip" class="sig-history-strip" style="flex:1;"></div>
+      <span id="sig_historyViewAll" class="sig-history-viewall mono" role="button" tabindex="0" onclick="openScanHistory()" onkeydown="if(event.key==='Enter')openScanHistory()">View all →</span>
+    </div>
   </div>
 
-  <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()">Analyze setup</button>
+  <div class="sig-step"><span class="num">1</span><span class="lbl">Setup parameters</span></div>
+  <div class="sig-card">
+    <div class="field">
+      <label>◈ Strategy</label>
+      <select id="sig_strategy" onchange="onSignalStrategyChange()"></select>
+      <div class="hint" id="sig_strategyChecklist"></div>
+    </div>
+
+    <div class="field">
+      <label>◈ Trade style</label>
+      <select id="sig_style" onchange="onSignalStyleChange()">
+        <option value="scalp">Scalp</option>
+        <option value="intraday" selected>Intraday</option>
+        <option value="swing">Swing</option>
+      </select>
+      <div class="hint" id="sig_styleHint"></div>
+    </div>
+
+    <div class="field">
+      <label>◈ Your target R:R <span style="font-weight:400;color:var(--slate);text-transform:none;letter-spacing:0;">(optional)</span></label>
+      <input type="number" id="sig_desiredRR" step="0.1" min="0.1" placeholder="e.g. 2 for 1:2">
+      <div class="hint">TP1 and TP2 are laid out as intermediate targets on the way there; TP3 is the main target built around this R:R. Leave blank and SciFe picks a sensible target for the trade style instead. If the chart's own structure genuinely can't support the R:R you ask for, SciFe will tell you rather than force a level that isn't really there.</div>
+    </div>
+
+    <div class="field">
+      <label>◈ Sessions you trade <span style="font-weight:400;color:var(--slate);text-transform:none;letter-spacing:0;">(used to check if a setup is executable right now)</span></label>
+      <div class="sig-sess-row" id="sig_sessionPicker"></div>
+      <div class="hint">SciFe factors these into the read and tells you whether this setup falls inside one of your windows right now, or how long until it does. Times are approximate standard UTC session hours (not DST-adjusted) — treat the "opens in" estimate as a rough guide, not to the minute.</div>
+    </div>
+
+    <div class="field">
+      <label>◈ Pair / instrument</label>
+      <input type="text" id="sig_pair" placeholder="e.g. EURUSD, XAUUSD, NAS100" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="sig-step"><span class="num">2</span><span class="lbl">Give it eyes</span></div>
+  <div class="sig-card">
+    <div class="field">
+      <label>Chart screenshot <span style="font-weight:400;color:var(--slate);text-transform:none;letter-spacing:0;">(optional)</span></label>
+      <input type="file" id="sig_chartInput" accept="image/*" style="display:none;" onchange="onChartFileChange(event)">
+      <div class="sig-upload-zone" id="sig_uploadZone" role="button" tabindex="0"
+        onclick="document.getElementById('sig_chartInput').click()"
+        onkeydown="if(event.key==='Enter')document.getElementById('sig_chartInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over');"
+        ondragleave="this.classList.remove('drag-over');"
+        ondrop="event.preventDefault();this.classList.remove('drag-over');if(event.dataTransfer.files&&event.dataTransfer.files[0]){document.getElementById('sig_chartInput').files=event.dataTransfer.files;onChartFileChange({target:document.getElementById('sig_chartInput')});}">
+        <div class="icon">🔍</div>
+        <div>Upload or drop chart image</div>
+        <div class="sub">Scanned by your selected AI model</div>
+      </div>
+      <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. Use a clean chart with no drawn indicators, fib tools, or annotations — SciFe reads raw price action and works out its own swing points, Fibonacci zone, and full confluence logic itself, rather than trusting whatever's already drawn on the image.</div>
+      <div id="sig_chartPreview"></div>
+      <input type="file" id="sig_chartInput2" accept="image/*" style="display:none;" onchange="onChartFileChange2(event)">
+      <div id="sig_chart2Controls" style="display:none;margin-top:10px;">
+        <div class="hint">Add higher and/or lower timeframe charts for extra context — both get sent to the model together with the primary chart.</div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button type="button" class="btn-ghost" id="sig_addHigherBtn" style="flex:1;" onclick="addSecondChart('higher')">+ Add Higher Timeframe chart</button>
+          <button type="button" class="btn-ghost" id="sig_addLowerBtn" style="flex:1;" onclick="addSecondChart('lower')">+ Add Lower Timeframe chart</button>
+        </div>
+      </div>
+      <div id="sig_chart2Preview"></div>
+      <div id="sig_chartRequestBanner" style="display:none;"></div>
+    </div>
+
+    <div class="field">
+      <label>What are you seeing?</label>
+      <textarea id="sig_desc" class="sig-textarea" rows="6" placeholder="HTF bias, recent structure (BOS/CHoCH), where price sits relative to your key levels (order block, FVG, liquidity), current price... (optional if you attached a chart, but exact numbers you type are more reliable than what SciFe reads off an image)"></textarea>
+    </div>
+
+    <div class="field">
+      <label>What's your read?</label>
+      <div class="sig-bias-toggle" id="sig_traderBias">
+        <button type="button" class="sig-bias-opt" data-val="long" onclick="setTraderBias('long')">
+          <span class="sig-bias-opt-dot"></span>Long
+        </button>
+        <button type="button" class="sig-bias-opt active" data-val="unsure" onclick="setTraderBias('unsure')">
+          <span class="sig-bias-opt-dot"></span>Not sure
+        </button>
+        <button type="button" class="sig-bias-opt" data-val="short" onclick="setTraderBias('short')">
+          <span class="sig-bias-opt-dot"></span>Short
+        </button>
+      </div>
+      <div class="hint">SciFe forms its own read independently — if it disagrees with yours, it'll say so and explain why, not just agree with you.</div>
+    </div>
+  </div>
+
+  <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()">🎯 Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span></button>
   <div id="sig_error" style="display:none;"></div>
 
   <div id="sig_result" style="display:none;margin-top:24px;"></div>
@@ -2259,6 +2396,11 @@ function updateScanBanner(){
     banner.classList.toggle('empty', !scife.usage.isAdmin && remaining === 0);
     banner.classList.toggle('low', !scife.usage.isAdmin && remaining > 0 && remaining <= 1);
   }
+  const fill = document.getElementById('sig_scanMeterFill');
+  if(fill){
+    const pct = scife.usage.isAdmin ? 100 : Math.round((remaining / SCAN_LIMIT_PER_WEEK) * 100);
+    fill.style.width = pct + '%';
+  }
 }
 /* Re-pulls the usage object from the synced row before every scan attempt —
    catches a scan already used on another device/tab this week, and rolls the
@@ -2888,9 +3030,9 @@ function computeSessionExecutability(){
 }
 
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
-let sigChartImage2 = null; // optional extra higher/lower-timeframe chart, same shape as sigChartImage — cleared on removeChartImage() or removeChartImage2()
-let sigChartImage2Role = null; // 'higher' | 'lower' — which side the trader added Image 2 for
-let sigPendingChart2Role = null; // set right before opening the file picker so onChartFileChange2 knows which role this upload is for
+let sigChartImageHigher = null; // optional higher-timeframe chart, same shape as sigChartImage — independent slot, cleared on removeChartImage() or removeChartImage2('higher')
+let sigChartImageLower = null; // optional lower-timeframe chart, same shape as sigChartImage — independent slot, cleared on removeChartImage() or removeChartImage2('lower')
+let sigPendingChart2Role = null; // set right before opening the shared file picker so onChartFileChange2 knows which slot this upload goes into
 let sigSelectedSessions = []; // array of SIGNAL_SESSIONS keys the trader has toggled on, persisted in scife.sigSessions
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
@@ -2911,6 +3053,8 @@ function openSignalPage(){
   renderSignalSessionPicker();
   document.getElementById('app').style.display='none';
   document.getElementById('signalPage').style.display='flex';
+  const heroModelEl = document.getElementById('sig_heroModel');
+  if(heroModelEl) heroModelEl.textContent = scife.model || (PROVIDERS[scife.provider]?.label) || '—';
   updateScanBanner();
   renderScanHistory();
   refreshUsageFromServer().then(renderScanHistory);
@@ -2979,7 +3123,7 @@ function summarizeStrategyPerformance(strategyId){
   const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
 }
-function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR, selectedSessions, hasImage2, image2Role){
+function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR, selectedSessions, hasHigher, hasLower){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
   const logicList = set
     ? set.map(l=>`- ${l.id} (${l.label}): ${SIGNAL_LOGIC_DEFS[l.id] || 'Use standard trading definition for this concept.'}`).join('\n')
@@ -3001,11 +3145,9 @@ function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desir
 CONSISTENCY IS CRITICAL: if this looks like the same chart image you may have seen before (same candles, same visible price axis, same structure), read it exactly the same way every time — the same swing highs/lows, the same order blocks, the same entry/stop/target levels. Never vary your reading of an unchanged chart between analyses; a trader re-uploading the same screenshot must get the same coordinates back, not a different interpretation. Anchor strictly to what's visibly printed on the chart (candle wicks/bodies and axis labels) rather than an impression of the image, since that visible data doesn't change between reads even if your phrasing does.
 
 You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label and candle body/wick carefully before judging anything. Work out structure, confluence, and the Fibonacci zone yourself from the raw candles — if the chart has any drawn lines, boxes, or fib tools already on it, treat them as unverified and re-derive everything from price action rather than trusting them' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
-${hasImage && hasImage2 ? `
-MULTI-TIMEFRAME READ: two chart images were provided, in this order — Image 1 is the PRIMARY/entry-timeframe chart; Image 2 is a ${image2Role === 'higher' ? 'HIGHER' : 'LOWER'} timeframe chart the trader added for extra context. ${image2Role === 'higher'
-  ? 'Use Image 2 specifically to judge htf_bias/market_condition (the true higher-timeframe trend and regime) — don\'t infer HTF structure from Image 1 alone when a real HTF chart is right there. Everything else (entry structure, order block, fib/OTE, levels, chart_positions/chart_markers coordinates) still comes from Image 1, since that\'s the chart the trader will actually see the overlay drawn on.'
-  : 'Use Image 2 specifically to sharpen entry precision, the confirmation/displacement candle read, and order flow control at the exact entry zone — a lower-timeframe view is what actually shows whether a reaction candle has printed yet. Everything else (HTF bias, overall structure, and all chart_positions/chart_markers coordinates) still comes from Image 1, since that\'s the chart the trader will actually see the overlay drawn on.'}
-` : ''}${hasImage && !hasImage2 ? `
+${hasImage && (hasHigher || hasLower) ? `
+MULTI-TIMEFRAME READ: ${1 + (hasHigher?1:0) + (hasLower?1:0)} chart images were provided, in this order — Image 1 is the PRIMARY/entry-timeframe chart${hasHigher ? `; Image ${hasHigher?2:''} is a HIGHER timeframe chart the trader added for extra context` : ''}${hasLower ? `; Image ${hasHigher?3:2} is a LOWER timeframe chart the trader added for extra context` : ''}. ${hasHigher ? 'Use the HIGHER timeframe image specifically to judge htf_bias/market_condition (the true higher-timeframe trend and regime) — don\'t infer HTF structure from Image 1 alone when a real HTF chart is right there.' : ''} ${hasLower ? 'Use the LOWER timeframe image specifically to sharpen entry precision, the confirmation/displacement candle read, and order flow control at the exact entry zone — a lower-timeframe view is what actually shows whether a reaction candle has printed yet.' : ''} Everything else (any concept not specifically called out above, and all chart_positions/chart_markers coordinates) still comes from Image 1, since that's the chart the trader will actually see the overlay drawn on. If both a higher and lower timeframe image were provided, use them together — HTF for bias/regime, LTF for entry precision — rather than picking only one.
+` : ''}${hasImage && !hasHigher && !hasLower ? `
 ADDITIONAL TIMEFRAME REQUEST: only one chart was provided. If — and only if — judging this setup properly is genuinely hampered without another timeframe (e.g. a Swing-style read with no visible higher-timeframe trend context at all, or a Scalp-style read where entry precision/confirmation genuinely can't be judged without a lower-timeframe view), set "chart_request.needed" to true, "chart_request.timeframe" to "higher" or "lower" (whichever would actually help), and give one concrete sentence in "chart_request.reason" naming exactly what you can't judge without it. This should be the exception, not the default — most single-chart reads have enough to work with, so don't request a chart just to pad out caution. If the single chart already gives you enough to judge the checklist honestly, set "needed" to false.
 ` : ''}
 ${biasBlock}
@@ -3071,9 +3213,9 @@ Never add a chart_markers entry for an id that isn't in one of those six groups,
 CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''}${hasImage && !hasImage2 ? `,"chart_request":{"needed":false,"timeframe":null,"reason":""}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''}${hasImage && !hasHigher && !hasLower ? `,"chart_request":{"needed":false,"timeframe":null,"reason":""}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a fresh BOS with no order block behind it yet, or a clean order block reaction with nothing else confirmed), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. A fibonacci/OTE read is NEVER sufficient on its own to justify a bias or entry — it's a refinement layer on top of real structure/order-flow/liquidity confluence, not a substitute for it; if fib or OTE is the only thing present with nothing structural behind it, that's grounds for "no_trade" or a very low-confidence read, not a standalone setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.
-CONVICTION AND PATIENCE: when a setup is genuinely well-confirmed (strong HTF alignment, control on your side, inducement already resolved, a real magnet area behind TP3), say so plainly in risk_note or verdict and frame TP3 as the real target to hold for — the invalidation level in "invalidation" is what should get the trader out, not a shallow pullback or TP1/TP2 wobble along the way. Don't hedge a genuinely strong setup into false caution just to sound balanced, and don't manufacture confidence in a weak one just to sound decisive — the honesty of the read matters more than either extreme. If the setup is weak or the checklist barely supports it, say that plainly instead so the trader isn't tempted to hold with conviction it hasn't earned.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}${hasImage && !hasImage2 ? ' chart_request must be present in the JSON — see the ADDITIONAL TIMEFRAME REQUEST note above for exactly when "needed" should be true; leave it false for the ordinary case where one chart is enough.' : ''}`;
+CONVICTION AND PATIENCE: when a setup is genuinely well-confirmed (strong HTF alignment, control on your side, inducement already resolved, a real magnet area behind TP3), say so plainly in risk_note or verdict and frame TP3 as the real target to hold for — the invalidation level in "invalidation" is what should get the trader out, not a shallow pullback or TP1/TP2 wobble along the way. Don't hedge a genuinely strong setup into false caution just to sound balanced, and don't manufacture confidence in a weak one just to sound decisive — the honesty of the read matters more than either extreme. If the setup is weak or the checklist barely supports it, say that plainly instead so the trader isn't tempted to hold with conviction it hasn't earned.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}${hasImage && !hasHigher && !hasLower ? ' chart_request must be present in the JSON — see the ADDITIONAL TIMEFRAME REQUEST note above for exactly when "needed" should be true; leave it false for the ordinary case where one chart is enough.' : ''}`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -3159,24 +3301,27 @@ function removeChartImage(){
   sigChartImage = null;
   document.getElementById('sig_chartPreview').innerHTML = '';
   document.getElementById('sig_chartInput').value = '';
-  removeChartImage2();
+  removeChartImage2('higher');
+  removeChartImage2('lower');
   const chart2Controls = document.getElementById('sig_chart2Controls');
   if(chart2Controls) chart2Controls.style.display = 'none';
   renderChartRequestBanner(null);
 }
-// Opens the file picker for the trader's optional second (higher/lower
-// timeframe) chart. Stashes which role they picked so onChartFileChange2
-// below knows how to label/use it once it loads.
+// Opens the file picker for the trader's optional higher/lower timeframe
+// chart(s). Both slots are independent — adding one never clears the
+// other, so a trader can attach BOTH a higher and a lower timeframe chart
+// at once and have all three images sent to the model together.
 function addSecondChart(role){
   sigPendingChart2Role = role === 'higher' ? 'higher' : 'lower';
   document.getElementById('sig_chartInput2').click();
 }
-// Mirrors onChartFileChange but for the optional second chart — same
-// re-encode pipeline, stored separately as sigChartImage2/sigChartImage2Role
-// so analyzeSignal() can send both images and buildSignalSystemPrompt can
-// tell the model which one is which. Also clears any pending "add a
-// chart" request banner from a prior scan, since the trader is now acting
-// on it.
+// Mirrors onChartFileChange but for the optional higher/lower-timeframe
+// charts — same re-encode pipeline, stored into whichever of
+// sigChartImageHigher / sigChartImageLower matches the role the trader
+// picked, so analyzeSignal() can send up to 3 images total (primary +
+// higher + lower) and buildSignalSystemPrompt can tell the model which
+// image is which. Also clears any pending "add a chart" request banner
+// from a prior scan, since the trader is now acting on it.
 function onChartFileChange2(e){
   const file = e.target.files && e.target.files[0];
   if(!file) return;
@@ -3201,16 +3346,12 @@ function onChartFileChange2(e){
       ctx.drawImage(img, 0, 0, width, height);
       const outDataUrl = canvas.toDataURL('image/jpeg', 0.95);
       const comma = outDataUrl.indexOf(',');
-      sigChartImage2 = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1) };
-      sigChartImage2Role = role;
-      const roleLabel = role === 'higher' ? 'Higher Timeframe' : 'Lower Timeframe';
-      document.getElementById('sig_chart2Preview').innerHTML = `
-        <div class="sig-chart-thumb" style="margin-top:10px;">
-          <div class="hint" style="margin-bottom:4px;font-weight:650;">${roleLabel} chart</div>
-          <div class="sig-scan-frame"><img src="${outDataUrl}" alt="${roleLabel} chart" style="max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;"></div>
-          <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage2()">Remove ${roleLabel} chart</button>
-        </div>`;
+      const chartObj = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1) };
+      if(role === 'higher') sigChartImageHigher = chartObj; else sigChartImageLower = chartObj;
+      e.target.value = ''; // clear so picking the same file again for the other slot still fires onchange
+      renderChart2Previews();
       renderChartRequestBanner(null);
+      const roleLabel = role === 'higher' ? 'Higher Timeframe' : 'Lower Timeframe';
       showToast(roleLabel + ' chart added — analyze again to include it in the read.');
     };
     img.onerror = function(){ showToast("Couldn't read that image — try a different file."); };
@@ -3218,13 +3359,35 @@ function onChartFileChange2(e){
   };
   reader.readAsDataURL(file);
 }
-function removeChartImage2(){
-  sigChartImage2 = null;
-  sigChartImage2Role = null;
-  const preview = document.getElementById('sig_chart2Preview');
-  if(preview) preview.innerHTML = '';
-  const input2 = document.getElementById('sig_chartInput2');
-  if(input2) input2.value = '';
+// Redraws both HTF/LTF preview cards from whichever of the two slots are
+// currently filled — called after every add/remove so both can be shown
+// at once, independently.
+function renderChart2Previews(){
+  const wrap = document.getElementById('sig_chart2Preview');
+  if(wrap){
+    let html = '';
+    if(sigChartImageHigher) html += sigChart2CardHTML('higher', sigChartImageHigher);
+    if(sigChartImageLower) html += sigChart2CardHTML('lower', sigChartImageLower);
+    wrap.innerHTML = html;
+  }
+  const higherBtn = document.getElementById('sig_addHigherBtn');
+  if(higherBtn) higherBtn.textContent = sigChartImageHigher ? '↻ Replace Higher Timeframe chart' : '+ Add Higher Timeframe chart';
+  const lowerBtn = document.getElementById('sig_addLowerBtn');
+  if(lowerBtn) lowerBtn.textContent = sigChartImageLower ? '↻ Replace Lower Timeframe chart' : '+ Add Lower Timeframe chart';
+}
+function sigChart2CardHTML(role, img){
+  const roleLabel = role === 'higher' ? 'Higher Timeframe' : 'Lower Timeframe';
+  const outDataUrl = `data:${img.mime};base64,${img.data}`;
+  return `
+        <div class="sig-chart-thumb" style="margin-top:10px;">
+          <div class="hint" style="margin-bottom:4px;font-weight:650;">${roleLabel} chart</div>
+          <div class="sig-scan-frame"><img src="${outDataUrl}" alt="${roleLabel} chart" style="max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;"></div>
+          <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage2('${role}')">Remove ${roleLabel} chart</button>
+        </div>`;
+}
+function removeChartImage2(role){
+  if(role === 'lower') sigChartImageLower = null; else sigChartImageHigher = null;
+  renderChart2Previews();
 }
 /* ============ CHART LIGHTBOX (enlarged, close-up view) ============
    Opens the current chart image full-size in a modal, exactly as-is
@@ -3323,7 +3486,7 @@ async function analyzeSignal(){
   // the moment an admin re-uploaded the identical image, since this cache hit
   // would still silently short-circuit a real rescan and hand back the old
   // result. Admin = always a genuine fresh model call, no exceptions.
-  if(!scife.usage.isAdmin && sigChartImage && sigChartImage.hash && !sigChartImage2 && memEntry && memEntry.hash === sigChartImage.hash){
+  if(!scife.usage.isAdmin && sigChartImage && sigChartImage.hash && !sigChartImageHigher && !sigChartImageLower && memEntry && memEntry.hash === sigChartImage.hash){
     hideSkeleton();
     renderSignalResult(memEntry.result, strategy, styleKey, pair, null);
     renderChartRequestBanner(memEntry.result.chart_request);
@@ -3360,7 +3523,8 @@ async function analyzeSignal(){
   }
   updateScanBanner();
   const btn = document.getElementById('sig_analyzeBtn');
-  btn.disabled = true; btn.textContent = 'Analyzing…'; btn.classList.add('btn-analyzing');
+  const btnDefaultHTML = '🎯 Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span>';
+  btn.disabled = true; btn.innerHTML = 'Analyzing…<span class="sig-cta-sub">Reading chart(s) and checklist</span>'; btn.classList.add('btn-analyzing');
   document.getElementById('sig_error').style.display = 'none';
   document.getElementById('sig_orderPlaced').style.display = 'none';
   renderChartRequestBanner(null);
@@ -3388,8 +3552,9 @@ async function analyzeSignal(){
     // could get cut off mid-JSON, which surfaced as a generic parse failure.
     const opts = { temperature:0.3, maxTokens:2600 };
     if(sigChartImage) opts.image = sigChartImage;
-    if(sigChartImage2) opts.image2 = sigChartImage2;
-    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias, desiredRR, sigSelectedSessions, !!sigChartImage2, sigChartImage2Role);
+    if(sigChartImageHigher) opts.image2 = sigChartImageHigher;
+    if(sigChartImageLower) opts.image3 = sigChartImageLower;
+    const systemPrompt = buildSignalSystemPrompt(strategy, styleKey, !!sigChartImage, sigTraderBias, desiredRR, sigSelectedSessions, !!sigChartImageHigher, !!sigChartImageLower);
     const userTurn = [{ role:'user', content:userMsg }];
 
     let raw, parsed, lastErr;
@@ -3453,7 +3618,7 @@ async function analyzeSignal(){
     logAction('signal_analysis', { strategy: strategy.name, pair: pair || null, style: styleKey, hadChart: !!sigChartImage, desc: desc || null, desiredRR, traderBias: sigTraderBias, error: e.message||'unknown' }, false);
     renderScanHistory();
   }finally{
-    btn.disabled = false; btn.textContent = 'Analyze setup'; btn.classList.remove('btn-analyzing');
+    btn.disabled = false; btn.innerHTML = btnDefaultHTML; btn.classList.remove('btn-analyzing');
     if(chartThumb) chartThumb.classList.remove('scanning');
   }
 }
@@ -4672,11 +4837,12 @@ async function sendMessage(text){
 /* Generic chat call — dispatches to whichever provider is currently
    selected in scife.provider. systemPrompt is a plain string;
    turns is a list of {role:'user'|'assistant', content:string}.
-   opts.image and opts.image2, when present ({mime, data (base64, no
-   data-url prefix)}), are attached to the LAST turn (must be role:'user')
-   in whatever shape that provider expects, in that order — used only by
-   the Signal page's chart upload (image2 is the trader's optional extra
-   higher/lower-timeframe chart). */
+   opts.image, opts.image2, opts.image3, when present ({mime, data
+   (base64, no data-url prefix)}), are attached to the LAST turn (must be
+   role:'user') in whatever shape that provider expects, in that order —
+   used only by the Signal page's chart upload (image2/image3 are the
+   trader's optional higher/lower-timeframe context charts, sent together
+   with the primary chart so both actually reach the model in one call). */
 async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
   const maxTokens = opts.maxTokens || 500; // a little headroom for the trailing trade-action JSON block
@@ -4684,7 +4850,7 @@ async function chatCompletion(systemPrompt, turns, opts){
   const cfg = PROVIDERS[scife.provider] || PROVIDERS.openai;
   const apiKey = activeApiKey();
   if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
-  const images = [opts.image, opts.image2].filter(Boolean);
+  const images = [opts.image, opts.image2, opts.image3].filter(Boolean);
   if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
   if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
   return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
