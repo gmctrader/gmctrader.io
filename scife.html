@@ -1269,6 +1269,16 @@ setTimeout(function(){
     <button type="button" class="btn-ghost" onclick="document.getElementById('sig_chartInput').click()">🔍 Upload chart image</button>
     <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. Use a clean chart with no drawn indicators, fib tools, or annotations — SciFe reads raw price action and works out its own swing points, Fibonacci zone, and full confluence logic itself, rather than trusting whatever's already drawn on the image.</div>
     <div id="sig_chartPreview"></div>
+    <input type="file" id="sig_chartInput2" accept="image/*" style="display:none;" onchange="onChartFileChange2(event)">
+    <div id="sig_chart2Controls" style="display:none;margin-top:10px;">
+      <div class="hint">Need another timeframe for context? Add one and SciFe will use it specifically for higher/lower-timeframe confirmation instead of guessing off one chart alone.</div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button type="button" class="btn-ghost" style="flex:1;" onclick="addSecondChart('higher')">+ Add Higher Timeframe chart</button>
+        <button type="button" class="btn-ghost" style="flex:1;" onclick="addSecondChart('lower')">+ Add Lower Timeframe chart</button>
+      </div>
+    </div>
+    <div id="sig_chart2Preview"></div>
+    <div id="sig_chartRequestBanner" style="display:none;"></div>
   </div>
 
   <div class="field">
@@ -2878,6 +2888,9 @@ function computeSessionExecutability(){
 }
 
 let sigChartImage = null; // { mime, data (base64, no data-url prefix) } — cleared on removeChartImage()
+let sigChartImage2 = null; // optional extra higher/lower-timeframe chart, same shape as sigChartImage — cleared on removeChartImage() or removeChartImage2()
+let sigChartImage2Role = null; // 'higher' | 'lower' — which side the trader added Image 2 for
+let sigPendingChart2Role = null; // set right before opening the file picker so onChartFileChange2 knows which role this upload is for
 let sigSelectedSessions = []; // array of SIGNAL_SESSIONS keys the trader has toggled on, persisted in scife.sigSessions
 function sigEsc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
@@ -2966,7 +2979,7 @@ function summarizeStrategyPerformance(strategyId){
   const pnl = trades.reduce((a,t)=>a+pnlOf(t),0);
   return `TRACK RECORD ON THIS STRATEGY: ${trades.length} logged trades, ${winRate}% win rate, net P/L ${pnl.toFixed(0)}. Weigh this in — don't score confidence higher than this trader's actual results on this exact strategy warrant.`;
 }
-function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR, selectedSessions){
+function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desiredRR, selectedSessions, hasImage2, image2Role){
   const set = SIGNAL_LOGIC_SETS[strategy.type];
   const logicList = set
     ? set.map(l=>`- ${l.id} (${l.label}): ${SIGNAL_LOGIC_DEFS[l.id] || 'Use standard trading definition for this concept.'}`).join('\n')
@@ -2988,6 +3001,13 @@ function buildSignalSystemPrompt(strategy, styleKey, hasImage, traderBias, desir
 CONSISTENCY IS CRITICAL: if this looks like the same chart image you may have seen before (same candles, same visible price axis, same structure), read it exactly the same way every time — the same swing highs/lows, the same order blocks, the same entry/stop/target levels. Never vary your reading of an unchanged chart between analyses; a trader re-uploading the same screenshot must get the same coordinates back, not a different interpretation. Anchor strictly to what's visibly printed on the chart (candle wicks/bodies and axis labels) rather than an impression of the image, since that visible data doesn't change between reads even if your phrasing does.
 
 You have no live chart or price feed of your own${hasImage ? ' — the trader has attached a chart screenshot. Read every legible price axis label and candle body/wick carefully before judging anything. Work out structure, confluence, and the Fibonacci zone yourself from the raw candles — if the chart has any drawn lines, boxes, or fib tools already on it, treat them as unverified and re-derive everything from price action rather than trusting them' : ''}. You can only reason over what's actually given below — be honest about that limit. If a concept is genuinely too thin to judge (not visible in the image, not described in the text), mark it "unclear" rather than guessing or forcing a verdict.
+${hasImage && hasImage2 ? `
+MULTI-TIMEFRAME READ: two chart images were provided, in this order — Image 1 is the PRIMARY/entry-timeframe chart; Image 2 is a ${image2Role === 'higher' ? 'HIGHER' : 'LOWER'} timeframe chart the trader added for extra context. ${image2Role === 'higher'
+  ? 'Use Image 2 specifically to judge htf_bias/market_condition (the true higher-timeframe trend and regime) — don\'t infer HTF structure from Image 1 alone when a real HTF chart is right there. Everything else (entry structure, order block, fib/OTE, levels, chart_positions/chart_markers coordinates) still comes from Image 1, since that\'s the chart the trader will actually see the overlay drawn on.'
+  : 'Use Image 2 specifically to sharpen entry precision, the confirmation/displacement candle read, and order flow control at the exact entry zone — a lower-timeframe view is what actually shows whether a reaction candle has printed yet. Everything else (HTF bias, overall structure, and all chart_positions/chart_markers coordinates) still comes from Image 1, since that\'s the chart the trader will actually see the overlay drawn on.'}
+` : ''}${hasImage && !hasImage2 ? `
+ADDITIONAL TIMEFRAME REQUEST: only one chart was provided. If — and only if — judging this setup properly is genuinely hampered without another timeframe (e.g. a Swing-style read with no visible higher-timeframe trend context at all, or a Scalp-style read where entry precision/confirmation genuinely can't be judged without a lower-timeframe view), set "chart_request.needed" to true, "chart_request.timeframe" to "higher" or "lower" (whichever would actually help), and give one concrete sentence in "chart_request.reason" naming exactly what you can't judge without it. This should be the exception, not the default — most single-chart reads have enough to work with, so don't request a chart just to pad out caution. If the single chart already gives you enough to judge the checklist honestly, set "needed" to false.
+` : ''}
 ${biasBlock}
 STRATEGY: "${strategy.name}" (${strategy.type ? strategy.type.toUpperCase() : 'custom'})
 Strategy notes: ${strategy.notes || 'none provided'}
@@ -3051,9 +3071,9 @@ Never add a chart_markers entry for an id that isn't in one of those six groups,
 CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''}${hasImage && !hasImage2 ? `,"chart_request":{"needed":false,"timeframe":null,"reason":""}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a fresh BOS with no order block behind it yet, or a clean order block reaction with nothing else confirmed), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. A fibonacci/OTE read is NEVER sufficient on its own to justify a bias or entry — it's a refinement layer on top of real structure/order-flow/liquidity confluence, not a substitute for it; if fib or OTE is the only thing present with nothing structural behind it, that's grounds for "no_trade" or a very low-confidence read, not a standalone setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.
-CONVICTION AND PATIENCE: when a setup is genuinely well-confirmed (strong HTF alignment, control on your side, inducement already resolved, a real magnet area behind TP3), say so plainly in risk_note or verdict and frame TP3 as the real target to hold for — the invalidation level in "invalidation" is what should get the trader out, not a shallow pullback or TP1/TP2 wobble along the way. Don't hedge a genuinely strong setup into false caution just to sound balanced, and don't manufacture confidence in a weak one just to sound decisive — the honesty of the read matters more than either extreme. If the setup is weak or the checklist barely supports it, say that plainly instead so the trader isn't tempted to hold with conviction it hasn't earned.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}`;
+CONVICTION AND PATIENCE: when a setup is genuinely well-confirmed (strong HTF alignment, control on your side, inducement already resolved, a real magnet area behind TP3), say so plainly in risk_note or verdict and frame TP3 as the real target to hold for — the invalidation level in "invalidation" is what should get the trader out, not a shallow pullback or TP1/TP2 wobble along the way. Don't hedge a genuinely strong setup into false caution just to sound balanced, and don't manufacture confidence in a weak one just to sound decisive — the honesty of the read matters more than either extreme. If the setup is weak or the checklist barely supports it, say that plainly instead so the trader isn't tempted to hold with conviction it hasn't earned.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}${hasImage && !hasImage2 ? ' chart_request must be present in the JSON — see the ADDITIONAL TIMEFRAME REQUEST note above for exactly when "needed" should be true; leave it false for the ordinary case where one chart is enough.' : ''}`;
 }
 function extractJson(text){
   if(!text) return null;
@@ -3127,6 +3147,8 @@ function onChartFileChange(e){
       if(!currentModelSupportsVision()){
         showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
       }
+      const chart2Controls = document.getElementById('sig_chart2Controls');
+      if(chart2Controls) chart2Controls.style.display = 'block';
     };
     img.onerror = function(){ showToast("Couldn't read that image — try a different file."); };
     img.src = reader.result;
@@ -3137,6 +3159,72 @@ function removeChartImage(){
   sigChartImage = null;
   document.getElementById('sig_chartPreview').innerHTML = '';
   document.getElementById('sig_chartInput').value = '';
+  removeChartImage2();
+  const chart2Controls = document.getElementById('sig_chart2Controls');
+  if(chart2Controls) chart2Controls.style.display = 'none';
+  renderChartRequestBanner(null);
+}
+// Opens the file picker for the trader's optional second (higher/lower
+// timeframe) chart. Stashes which role they picked so onChartFileChange2
+// below knows how to label/use it once it loads.
+function addSecondChart(role){
+  sigPendingChart2Role = role === 'higher' ? 'higher' : 'lower';
+  document.getElementById('sig_chartInput2').click();
+}
+// Mirrors onChartFileChange but for the optional second chart — same
+// re-encode pipeline, stored separately as sigChartImage2/sigChartImage2Role
+// so analyzeSignal() can send both images and buildSignalSystemPrompt can
+// tell the model which one is which. Also clears any pending "add a
+// chart" request banner from a prior scan, since the trader is now acting
+// on it.
+function onChartFileChange2(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('Please upload an image file'); e.target.value=''; return; }
+  if(file.size > 5*1024*1024){ showToast('Image too large — please use one under 5MB'); e.target.value=''; return; }
+  const role = sigPendingChart2Role || 'higher';
+  const reader = new FileReader();
+  reader.onload = function(){
+    const img = new Image();
+    img.onload = function(){
+      const MAX_DIM = 2200;
+      let { width, height } = img;
+      if(width > MAX_DIM || height > MAX_DIM){
+        const scale = MAX_DIM / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      const outDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      const comma = outDataUrl.indexOf(',');
+      sigChartImage2 = { mime: 'image/jpeg', data: outDataUrl.slice(comma + 1) };
+      sigChartImage2Role = role;
+      const roleLabel = role === 'higher' ? 'Higher Timeframe' : 'Lower Timeframe';
+      document.getElementById('sig_chart2Preview').innerHTML = `
+        <div class="sig-chart-thumb" style="margin-top:10px;">
+          <div class="hint" style="margin-bottom:4px;font-weight:650;">${roleLabel} chart</div>
+          <div class="sig-scan-frame"><img src="${outDataUrl}" alt="${roleLabel} chart" style="max-width:100%;border-radius:11px;border:1px solid var(--steel-hi);display:block;"></div>
+          <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage2()">Remove ${roleLabel} chart</button>
+        </div>`;
+      renderChartRequestBanner(null);
+      showToast(roleLabel + ' chart added — analyze again to include it in the read.');
+    };
+    img.onerror = function(){ showToast("Couldn't read that image — try a different file."); };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function removeChartImage2(){
+  sigChartImage2 = null;
+  sigChartImage2Role = null;
+  const preview = document.getElementById('sig_chart2Preview');
+  if(preview) preview.innerHTML = '';
+  const input2 = document.getElementById('sig_chartInput2');
+  if(input2) input2.value = '';
 }
 /* ============ CHART LIGHTBOX (enlarged, close-up view) ============
    Opens the current chart image full-size in a modal, exactly as-is
@@ -3235,7 +3323,7 @@ async function analyzeSignal(){
   // the moment an admin re-uploaded the identical image, since this cache hit
   // would still silently short-circuit a real rescan and hand back the old
   // result. Admin = always a genuine fresh model call, no exceptions.
-  if(!scife.usage.isAdmin && sigChartImage && sigChartImage.hash && memEntry && memEntry.hash === sigChartImage.hash){
+  if(!scife.usage.isAdmin && sigChartImage && sigChartImage.hash && !sigChartImage2 && memEntry && memEntry.hash === sigChartImage.hash){
     hideSkeleton();
     renderSignalResult(memEntry.result, strategy, styleKey, pair, null);
     renderChartRequestBanner(memEntry.result.chart_request);
@@ -4584,9 +4672,11 @@ async function sendMessage(text){
 /* Generic chat call — dispatches to whichever provider is currently
    selected in scife.provider. systemPrompt is a plain string;
    turns is a list of {role:'user'|'assistant', content:string}.
-   opts.image, when present ({mime, data (base64, no data-url prefix)}), is
-   attached to the LAST turn (must be role:'user') in whatever shape that
-   provider expects — used only by the Signal page's chart upload. */
+   opts.image and opts.image2, when present ({mime, data (base64, no
+   data-url prefix)}), are attached to the LAST turn (must be role:'user')
+   in whatever shape that provider expects, in that order — used only by
+   the Signal page's chart upload (image2 is the trader's optional extra
+   higher/lower-timeframe chart). */
 async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
   const maxTokens = opts.maxTokens || 500; // a little headroom for the trailing trade-action JSON block
@@ -4594,20 +4684,21 @@ async function chatCompletion(systemPrompt, turns, opts){
   const cfg = PROVIDERS[scife.provider] || PROVIDERS.openai;
   const apiKey = activeApiKey();
   if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
-  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, opts.image);
-  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, opts.image);
-  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, opts.image);
+  const images = [opts.image, opts.image2].filter(Boolean);
+  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
+  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
+  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
 }
 
 /* Covers OpenAI, Groq, OpenRouter, and Mistral — they all speak the same
    /chat/completions shape, just at a different base URL. */
-async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, image){
+async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images){
   const messages = [{ role:'system', content: systemPrompt }];
   turns.forEach((t,i)=>{
-    if(image && t.role==='user' && i===turns.length-1){
+    if(images && images.length && t.role==='user' && i===turns.length-1){
       messages.push({ role:'user', content:[
         { type:'text', text: t.content },
-        { type:'image_url', image_url:{ url:`data:${image.mime};base64,${image.data}` } }
+        ...images.map(img=>({ type:'image_url', image_url:{ url:`data:${img.mime};base64,${img.data}` } }))
       ]});
     } else {
       messages.push({ role:t.role, content:t.content });
@@ -4645,11 +4736,11 @@ async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens,
   return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "I didn't catch that — try again?";
 }
 
-async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, image){
+async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images){
   const messages = turns.map((t,i)=>{
-    if(image && t.role==='user' && i===turns.length-1){
+    if(images && images.length && t.role==='user' && i===turns.length-1){
       return { role:t.role, content:[
-        { type:'image', source:{ type:'base64', media_type:image.mime, data:image.data } },
+        ...images.map(img=>({ type:'image', source:{ type:'base64', media_type:img.mime, data:img.data } })),
         { type:'text', text:t.content }
       ]};
     }
@@ -4683,12 +4774,12 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
   return (block && block.text) || "I didn't catch that — try again?";
 }
 
-async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, image){
+async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images){
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${scife.model}:generateContent?key=${apiKey}`;
   const contents = turns.map((t,i)=>{
     const parts = [];
-    if(image && t.role==='user' && i===turns.length-1){
-      parts.push({ inline_data:{ mime_type:image.mime, data:image.data } });
+    if(images && images.length && t.role==='user' && i===turns.length-1){
+      images.forEach(img=>parts.push({ inline_data:{ mime_type:img.mime, data:img.data } }));
     }
     parts.push({ text:t.content });
     return { role: t.role === 'assistant' ? 'model' : 'user', parts };
