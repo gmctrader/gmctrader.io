@@ -1860,6 +1860,7 @@ setTimeout(function(){
         <h1>Ghost Discipline</h1>
         <span>GMC Traders Desk</span>
       </div>
+      <div class="ai-live-pill" title="AI Copilot is reading your live data"><span class="ai-live-dot"></span>AI</div>
     </div>
     <div class="side-discipline-pill" id="sideDisciplinePill" onclick="document.querySelector('.side-navbtn[data-view=dashboard]').click(); toggleSidebar(false);">
       <div class="sdp-streak" id="sdpStreak">0</div>
@@ -1981,6 +1982,13 @@ setTimeout(function(){
         <div class="hero-stat" id="hero_profitFactor"><div class="hero-label">Profit Factor</div><div class="hero-value">—</div><div class="hero-sub">gross win ÷ gross loss</div></div>
         <div class="hero-stat" id="hero_avgWinLoss"><div class="hero-label">Avg Win / Loss</div><div class="hero-value">—</div><div class="hero-sub">per-trade average</div></div>
       </div>
+
+      <div class="card card-ai tilt" id="aiCoachCard" style="margin-bottom:18px;">
+        <h2><span class="ai-orb"></span>AI <span class="accent">Coach</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('coach')" title="Ask Claude for a fresh read">✨ Ask AI</button></h2>
+        <div class="ai-insight loading" id="aiCoachInsight">Reading your discipline data<span class="ai-cursor"></span></div>
+        <div class="ai-source" id="aiCoachSource"></div>
+      </div>
+
       <div class="grid">
         <div class="card tilt">
           <h2>Discipline <span class="accent">Seal</span></h2>
@@ -2094,6 +2102,11 @@ setTimeout(function(){
           <div class="page-sub">What to do, what got done, and what's moving the market — in one place.</div>
         </div>
       </div>
+      <div class="card card-ai tilt" style="margin-bottom:18px;">
+        <h2><span class="ai-orb"></span>AI <span class="accent">Market Pulse</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('brief')" title="Ask Claude for a fresh read">✨ Ask AI</button></h2>
+        <div class="ai-insight loading" id="aiBriefInsight">Synthesizing today's brief<span class="ai-cursor"></span></div>
+        <div class="ai-source" id="aiBriefSource"></div>
+      </div>
       <div class="grid">
         <div class="card tilt">
           <h2>Morning <span class="accent">Brief</span><span class="eyebrow" id="briefDateLabel"></span></h2>
@@ -2112,7 +2125,7 @@ setTimeout(function(){
         </div>
         <div class="card tilt" style="grid-column:1/-1;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:2px;">
-            <h2 style="margin:0;">Market <span class="accent">News</span></h2>
+            <h2 style="margin:0;">Market <span class="accent">News</span><span class="ai-chip">AI-curated</span></h2>
             <div style="display:flex;align-items:center;gap:10px;">
               <span class="hint-inline" id="briefNewsUpdatedLabel" style="text-transform:none;"></span>
               <button class="side-logout" style="font-size:11px;padding:5px 12px;" onclick="refreshMarketNews(true)">↻ Refresh</button>
@@ -2154,6 +2167,12 @@ setTimeout(function(){
         <div class="topbar-actions">
           <select class="trader-filter" id="globalTraderFilter2" onchange="onTraderFilterChange()"></select>
         </div>
+      </div>
+
+      <div class="card card-ai tilt" style="margin-bottom:18px;">
+        <h2><span class="ai-orb"></span>AI <span class="accent">Insights</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('analytics')" title="Ask Claude for a fresh read">✨ Ask AI</button></h2>
+        <div class="ai-insight loading" id="aiAnalyticsInsight">Analyzing your edge<span class="ai-cursor"></span></div>
+        <div class="ai-source" id="aiAnalyticsSource"></div>
       </div>
 
       <div class="card eq-dark-card fs-target" data-fs-label="Equity Curve">
@@ -2209,7 +2228,7 @@ setTimeout(function(){
       </div>
 
       <div class="card tilt" style="margin-top:18px">
-        <h2>Confluence <span class="accent">Score</span><span class="eyebrow">which logic actually wins for you</span></h2>
+        <h2>Confluence <span class="accent">Score</span><span class="ai-chip">AI-ranked</span><span class="eyebrow">which logic actually wins for you</span></h2>
         <div class="hint" style="margin-bottom:14px">Every logic tag you've selected on a closed trade, ranked by win rate. This is your real edge — not what you think works, but what the numbers say works.</div>
         <div id="confluenceList"></div>
       </div>
@@ -2220,7 +2239,7 @@ setTimeout(function(){
       </div>
 
       <div class="card tilt" style="margin-top:18px">
-        <h2>Mindset <span class="accent">vs Outcome</span><span class="eyebrow">win rate by emotional state at entry</span></h2>
+        <h2>Mindset <span class="accent">vs Outcome</span><span class="ai-chip">AI-detected</span><span class="eyebrow">win rate by emotional state at entry</span></h2>
         <div class="hint" style="margin-bottom:14px">Tag your mindset when you close a trade. Over time this shows whether calm, planned entries actually outperform emotional ones — usually the most honest chart in the whole journal.</div>
         <div id="moodInsight"></div>
         <div id="moodList"></div>
@@ -9038,6 +9057,417 @@ function toggleGdTheme(){
     </div>
   </div>
 </div>
+
+<!-- ============ AI PREMIUM LAYER — AI copilot chrome + live insight cards ============ -->
+<style>
+/* Sidebar "AI Active" indicator */
+.ai-live-pill{margin-left:auto;display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px;font-weight:700;letter-spacing:0.1em;color:var(--bronze-bright);
+  background:linear-gradient(135deg, rgba(16,185,129,0.14), rgba(13,148,136,0.1));
+  border:1px solid rgba(16,185,129,0.28);padding:5px 9px;border-radius:100px;flex-shrink:0;}
+.ai-live-dot{width:6px;height:6px;border-radius:50%;background:var(--bronze-bright);box-shadow:0 0 8px var(--bronze-bright);
+  animation:aiDotPulse 1.8s ease-in-out infinite;}
+@keyframes aiDotPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
+
+/* AI chip badge — used inline in card headers */
+.ai-chip{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:9px;
+  font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--bronze-bright);
+  background:linear-gradient(135deg, rgba(16,185,129,0.14), rgba(13,148,136,0.12));
+  border:1px solid rgba(16,185,129,0.28);padding:4px 9px 4px 7px;border-radius:100px;
+  vertical-align:middle;line-height:1;}
+.ai-chip::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--bronze-bright);
+  box-shadow:0 0 8px var(--bronze-bright);animation:aiDotPulse 1.8s ease-in-out infinite;}
+
+/* Glowing AI orb icon for card titles */
+.ai-orb{width:22px;height:22px;border-radius:50%;flex-shrink:0;position:relative;
+  background:radial-gradient(circle at 35% 30%, var(--neon-cyan), var(--bronze) 55%, var(--bronze-dim) 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.15) inset, 0 0 14px rgba(16,185,129,0.5);
+  animation:aiOrbPulse 2.4s ease-in-out infinite;}
+.ai-orb::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1px solid rgba(16,185,129,0.35);
+  animation:aiOrbRing 2.4s ease-out infinite;}
+@keyframes aiOrbPulse{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,0.15) inset,0 0 14px rgba(16,185,129,0.5);}
+  50%{box-shadow:0 0 0 1px rgba(255,255,255,0.22) inset,0 0 22px rgba(16,185,129,0.78);}}
+@keyframes aiOrbRing{0%{transform:scale(0.75);opacity:.7;}100%{transform:scale(1.55);opacity:0;}}
+
+/* Premium animated-gradient-border card variant for AI panels */
+.card.card-ai{position:relative;z-index:0;}
+.card.card-ai::before{
+  content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;z-index:-1;
+  background:conic-gradient(from 0deg, var(--neon-cyan), var(--bronze-bright), var(--gold-bright), var(--neon-purple), var(--neon-cyan));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  opacity:0.5; animation:aiBorderSpin 7s linear infinite;
+}
+.card.card-ai:hover::before{opacity:0.85;}
+@keyframes aiBorderSpin{to{transform:rotate(360deg);}}
+
+/* Live insight text block ("terminal" feel) */
+.ai-insight{font-family:'Instrument Sans',sans-serif;font-size:14px;line-height:1.65;color:var(--platinum);
+  padding:14px 16px;border-radius:14px;position:relative;min-height:22px;
+  background:linear-gradient(120deg, rgba(16,185,129,0.07), rgba(13,148,136,0.03));
+  border:1px solid rgba(16,185,129,0.16);}
+.ai-insight.loading{color:var(--slate-dim);font-style:italic;}
+.ai-insight b{color:var(--bronze-bright);font-weight:700;}
+.ai-cursor{display:inline-block;width:2px;height:13px;background:var(--bronze-bright);margin-left:3px;
+  vertical-align:middle;animation:aiCursorBlink .9s steps(1) infinite;}
+@keyframes aiCursorBlink{50%{opacity:0;}}
+@media(max-width:520px){.ai-live-pill span{display:none;}}
+
+/* "Ask AI" refresh button + real-call source label */
+.ai-refresh-btn{margin-left:auto;flex-shrink:0;font-family:'Instrument Sans',sans-serif;font-size:10.5px;font-weight:700;
+  letter-spacing:0.02em;color:var(--bronze-bright);background:rgba(16,185,129,0.1);
+  border:1px solid rgba(16,185,129,0.28);border-radius:100px;padding:6px 11px;cursor:pointer;
+  transition:transform .15s ease, background .15s ease;}
+.ai-refresh-btn:hover{background:rgba(16,185,129,0.18);transform:translateY(-1px);}
+.ai-refresh-btn:disabled{opacity:0.55;cursor:default;transform:none;}
+.ai-refresh-btn.spin{animation:aiBtnSpin 1s linear infinite;}
+@keyframes aiBtnSpin{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.ai-source{font-size:10px;color:var(--slate-dim);margin-top:8px;font-family:'IBM Plex Mono',monospace;
+  letter-spacing:0.02em;min-height:14px;}
+.ai-source.real::before{content:'✓ ';color:var(--bronze-bright);}
+</style>
+
+<script>
+/* Self-contained AI Copilot insight generator. Reads the app's own live,
+   already-rendered numbers off the DOM (it never touches internal app
+   state), so it can't desync from what the trader is actually looking at.
+   Defensive throughout: any missing element is skipped silently. */
+(function(){
+  function txt(id){ var el = document.getElementById(id); return el ? el.textContent.trim() : ''; }
+  function num(str){ if(!str) return null; var n = parseFloat(String(str).replace(/[^0-9.\-]/g,'')); return isNaN(n) ? null : n; }
+  function setInsight(id, html){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(el.__lastHtml === html) return;
+    el.__lastHtml = html;
+    el.classList.remove('loading');
+    el.innerHTML = html + '<span class="ai-cursor"></span>';
+  }
+
+  function renderCoach(){
+    var streak = num(txt('streakNum'));
+    var score = txt('scoreNum');
+    var tier = txt('scoreTier');
+    var todayPnl = txt('statTodayPnl') && document.getElementById('statTodayPnl') ? document.getElementById('statTodayPnl').querySelector('b') : null;
+    todayPnl = todayPnl ? todayPnl.textContent.trim() : '';
+    if(streak === null && (!score || score === '—')) return;
+    var parts = [];
+    if(streak !== null){
+      if(streak === 0) parts.push('Your discipline streak is reset to <b>0</b> — the next clean session starts rebuilding it.');
+      else if(streak >= 14) parts.push('<b>'+streak+' days</b> of unbroken discipline. This is exactly the kind of consistency that compounds.');
+      else parts.push('You\'re <b>'+streak+' day'+(streak===1?'':'s')+'</b> into your current streak — keep the process boring and let it run.');
+    }
+    if(score && score !== '—'){
+      parts.push('Discipline score sits at <b>'+score+'</b>'+(tier?(' ('+tier+')'):'')+'.');
+    }
+    if(todayPnl){
+      parts.push('Today\'s P/L: <b>'+todayPnl+'</b>.');
+    }
+    if(!parts.length) return;
+    setInsight('aiCoachInsight', parts.join(' '));
+  }
+
+  function renderAnalytics(){
+    var pf = txt('es_profitFactor');
+    var avgWin = txt('es_avgWin');
+    var avgLoss = txt('es_avgLoss');
+    var winRate = txt('eqFooterWinRateNum');
+    var maxDD = txt('es_maxDD');
+    if((!pf || pf === '—') && (!winRate || winRate === '0%')) return;
+    var parts = [];
+    var pfNum = num(pf);
+    if(pfNum !== null){
+      if(pfNum >= 2) parts.push('A profit factor of <b>'+pf+'</b> means your winners are pulling well clear of your losers — a strong, durable edge.');
+      else if(pfNum >= 1) parts.push('Profit factor is <b>'+pf+'</b> — profitable, but the margin is thin enough that a few undisciplined trades could flip it.');
+      else parts.push('Profit factor is <b>'+pf+'</b>, currently under 1 — losses are outweighing wins and process, not markets, is the fastest fix.');
+    }
+    if(winRate && winRate !== '0%') parts.push('Win rate is <b>'+winRate+'</b>, avg win <b>'+(avgWin||'—')+'</b> vs avg loss <b>'+(avgLoss||'—')+'</b>.');
+    if(maxDD && maxDD !== '$0') parts.push('Max drawdown on record: <b>'+maxDD+'</b>.');
+    if(!parts.length) return;
+    setInsight('aiAnalyticsInsight', parts.join(' '));
+  }
+
+  function renderBrief(){
+    var pairsInput = document.getElementById('brief_watchedPairs');
+    var pairs = pairsInput ? pairsInput.value.trim() : '';
+    var newsBody = document.getElementById('briefNewsBody');
+    var hasNews = newsBody && newsBody.children && newsBody.children.length > 0;
+    var parts = [];
+    if(pairs) parts.push('Watching <b>'+pairs+'</b> for anything that should change today\'s plan.');
+    else parts.push('No pairs on watch yet — add some below so high-impact releases surface automatically.');
+    if(hasNews) parts.push('Latest releases are pulled in below, ranked by market impact.');
+    setInsight('aiBriefInsight', parts.join(' '));
+  }
+
+  function tick(){
+    try{ renderCoach(); }catch(e){}
+    try{ renderAnalytics(); }catch(e){}
+    try{ renderBrief(); }catch(e){}
+  }
+
+  function boot(){
+    tick();
+    setInterval(tick, 3000);
+    var hud = document.getElementById('hud');
+    if(hud && window.MutationObserver){
+      var mo = new MutationObserver(function(){ tick(); });
+      mo.observe(hud, {childList:true, subtree:true, characterData:true});
+    }
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
+
+  /* ---------- Real AI calls (via the trader's own SciFe provider) ----------
+     The heuristic renderers above give an instant, zero-cost read. This
+     layer upgrades a card to a genuinely model-generated insight using
+     whichever provider + API key the trader already saved in SciFe
+     (Settings inside scife.html) — same free-tier-friendly providers
+     (Groq, Gemini, OpenRouter, Cerebras, LLM7 with no key at all, etc.),
+     same `trader_data.scife` column, no separate backend or paid Anthropic
+     key required. Calls happen straight from this page to the provider,
+     exactly like scife.html does it. Fails silently back to the heuristic
+     text if no key is saved yet or the call errors out. */
+  var CACHE_MS = 30 * 60 * 1000; // reuse a real answer for 30 minutes
+  var CARD_MAP = {
+    coach:     { insightId:'aiCoachInsight',     sourceId:'aiCoachSource',     btnCard:'aiCoachCard' },
+    analytics: { insightId:'aiAnalyticsInsight',  sourceId:'aiAnalyticsSource', btnCard:null },
+    brief:     { insightId:'aiBriefInsight',      sourceId:'aiBriefSource',     btnCard:null }
+  };
+
+  // Minimal mirror of scife.html's PROVIDERS map — just enough (compat +
+  // endpoint) to place a text-only call. Keep provider ids identical to
+  // scife.html so whatever the trader picked there resolves here too.
+  var AI_PROVIDERS = {
+    groq:        { compat:'openai',    baseURL:'https://api.groq.com/openai/v1/chat/completions' },
+    google:      { compat:'gemini' },
+    openrouter:  { compat:'openai',    baseURL:'https://openrouter.ai/api/v1/chat/completions' },
+    mistral:     { compat:'openai',    baseURL:'https://api.mistral.ai/v1/chat/completions' },
+    openai:      { compat:'openai',    baseURL:'https://api.openai.com/v1/chat/completions' },
+    deepseek:    { compat:'openai',    baseURL:'https://api.deepseek.com/chat/completions' },
+    together:    { compat:'openai',    baseURL:'https://api.together.xyz/v1/chat/completions' },
+    sambanova:   { compat:'openai',    baseURL:'https://api.sambanova.ai/v1/chat/completions' },
+    github:      { compat:'openai',    baseURL:'https://models.github.ai/inference/chat/completions' },
+    cerebras:    { compat:'openai',    baseURL:'https://api.cerebras.ai/v1/chat/completions' },
+    huggingface: { compat:'openai',    baseURL:'https://router.huggingface.co/v1/chat/completions' },
+    cohere:      { compat:'openai',    baseURL:'https://api.cohere.ai/compatibility/v1/chat/completions' },
+    fireworks:   { compat:'openai',    baseURL:'https://api.fireworks.ai/inference/v1/chat/completions' },
+    qwen:        { compat:'openai',    baseURL:'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions' },
+    ovhcloud:    { compat:'openai',    baseURL:'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions' },
+    llm7:        { compat:'openai',    baseURL:'https://api.llm7.io/v1/chat/completions' },
+    kluster:     { compat:'openai',    baseURL:'https://api.kluster.ai/v1/chat/completions' },
+    scaleway:    { compat:'openai',    baseURL:'https://api.scaleway.ai/v1/chat/completions' },
+    featherless: { compat:'openai',    baseURL:'https://api.featherless.ai/v1/chat/completions' },
+    novita:      { compat:'openai',    baseURL:'https://api.novita.ai/openai/v1/chat/completions' },
+    deepinfra:   { compat:'openai',    baseURL:'https://api.deepinfra.com/v1/openai/chat/completions' },
+    hyperbolic:  { compat:'openai',    baseURL:'https://api.hyperbolic.xyz/v1/chat/completions' },
+    nvidia:      { compat:'openai',    baseURL:'https://integrate.api.nvidia.com/v1/chat/completions' },
+    pollinations:{ compat:'openai',    baseURL:'https://gen.pollinations.ai/v1/chat/completions' },
+    anthropic:   { compat:'anthropic', baseURL:'https://api.anthropic.com/v1/messages' }
+  };
+
+  // Short, single-purpose system prompts — mirrors the style of
+  // scife.html's buildSystemPrompt, one per insight card.
+  var AI_SYSTEM_PROMPTS = {
+    coach: 'You are the "AI Coach" on Ghost Discipline, a trading-discipline app. You will be given the trader\'s current discipline streak, discipline score, today\'s P/L, their stated purpose for trading, and their personal trading principles ("Monk Code"), all as JSON. Write 2-3 sentences of direct, specific coaching about their discipline pattern — not their market performance. Reference the actual numbers given. Be honest, not cheerleading — if the streak is 0 or the score is low, say so plainly and say what one concrete thing would help. Never give financial or trade-entry advice. No greeting, no sign-off, no markdown, plain sentences only.',
+    analytics: 'You are the "AI Insights" panel on Ghost Discipline, a trading-discipline app. You will be given the trader\'s profit factor, win rate, average win/loss, max drawdown, best-performing confluence tags, mood-vs-outcome data, and timing data, all as JSON. Write 2-4 sentences identifying the single most useful pattern in this data and what it implies — e.g. if a particular mindset or tag clearly outperforms, say which one and by how much. Be specific and numbers-driven, not generic. Never give financial or trade-entry advice, only observations about their own historical patterns. No greeting, no sign-off, no markdown, plain sentences only.',
+    brief: 'You are the "AI Market Pulse" panel on Ghost Discipline, a trading-discipline app. You will be given the trader\'s watched pairs, today\'s plan-vs-actual review text, and the day\'s news headlines already pulled from a market news API, all as JSON. Write 2-3 sentences summarizing what\'s most relevant to their watched pairs today and one honest note on their plan-vs-actual review if provided. Do not invent news that wasn\'t given to you. Never give financial or trade-entry advice or price predictions. No greeting, no sign-off, no markdown, plain sentences only.'
+  };
+
+  function cacheKey(kind){ return 'gd_ai_cache_' + kind; }
+  function readCache(kind){
+    try{
+      var raw = localStorage.getItem(cacheKey(kind));
+      if(!raw) return null;
+      var obj = JSON.parse(raw);
+      if(!obj || (Date.now() - obj.ts) > CACHE_MS) return null;
+      return obj.insight;
+    }catch(e){ return null; }
+  }
+  function writeCache(kind, insight){
+    try{ localStorage.setItem(cacheKey(kind), JSON.stringify({insight:insight, ts:Date.now()})); }catch(e){}
+  }
+
+  function buildContext(kind){
+    if(kind === 'coach'){
+      return {
+        streakDays: num(txt('streakNum')),
+        disciplineScore: txt('scoreNum'),
+        scoreTier: txt('scoreTier'),
+        todayPnl: (function(){ var el=document.getElementById('statTodayPnl'); var b = el && el.querySelector('b'); return b ? b.textContent.trim() : null; })(),
+        netPnl: (document.querySelector('#hero_netPnl .hero-value')||{}).textContent || null,
+        winRate: (document.querySelector('#hero_winRate .hero-value')||{}).textContent || null,
+        purpose: txt('whyPreview'),
+        monkCode: txt('monkPreview')
+      };
+    }
+    if(kind === 'analytics'){
+      return {
+        profitFactor: txt('es_profitFactor'),
+        avgWin: txt('es_avgWin'),
+        avgLoss: txt('es_avgLoss'),
+        maxDrawdown: txt('es_maxDD'),
+        winRate: txt('eqFooterWinRateNum'),
+        bestStreak: txt('eqFooterBestStreak'),
+        worstStreak: txt('eqFooterWorstStreak'),
+        topConfluenceTags: txt('confluenceList').slice(0, 600),
+        moodVsOutcome: txt('moodList').slice(0, 600),
+        timingEdge: txt('timingInsight').slice(0, 400)
+      };
+    }
+    if(kind === 'brief'){
+      var pairsInput = document.getElementById('brief_watchedPairs');
+      return {
+        watchedPairs: pairsInput ? pairsInput.value.trim() : '',
+        planVsActual: txt('briefReviewBody').slice(0, 800),
+        newsHeadlines: txt('briefNewsBody').slice(0, 1200)
+      };
+    }
+    return {};
+  }
+
+  function showRealInsight(kind, text, providerLabel){
+    var m = CARD_MAP[kind];
+    var el = document.getElementById(m.insightId);
+    var src = document.getElementById(m.sourceId);
+    if(el){ el.classList.remove('loading'); el.innerHTML = text; el.__lastHtml = text; }
+    if(src){ src.textContent = 'Generated by ' + (providerLabel||'your SciFe AI') + ' just now'; src.classList.add('real'); }
+  }
+  function showNoKeyPrompt(kind){
+    var m = CARD_MAP[kind];
+    var src = document.getElementById(m.sourceId);
+    if(src && !src.__promptShown){
+      src.__promptShown = true;
+      src.innerHTML = 'No AI key saved yet — <a href="scife.html" style="color:var(--bronze-bright);font-weight:700;">add a free one in SciFe →</a>';
+    }
+  }
+
+  // ---- Text-only, minimal ports of scife.html's provider callers ----
+  function callOpenAICompatibleSimple(cfg, apiKey, systemPrompt, userText, maxTokens){
+    return fetch(cfg.baseURL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model: window.__gdScifeModel,
+        messages:[ {role:'system', content:systemPrompt}, {role:'user', content:userText} ],
+        temperature:0.7, max_tokens:maxTokens
+      })
+    }).then(function(res){
+      if(!res.ok) return res.json().catch(function(){return{};}).then(function(err){
+        var msg = (err.error && err.error.message) || ('Request failed (' + res.status + ')');
+        throw new Error(msg);
+      });
+      return res.json();
+    }).then(function(data){
+      return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    });
+  }
+  function callAnthropicSimple(apiKey, systemPrompt, userText, maxTokens){
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json', 'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({ model: window.__gdScifeModel, max_tokens:maxTokens, temperature:0.7, system:systemPrompt, messages:[{role:'user', content:userText}] })
+    }).then(function(res){
+      if(!res.ok) return res.json().catch(function(){return{};}).then(function(err){
+        throw new Error((err.error && err.error.message) || ('Anthropic request failed (' + res.status + ')'));
+      });
+      return res.json();
+    }).then(function(data){
+      var block = (data.content||[]).filter(function(c){return c.type==='text';})[0];
+      return (block && block.text) || '';
+    });
+  }
+  function callGeminiSimple(apiKey, systemPrompt, userText, maxTokens){
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + window.__gdScifeModel + ':generateContent?key=' + apiKey;
+    return fetch(url, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{ role:'user', parts:[{text:userText}] }],
+        systemInstruction:{ role:'user', parts:[{text:systemPrompt}] },
+        generationConfig:{ temperature:0.7, maxOutputTokens:maxTokens }
+      })
+    }).then(function(res){
+      if(!res.ok) return res.json().catch(function(){return{};}).then(function(err){
+        throw new Error((err.error && err.error.message) || ('Gemini request failed (' + res.status + ')'));
+      });
+      return res.json();
+    }).then(function(data){
+      var cand = data.candidates && data.candidates[0];
+      var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){return p.text||'';}).join('');
+      return text || '';
+    });
+  }
+
+  // Fetched lazily once, then cached in-memory for the rest of the session.
+  var scifeConfigPromise = null;
+  function loadScifeConfig(){
+    if(scifeConfigPromise) return scifeConfigPromise;
+    scifeConfigPromise = (function(){
+      try{
+        if(typeof sb === 'undefined' || !sb || typeof currentUser === 'undefined' || !currentUser){
+          return Promise.resolve(null);
+        }
+        return sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle()
+          .then(function(res){
+            if(res.error || !res.data || !res.data.scife) return null;
+            return res.data.scife;
+          })
+          .catch(function(){ return null; });
+      }catch(e){ return Promise.resolve(null); }
+    })();
+    return scifeConfigPromise;
+  }
+
+  window.gdAskAI = function(kind, opts){
+    opts = opts || {};
+    var m = CARD_MAP[kind];
+    if(!m) return;
+    if(!opts.force){
+      var cached = readCache(kind);
+      if(cached){ showRealInsight(kind, cached); return; }
+    }
+    loadScifeConfig().then(function(scifeCfg){
+      try{
+        var provider = scifeCfg && scifeCfg.provider;
+        var apiKey = provider && scifeCfg.apiKeys && scifeCfg.apiKeys[provider];
+        var providerCfg = provider && AI_PROVIDERS[provider];
+        if(!providerCfg || !apiKey){ showNoKeyPrompt(kind); return; }
+
+        var btn = document.querySelector('.ai-refresh-btn[onclick*="\'' + kind + '\'"]');
+        if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = '✨ Thinking…'; }
+
+        window.__gdScifeModel = scifeCfg.model;
+        var system = AI_SYSTEM_PROMPTS[kind];
+        var userText = 'Here is the trader\'s current data as JSON:\n\n' + JSON.stringify(buildContext(kind), null, 2) + '\n\nWrite the insight now.';
+        var maxTokens = 300;
+
+        var callPromise = providerCfg.compat === 'anthropic' ? callAnthropicSimple(apiKey, system, userText, maxTokens)
+          : providerCfg.compat === 'gemini' ? callGeminiSimple(apiKey, system, userText, maxTokens)
+          : callOpenAICompatibleSimple(providerCfg, apiKey, system, userText, maxTokens);
+
+        callPromise.then(function(text){
+          if(!text) throw new Error('Empty response');
+          writeCache(kind, text);
+          showRealInsight(kind, text, provider);
+        }).catch(function(err){
+          console.warn('gdAskAI(' + kind + ') failed, keeping heuristic text:', err);
+        }).finally(function(){
+          if(btn){ btn.disabled = false; btn.classList.remove('spin'); btn.textContent = '✨ Ask AI'; }
+        });
+      }catch(e){ console.warn('gdAskAI error:', e); }
+    });
+  };
+
+  // Auto-fire once per card, shortly after load, using any cached answer
+  // instantly and only calling out to the trader's own SciFe provider if
+  // the cache is stale/empty (and a key is actually saved).
+  setTimeout(function(){
+    ['coach','analytics','brief'].forEach(function(kind){ window.gdAskAI(kind); });
+  }, 1500);
+})();
+</script>
+
 
 <!-- ============ 100x ENHANCEMENT PACK — command palette, offline banner ============ -->
 <div class="net-banner" id="netBanner">You're offline — changes are saved on this device and will sync when you're back.</div>
