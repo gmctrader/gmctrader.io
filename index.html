@@ -2735,6 +2735,10 @@ setTimeout(function(){
 
       <div class="card tilt" style="margin-top:18px">
         <h2>Strategy <span class="accent">Playbook</span><span class="eyebrow">tap a card to flip</span></h2>
+        <div class="field">
+          <label>Load from Strategy Notes <span class="hint-inline">optional — pulls in a checklist you built there</span></label>
+          <select id="pb_baseSn" onchange="onPbBaseSnChange()"><option value="">— Build fresh —</option></select>
+        </div>
         <div class="row3">
           <div class="field"><label>Strategy name</label><input type="text" id="pb_stratName" placeholder="e.g. London Breakout"></div>
           <div class="field">
@@ -2768,6 +2772,7 @@ setTimeout(function(){
         <button class="btn btn-primary" onclick="addStrategy()">Add Strategy to Playbook</button>
         <div class="flip-grid" id="strategyGrid"></div>
       </div>
+
     </div>
 
     <!-- STRATEGY NOTES -->
@@ -6133,6 +6138,7 @@ function renderPlaybook(){
   if(document.getElementById('pbLogicChoices') && document.getElementById('pbLogicChoices').innerHTML.trim()===''){
     renderPbLogicChoices();
   }
+  populatePbBaseSnSelect();
   const chips = document.getElementById('traderChips');
   chips.innerHTML = state.psychology.traders.map(t=>`
     <div class="trader-chip">
@@ -6196,13 +6202,44 @@ async function addStrategy(){
   document.getElementById('pb_stratRisk').value='';
   document.getElementById('pb_stratNotes').value='';
   document.getElementById('pb_stratType').value='gmc';
+  const baseSnSel = document.getElementById('pb_baseSn');
+  if(baseSnSel) baseSnSel.value='';
   renderPbLogicChoices();
   await saveState(); renderPlaybook(); populateTradeSelectors();
   showToast('Strategy added to the playbook');
 }
-function renderPbLogicChoices(){
+function renderPbLogicChoices(preselected){
   const type = document.getElementById('pb_stratType').value;
-  renderLogicChoices('pbLogicChoices', type, []);
+  renderLogicChoices('pbLogicChoices', type, preselected||[]);
+}
+// Lets a trader start a new Playbook entry from a checklist they already
+// built in Strategy Notes, so those strategies are one click away from the
+// Playbook's own "Strategy type" field instead of having to retype them.
+function populatePbBaseSnSelect(){
+  const sel = document.getElementById('pb_baseSn');
+  if(!sel) return;
+  const prev = sel.value;
+  const list = (state.psychology.strategyNotes && state.psychology.strategyNotes.customStrategies) || [];
+  sel.innerHTML = '<option value="">— Build fresh —</option>' + list.map(s=>
+    `<option value="${s.id}">${escapeHtml(s.name)}</option>`
+  ).join('');
+  if(list.some(s=>s.id===prev)) sel.value = prev;
+}
+function onPbBaseSnChange(){
+  const sel = document.getElementById('pb_baseSn');
+  if(!sel || !sel.value) return;
+  const strat = ((state.psychology.strategyNotes && state.psychology.strategyNotes.customStrategies) || []).find(s=>s.id===sel.value);
+  if(!strat) return;
+  document.getElementById('pb_stratName').value = strat.name;
+  document.getElementById('pb_stratNotes').value = strat.items.map(i=>i.text).join('\n');
+  const typeSel = document.getElementById('pb_stratType');
+  if(strat.sourceType && STRATEGY_TYPES[strat.sourceType]){
+    typeSel.value = strat.sourceType;
+    const presetIds = strat.items.filter(i=>i.source==='preset').map(i=>i.id);
+    renderPbLogicChoices(presetIds);
+  } else {
+    renderPbLogicChoices();
+  }
 }
 async function removeStrategy(id){
   state.psychology.strategies = state.psychology.strategies.filter(s=>s.id!==id);
