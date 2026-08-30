@@ -3350,7 +3350,7 @@ function resetMoodChoices(preselected){
 let calViewDate = new Date();
 let activeTraderFilter = 'all';
 const STRAT_TAG_COLORS = {
-  breakout:'#2dd4bf', reversal:'#f43f5e', trend:'#22c55e', scalp:'#8b90a0', news:'#34d399', range:'#565b6c'
+  breakout:'#2dd4bf', reversal:'#f43f5e', trend:'#22c55e', scalp:'#8b90a0', news:'#34d399', range:'#565b6c', notes:'#a78bfa'
 };
 const STREAK_MILESTONES = [3,7,14,30,60,100];
 /* ============ CURRENCY ============ */
@@ -7177,10 +7177,12 @@ async function saveSnStrategy(){
   const baseSel = document.getElementById('sn_baseStrategy');
   const baseVal = baseSel ? baseSel.value : 'custom';
   let sourceType = null;
+  let fromPbId = null;
   const presetItems = [];
   if(baseVal && baseVal !== 'custom'){
     if(baseVal.startsWith('pb:')){
-      const strat = (state.psychology.strategies||[]).find(s=>s.id===baseVal.slice(3));
+      fromPbId = baseVal.slice(3);
+      const strat = (state.psychology.strategies||[]).find(s=>s.id===fromPbId);
       if(strat) sourceType = strat.type;
     } else if(baseVal.startsWith('type:')){
       sourceType = baseVal.slice(5);
@@ -7193,20 +7195,47 @@ async function saveSnStrategy(){
   }
   const items = presetItems.concat(snPendingItems);
   if(items.length < 2){ showToast('Pick or add at least 2 checklist items first'); return; }
-  state.psychology.strategyNotes.customStrategies.push({ id:'sns_'+Date.now(), name, items, sourceType });
+  const snStrategy = { id:'sns_'+Date.now(), name, items, sourceType, linkedPbId: fromPbId };
+  // Strategy Notes strategies should also live in the Playbook so the full
+  // set of strategies is visible in one place — the Playbook, in turn, is
+  // what feeds scanner strategy pickers, trade-log dropdowns, etc. If this
+  // checklist was built from an existing Playbook strategy it's already
+  // there (just remember the link); otherwise mirror it into the Playbook
+  // now as a linked entry so removing one side cleans up the other.
+  if(!fromPbId){
+    const logics = sourceType ? items.filter(i=>i.source==='preset').map(i=>i.id) : [];
+    const notes = items.map(i=>i.text).join('\n');
+    const pbId = 'st_'+Date.now()+'_sn';
+    state.psychology.strategies.push({
+      id: pbId, name, tag:'notes', type: sourceType || null, risk: null, notes, logics,
+      fromStrategyNotes: true
+    });
+    snStrategy.linkedPbId = pbId;
+  }
+  state.psychology.strategyNotes.customStrategies.push(snStrategy);
   nameEl.value = '';
   snPendingItems = [];
   if(baseSel) baseSel.value = 'custom';
   onSnBaseStrategyChange();
   await saveState();
   renderStrategyNotes();
-  showToast('Strategy saved to Strategy Notes');
+  renderPlaybook(); populateTradeSelectors(); populateSnBaseStrategySelect();
+  showToast(fromPbId ? 'Strategy saved to Strategy Notes' : 'Strategy saved to Strategy Notes and added to the Playbook');
 }
 async function removeSnStrategy(id){
   if(!confirm('Remove this strategy and its checklist? Past check-ins stay in your log.')) return;
+  const strat = state.psychology.strategyNotes.customStrategies.find(s=>s.id===id);
   state.psychology.strategyNotes.customStrategies = state.psychology.strategyNotes.customStrategies.filter(s=>s.id!==id);
+  // Clean up the mirrored Playbook entry too, but only if it was created
+  // automatically from this Strategy Notes strategy — never delete a
+  // Playbook strategy the trader built directly in the Playbook.
+  if(strat && strat.linkedPbId){
+    const pb = state.psychology.strategies.find(s=>s.id===strat.linkedPbId);
+    if(pb && pb.fromStrategyNotes) state.psychology.strategies = state.psychology.strategies.filter(s=>s.id!==strat.linkedPbId);
+  }
   await saveState();
   renderStrategyNotes();
+  renderPlaybook(); populateTradeSelectors(); populateSnBaseStrategySelect();
 }
 function renderSnStrategyGrid(){
   const el = document.getElementById('snStrategyGrid');

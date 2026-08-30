@@ -8,7 +8,13 @@
 <meta name="apple-mobile-web-app-title" content="SciFe">
 <meta name="theme-color" content="#04070a">
 <title>SciFe — Ghost Discipline</title>
-<script>(function(){try{document.documentElement.setAttribute('data-theme', localStorage.getItem('gd_theme')==='dark' ? 'dark' : 'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+<script>(function(){
+  var GD_THEMES=['light','dark','red','blue','purple','gold','slate'];
+  try{
+    var t = localStorage.getItem('gd_theme');
+    document.documentElement.setAttribute('data-theme', GD_THEMES.indexOf(t)!==-1 ? t : 'light');
+  }catch(e){ document.documentElement.setAttribute('data-theme','light'); }
+})();</script>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="logo.png">
 <link rel="manifest" href="scife-manifest.json">
@@ -367,7 +373,7 @@ html[data-theme="light"]{
 .stage-3d-wrap{background:none !important;box-shadow:none !important;}
 .stage{background:none !important;background-color:transparent !important;border:none !important;
   box-shadow:none !important;border-radius:0 !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
-html[data-theme="light"] .stage,html[data-theme="dark"] .stage{background:none !important;}
+html[data-theme="light"] .stage,html[data-theme="dark"] .stage,html[data-theme="red"] .stage,html[data-theme="blue"] .stage,html[data-theme="purple"] .stage,html[data-theme="gold"] .stage,html[data-theme="slate"] .stage{background:none !important;}
 .neural-core-etch{border-color:var(--core-faint);}
 .neural-core-etch.e2{border-color:var(--core-faint);}
 .neural-core-etch.e3{border-color:var(--core-faint);}
@@ -980,6 +986,199 @@ html[data-theme="light"] .composer-row{background:rgba(255,255,255,0.7);}
 html[data-theme="light"] .grain-overlay{opacity:.02;}
 html[data-theme="light"] .center-orb{opacity:.32;}
 html[data-theme="light"] .gate-card::after{background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.045), transparent 60%);}
+
+/* ============ COLOUR THEMES (red / blue / purple / gold / slate) ============
+   Whatever background the trader picks in the main Ghost Discipline app
+   (the theme-toggle-fab swatches) is written to the shared 'gd_theme' key
+   and read here on boot — see applyGdTheme() below. These five blocks use
+   the exact same variable values as their counterparts in index.html so
+   the two apps always match, plus the handful of extra vars/backgrounds
+   SciFe itself relies on (--violet/--cyan/--bg, the ambient grid/particle
+   layer, the center-orb glows, and the neural-core pulse colors). ============ */
+html[data-theme="red"]{
+  --void:#040506; --void-2:#0a0c0f; --graphite:#100d10; --graphite-hi:#1a1315;
+  --steel:rgba(232,224,224,0.08); --steel-hi:rgba(232,224,224,0.15);
+  --panel:rgba(10,9,11,0.78); --panel-solid:#0d0b0d;
+  --bronze-bright:#d9636f; --bronze:#b8404f; --bronze-dim:#4a151c; --bronze-ink:#160608;
+  --gold:#c67f47; --gold-bright:#e0a165; --gold-dim:#5c3d1e; --gold-ink:#160c04;
+  --platinum:#f3eeee; --slate:#8f8386; --slate-dim:#635a5c;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#d9636f; --neon-purple:#9c7fc9; --neon-magenta:#e0a165;
+  --amber:#e0a165; --violet:#9c7fc9; --cyan:#d9636f; --bg:#040506;
+  --core-a: rgba(217,99,111,0.95); --core-b: rgba(217,99,111,0.55); --core-dim: rgba(217,99,111,0.4); --core-faint: rgba(217,99,111,0.12);
+}
+html[data-theme="red"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(217,99,111,0.10), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(224,161,101,0.06), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(184,64,79,0.08), transparent 60%),
+    #040506;
+}
+html[data-theme="red"] body::before{
+  background-image:
+    linear-gradient(rgba(217,99,111,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,99,111,0.14) 1px, transparent 1px);
+}
+html[data-theme="red"] body::after{
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(224,161,101,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(217,99,111,0.5), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3), transparent);
+}
+html[data-theme="red"] .center-orb.o1{background:radial-gradient(circle, rgba(217,99,111,0.35), transparent 70%);}
+html[data-theme="red"] .center-orb.o2{background:radial-gradient(circle, rgba(224,161,101,0.28), transparent 70%);}
+html[data-theme="red"] .center-orb.o3{background:radial-gradient(circle, rgba(184,64,79,0.22), transparent 70%);}
+
+html[data-theme="blue"]{
+  --void:#040506; --void-2:#090c10; --graphite:#0d1216; --graphite-hi:#161c22;
+  --steel:rgba(224,232,238,0.08); --steel-hi:rgba(224,232,238,0.15);
+  --panel:rgba(9,11,14,0.78); --panel-solid:#0b0f13;
+  --bronze-bright:#5f92c4; --bronze:#3d6f9e; --bronze-dim:#173049; --bronze-ink:#05090d;
+  --gold:#bd9256; --gold-bright:#e3b876; --gold-dim:#544526; --gold-ink:#100c04;
+  --platinum:#eef2f4; --slate:#84939f; --slate-dim:#586570;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#5f92c4; --neon-purple:#9c7fc9; --neon-magenta:#e3b876;
+  --amber:#e3b876; --violet:#9c7fc9; --cyan:#5f92c4; --bg:#040506;
+  --core-a: rgba(95,146,196,0.95); --core-b: rgba(95,146,196,0.55); --core-dim: rgba(95,146,196,0.4); --core-faint: rgba(95,146,196,0.12);
+}
+html[data-theme="blue"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(95,146,196,0.10), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(227,184,118,0.06), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(61,111,158,0.08), transparent 60%),
+    #040506;
+}
+html[data-theme="blue"] body::before{
+  background-image:
+    linear-gradient(rgba(95,146,196,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95,146,196,0.14) 1px, transparent 1px);
+}
+html[data-theme="blue"] body::after{
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(227,184,118,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(95,146,196,0.5), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3), transparent);
+}
+html[data-theme="blue"] .center-orb.o1{background:radial-gradient(circle, rgba(95,146,196,0.35), transparent 70%);}
+html[data-theme="blue"] .center-orb.o2{background:radial-gradient(circle, rgba(227,184,118,0.28), transparent 70%);}
+html[data-theme="blue"] .center-orb.o3{background:radial-gradient(circle, rgba(61,111,158,0.22), transparent 70%);}
+
+html[data-theme="purple"]{
+  --void:#050508; --void-2:#0a0a0f; --graphite:#100e17; --graphite-hi:#191622;
+  --steel:rgba(230,224,238,0.08); --steel-hi:rgba(230,224,238,0.15);
+  --panel:rgba(10,10,15,0.78); --panel-solid:#0d0c12;
+  --bronze-bright:#9c7fc9; --bronze:#7658a3; --bronze-dim:#2c1c4a; --bronze-ink:#0a0512;
+  --gold:#b98a52; --gold-bright:#e0ab72; --gold-dim:#513c1f; --gold-ink:#0f0a04;
+  --platinum:#f0eef4; --slate:#8b849a; --slate-dim:#5e5870;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#9c7fc9; --neon-purple:#9c7fc9; --neon-magenta:#c589d9;
+  --amber:#e0ab72; --violet:#9c7fc9; --cyan:#9c7fc9; --bg:#050508;
+  --core-a: rgba(156,127,201,0.95); --core-b: rgba(156,127,201,0.55); --core-dim: rgba(156,127,201,0.4); --core-faint: rgba(156,127,201,0.12);
+}
+html[data-theme="purple"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(156,127,201,0.10), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(224,171,114,0.06), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(118,88,163,0.08), transparent 60%),
+    #050508;
+}
+html[data-theme="purple"] body::before{
+  background-image:
+    linear-gradient(rgba(156,127,201,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(156,127,201,0.14) 1px, transparent 1px);
+}
+html[data-theme="purple"] body::after{
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(224,171,114,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(156,127,201,0.5), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3), transparent);
+}
+html[data-theme="purple"] .center-orb.o1{background:radial-gradient(circle, rgba(156,127,201,0.35), transparent 70%);}
+html[data-theme="purple"] .center-orb.o2{background:radial-gradient(circle, rgba(224,171,114,0.28), transparent 70%);}
+html[data-theme="purple"] .center-orb.o3{background:radial-gradient(circle, rgba(118,88,163,0.22), transparent 70%);}
+
+html[data-theme="gold"]{
+  --void:#050504; --void-2:#0b0a08; --graphite:#15120c; --graphite-hi:#201a10;
+  --steel:rgba(238,230,214,0.08); --steel-hi:rgba(238,230,214,0.15);
+  --panel:rgba(11,10,8,0.78); --panel-solid:#0e0c09;
+  --bronze-bright:#d4a24e; --bronze:#b17e2e; --bronze-dim:#4a3210; --bronze-ink:#140d02;
+  --gold:#d4a24e; --gold-bright:#f2c27c; --gold-dim:#5c4014; --gold-ink:#160e02;
+  --platinum:#f5f0e6; --slate:#9c9280; --slate-dim:#6e6555;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#d4a24e; --neon-purple:#9c7fc9; --neon-magenta:#f2c27c;
+  --amber:#f2c27c; --violet:#9c7fc9; --cyan:#d4a24e; --bg:#050504;
+  --core-a: rgba(212,162,78,0.95); --core-b: rgba(212,162,78,0.55); --core-dim: rgba(212,162,78,0.4); --core-faint: rgba(212,162,78,0.12);
+}
+html[data-theme="gold"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(212,162,78,0.11), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(242,194,124,0.06), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(177,126,46,0.08), transparent 60%),
+    #050504;
+}
+html[data-theme="gold"] body::before{
+  background-image:
+    linear-gradient(rgba(212,162,78,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,162,78,0.14) 1px, transparent 1px);
+}
+html[data-theme="gold"] body::after{
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(242,194,124,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(212,162,78,0.5), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3), transparent);
+}
+html[data-theme="gold"] .center-orb.o1{background:radial-gradient(circle, rgba(212,162,78,0.35), transparent 70%);}
+html[data-theme="gold"] .center-orb.o2{background:radial-gradient(circle, rgba(242,194,124,0.28), transparent 70%);}
+html[data-theme="gold"] .center-orb.o3{background:radial-gradient(circle, rgba(177,126,46,0.22), transparent 70%);}
+
+html[data-theme="slate"]{
+  --void:#050607; --void-2:#0a0d10; --graphite:#111519; --graphite-hi:#1a2024;
+  --steel:rgba(226,232,236,0.08); --steel-hi:rgba(226,232,236,0.15);
+  --panel:rgba(10,13,16,0.78); --panel-solid:#0d1013;
+  --bronze-bright:#9aa7b3; --bronze:#748394; --bronze-dim:#2c343d; --bronze-ink:#0a0d10;
+  --gold:#b39f68; --gold-bright:#d9c48a; --gold-dim:#4d452c; --gold-ink:#100e08;
+  --platinum:#eef1f3; --slate:#889198; --slate-dim:#5c646b;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#9aa7b3; --neon-purple:#9c7fc9; --neon-magenta:#d9c48a;
+  --amber:#d9c48a; --violet:#9c7fc9; --cyan:#9aa7b3; --bg:#050607;
+  --core-a: rgba(154,167,179,0.95); --core-b: rgba(154,167,179,0.55); --core-dim: rgba(154,167,179,0.4); --core-faint: rgba(154,167,179,0.12);
+}
+html[data-theme="slate"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(154,167,179,0.09), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(217,196,138,0.05), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(116,131,148,0.07), transparent 60%),
+    #050607;
+}
+html[data-theme="slate"] body::before{
+  background-image:
+    linear-gradient(rgba(154,167,179,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(154,167,179,0.14) 1px, transparent 1px);
+}
+html[data-theme="slate"] body::after{
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(217,196,138,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(154,167,179,0.5), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3), transparent);
+}
+html[data-theme="slate"] .center-orb.o1{background:radial-gradient(circle, rgba(154,167,179,0.35), transparent 70%);}
+html[data-theme="slate"] .center-orb.o2{background:radial-gradient(circle, rgba(217,196,138,0.28), transparent 70%);}
+html[data-theme="slate"] .center-orb.o3{background:radial-gradient(circle, rgba(116,131,148,0.22), transparent 70%);}
 
 /* ============ MOBILE ============ */
 button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
@@ -2453,12 +2652,20 @@ function renderAdminSection(){
 /* Appearance is no longer a SciFe-specific setting — it just mirrors the
    'gd_theme' key the main Ghost Discipline app writes, so both pages always
    match and there's only one toggle to find. Applied on boot (inline script
-   in <head>, before paint) and kept live if it's changed in another tab. */
+   in <head>, before paint) and kept live if it's changed in another tab.
+   All 7 backgrounds from Ghost Discipline (light/dark + the 5 colour
+   themes) are understood here — see the COLOUR THEMES CSS block above —
+   so whatever the trader picks in either app carries straight over. */
+const GD_THEMES = ['light','dark','red','blue','purple','gold','slate'];
+const GD_THEME_COLOR = {
+  light:'#ffffff', dark:'#03050a', red:'#0a0304', blue:'#03060d',
+  purple:'#08040d', gold:'#0a0704', slate:'#05070a'
+};
 function applyGdTheme(t){
-  const theme = t === 'dark' ? 'dark' : 'light';
+  const theme = GD_THEMES.includes(t) ? t : 'light';
   document.documentElement.setAttribute('data-theme', theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#04070a');
+  if(meta) meta.setAttribute('content', GD_THEME_COLOR[theme]);
 }
 window.addEventListener('storage', (e)=>{ if(e.key==='gd_theme') applyGdTheme(e.newValue); });
 applyGdTheme((function(){ try{ return localStorage.getItem('gd_theme'); }catch(e){ return 'light'; } })());
