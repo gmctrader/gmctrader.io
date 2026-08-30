@@ -3667,6 +3667,84 @@ const STRATEGY_TYPES = {
     {id:'cbpolicy', label:'Central Bank Policy'},
     {id:'geopolitical', label:'Geopolitical Event'},
     {id:'earnings', label:'Earnings Report'}
+  ]},
+  wyckoff: { label:'Wyckoff Method', short:'WYCK', color:'#c9a227', logics:[
+    {id:'wyckoff_accum', label:'Accumulation Phase'},
+    {id:'wyckoff_distrib', label:'Distribution Phase'},
+    {id:'wyckoff_spring', label:'Spring'},
+    {id:'wyckoff_upthrust', label:'Upthrust'},
+    {id:'wyckoff_sos', label:'Sign of Strength (SOS)'},
+    {id:'wyckoff_sow', label:'Sign of Weakness (SOW)'},
+    {id:'wyckoff_effort', label:'Effort vs Result'}
+  ]},
+  elliott: { label:'Elliott Wave', short:'EW', color:'#60a5fa', logics:[
+    {id:'ew_impulse', label:'Impulse Wave (1-5)'},
+    {id:'ew_corrective', label:'Corrective Wave (ABC)'},
+    {id:'ew_wave3', label:'Wave 3 Extension'},
+    {id:'ew_fibratio', label:'Fibonacci Wave Ratio'},
+    {id:'ew_invalidation', label:'Wave Invalidation Level'}
+  ]},
+  supdem: { label:'Supply & Demand Zones', short:'S&D', color:'#84cc16', logics:[
+    {id:'sd_freshsupply', label:'Fresh Supply Zone'},
+    {id:'sd_freshdemand', label:'Fresh Demand Zone'},
+    {id:'sd_dbr', label:'Drop-Base-Rally'},
+    {id:'sd_rbd', label:'Rally-Base-Drop'},
+    {id:'sd_mitigated', label:'Zone Mitigation'},
+    {id:'sd_imbalance', label:'Imbalance in Zone'}
+  ]},
+  volprofile: { label:'Volume Profile / Order Flow', short:'VP', color:'#f97316', logics:[
+    {id:'vp_poc', label:'Point of Control (POC)'},
+    {id:'vp_vah', label:'Value Area High'},
+    {id:'vp_val', label:'Value Area Low'},
+    {id:'vp_hvn', label:'High Volume Node'},
+    {id:'vp_lvn', label:'Low Volume Node'},
+    {id:'vp_delta', label:'Volume Delta / Absorption'}
+  ]},
+  harmonic: { label:'Harmonic Patterns', short:'HARM', color:'#e879f9', logics:[
+    {id:'harm_gartley', label:'Gartley Pattern'},
+    {id:'harm_bat', label:'Bat Pattern'},
+    {id:'harm_butterfly', label:'Butterfly Pattern'},
+    {id:'harm_crab', label:'Crab Pattern'},
+    {id:'harm_prz', label:'Potential Reversal Zone (PRZ)'},
+    {id:'harm_fibconf', label:'Fibonacci Confluence'}
+  ]},
+  meanrev: { label:'Mean Reversion / Range', short:'RANGE', color:'#38bdf8', logics:[
+    {id:'mr_rangehigh', label:'Range High'},
+    {id:'mr_rangelow', label:'Range Low'},
+    {id:'mr_midpoint', label:'Range Midpoint (Equilibrium)'},
+    {id:'mr_obos', label:'Overbought / Oversold'},
+    {id:'mr_bbtouch', label:'Bollinger Band Touch'},
+    {id:'mr_rsidiv', label:'RSI Divergence'}
+  ]},
+  momentum: { label:'Momentum Breakout', short:'MOM', color:'#ef4444', logics:[
+    {id:'mo_consolidation', label:'Consolidation Range'},
+    {id:'mo_breakout', label:'Breakout of Range'},
+    {id:'mo_volexpansion', label:'Volume Expansion'},
+    {id:'mo_retest', label:'Breakout Level Retest'},
+    {id:'mo_atrexpansion', label:'ATR Expansion'},
+    {id:'mo_continuation', label:'Trend Continuation'}
+  ]},
+  marketprofile: { label:'Market Profile (TPO)', short:'TPO', color:'#fbbf24', logics:[
+    {id:'mp_ibrange', label:'Initial Balance Range'},
+    {id:'mp_valuearea', label:'Value Area'},
+    {id:'mp_singleprint', label:'Single Print'},
+    {id:'mp_poorhighlow', label:'Poor High / Poor Low'},
+    {id:'mp_balance', label:'Balanced vs Imbalanced Day'}
+  ]},
+  gammaflow: { label:'Options Flow & Gamma Levels', short:'GAMMA', color:'#14b8a6', logics:[
+    {id:'gf_gammawall', label:'Gamma Wall'},
+    {id:'gf_zerogamma', label:'Zero Gamma Level (Flip Point)'},
+    {id:'gf_pcwall', label:'Put / Call Wall'},
+    {id:'gf_maxpain', label:'Max Pain Level'},
+    {id:'gf_dealerpos', label:'Dealer Positioning (Long/Short Gamma)'}
+  ]},
+  liquidityraid: { label:'Liquidity Raid Reversal', short:'LRR', color:'#eab308', logics:[
+    {id:'lr_sessionrange', label:'Session Range (Asia/Prior Session)'},
+    {id:'lr_raid', label:'Liquidity Raid (Sweep of Range)'},
+    {id:'lr_structureshift', label:'Structure Shift (BOS/CHoCH) After Raid'},
+    {id:'lr_fvgentry', label:'Entry on FVG Retrace'},
+    {id:'lr_killzone', label:'Killzone Timing'},
+    {id:'lr_htfconfluence', label:'Multi-Timeframe Bias Confluence'}
   ]}
 };
 function logicLabel(id){
@@ -8650,7 +8728,11 @@ async function submitTrade(){
 
   if(brokeRuleThisTrade){
     state.day.ruleBrokenToday = true; state.streak.count = 0;
-    showToast(newTrade.ruleViolationLabels.length ? `Rule broken: ${newTrade.ruleViolationLabels[0]} — streak reset to 0` : 'Rule broken — streak reset to 0');
+    const vLabels = newTrade.ruleViolationLabels;
+    const vText = vLabels.length > 1
+      ? `${vLabels.length} rules broken: ${vLabels.join(' · ')}`
+      : (vLabels.length ? `Rule broken: ${vLabels[0]}` : 'Rule broken');
+    showToast(`${vText} — streak reset to 0`);
   } else {
     showToast('Trade logged. Stay the course.');
     if(result==='win') fireConfetti();

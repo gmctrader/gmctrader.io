@@ -18,12 +18,13 @@
 <style>
 :root{
   --void:#03050a; --void-2:#0a1119; --graphite:#0e1720; --graphite-hi:#152029;
-  --steel:rgba(140,200,185,0.12); --steel-hi:rgba(140,200,185,0.22);
-  --panel:rgba(14,22,28,0.72); --panel-solid:#0b131a;
+  --steel:rgba(240,244,242,0.09); --steel-hi:rgba(240,244,242,0.16);
+  --panel:rgba(14,22,28,0.78); --panel-solid:#0b131a;
   --bronze-bright:#2dd4a8; --bronze:#12b988; --bronze-dim:#063b2c; --bronze-ink:#03110c;
-  --gold:#f2c877; --gold-bright:#ffdf9e; --gold-dim:#8a6b28;
+  --gold:#f2c877; --gold-bright:#ffdf9e; --gold-dim:#8a6b28; --gold-ink:#03110c;
   --platinum:#eef6f2; --slate:#8fa6a0; --slate-dim:#5e7772;
-  --win:#2be08a; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#2dd4c8; --neon-purple:#8b5cf6; --neon-magenta:#0d9488;
   --amber:#f0a94e; --violet:#b39bff; --cyan:#5fd0e8; --r-sm:10px; --r-md:16px; --r-lg:22px; --bg:#03050a;
 }
 *{box-sizing:border-box;}
@@ -933,46 +934,48 @@ html.motion-reduced .stream-caret{animation:none !important;opacity:.7;}
 
 /* ============ LIGHT THEME ============ */
 html[data-theme="light"]{
-  --steel:rgba(15,60,50,0.10); --steel-hi:rgba(15,60,50,0.18);
-  --panel:rgba(255,255,255,0.72); --panel-solid:#ffffff;
-  --bronze-bright:#0ea37c; --bronze:#0a8f68;
-  --gold:#b8862c; --gold-bright:#a8701f;
-  --platinum:#132922; --slate:#4c635d; --slate-dim:#7c8f89;
-  --win:#178f57; --amber:#c97f1e; --violet:#7c5cd6; --cyan:#1489a3; --bg:#f5f3ec;
+  --steel:rgba(15,23,22,0.09); --steel-hi:rgba(15,23,22,0.16);
+  --panel:rgba(255,255,255,0.86); --panel-solid:#ffffff;
+  --bronze-bright:#059669; --bronze:#10b981; --bronze-dim:#0b5c42; --bronze-ink:#ffffff;
+  --gold:#a16207; --gold-bright:#b8860b; --gold-dim:#8a6d1f; --gold-ink:#ffffff;
+  --platinum:#10201b; --slate:#5b6663; --slate-dim:#8a9491;
+  --win:#16a34a; --win-bright:#15803d; --loss:#be123c; --loss-bright:#e11d48;
+  --neon-green:#10b981; --neon-red:#f43f5e; --neon-cyan:#0d9488; --neon-purple:#6d28d9; --neon-magenta:#0f766e;
+  --amber:#c2760a; --violet:#7c5cd6; --cyan:#0d9488; --bg:#ffffff;
 }
 html[data-theme="light"] body{
   background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(18,185,136,0.08), transparent 60%),
-    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(242,169,78,0.09), transparent 55%),
-    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(18,185,136,0.06), transparent 60%),
-    #f5f3ec;
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(16,185,129,0.07), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(45,212,191,0.05), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(16,185,129,0.05), transparent 60%),
+    #ffffff;
 }
 html[data-theme="light"] body::before{
   background-image:
-    linear-gradient(rgba(15,60,50,0.10) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15,60,50,0.10) 1px, transparent 1px);
+    linear-gradient(rgba(15,23,22,0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,22,0.09) 1px, transparent 1px);
 }
 html[data-theme="light"] body::after{
   background:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(19,41,34,0.35), transparent),
-    radial-gradient(1.5px 1.5px at 78% 14%, rgba(19,41,34,0.25), transparent),
-    radial-gradient(1px 1px at 34% 68%, rgba(184,134,44,0.45), transparent),
-    radial-gradient(1.5px 1.5px at 60% 82%, rgba(18,185,136,0.4), transparent),
-    radial-gradient(1px 1px at 88% 60%, rgba(19,41,34,0.25), transparent),
-    radial-gradient(1px 1px at 20% 90%, rgba(19,41,34,0.2), transparent);
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(16,32,27,0.35), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(16,32,27,0.25), transparent),
+    radial-gradient(1px 1px at 34% 68%, rgba(161,98,7,0.45), transparent),
+    radial-gradient(1.5px 1.5px at 60% 82%, rgba(16,185,129,0.4), transparent),
+    radial-gradient(1px 1px at 88% 60%, rgba(16,32,27,0.25), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(16,32,27,0.2), transparent);
 }
 html[data-theme="light"] .field input,
 html[data-theme="light"] .field select,
 html[data-theme="light"] .sig-textarea,
-html[data-theme="light"] .sig-risk-field input{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] .sig-risk-field input{background:rgba(15,23,22,0.045);}
 html[data-theme="light"] .sig-disclaimer{color:var(--slate);}
 html[data-theme="light"] .field select option{background:#ffffff;color:var(--platinum);}
-html[data-theme="light"] .btn-ghost{background:rgba(15,60,50,0.045);}
-html[data-theme="light"] .btn-ghost:hover{background:rgba(15,60,50,0.08);}
-html[data-theme="light"] .topbar .back:hover{background:rgba(15,60,50,0.05);}
-html[data-theme="light"] .icon-btn{background:rgba(15,60,50,0.045);}
-html[data-theme="light"] .bubble.assistant{background:rgba(15,60,50,0.045);}
-html[data-theme="light"] .composer{background:linear-gradient(transparent, #f5f3ec 40%);}
+html[data-theme="light"] .btn-ghost{background:rgba(15,23,22,0.045);}
+html[data-theme="light"] .btn-ghost:hover{background:rgba(15,23,22,0.08);}
+html[data-theme="light"] .topbar .back:hover{background:rgba(15,23,22,0.05);}
+html[data-theme="light"] .icon-btn{background:rgba(15,23,22,0.045);}
+html[data-theme="light"] .bubble.assistant{background:rgba(15,23,22,0.045);}
+html[data-theme="light"] .composer{background:linear-gradient(transparent, #ffffff 40%);}
 html[data-theme="light"] .composer-row{background:rgba(255,255,255,0.7);}
 html[data-theme="light"] .grain-overlay{opacity:.02;}
 html[data-theme="light"] .center-orb{opacity:.32;}
@@ -1107,7 +1110,7 @@ button,.switch,.icon-btn,.quick-chip,.provider-card,.mic-btn,.send-btn{-webkit-t
   #signalPage .sig-hero::after{animation:none;}
 }
 html[data-theme="light"] #signalPage .sig-hero{background:linear-gradient(180deg, rgba(14,163,124,0.08), rgba(255,255,255,0.4) 60%), var(--panel-solid);}
-html[data-theme="light"] #signalPage .field input,html[data-theme="light"] #signalPage .field select,html[data-theme="light"] #signalPage .sig-textarea{background:rgba(15,60,50,0.045);}
+html[data-theme="light"] #signalPage .field input,html[data-theme="light"] #signalPage .field select,html[data-theme="light"] #signalPage .sig-textarea{background:rgba(15,23,22,0.045);}
 html[data-theme="light"] #signalPage .sig-upload-zone{background:rgba(14,163,124,0.05);}
 </style>
 </head>
@@ -2455,7 +2458,7 @@ function applyGdTheme(t){
   const theme = t === 'dark' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', theme === 'light' ? '#f5f3ec' : '#04070a');
+  if(meta) meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#04070a');
 }
 window.addEventListener('storage', (e)=>{ if(e.key==='gd_theme') applyGdTheme(e.newValue); });
 applyGdTheme((function(){ try{ return localStorage.getItem('gd_theme'); }catch(e){ return 'light'; } })());
@@ -2709,6 +2712,42 @@ async function saveTrades(){
   if(error){ showToast('Could not save trade: ' + (error.message||error.code)); return false; }
   return true;
 }
+// Same trades write as saveTrades(), plus the discipline fields (day, streak,
+// consecutive_losses) that a rule-checked chat log_trade also touches — kept
+// as one update() call against the same trader_data row index.html writes,
+// so a trade logged by talking to the AI moves the same streak/day counters
+// a manually-logged trade would.
+async function saveTradeAndDiscipline(){
+  if(!currentUser || !traderRow) return false;
+  const { error } = await sb.from('trader_data')
+    .update({
+      trades: traderRow.trades, day: traderRow.day, streak: traderRow.streak,
+      consecutive_losses: traderRow.consecutive_losses, updated_at: new Date().toISOString()
+    })
+    .eq('user_id', currentUser.id);
+  if(error){ showToast('Could not save trade: ' + (error.message||error.code)); return false; }
+  return true;
+}
+// Mirrors rolloverDayIfNeeded() in index.html: rolls yesterday's result into
+// the streak (extend it if no rule broke, zero it if one did) and opens a
+// fresh day bucket, so a trade logged the morning after a gap doesn't get
+// checked against yesterday's trade count / loss-used numbers.
+function sigRolloverDayIfNeeded(){
+  const t = todayStr();
+  traderRow.day = traderRow.day || { date:null, tradesCount:0, lossUsed:0, ruleBrokenToday:false };
+  traderRow.streak = traderRow.streak || { count:0, lastGoodDate:null };
+  if(traderRow.day.date !== t){
+    if(traderRow.day.date && traderRow.day.tradesCount>0){
+      if(!traderRow.day.ruleBrokenToday){
+        traderRow.streak.count = (traderRow.streak.count||0) + 1;
+        traderRow.streak.lastGoodDate = traderRow.day.date;
+      } else {
+        traderRow.streak.count = 0;
+      }
+    }
+    traderRow.day = { date:t, tradesCount:0, lossUsed:0, ruleBrokenToday:false };
+  }
+}
 // Applies a {type:'log_trade'|'edit_trade', ...} action parsed from the
 // model's reply. Returns a short confirmation string to surface to the
 // trader (or an error string, prefixed so it reads clearly either way).
@@ -2716,16 +2755,18 @@ async function applyTradeAction(action){
   if(!action || !action.type) return null;
   traderRow.trades = traderRow.trades || [];
   if(action.type === 'log_trade'){
+    sigRolloverDayIfNeeded();
     const pnl = parseFloat(action.pnl);
     const result = action.result==='win' || action.result==='loss' ? action.result : (isNaN(pnl) ? 'win' : (pnl < 0 ? 'loss' : 'win'));
     const amount = isNaN(pnl) ? 0 : Math.abs(pnl);
     const strategies = (traderRow.psychology && traderRow.psychology.strategies) || [];
     const matchedStrategy = action.strategy ? strategies.find(s=>s.name && s.name.toLowerCase().includes(String(action.strategy).toLowerCase())) : null;
+    const rr = action.rr!=null ? parseFloat(action.rr) : null;
     const trade = {
       id: Date.now(),
       date: (action.date && /^\d{4}-\d{2}-\d{2}$/.test(action.date)) ? action.date : todayStr(),
       time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
-      result, rr: action.rr!=null ? parseFloat(action.rr) : null,
+      result, rr,
       notes: action.notes || '',
       lossAmount: result==='loss' ? amount : 0,
       winAmount: result==='win' ? amount : 0,
@@ -2738,10 +2779,60 @@ async function applyTradeAction(action){
       account: action.account==='propfirm' ? 'propfirm' : 'personal',
       screenshotUrl: null, tvLink: null
     };
+
+    // ---- Rule-violation check — the same gate index.html's manual trade
+    // form runs, ported here so a trade logged by talking to the AI can't
+    // silently skip discipline tracking. Every rule that actually broke gets
+    // its own plain-language label; when nothing broke, nothing gets flagged
+    // regardless of whether the trade won or lost — a plain loss inside the
+    // rules is not a violation and shouldn't read like one. ----
+    const rules = traderRow.rules || {};
+    traderRow.day.tradesCount = (traderRow.day.tradesCount||0) + 1;
+    if(result==='loss'){
+      traderRow.day.lossUsed = +((traderRow.day.lossUsed||0) + amount).toFixed(2);
+      traderRow.consecutive_losses = (traderRow.consecutive_losses||0) + 1;
+    } else {
+      traderRow.consecutive_losses = 0;
+    }
+    const ccy = rules.currency || 'USD';
+    const violations = [];
+    if(rules.minRR!=null && rr!=null && !isNaN(rr) && rr < rules.minRR){
+      violations.push(`Below minimum R:R (${rr} < ${rules.minRR})`);
+    }
+    if(result==='loss' && rules.maxRiskPerTrade!=null && amount > rules.maxRiskPerTrade){
+      violations.push(`Risk exceeded max per trade (${amount.toFixed(0)} ${ccy} > ${rules.maxRiskPerTrade} ${ccy})`);
+    }
+    if(rules.maxTrades!=null && traderRow.day.tradesCount > rules.maxTrades){
+      violations.push(`Over daily trade limit (${traderRow.day.tradesCount}/${rules.maxTrades})`);
+    }
+    if(rules.maxDailyLoss!=null && traderRow.day.lossUsed > rules.maxDailyLoss){
+      violations.push(`Over daily loss limit (${traderRow.day.lossUsed} ${ccy}/${rules.maxDailyLoss} ${ccy})`);
+    }
+    if(rules.maxConsecLosses!=null && traderRow.consecutive_losses>0 && traderRow.consecutive_losses >= rules.maxConsecLosses){
+      violations.push(`Consecutive losses at limit (${traderRow.consecutive_losses}/${rules.maxConsecLosses})`);
+    }
+    const session = sigCurrentSession();
+    if(session.restrict && !sigIsInSession(session)){
+      violations.push(`Traded outside session window (${session.start}–${session.end})`);
+    }
+    trade.ruleViolations = violations;
+    const brokeRule = violations.length > 0;
+    if(brokeRule){ traderRow.day.ruleBrokenToday = true; traderRow.streak.count = 0; }
+
     traderRow.trades.push(trade);
-    const ok = await saveTrades();
-    logAction('log_trade', { id: trade.id, result: trade.result, amount, pair: trade.pair, date: trade.date }, ok);
-    return ok ? { ok:true, message:`Logged: ${trade.result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}` } : { ok:false, message:'Could not save that trade — try again in a moment.' };
+    const ok = await saveTradeAndDiscipline();
+    logAction('log_trade', { id: trade.id, result: trade.result, amount, pair: trade.pair, date: trade.date, violations }, ok);
+    if(!ok) return { ok:false, message:'Could not save that trade — try again in a moment.' };
+    const head = `Logged: ${result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}.`;
+    let message;
+    if(!brokeRule){
+      message = `${head} Stay the course.`;
+    } else if(violations.length === 1){
+      message = `${head} Rule broken: ${violations[0]} — streak reset to 0.`;
+    } else {
+      message = `${head} ${violations.length} rules broken: ${violations.join(' · ')} — streak reset to 0.`;
+    }
+    return { ok:true, message, brokeRule, violations };
   }
   if(action.type === 'edit_rule'){
     return await applyRuleAction(action);
@@ -2853,6 +2944,8 @@ For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
 Valid "rule" keys (use exactly one of these, spelled exactly like this — see current values in the JOURNAL SNAPSHOT above): maxDailyLoss, maxTrades, riskPerTrade, minRR, maxConsecLosses, accountBalance, coolingOffMinutes, maxRiskPerTrade, currency, accountType. "value" is a plain number for all of these except currency/accountType, which take a short string.
 Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit an id that actually appears in the JOURNAL SNAPSHOT above. Only include an action block when the trader is actually giving you a trade to log, a real change to make, or a real rule to change — never for hypothetical or past-tense-recap conversation. The action block is invisible to the trader (it is stripped out before display), so still say in plain words what you just logged/changed before it — but never print the literal action block text itself as part of your visible answer, and never describe the JSON to the trader instead of emitting a real action block.
 
+TONE WHEN LOGGING A TRADE — do not overreact: whether a rule was actually broken is checked in code against the trader's real rules after you reply, not guessed by you, so never announce "rule broken" or reset a streak yourself in your narration — that line gets appended automatically, with the exact rule(s), only when one truly tripped. Your own reply to a plain win or a plain loss that broke nothing should be the same even, matter-of-fact tone either way ("Logged." / "Got it, logged that one.") — a clean loss inside the trader's own rules is not a bad outcome and doesn't call for concern, a pep talk, or "are you okay?" energy. Save any coaching for when the trader actually asks for it or the data shows an actual pattern (see DURING A LOSING STREAK above).
+
 MEMORY FROM PAST SESSIONS:
 ${memNotes}`;
 }
@@ -2866,7 +2959,17 @@ const SIGNAL_LOGIC_SETS = {
   smc: [ {id:'smc_htf_bias',label:'HTF Structure & Bias'}, {id:'smc_market_condition',label:'Market Condition'}, {id:'smc_control',label:'Order Flow Control'}, {id:'smc_inducement',label:'Inducement'}, {id:'liquiditygrab',label:'Liquidity Grab'}, {id:'smc_orderblock',label:'Order Block'}, {id:'smc_displacement',label:'Displacement'}, {id:'smc_fvg',label:'Fair Value Gap (FVG)'}, {id:'smc_bos',label:'Break of Structure (BOS)'}, {id:'smc_choch',label:'Change of Character (CHoCH)'}, {id:'mitigation',label:'Mitigation Block'}, {id:'breaker',label:'Breaker Block'}, {id:'smc_confirmation_candle',label:'Confirmation Candle'}, {id:'smc_magnet',label:'Magnet Area (Draw on Liquidity)'} ],
   ict: [ {id:'ict_htf_bias',label:'HTF Structure & Bias'}, {id:'ict_market_condition',label:'Market Condition'}, {id:'ict_control',label:'Order Flow Control'}, {id:'ict_orderblock',label:'Order Block'}, {id:'ict_displacement',label:'Displacement'}, {id:'ict_fvg',label:'Fair Value Gap (FVG)'}, {id:'liquiditysweep',label:'Liquidity Sweep'}, {id:'ict_inducement',label:'Inducement'}, {id:'ote',label:'Optimal Trade Entry (OTE)'}, {id:'killzone',label:'Killzone Timing'}, {id:'breaker',label:'Breaker Block'}, {id:'mitigation',label:'Mitigation Block'}, {id:'ict_confirmation_candle',label:'Confirmation Candle'}, {id:'pdh',label:'Previous Day High (PDH)'}, {id:'pdl',label:'Previous Day Low (PDL)'}, {id:'pwh',label:'Previous Week High (PWH)'}, {id:'pwl',label:'Previous Week Low (PWL)'}, {id:'sessionhigh',label:'Session High'}, {id:'sessionlow',label:'Session Low'}, {id:'ict_magnet',label:'Magnet Area (Draw on Liquidity)'} ],
   ta: [ {id:'ta_trendbias',label:'Higher-Timeframe Trend Bias'}, {id:'ta_control',label:'Momentum / Who\u2019s in Control'}, {id:'supres',label:'Support / Resistance'}, {id:'trendline',label:'Trendline'}, {id:'ta_falsebreak',label:'False Break / Trap'}, {id:'chartpattern',label:'Chart Pattern'}, {id:'ta_confirmation_candle',label:'Confirmation Candle'}, {id:'indicator',label:'Indicator Signal'}, {id:'macross',label:'Moving Average Cross'}, {id:'volume',label:'Volume Confirmation'}, {id:'ta_target',label:'Magnet Level (Target Draw)'} ],
-  fundamentals: [ {id:'newsevent',label:'News Event'}, {id:'ratedecision',label:'Interest Rate Decision'}, {id:'econdata',label:'Economic Data Release'}, {id:'cbpolicy',label:'Central Bank Policy'}, {id:'geopolitical',label:'Geopolitical Event'}, {id:'earnings',label:'Earnings Report'} ]
+  fundamentals: [ {id:'newsevent',label:'News Event'}, {id:'ratedecision',label:'Interest Rate Decision'}, {id:'econdata',label:'Economic Data Release'}, {id:'cbpolicy',label:'Central Bank Policy'}, {id:'geopolitical',label:'Geopolitical Event'}, {id:'earnings',label:'Earnings Report'} ],
+  wyckoff: [ {id:'wyckoff_accum',label:'Accumulation Phase'}, {id:'wyckoff_distrib',label:'Distribution Phase'}, {id:'wyckoff_spring',label:'Spring'}, {id:'wyckoff_upthrust',label:'Upthrust'}, {id:'wyckoff_sos',label:'Sign of Strength (SOS)'}, {id:'wyckoff_sow',label:'Sign of Weakness (SOW)'}, {id:'wyckoff_effort',label:'Effort vs Result'} ],
+  elliott: [ {id:'ew_impulse',label:'Impulse Wave (1-5)'}, {id:'ew_corrective',label:'Corrective Wave (ABC)'}, {id:'ew_wave3',label:'Wave 3 Extension'}, {id:'ew_fibratio',label:'Fibonacci Wave Ratio'}, {id:'ew_invalidation',label:'Wave Invalidation Level'} ],
+  supdem: [ {id:'sd_freshsupply',label:'Fresh Supply Zone'}, {id:'sd_freshdemand',label:'Fresh Demand Zone'}, {id:'sd_dbr',label:'Drop-Base-Rally'}, {id:'sd_rbd',label:'Rally-Base-Drop'}, {id:'sd_mitigated',label:'Zone Mitigation'}, {id:'sd_imbalance',label:'Imbalance in Zone'} ],
+  volprofile: [ {id:'vp_poc',label:'Point of Control (POC)'}, {id:'vp_vah',label:'Value Area High'}, {id:'vp_val',label:'Value Area Low'}, {id:'vp_hvn',label:'High Volume Node'}, {id:'vp_lvn',label:'Low Volume Node'}, {id:'vp_delta',label:'Volume Delta / Absorption'} ],
+  harmonic: [ {id:'harm_gartley',label:'Gartley Pattern'}, {id:'harm_bat',label:'Bat Pattern'}, {id:'harm_butterfly',label:'Butterfly Pattern'}, {id:'harm_crab',label:'Crab Pattern'}, {id:'harm_prz',label:'Potential Reversal Zone (PRZ)'}, {id:'harm_fibconf',label:'Fibonacci Confluence'} ],
+  meanrev: [ {id:'mr_rangehigh',label:'Range High'}, {id:'mr_rangelow',label:'Range Low'}, {id:'mr_midpoint',label:'Range Midpoint (Equilibrium)'}, {id:'mr_obos',label:'Overbought / Oversold'}, {id:'mr_bbtouch',label:'Bollinger Band Touch'}, {id:'mr_rsidiv',label:'RSI Divergence'} ],
+  momentum: [ {id:'mo_consolidation',label:'Consolidation Range'}, {id:'mo_breakout',label:'Breakout of Range'}, {id:'mo_volexpansion',label:'Volume Expansion'}, {id:'mo_retest',label:'Breakout Level Retest'}, {id:'mo_atrexpansion',label:'ATR Expansion'}, {id:'mo_continuation',label:'Trend Continuation'} ],
+  marketprofile: [ {id:'mp_ibrange',label:'Initial Balance Range'}, {id:'mp_valuearea',label:'Value Area'}, {id:'mp_singleprint',label:'Single Print'}, {id:'mp_poorhighlow',label:'Poor High / Poor Low'}, {id:'mp_balance',label:'Balanced vs Imbalanced Day'} ],
+  gammaflow: [ {id:'gf_gammawall',label:'Gamma Wall'}, {id:'gf_zerogamma',label:'Zero Gamma Level (Flip Point)'}, {id:'gf_pcwall',label:'Put / Call Wall'}, {id:'gf_maxpain',label:'Max Pain Level'}, {id:'gf_dealerpos',label:'Dealer Positioning (Long/Short Gamma)'} ],
+  liquidityraid: [ {id:'lr_sessionrange',label:'Session Range (Asia/Prior Session)'}, {id:'lr_raid',label:'Liquidity Raid (Sweep of Range)'}, {id:'lr_structureshift',label:'Structure Shift (BOS/CHoCH) After Raid'}, {id:'lr_fvgentry',label:'Entry on FVG Retrace'}, {id:'lr_killzone',label:'Killzone Timing'}, {id:'lr_htfconfluence',label:'Multi-Timeframe Bias Confluence'} ]
 };
 const SIGNAL_TRADE_STYLES = {
   scalp:    { label:'Scalp',    good:0.8, warn:0.4, tpRange:'1–2', blurb:'Scalps lean on a high win rate and fast turnaround more than a big reward — 0.5–1R is normal if your hit rate backs it up.',
@@ -2964,7 +3067,75 @@ const SIGNAL_LOGIC_DEFS = {
   econdata: 'Economic Data Release — scheduled data (CPI, NFP, GDP, etc.) relevant to this instrument\'s currency/market.',
   cbpolicy: 'Central Bank Policy — broader policy stance/guidance (hawkish/dovish tone) currently relevant.',
   geopolitical: 'Geopolitical Event — any relevant geopolitical development affecting this instrument, if known.',
-  earnings: 'Earnings Report — a scheduled or recent earnings release, for equity/index instruments.'
+  earnings: 'Earnings Report — a scheduled or recent earnings release, for equity/index instruments.',
+  // --- Wyckoff Method ---
+  wyckoff_accum: 'Accumulation Phase — a sideways trading range that follows a decline, where informed/composite buying is absorbing supply before markup. Look for narrowing ranges, decreasing volume on down-moves within the range, and a series of tests toward the range low that hold or improve.',
+  wyckoff_distrib: 'Distribution Phase — a sideways range following an advance, where composite selling is absorbing demand before markdown. Look for tests toward the range high that fail to make meaningful progress, and rallies on shrinking volume.',
+  wyckoff_spring: 'Spring — a brief false breakdown below the accumulation range low that quickly reverses back inside the range, shaking out weak longs and triggering breakout shorts before the real markup — the Wyckoff equivalent of a liquidity sweep at the low.',
+  wyckoff_upthrust: 'Upthrust — the distribution-phase mirror of a Spring: a brief false breakout above the range high that fails and closes back inside, trapping breakout buyers before markdown.',
+  wyckoff_sos: 'Sign of Strength (SOS) — a decisive rally out of the accumulation range on visibly increased volume and wide-spread up bars, confirming the range has resolved to the upside and composite operators are now marking price up.',
+  wyckoff_sow: 'Sign of Weakness (SOW) — the bearish mirror of SOS: a decisive break out of a distribution range on increased volume and wide down bars, confirming markdown has begun.',
+  wyckoff_effort: 'Effort vs Result — compare the volume/effort behind a move to its actual price result: a large-volume bar that produces little price progress signals absorption by the opposing side (a warning the move may be near exhaustion), while a small-volume bar producing a large price move signals a lack of opposition (the move is likely to continue). Only judge this from a visible volume pane.',
+  // --- Elliott Wave ---
+  ew_impulse: 'Impulse Wave (1-5) — a five-wave motive sequence in the direction of the larger trend (waves 1,3,5 advancing, waves 2,4 correcting), only labeled if the swing structure genuinely resembles a clean five-wave count on the visible chart — don\'t force a count onto ambiguous or overlapping price action.',
+  ew_corrective: 'Corrective Wave (ABC) — a three-wave counter-trend structure (A down, B up, C down, or the mirror in an uptrend) that corrects the preceding impulse wave, typically retracing a Fibonacci portion of it.',
+  ew_wave3: 'Wave 3 Extension — Wave 3 of an impulse is conventionally the longest and most powerful wave, and by rule is never the shortest of waves 1, 3, and 5. If price is in a strong, high-momentum leg with displacement-like candles, consider whether this is a Wave 3 in progress.',
+  ew_fibratio: 'Fibonacci Wave Ratio — classic Elliott ratio relationships: Wave 2 commonly retraces 0.5–0.786 of Wave 1, Wave 4 commonly retraces 0.236–0.382 of Wave 3, and Wave 3 is often 1.618x Wave 1. Only cite a ratio if the anchor swing points for the waves being compared are actually identifiable.',
+  ew_invalidation: 'Wave Invalidation Level — the price level that, if breached, proves the current wave count wrong (e.g. Wave 2 cannot retrace beyond the start of Wave 1 in a valid impulse). This doubles as the logical stop-loss level for a wave-count-based entry.',
+  // --- Supply & Demand Zones ---
+  sd_freshsupply: 'Fresh Supply Zone — an area above current price where a sharp decline originated that has NOT yet been retested — the last up-close candle(s) before the drop, untouched since. "Fresh" (untested) zones are considered higher-probability than zones that have already been retested once or more.',
+  sd_freshdemand: 'Fresh Demand Zone — the bullish mirror: an untested area below current price where a sharp rally originated, marked by the last down-close candle(s) before the move up.',
+  sd_dbr: 'Drop-Base-Rally — a demand-zone formation pattern: price drops, bases (consolidates sideways in a tight range), then rallies away impulsively. The base itself is the demand zone; the impulsive rally away from it is what makes the zone worth marking.',
+  sd_rbd: 'Rally-Base-Drop — the supply-zone mirror of Drop-Base-Rally: price rallies, bases in a tight consolidation, then drops away impulsively — the base is the supply zone.',
+  sd_mitigated: 'Zone Mitigation — whether this supply/demand zone has already been returned to and traded through once before (mitigated, and therefore weaker) versus being untouched since it formed (fresh, and therefore stronger). State which, based on what\'s visible on the chart.',
+  sd_imbalance: 'Imbalance in Zone — whether the base/zone itself contains a visible fair-value-gap-style imbalance (an inefficient, one-sided move through the zone) — a zone left behind by an imbalanced move is generally considered to react more reliably than one formed by slow, balanced trading.',
+  // --- Volume Profile / Order Flow ---
+  vp_poc: 'Point of Control (POC) — the single price level with the highest traded volume over the visible session/range, only if a volume profile is actually plotted on the chart. Price is statistically drawn to revisit the POC and often reacts around it.',
+  vp_vah: 'Value Area High — the upper boundary of the price range containing roughly 70% of traded volume (the "value area"), read directly from a plotted volume profile.',
+  vp_val: 'Value Area Low — the lower boundary of the 70% value area, the demand-side mirror of Value Area High.',
+  vp_hvn: 'High Volume Node — a price level or narrow band on the profile with a pronounced volume spike, indicating an area of prior acceptance/consolidation. Price tends to slow down and rotate around HVNs.',
+  vp_lvn: 'Low Volume Node — a price level with unusually thin volume on the profile, indicating an area price previously moved through quickly (rejection, not acceptance). Price tends to move fast through LVNs rather than stalling there.',
+  vp_delta: 'Volume Delta / Absorption — the visible imbalance between buy-side and sell-side executed volume (if a delta/footprint indicator is plotted): sustained positive delta on a stalling price move (or vice versa) signals absorption — one side is being met by hidden opposing size rather than actually pushing price.',
+  // --- Harmonic Patterns ---
+  harm_gartley: 'Gartley Pattern — a 5-point (X-A-B-C-D) harmonic reversal pattern where B retraces 0.618 of XA, and D (the entry point, the PRZ) sits near a 0.786 retracement of XA. Only label this if the swing points genuinely fit the ratios within a reasonable tolerance.',
+  harm_bat: 'Bat Pattern — harmonic reversal similar to Gartley but with B retracing a shallower 0.382–0.5 of XA, and D completing at a deeper 0.886 retracement of XA.',
+  harm_butterfly: 'Butterfly Pattern — harmonic pattern where D extends BEYOND the X point (a 1.27–1.618 extension of XA), unlike Gartley/Bat where D stays inside the XA range — this is the key visual tell distinguishing it from the other two.',
+  harm_crab: 'Crab Pattern — the most extreme harmonic extension, with D completing at a 1.618 extension of XA (deeper than the Butterfly), making it a higher-reward but rarer, harder-to-confirm reversal zone.',
+  harm_prz: 'Potential Reversal Zone (PRZ) — the price area at point D where the harmonic pattern\'s ratios converge, and where a reversal is anticipated. Treat this as the entry trigger zone — it still needs its own confirmation candle, not just geometric completion.',
+  harm_fibconf: 'Fibonacci Confluence — whether the harmonic PRZ lines up with an independent fib retracement/extension level, a prior swing high/low, or another structural level at roughly the same price. Multiple independent methods agreeing on one zone is meaningfully stronger than the harmonic pattern alone.',
+  // --- Mean Reversion / Range ---
+  mr_rangehigh: 'Range High — the upper boundary of a clearly sideways, non-trending price range, defined by at least two prior reaction highs at a similar level.',
+  mr_rangelow: 'Range Low — the lower boundary of the same range, defined by at least two prior reaction lows at a similar level.',
+  mr_midpoint: 'Range Midpoint (Equilibrium) — the halfway point between range high and range low. Mean-reversion setups taken beyond this midpoint (i.e. already most of the way through the range) carry less room and weaker reward than ones taken near a range extreme.',
+  mr_obos: 'Overbought / Oversold — a visible momentum oscillator (RSI, Stochastic) reading in extreme territory (conventionally RSI > 70 or < 30), used here only as a mean-reversion filter within an established range — not as a standalone reversal signal in a trending market.',
+  mr_bbtouch: 'Bollinger Band Touch — price tagging or closing outside the upper or lower Bollinger Band, if the indicator is plotted. In a ranging market this favors a reversion back toward the middle band; in a trending market a band touch/"walk" instead favors continuation, so always read this alongside Market Condition.',
+  mr_rsidiv: 'RSI Divergence — price makes a new high/low that the RSI (or another visible oscillator) does NOT confirm with a matching new high/low — a classic early warning that the current move is losing momentum. Only mark present if both the price pivots and the oscillator are actually legible on the chart.',
+  // --- Momentum Breakout ---
+  mo_consolidation: 'Consolidation Range — a tight, low-volatility sideways range that precedes the breakout being evaluated. The tighter and longer the consolidation, the more significant a genuine breakout from it tends to be.',
+  mo_breakout: 'Breakout of Range — a decisive close beyond the consolidation range boundary, not just a wick poke through it — the same close-vs-wick distinction used for BOS elsewhere.',
+  mo_volexpansion: 'Volume Expansion — a visible surge in volume accompanying the breakout candle(s), confirming real participation behind the move rather than a low-volume, easily-reversed poke through the level.',
+  mo_retest: 'Breakout Level Retest — price returns to retest the broken range boundary from the outside before continuing, turning former resistance into support (or vice versa). A breakout entry taken on this retest is generally lower-risk than chasing the initial breakout candle.',
+  mo_atrexpansion: 'ATR Expansion — the Average True Range (or simply visible candle size) expanding relative to the recent consolidation, confirming volatility/momentum has genuinely picked up rather than the breakout being an isolated single-candle spike.',
+  mo_continuation: 'Trend Continuation — whether the breakout direction agrees with the higher-timeframe trend; a breakout trading with the HTF trend is higher-probability than a countertrend breakout attempt.',
+  // --- Market Profile (TPO) ---
+  mp_ibrange: 'Initial Balance Range — the high/low range established in the first hour (or first two TPO periods) of the session, used as a reference for whether the rest of the session extends beyond it (a trend day) or stays contained within it (a balanced/rotational day).',
+  mp_valuearea: 'Value Area — the TPO-derived price range containing the bulk of the session\'s time-at-price (conceptually the same idea as the volume-profile value area, built from time instead of volume). Read from an actual plotted TPO/Market Profile chart.',
+  mp_singleprint: 'Single Print — a price level printed by only a single TPO letter during the session, indicating a fast, low-acceptance move through that price — these levels often act as support/resistance on a retest, similar to a low volume node.',
+  mp_poorhighlow: 'Poor High / Poor Low — a session high or low formed by multiple TPOs stacking at nearly the same price rather than a single sharp rejection, suggesting the level was not fully accepted/rejected and may get revisited and taken out later.',
+  mp_balance: 'Balanced vs Imbalanced Day — classify the session\'s overall profile shape: a balanced day builds a normal, symmetric bell-shaped profile (favors range/mean-reversion tactics), while an imbalanced/trend day shows a skewed, elongated profile with price accepting new value away from the open (favors trend-following tactics).',
+  // --- Options Flow & Gamma Levels ---
+  gf_gammawall: 'Gamma Wall — a strike price with an unusually large concentration of dealer gamma exposure (from options open interest), which tends to act as a magnet/pin or a hard ceiling/floor for the underlying as expiry approaches, since dealers must hedge by trading against price moves toward it.',
+  gf_zerogamma: 'Zero Gamma Level (Flip Point) — the price level where aggregate dealer gamma exposure flips from positive to negative. Above this level dealer hedging tends to dampen volatility (positive gamma); below it, dealer hedging tends to amplify moves (negative gamma) — treat this as a volatility-regime line, not a trade signal on its own.',
+  gf_pcwall: 'Put / Call Wall — the strike with the largest put open interest (a common downside support/floor level) or call open interest (a common upside resistance/ceiling level), from options positioning data.',
+  gf_maxpain: 'Max Pain Level — the strike price at which the largest dollar value of options (both puts and calls) would expire worthless, theoretically the price options writers benefit most from at expiry. Treat as a mild magnet into expiration, not a reliable standalone trade trigger.',
+  gf_dealerpos: 'Dealer Positioning (Long/Short Gamma) — whether dealers are net long or short gamma overall (inferred from the zero-gamma level relative to current price): long-gamma regimes tend to compress volatility and favor mean-reversion, short-gamma regimes tend to amplify trends and favor momentum/breakout tactics.',
+  // --- Liquidity Raid Reversal (session-range sweep + displacement model) ---
+  lr_sessionrange: 'Session Range (Asia/Prior Session) — the high and low established during a defined, lower-volatility prior session (classically the Asian session, or simply the prior session/overnight range), only if session boundaries are inferable from the chart\'s visible time axis or explicitly stated. This range is the liquidity pool the rest of the model is built around.',
+  lr_raid: 'Liquidity Raid (Sweep of Range) — price pushes through the session range high or low (running the resting stops/liquidity sitting just beyond it) during the following, more active session (classically London or New York), then shows signs of rejecting rather than continuing — the same mechanism as a liquidity sweep/grab, applied specifically to the prior session\'s range extremes.',
+  lr_structureshift: 'Structure Shift (BOS/CHoCH) After Raid — following the raid, price must actually break market structure back in the opposite direction (a CHoCH against the raid direction, or a BOS confirming the new direction) — the raid alone is not enough; without a confirmed structure shift after it, this is just a sweep with no confirmed reversal yet.',
+  lr_fvgentry: 'Entry on FVG Retrace — after the structure shift, the entry is taken on a retracement into the fair value gap (imbalance) left behind by the displacement move that caused the shift — same 3-candle FVG definition as elsewhere, applied as the specific entry trigger for this model.',
+  lr_killzone: 'Killzone Timing — this raid-and-reversal pattern is designed around specific session open windows (London Open, New York Open); a setup forming well outside those windows is a materially weaker read even if the structure looks right. Only judge from an actual visible timestamp — mark "unclear" if no time is visible.',
+  lr_htfconfluence: 'Multi-Timeframe Bias Confluence — check that the higher-timeframe bias (weekly/daily/4H) actually agrees with the direction of the reversal this model is signaling; a raid-and-shift taken directly against a strong, unresolved higher-timeframe trend is a lower-probability countertrend attempt, not a confirmed reversal.'
 };
 const SIG_ORDER_TYPE_LABELS = { market:'Market', buy_limit:'Buy Limit', sell_limit:'Sell Limit', buy_stop:'Buy Stop', sell_stop:'Sell Stop' };
 let sigTraderBias = 'unsure';
@@ -4815,13 +4986,20 @@ async function sendMessage(text){
     const { text: cleanReply, action } = extractTradeAction(rawReply);
     let result = null;
     if(action) result = await applyTradeAction(action);
-    // Only surface the confirmation note when something went wrong — a
-    // successful action is already narrated in plain language by the model
-    // itself (see buildSystemPrompt's instructions), so bolting a second,
-    // bracket-formatted "[Updated X]" line onto every reply just reads as
-    // leaked internal state. Failures still need to be visible so the
-    // trader knows a change didn't actually save.
-    const displayReply = (result && !result.ok) ? `${cleanReply}\n\n${result.message}` : cleanReply;
+    // Only surface the confirmation note when something went wrong, or when a
+    // trade log actually tripped a rule — for a clean save the model has
+    // already narrated it in plain language (see buildSystemPrompt's
+    // instructions), so bolting a second, bracket-formatted "[Updated X]"
+    // line onto every reply just reads as leaked internal state. A rule
+    // violation is different: it's computed here from the trader's actual
+    // rules, not guessed by the model, so it's appended verbatim to guarantee
+    // the trader sees the real broken rule(s) rather than the model's guess.
+    let displayReply = cleanReply;
+    if(result && !result.ok){
+      displayReply = `${cleanReply}\n\n${result.message}`;
+    } else if(result && result.ok && result.brokeRule){
+      displayReply = `${cleanReply}\n\n⚠ ${result.message}`;
+    }
     removeTyping();
     addBubble('assistant', displayReply);
     history.push({ role:'assistant', content: cleanReply });
