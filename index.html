@@ -2756,13 +2756,7 @@ setTimeout(function(){
         </div>
         <div class="field">
           <label>Strategy type</label>
-          <select id="pb_stratType" onchange="renderPbLogicChoices()">
-            <option value="gmc">Ghost Money Concepts (GMC) — default</option>
-            <option value="smc">Smart Money Concepts (SMC)</option>
-            <option value="ict">ICT Concepts</option>
-            <option value="ta">Technical Analysis</option>
-            <option value="fundamentals">Fundamentals</option>
-          </select>
+          <select id="pb_stratType" onchange="renderPbLogicChoices()"></select>
         </div>
         <div class="field">
           <label>Logic concepts used <span class="hint-inline">tap to select, no typing</span></label>
@@ -6135,6 +6129,7 @@ function traderInitials(name){
   return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('') || '?';
 }
 function renderPlaybook(){
+  populatePbStratTypeSelect();
   if(document.getElementById('pbLogicChoices') && document.getElementById('pbLogicChoices').innerHTML.trim()===''){
     renderPbLogicChoices();
   }
@@ -6207,6 +6202,19 @@ async function addStrategy(){
   renderPbLogicChoices();
   await saveState(); renderPlaybook(); populateTradeSelectors();
   showToast('Strategy added to the playbook');
+}
+// Every strategy system defined in STRATEGY_TYPES is offered here — GMC
+// through Liquidity Raid Reversal — so the Playbook's own "Strategy type"
+// field never falls behind the full logic library Strategy Notes already
+// draws from. Add a new system to STRATEGY_TYPES and it shows up here too.
+function populatePbStratTypeSelect(){
+  const sel = document.getElementById('pb_stratType');
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = Object.entries(STRATEGY_TYPES).map(([key,t],i)=>
+    `<option value="${key}">${escapeHtml(t.label)}${i===0?' — default':''}</option>`
+  ).join('');
+  sel.value = [...sel.options].some(o=>o.value===prev) ? prev : Object.keys(STRATEGY_TYPES)[0];
 }
 function renderPbLogicChoices(preselected){
   const type = document.getElementById('pb_stratType').value;
