@@ -46,34 +46,6 @@ body{
   color:var(--platinum); font-family:'Instrument Sans',sans-serif; font-size:15px; line-height:1.55;
   min-height:100vh;min-height:100dvh; -webkit-font-smoothing:antialiased; position:relative;
 }
-/* ---- ambient "inside the machine" atmosphere: perspective floor grid + drifting aurora + fine scanlines ---- */
-body::before{
-  content:'';position:fixed;inset:-10% -10% 40% -10%;z-index:-3;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(45,212,168,0.14) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(45,212,168,0.14) 1px, transparent 1px);
-  background-size:44px 44px;
-  transform:perspective(600px) rotateX(62deg) scale(1.6);
-  transform-origin:50% 100%;
-  -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,0.9), transparent 78%);
-  mask-image:linear-gradient(to top, rgba(0,0,0,0.9), transparent 78%);
-  animation:gridDrift 9s linear infinite;
-}
-@keyframes gridDrift{from{background-position:0 0,0 0;}to{background-position:0 44px,44px 0;}}
-body::after{
-  content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
-  background:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
-    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1px 1px at 34% 68%, rgba(242,200,119,0.5), transparent),
-    radial-gradient(1.5px 1.5px at 60% 82%, rgba(45,212,168,0.5), transparent),
-    radial-gradient(1px 1px at 88% 60%, rgba(255,255,255,0.35), transparent),
-    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3), transparent);
-  background-size:100% 100%;
-  animation:starDrift 16s ease-in-out infinite alternate;
-  opacity:.8;
-}
-@keyframes starDrift{from{transform:translateY(0) scale(1);}to{transform:translateY(-14px) scale(1.02);}}
 .serif{font-family:'Fraunces',serif;}
 .mono{font-family:'IBM Plex Mono',monospace;}
 a{color:var(--bronze-bright);}
@@ -107,8 +79,7 @@ body{position:relative;}
 .gate-card::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:2;
   background:conic-gradient(from 0deg, rgba(45,212,168,0.75), rgba(242,200,119,0.55), transparent 30%, transparent 60%, rgba(45,212,168,0.75));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;animation:foilRotate 6s linear infinite;}
-@keyframes foilRotate{to{transform:rotate(360deg);}}
+  -webkit-mask-composite:xor;mask-composite:exclude;}
 /* cursor-follow spotlight — set via --mx/--my from JS on mousemove */
 .gate-card::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;
   background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,0.07), transparent 60%);
@@ -464,7 +435,7 @@ html.motion-reduced .stream-caret{animation:none !important;opacity:.7;}
 .modal::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:0;
   background:conic-gradient(from 90deg, rgba(45,212,168,0.55), rgba(242,200,119,0.4), transparent 35%, transparent 65%, rgba(45,212,168,0.55));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;animation:foilRotate 7s linear infinite;}
+  -webkit-mask-composite:xor;mask-composite:exclude;}
 .modal > *{position:relative;z-index:1;}
 .modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;padding-right:26px;
   background:linear-gradient(100deg, var(--platinum) 30%, var(--gold-bright) 65%);
@@ -1316,64 +1287,6 @@ html[data-theme="light"] #signalPage .sig-upload-zone{background:rgba(14,163,124
 <body>
 <a class="skip-link" href="#app">Skip to main content</a>
 <div class="grain-overlay" aria-hidden="true"></div>
-
-<!-- ============ AMBIENT 3D PARTICLE FIELD (three.js) ============
-     Deepest, always-on layer: a slow drifting cloud of bronze/gold motes
-     behind everything else (blobs, orb, chat). Reacts gently to pointer
-     and device tilt. Defensive: removes itself if WebGL/CDN unavailable
-     or the user prefers reduced motion, so the app is never dependent on it. -->
-<canvas id="tjParticles" aria-hidden="true"></canvas>
-<script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
-</script>
-<script type="module">
-(async function(){
-  try{
-    var reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || (window.gdMotionLevel && window.gdMotionLevel()==='reduced');
-    var canvas = document.getElementById('tjParticles');
-    if(reduceMotion || !canvas){ if(canvas) canvas.remove(); return; }
-    var THREE = await import('three');
-    var renderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true, powerPreference:'low-power'});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
-    var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 2000);
-    camera.position.z = 420;
-    function makeField(count, spread, color, size, opacity){
-      var geo = new THREE.BufferGeometry();
-      var pos = new Float32Array(count*3);
-      for(var i=0;i<count;i++){
-        pos[i*3]=(Math.random()-0.5)*spread; pos[i*3+1]=(Math.random()-0.5)*spread; pos[i*3+2]=(Math.random()-0.5)*spread*0.6;
-      }
-      geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-      var mat = new THREE.PointsMaterial({color:color, size:size, sizeAttenuation:true, transparent:true, opacity:opacity, depthWrite:false});
-      var pts = new THREE.Points(geo, mat); scene.add(pts); return pts;
-    }
-    var fieldNear = makeField(150, 820, 0x2dd4a8, 2.4, 0.3);
-    var fieldFar  = makeField(220, 1400, 0xf2c877, 1.5, 0.14);
-    function resize(){ var w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
-    resize(); window.addEventListener('resize', resize);
-    var mx=0,my=0,tx=0,ty=0;
-    window.addEventListener('pointermove', function(e){ mx=(e.clientX/innerWidth-0.5); my=(e.clientY/innerHeight-0.5); }, {passive:true});
-    window.addEventListener('deviceorientation', function(e){ if(e.gamma==null) return; mx=Math.max(-0.5,Math.min(0.5,e.gamma/45)); my=Math.max(-0.5,Math.min(0.5,e.beta/90)); }, {passive:true});
-    var running=true; document.addEventListener('visibilitychange', function(){ running=!document.hidden; });
-    var clock = new THREE.Clock();
-    function tick(){
-      requestAnimationFrame(tick); if(!running) return;
-      var t = clock.getElapsedTime();
-      tx += (mx-tx)*0.03; ty += (my-ty)*0.03;
-      fieldNear.rotation.y = t*0.015 + tx*0.4; fieldNear.rotation.x = t*0.008 + ty*0.25;
-      fieldFar.rotation.y = -t*0.008 - tx*0.2; fieldFar.rotation.x = -t*0.005 - ty*0.15;
-      camera.position.x = tx*40; camera.position.y = -ty*40; camera.lookAt(scene.position);
-      renderer.render(scene, camera);
-    }
-    tick();
-  }catch(err){ var c=document.getElementById('tjParticles'); if(c) c.remove(); }
-})();
-</script>
-<style>
-#tjParticles{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:-2;pointer-events:none;opacity:0.8;}
-@media(max-width:600px){#tjParticles{opacity:0.5;}}
-</style>
 
 <!-- ============ BOOT LOADER (avoids a blank flash while the session check resolves) ============ -->
 <div class="center-screen" id="bootLoader">
