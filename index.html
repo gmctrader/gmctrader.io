@@ -781,6 +781,20 @@ html[data-theme="dark"] #bootSplash{
 }
 .btn-demo:hover{border-color:var(--gold);background:rgba(212,175,55,0.08);}
 .auth-demo-hint{font-size:10.5px;color:var(--slate-dim);text-align:center;margin-top:9px;line-height:1.5;}
+/* ============ AUTH BRAND COPY (marketing panel beside the sign-in card) ============ */
+.auth-brand{max-width:380px;}
+.auth-kicker{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--slate-dim);margin:0 0 14px;font-weight:600;}
+.auth-brand .auth-emblem{text-align:left;margin-bottom:18px;}
+.auth-headline{font-family:'Fraunces',serif;font-size:30px;font-weight:650;line-height:1.18;letter-spacing:-0.02em;color:var(--platinum);margin:0 0 14px;}
+.auth-lede{font-size:13px;color:var(--slate);line-height:1.6;margin:0 0 26px;}
+.auth-pillars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px;}
+.auth-pillars li{display:flex;gap:14px;align-items:flex-start;}
+.auth-pillar-index{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--bronze-bright);opacity:0.7;padding-top:2px;flex-shrink:0;}
+.auth-pillars strong{display:block;font-size:13px;color:var(--platinum);margin-bottom:3px;font-weight:650;}
+.auth-pillars span{font-size:12px;color:var(--slate);line-height:1.55;}
+.auth-forgot{background:none;border:none;padding:0;font-size:12px;color:var(--slate);text-decoration:underline;cursor:pointer;font-family:'Instrument Sans',sans-serif;}
+.auth-forgot:hover{color:var(--platinum);}
+@media(max-width:840px){.auth-brand{max-width:none;text-align:center;}.auth-brand .auth-emblem{text-align:center;}.auth-pillars li{text-align:left;}}
 /* ============ DEMO LOCK / TEASE ============ */
 .side-navbtn .lock-badge{
   margin-left:auto;display:flex;align-items:center;gap:3px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;
@@ -1924,38 +1938,57 @@ setTimeout(function(){
   <div class="auth-scan"></div>
   <div class="auth-vignette"></div>
   <div class="auth-wrap">
-    <div class="auth-emblem">
-      <div class="medallion" id="authMedallion">
-        <div class="medallion-plate">
-          <div class="medallion-ring"></div>
-          <div class="medallion-ring2"></div>
-          <div class="medallion-shine"></div>
-          <img class="medallion-logo" src="logo.png" alt="GMC Traders" onerror="gdLogoFallback(this)">
+    <div class="auth-brand">
+      <p class="auth-kicker">GMC Traders · Private terminal</p>
+      <div class="auth-emblem">
+        <div class="medallion" id="authMedallion">
+          <div class="medallion-plate">
+            <div class="medallion-ring"></div>
+            <div class="medallion-ring2"></div>
+            <div class="medallion-shine"></div>
+            <img class="medallion-logo" src="logo.png" alt="GMC Traders" onerror="gdLogoFallback(this)">
+          </div>
+          <div class="medallion-caption">Discipline over emotion</div>
         </div>
-        <div class="medallion-caption">Discipline over emotion</div>
       </div>
+      <h1 class="auth-headline">Keep your word.<br>Then take the trade.</h1>
+      <p class="auth-lede">Ghost Discipline is an invitation-only journal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan.</p>
+      <ul class="auth-pillars">
+        <li>
+          <span class="auth-pillar-index">01</span>
+          <div><strong>Rules before setups</strong><span>Balance, daily loss, session window and cooling-off are written first. The terminal stays closed until they are.</span></div>
+        </li>
+        <li>
+          <span class="auth-pillar-index">02</span>
+          <div><strong>An honest ledger</strong><span>Orders, journal, calendar and equity live in one private account — not a spreadsheet you can quietly edit later.</span></div>
+        </li>
+        <li>
+          <span class="auth-pillar-index">03</span>
+          <div><strong>Discipline, scored</strong><span>A live 0–100 score from your own limits. One broken rule cracks the seal. That is the point.</span></div>
+        </li>
+      </ul>
     </div>
-    <div class="auth-card">
-      <h2 class="auth-title">Ghost Discipline</h2>
-      <div class="auth-sub">A private terminal for traders who keep their word.</div>
-      <div class="auth-msg" id="authMsg"></div>
+    <form class="auth-card" onsubmit="event.preventDefault();handleAuthSubmit();" autocomplete="on">
+      <h2 class="auth-title">Sign in</h2>
+      <div class="auth-sub">Members enter here. Access is by invitation — your journal stays private to your account.</div>
+      <div class="auth-msg" id="authMsg" role="alert"></div>
       <div class="auth-field">
-        <label>Email</label>
-        <input type="text" id="authEmail" placeholder="you@domain.com" autocomplete="email">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" name="email" placeholder="you@domain.com" autocomplete="email" inputmode="email" required>
       </div>
       <div class="auth-field">
-        <label>Password</label>
-        <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" name="password" placeholder="••••••••" autocomplete="current-password" required>
       </div>
       <div style="text-align:right;margin:-8px 0 16px 0;">
-        <a href="javascript:void(0)" onclick="handleForgotPassword()" style="font-size:12px;color:var(--slate);text-decoration:underline;">Forgot password?</a>
+        <button type="button" class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</button>
       </div>
-      <button class="btn-gold" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
-      <div class="auth-foot">Access is by invitation only. Your data is private to your account, secured by row-level access control.</div>
+      <button type="submit" class="btn-gold" id="authSubmitBtn">Enter the terminal</button>
+      <div class="auth-foot">Invitation only. Data is isolated per account with row-level access control.</div>
       <div class="auth-divider"><span>or</span></div>
-      <button class="btn-demo" id="startDemoBtn" onclick="openDemoEmailGate()">Enter the Proving Ground — 7-Day Skill Trial</button>
-      <div class="auth-demo-hint">One trial per trader. A few rooms stay locked until you're in for real.</div>
-    </div>
+      <button type="button" class="btn-demo" id="startDemoBtn" onclick="openDemoEmailGate()">Start the 7-day Proving Ground</button>
+      <div class="auth-demo-hint">One trial per trader. A few rooms stay locked until you have real access.</div>
+    </form>
   </div>
 </div>
 
