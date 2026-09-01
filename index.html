@@ -6741,6 +6741,94 @@ function isHighImpactHeadline(text){
   const hay = (text||'').toUpperCase();
   return HIGH_IMPACT_KEYWORDS.some(k=>hay.includes(k));
 }
+/* ============ USD BIAS ENGINE (mirrors scife.html's computeUsdBias) ============
+   Same rule-based logic, adapted to the Finnhub economic-calendar field
+   names (event/actual/estimate/prev/time instead of ForexFactory's
+   title/actual/forecast/previous/date). No AI call — deterministic, so it
+   still works even for traders with no AI key saved, and it feeds the
+   AI Market Pulse card's own context so that card can talk about it too. */
+const USD_EVENT_CATEGORIES = [
+  { re:/FOMC|FEDERAL FUNDS|RATE DECISION|INTEREST RATE DECISION/i, weight:3,   inverse:false, label:'Fed rate decision' },
+  { re:/CORE CPI|CPI\b|CONSUMER PRICE INDEX/i,                     weight:3,   inverse:false, label:'CPI' },
+  { re:/CORE PCE|PCE PRICE INDEX|PERSONAL CONSUMPTION/i,           weight:2.5, inverse:false, label:'PCE' },
+  { re:/NON-?FARM|NFP|NONFARM PAYROLL/i,                           weight:2.5, inverse:false, label:'NFP' },
+  { re:/AVERAGE HOURLY EARNINGS|WAGE GROWTH/i,                     weight:1.5, inverse:false, label:'Wage growth' },
+  { re:/UNEMPLOYMENT RATE/i,                                       weight:1.5, inverse:true,  label:'Unemployment rate' },
+  { re:/PPI|PRODUCER PRICE/i,                                      weight:1.5, inverse:false, label:'PPI' },
+  { re:/GDP/i,                                                     weight:2,   inverse:false, label:'GDP' },
+  { re:/RETAIL SALES/i,                                            weight:1.5, inverse:false, label:'Retail sales' },
+  { re:/\bISM\b|\bPMI\b/i,                                         weight:1,   inverse:false, label:'PMI' },
+  { re:/JOBLESS CLAIMS|INITIAL CLAIMS|CONTINUING CLAIMS/i,         weight:1,   inverse:true,  label:'Jobless claims' }
+];
+function classifyUsdEvent(name){
+  for(const c of USD_EVENT_CATEGORIES) if(c.re.test(name||'')) return c;
+  return null;
+}
+function parseEconNumber(v){
+  if(v==null || v==='') return null;
+  const m = String(v).replace(/,/g,'').match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+// events here use Finnhub's shape: {event, country, time, impact, actual, estimate, prev}
+function computeUsdBias(events){
+  events = Array.isArray(events) ? events : [];
+  const now = Date.now();
+  const contributions = [];
+  const upcoming = [];
+  events.forEach(e=>{
+    if((e.country||'').toUpperCase() !== 'USD') return;
+    const ts = e.time ? new Date(e.time).getTime() : NaN;
+    if(isNaN(ts)) return;
+    const hasActual = e.actual!=null && e.actual!=='';
+    if(!hasActual){
+      if(ts > now && (String(e.impact||'').toLowerCase()==='high' || String(e.impact||'').toLowerCase()==='medium')){
+        upcoming.push({ name:e.event, ts });
+      }
+      return;
+    }
+    const cls = classifyUsdEvent(e.event);
+    if(!cls) return;
+    const actualNum = parseEconNumber(e.actual);
+    const forecastNum = parseEconNumber(e.estimate);
+    if(actualNum==null || forecastNum==null || actualNum===forecastNum) return;
+    let direction = actualNum > forecastNum ? 1 : -1;
+    if(cls.inverse) direction *= -1;
+    const ageDays = (now - ts) / 86400000;
+    if(ageDays < 0) return;
+    const recency = ageDays > 10 ? 0.3 : ageDays > 5 ? 0.6 : 1;
+    const impact = String(e.impact||'').toLowerCase();
+    const impactMult = impact==='high' ? 1 : impact==='medium' ? 0.6 : 0.3;
+    const contribution = direction * cls.weight * recency * impactMult;
+    contributions.push({ name:e.event, label:cls.label, actual:e.actual, forecast:e.estimate, direction, contribution });
+  });
+  const score = contributions.reduce((s,c)=>s+c.contribution, 0);
+  const bias = score >= 1.2 ? 'Bullish' : score <= -1.2 ? 'Bearish' : 'Neutral';
+  contributions.sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution));
+  return { bias, score, contributions, upcoming };
+}
+function usdBiasCardHtml(biasResult){
+  const b = biasResult || { bias:'Neutral', contributions:[], upcoming:[] };
+  const color = b.bias==='Bullish' ? 'var(--profit-bright, #4ade80)' : b.bias==='Bearish' ? 'var(--loss-bright)' : 'var(--amber)';
+  const arrow = b.bias==='Bullish' ? '▲' : b.bias==='Bearish' ? '▼' : '◆';
+  if(!b.contributions.length){
+    return `<div class="trade-row" style="align-items:flex-start;border-left:3px solid ${color};padding-left:10px;margin-bottom:10px;">
+      <div class="trade-meta" style="width:100%;">
+        <div class="top" style="color:${color};font-weight:700;">${arrow} USD/DXY auto-bias — Neutral</div>
+        <div class="bottom hint" style="margin:2px 0 0;">No recent USD releases with a scoreable forecast surprise yet.</div>
+      </div>
+    </div>`;
+  }
+  const rows = b.contributions.slice(0,4).map(c=>{
+    const verdict = c.direction>0 ? 'USD-positive' : 'USD-negative';
+    return `${escapeHtml(c.label)}: ${escapeHtml(String(c.actual))} actual vs ${escapeHtml(String(c.forecast))} forecast — ${verdict}`;
+  }).join('<br>');
+  return `<div class="trade-row" style="align-items:flex-start;border-left:3px solid ${color};padding-left:10px;margin-bottom:10px;">
+    <div class="trade-meta" style="width:100%;">
+      <div class="top" style="color:${color};font-weight:700;">${arrow} USD/DXY auto-bias — ${escapeHtml(b.bias)}</div>
+      <div class="bottom" style="margin:4px 0 0;color:var(--platinum);font-size:12.5px;">${rows}</div>
+    </div>
+  </div>`;
+}
 // Best-effort structured economic calendar (actual CPI/NFP prints, forecasts,
 // etc.) — this endpoint isn't available on every Finnhub plan, so a failure
 // here is silent and the Important bucket just falls back to headline
@@ -7086,6 +7174,9 @@ function renderNewsList(items, econEvents){
   const other = classified.filter(it=>!it._highImpact && !it._pair);
 
   let html = '';
+  if(econEvents.length){
+    html += usdBiasCardHtml(computeUsdBias(econEvents));
+  }
   if(econEvents.length || important.length){
     html += `<div class="hint-inline" style="display:block;margin:0 0 8px;color:var(--loss-bright);">📊 Important — moves every pair</div>`;
     html += econEvents.slice(0,6).map(econEventRowHtml).join('');
@@ -9870,7 +9961,7 @@ document.addEventListener('keydown', function(e){
   var AI_SYSTEM_PROMPTS = {
     coach: 'You are the "AI Coach" on Ghost Discipline, a trading-discipline app. You will be given the trader\'s current discipline streak, discipline score, today\'s P/L, their stated purpose for trading, and their personal trading principles ("Monk Code"), all as JSON. Write 2-3 sentences of direct, specific coaching about their discipline pattern — not their market performance. Reference the actual numbers given. Be honest, not cheerleading — if the streak is 0 or the score is low, say so plainly and say what one concrete thing would help. Never give financial or trade-entry advice. No greeting, no sign-off, no markdown, plain sentences only.',
     analytics: 'You are the "AI Insights" panel on Ghost Discipline, a trading-discipline app. You will be given the trader\'s profit factor, win rate, average win/loss, max drawdown, best-performing confluence tags, mood-vs-outcome data, and timing data, all as JSON. Write 2-4 sentences identifying the single most useful pattern in this data and what it implies — e.g. if a particular mindset or tag clearly outperforms, say which one and by how much. Be specific and numbers-driven, not generic. Never give financial or trade-entry advice, only observations about their own historical patterns. No greeting, no sign-off, no markdown, plain sentences only.',
-    brief: 'You are the "AI Market Pulse" panel on Ghost Discipline, a trading-discipline app. You will be given the trader\'s watched pairs, today\'s plan-vs-actual review text, and the day\'s news headlines already pulled from a market news API, all as JSON. Write 2-3 sentences summarizing what\'s most relevant to their watched pairs today and one honest note on their plan-vs-actual review if provided. Do not invent news that wasn\'t given to you. Never give financial or trade-entry advice or price predictions. No greeting, no sign-off, no markdown, plain sentences only.'
+    brief: 'You are the "AI Market Pulse" panel on Ghost Discipline, a trading-discipline app. You will be given the trader\'s watched pairs, today\'s plan-vs-actual review text, the day\'s news headlines already pulled from a market news API, and a pre-computed "usdBias" field (a rule-based Bullish/Bearish/Neutral read on the dollar, already weighted from actual-vs-forecast surprises on NFP/CPI/PPI/GDP/PMI/jobless claims/rate decisions — not your own inference). Write 2-3 sentences summarizing what\'s most relevant to their watched pairs today; if usdBias is not Neutral and any watched pair involves USD, lead with it and name the 1-2 releases driving it. Add one honest note on their plan-vs-actual review if provided. Do not invent news or numbers that weren\'t given to you. Never give financial or trade-entry advice or price predictions. No greeting, no sign-off, no markdown, plain sentences only.'
   };
 
   function cacheKey(kind){ return 'gd_ai_cache_' + kind; }
@@ -9916,10 +10007,12 @@ document.addEventListener('keydown', function(e){
     }
     if(kind === 'brief'){
       var pairsInput = document.getElementById('brief_watchedPairs');
+      var biasNow = (typeof computeUsdBias === 'function') ? computeUsdBias(briefEconCache.events) : null;
       return {
         watchedPairs: pairsInput ? pairsInput.value.trim() : '',
         planVsActual: txt('briefReviewBody').slice(0, 800),
-        newsHeadlines: txt('briefNewsBody').slice(0, 1200)
+        newsHeadlines: txt('briefNewsBody').slice(0, 1200),
+        usdBias: biasNow ? { bias: biasNow.bias, topDrivers: biasNow.contributions.slice(0,3).map(function(c){ return c.label + ': ' + c.actual + ' actual vs ' + c.forecast + ' forecast'; }) } : null
       };
     }
     return {};

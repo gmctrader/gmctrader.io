@@ -314,6 +314,19 @@ html.motion-reduced .stage.thinking .wave-bar{animation:none !important;}
 @keyframes dotBlink{0%,100%{opacity:1;}50%{opacity:.35;}}
 html.motion-reduced .stage.thinking .stage-status .dot{animation:none !important;}
 @media(prefers-reduced-motion:reduce){ .stage.thinking .stage-status .dot{animation:none !important;} }
+/* ---- USD auto-bias chip: sits top-right of the stage, tap/click to hear
+   the same verdict spoken via the existing TTS voice. Color follows the
+   computed bias so it reads at a glance without opening chat. ---- */
+.usd-bias-chip{position:absolute;top:14px;right:14px;z-index:6;display:flex;align-items:center;gap:5px;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;
+  padding:5px 10px;border-radius:20px;cursor:pointer;user-select:none;
+  background:rgba(20,26,24,0.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.12);
+  transition:transform .15s ease, background .2s ease;}
+.usd-bias-chip:hover{transform:translateY(-1px);}
+.usd-bias-chip.bullish{color:#4ade80;border-color:rgba(74,222,128,0.35);}
+.usd-bias-chip.bearish{color:#f87171;border-color:rgba(248,113,113,0.35);}
+.usd-bias-chip.neutral{color:var(--amber);border-color:rgba(217,168,90,0.35);}
+.usd-bias-chip .ubc-dot{font-size:9px;}
 .stage-emoji{position:absolute;bottom:10px;right:14px;font-size:16px;z-index:5;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));
   transition:transform .2s ease;}
 .stage-emoji.pop{animation:emojiPop .5s ease;}
@@ -1395,6 +1408,7 @@ setTimeout(function(){
       <div class="stage-metrics" id="stageMetrics">Cognition <b id="stageMetricCog">99.7%</b><br>Latency <b id="stageMetricLat">11ms</b></div>
       <div class="wave-ring" id="waveRing"></div>
       <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
+      <div class="usd-bias-chip" id="usdBiasChip" onclick="speakUsdBias()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')speakUsdBias()" title="Tap to hear the auto USD bias" style="display:none;"></div>
       <div class="stage-emoji" id="stageEmoji">🙂</div>
     </div>
   </div>
@@ -1406,6 +1420,7 @@ setTimeout(function(){
       <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
       <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
       <div class="quick-chip" onclick="quickAsk('news')">⚡ News/events coming up</div>
+      <div class="quick-chip" onclick="quickAsk('usdbias')">📊 USD bias right now</div>
       <div class="quick-chip" onclick="openSignalPage()">🎯 Analyze a setup</div>
     </div>
   </div>
@@ -2420,8 +2435,9 @@ function setBootLoaderText(label){
   setBootLoaderText('Loading your journal');
   await loadTraderRow();
   populateProviderSelects();
-  ensureEconomicCalendar(); // fire-and-forget: don't block app start on a third-party feed
-  setInterval(ensureEconomicCalendar, CALENDAR_REFRESH_MS);
+  ensureEconomicCalendar().then(updateUsdBiasBadge); // fire-and-forget: don't block app start on a third-party feed
+  updateUsdBiasBadge(); // paint instantly from any cached copy, before the fresh fetch even lands
+  setInterval(()=>ensureEconomicCalendar().then(updateUsdBiasBadge), CALENDAR_REFRESH_MS);
   if(!activeApiKey()){
     document.getElementById('setupProviderSelect').value = scife.provider;
     buildProviderGrid('setup');
@@ -2789,9 +2805,110 @@ function summarizeEconomicCalendar(){
       return '- ' + bits.join(' — ');
     });
   const ageMin = Math.round((now - new Date(cache.fetchedAt).getTime())/60000);
-  return rows.length
+  const calendarText = rows.length
     ? `Economic calendar — medium/high impact, last 24h through next 5 days (refreshed ${ageMin}min ago):\n${rows.join('\n')}`
     : `Economic calendar: no medium/high impact events in the last 24h–next 5 days window (refreshed ${ageMin}min ago).`;
+  const bias = computeUsdBias();
+  return calendarText + '\n\n' + usdBiasSummaryText(bias);
+}
+
+/* ============ USD BIAS ENGINE ============
+   Rule-based, auto-computed read on the dollar from whatever USD releases
+   in the calendar feed already have an "actual" printed — NFP, CPI, PPI,
+   GDP, retail sales, PMI, jobless claims, unemployment rate, and rate
+   decisions. No LLM call involved; this is deterministic so it's cheap to
+   recompute on every calendar refresh and safe to show even with no AI key
+   active. The LLM still gets this pre-digested in its system prompt so it
+   can talk about it in its own words instead of re-deriving it. */
+const USD_EVENT_CATEGORIES = [
+  { re:/FOMC|FEDERAL FUNDS|RATE DECISION|INTEREST RATE DECISION/i, weight:3,   inverse:false, label:'Fed rate decision' },
+  { re:/CORE CPI|CPI\b|CONSUMER PRICE INDEX/i,                     weight:3,   inverse:false, label:'CPI' },
+  { re:/CORE PCE|PCE PRICE INDEX|PERSONAL CONSUMPTION/i,           weight:2.5, inverse:false, label:'PCE' },
+  { re:/NON-?FARM|NFP|NONFARM PAYROLL/i,                           weight:2.5, inverse:false, label:'NFP' },
+  { re:/AVERAGE HOURLY EARNINGS|WAGE GROWTH/i,                     weight:1.5, inverse:false, label:'Wage growth' },
+  { re:/UNEMPLOYMENT RATE/i,                                       weight:1.5, inverse:true,  label:'Unemployment rate' },
+  { re:/PPI|PRODUCER PRICE/i,                                      weight:1.5, inverse:false, label:'PPI' },
+  { re:/GDP/i,                                                     weight:2,   inverse:false, label:'GDP' },
+  { re:/RETAIL SALES/i,                                            weight:1.5, inverse:false, label:'Retail sales' },
+  { re:/\bISM\b|\bPMI\b/i,                                         weight:1,   inverse:false, label:'PMI' },
+  { re:/JOBLESS CLAIMS|INITIAL CLAIMS|CONTINUING CLAIMS/i,         weight:1,   inverse:true,  label:'Jobless claims' }
+];
+function classifyUsdEvent(name){
+  for(const c of USD_EVENT_CATEGORIES) if(c.re.test(name||'')) return c;
+  return null;
+}
+// Pulls the first signed number out of a value like "3.4%", "180K", "-0.1%",
+// ignoring units — safe because actual/forecast for the same event always
+// share the same unit, so a raw numeric compare is still valid.
+function parseEconNumber(v){
+  if(v==null || v==='') return null;
+  const m = String(v).replace(/,/g,'').match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+function computeUsdBias(){
+  const cache = scife.newsCache;
+  const events = (cache && Array.isArray(cache.events)) ? cache.events : [];
+  const now = Date.now();
+  const contributions = [];
+  const upcoming = [];
+  events.forEach(e=>{
+    if((e.country||'').toUpperCase() !== 'USD') return;
+    const ts = new Date(e.date).getTime();
+    if(isNaN(ts)) return;
+    const hasActual = e.actual!=null && e.actual!=='';
+    if(!hasActual){
+      // Not printed yet — surface as upcoming risk rather than scoring it.
+      if(ts > now && ts < now + 5*24*60*60*1000 && (e.impact==='High'||e.impact==='Medium')){
+        upcoming.push({ name:e.title, ts });
+      }
+      return;
+    }
+    const cls = classifyUsdEvent(e.title);
+    if(!cls) return;
+    const actualNum = parseEconNumber(e.actual);
+    const forecastNum = parseEconNumber(e.forecast);
+    if(actualNum==null || forecastNum==null || actualNum===forecastNum) return;
+    let direction = actualNum > forecastNum ? 1 : -1;
+    if(cls.inverse) direction *= -1;
+    const ageDays = (now - ts) / 86400000;
+    if(ageDays < 0) return;
+    const recency = ageDays > 10 ? 0.3 : ageDays > 5 ? 0.6 : 1;
+    const impactMult = e.impact==='High' ? 1 : e.impact==='Medium' ? 0.6 : 0.3;
+    const contribution = direction * cls.weight * recency * impactMult;
+    contributions.push({ name:e.title, label:cls.label, actual:e.actual, forecast:e.forecast, direction, contribution, ageDays });
+  });
+  const score = contributions.reduce((s,c)=>s+c.contribution, 0);
+  const bias = score >= 1.2 ? 'Bullish' : score <= -1.2 ? 'Bearish' : 'Neutral / Mixed';
+  contributions.sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution));
+  return { bias, score, contributions, upcoming };
+}
+function usdBiasSummaryText(bias){
+  bias = bias || computeUsdBias();
+  if(!bias.contributions.length){
+    const up = bias.upcoming.length ? ` Upcoming: ${bias.upcoming.slice(0,3).map(u=>u.name).join(', ')}.` : '';
+    return `USD/DXY auto-bias: no recent printed USD releases with a scoreable forecast surprise — reading Neutral by default.${up}`;
+  }
+  const lines = bias.contributions.slice(0,5).map(c=>{
+    const verdict = c.direction>0 ? 'USD-positive' : 'USD-negative';
+    const vs = (c.actual!=null && c.forecast!=null) ? `${c.actual} actual vs ${c.forecast} forecast` : '';
+    return `${c.label} ${vs} — ${verdict}`;
+  });
+  const up = bias.upcoming.length ? ` Upcoming risk: ${bias.upcoming.slice(0,3).map(u=>u.name).join(', ')}.` : '';
+  return `USD/DXY auto-bias: ${bias.bias} (net weighted score ${bias.score.toFixed(1)}). Weighed factors, strongest first:\n${lines.map(l=>'- '+l).join('\n')}\n${up}`.trim();
+}
+function speakUsdBias(){
+  const bias = computeUsdBias();
+  speak(usdBiasSummaryText(bias).replace(/\n/g,' '));
+}
+function updateUsdBiasBadge(){
+  const chip = document.getElementById('usdBiasChip');
+  if(!chip) return;
+  const bias = computeUsdBias();
+  if(!scife.newsCache || !Array.isArray(scife.newsCache.events) || !scife.newsCache.events.length){ chip.style.display='none'; return; }
+  chip.style.display = 'flex';
+  chip.className = 'usd-bias-chip ' + (bias.bias==='Bullish' ? 'bullish' : bias.bias==='Bearish' ? 'bearish' : 'neutral');
+  const arrow = bias.bias==='Bullish' ? '▲' : bias.bias==='Bearish' ? '▼' : '◆';
+  chip.innerHTML = `<span class="ubc-dot">${arrow}</span> USD ${bias.bias}`;
 }
 
 /* ============ TRADE LOGGING / EDITING (from conversation) ============
@@ -3072,6 +3189,8 @@ ${summarizeJournal()}
 ECONOMIC CALENDAR:
 ${summarizeEconomicCalendar()}
 You DO have real, current data on scheduled macro news — including Non-Farm Payrolls (NFP), CPI, FOMC/rate decisions, GDP, PMI, and central-bank speakers — via the list above, regardless of which model/provider is answering. Use it directly: if the trader asks what's coming up, whether news is near, or whether they should trade around a release, answer from that list rather than saying you have no real-time access. If something isn't on the list, say plainly it's outside this calendar's coverage (it only tracks scheduled macro data releases, not breaking geopolitical or company-specific news) instead of guessing.
+
+USD/DXY AUTO-BIAS: the "USD/DXY auto-bias" line above is a pre-computed, rule-based read — it already weighed actual-vs-forecast surprises across NFP, CPI, PPI, PCE, GDP, retail sales, PMI, jobless claims, unemployment rate, and rate decisions (weighted by how much each type typically moves the dollar, how big the surprise was, how fresh it is, and the release's impact tier), not a guess. Bring it up proactively — not just when directly asked — whenever the trader asks about the dollar, DXY, a USD pair (EURUSD, GBPUSD, USDJPY, etc.), "what's moving the market," or whether news is bullish/bearish; and mention it in passing on setup analysis for any USD pair even if they didn't ask. State the bias plainly (Bullish/Bearish/Neutral) and walk through the 2-3 biggest contributing releases in your own words — actual vs forecast, and why that direction is USD-positive or -negative. If the trader is asking about a currency the auto-bias doesn't cover (e.g. straight EUR or JPY fundamentals), say so and reason qualitatively from what's in the calendar instead of applying the USD read to the wrong currency. Never present the auto-bias as certain market direction — it's a data-weighted read on sentiment, not a trade signal or a guarantee of where price goes next.
 
 Known strategy names: ${strategies}
 Prop firm on file: ${pf.firmName ? pf.firmName+' ('+(pf.phase||'challenge')+')' : 'none configured'}
@@ -5042,7 +5161,8 @@ function quickAsk(kind){
     journal: "Give me an overview of my trading journal so far.",
     trader: "Based on my journal, what kind of trader am I? Be honest about patterns.",
     emotions: "I want to talk through how I've been feeling while trading lately.",
-    news: "What economic news or events are coming up that I should know about — anything like NFP, CPI, or a rate decision?"
+    news: "What economic news or events are coming up that I should know about — anything like NFP, CPI, or a rate decision?",
+    usdbias: "Based on recent NFP, CPI, PPI and FOMC data, is the dollar looking bullish or bearish right now, and why? Weigh all the recent releases together."
   };
   sendMessage(prompts[kind]);
 }
