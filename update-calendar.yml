@@ -1,0 +1,48 @@
+name: Update economic calendar
+
+# Runs server-side on GitHub's infrastructure — no browser involved, so no
+# CORS restriction and nothing for a user's ad blocker to ever see or flag.
+# Fetches the same public ForexFactory-format feed SciFe used to fetch
+# client-side through third-party proxies, and commits the result as a
+# plain JSON file in this repo. scife.html then reads that file same-origin
+# (./calendar.json) instead of reaching out to any third party at all.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes (GitHub may delay this slightly on free/public repos — that's fine, the app treats anything under 30min old as fresh)
+  workflow_dispatch: {}       # lets you trigger a manual run from the Actions tab, e.g. right after first setting this up
+
+permissions:
+  contents: write            # needed so the workflow can commit calendar.json back to the repo
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Fetch calendar feed
+        run: |
+          curl -sSL --fail --max-time 20 \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" \
+            "https://nfs.faireconomy.media/ff_calendar_thisweek.json" \
+            -o raw_calendar.json
+
+      - name: Wrap with a freshness timestamp
+        run: |
+          node -e "
+            const fs = require('fs');
+            const events = JSON.parse(fs.readFileSync('raw_calendar.json','utf8'));
+            if(!Array.isArray(events)){ console.error('Unexpected feed shape — not an array'); process.exit(1); }
+            const out = { fetchedAt: new Date().toISOString(), events };
+            fs.writeFileSync('calendar.json', JSON.stringify(out));
+          "
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add calendar.json
+          git diff --cached --quiet && echo "No change" || git commit -m "Update economic calendar [skip ci]"
+          git push

@@ -2730,15 +2730,31 @@ const CALENDAR_REFRESH_MS = 30 * 60 * 1000; // the feed itself rate-limits to ~2
 let calendarFetchInFlight = null;
 let calendarFailedToastShown = false;
 
-// This feed is built for MT4/5 EAs calling WebRequest server-side — it has
-// no Access-Control-Allow-Origin header for arbitrary web origins, so a
-// direct browser fetch() is routinely blocked by CORS before it even gets
-// a response to check. Several public CORS proxies re-fetch it server-side
-// and hand back the JSON with the right headers. Every candidate is raced
-// in parallel (not tried one-by-one) so a single dead/rate-limited proxy
-// no longer costs a full timeout before the next one even gets a turn —
-// on a network where one proxy is blocked, the others still have a shot
-// within the same few seconds instead of queueing behind it.
+// PRIMARY SOURCE: a same-origin JSON file kept fresh by a GitHub Action
+// (see .github/workflows/update-calendar.yml) that fetches the feed
+// server-side every 30 minutes and commits it into this repo. Fetching
+// ./calendar.json is same-origin — no CORS, nothing for an ad blocker to
+// flag, no third-party rate limit, no dependency on a public proxy staying
+// online. This is the real fix; the proxy race below only exists as a
+// bootstrap fallback for the brief window before that workflow's first run
+// (or if the repo file is ever missing/stale for some other reason).
+const CALENDAR_LOCAL_URL = './calendar.json';
+async function fetchLocalCalendar(){
+  const res = await fetchWithTimeout(CALENDAR_LOCAL_URL, { cache: 'no-store' }, 6000);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(data && Array.isArray(data.events)) return { events: data.events, fetchedAt: data.fetchedAt || null };
+  if(Array.isArray(data)) return { events: data, fetchedAt: null };
+  throw new Error('unexpected local calendar shape');
+}
+
+// FALLBACK: this feed is built for MT4/5 EAs calling WebRequest
+// server-side — it has no Access-Control-Allow-Origin header for arbitrary
+// web origins, so a direct browser fetch() is routinely blocked by CORS.
+// These public CORS proxies re-fetch it server-side and hand back the JSON
+// with the right headers. Only used if the same-origin file above isn't
+// available yet. Raced in parallel so a single dead/rate-limited/blocked
+// proxy doesn't cost a full timeout before the others get a turn.
 const CALENDAR_URL_CANDIDATES = [
   CALENDAR_URL,
   'https://corsproxy.io/?url=' + encodeURIComponent(CALENDAR_URL),
@@ -2800,8 +2816,18 @@ function ensureEconomicCalendar(force){
   clearTimeout(calendarRetryTimer);
   calendarFetchInFlight = (async ()=>{
     try{
-      const events = await raceCalendarFetches(CALENDAR_URL_CANDIDATES);
-      scife.newsCache = { events, fetchedAt: new Date().toISOString() };
+      let result;
+      try{
+        result = await fetchLocalCalendar();
+      }catch(localErr){
+        // The Action-maintained file isn't there yet (first-run window) or
+        // something's briefly wrong with it — fall back to the live proxy
+        // race rather than failing outright.
+        console.warn('calendar.json unavailable, falling back to live mirrors:', localErr);
+        const events = await raceCalendarFetches(CALENDAR_URL_CANDIDATES);
+        result = { events, fetchedAt: null };
+      }
+      scife.newsCache = { events: result.events, fetchedAt: result.fetchedAt || new Date().toISOString() };
       saveScife();
       calendarFailedToastShown = false; // a later failure deserves its own toast again
       calendarRetryCount = 0;
