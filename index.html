@@ -3340,7 +3340,54 @@ setTimeout(function(){
 /* ============ SUPABASE CONFIG ============ */
 const SUPABASE_URL = "https://euvfoyxntkqxoydgpqjq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1dmZveXhudGtxeG95ZGdwcWpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzg3MjQsImV4cCI6MjEwMDc1NDcyNH0.7P9bpz4i4ekENWBsnsI-Bs-pPqL8r2E1S-GkeXI5v-8";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Defensive: if the Supabase CDN script (cdn.jsdelivr.net) was blocked or
+// failed to load — ad blockers, corporate firewalls, offline, or the CDN
+// itself hiccuping — `window.supabase` is undefined and calling
+// .createClient() on it used to throw synchronously right here. Because
+// this whole file lives in one giant <script> block, that crash silently
+// killed every function defined below it: rendering, the nav, the trade
+// journal, the news/brief fetches, all of it — with nothing but a blank or
+// stuck screen and no visible explanation. A tiny stub keeps the rest of
+// the app alive and shows one clear toast instead of a hard, silent crash.
+let sb;
+try{
+  if(!(window.supabase && typeof window.supabase.createClient === 'function')){
+    throw new Error('Supabase client library failed to load (CDN blocked or offline).');
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}catch(e){
+  console.error('Supabase init failed — running in a degraded, local-only mode:', e);
+  var __sbErrShown = false;
+  var __sbFail = function(){
+    if(!__sbErrShown){
+      __sbErrShown = true;
+      setTimeout(function(){
+        try{ showToast('Could not connect to the sync service — your data will only be saved on this device right now.'); }catch(e2){ /* toast not ready yet */ }
+      }, 800);
+    }
+  };
+  sb = {
+    auth:{
+      getSession: async()=>({ data:{ session:null }, error:null }),
+      onAuthStateChange: ()=>({ data:{ subscription:{ unsubscribe:function(){} } } }),
+      signInWithPassword: async()=>{ __sbFail(); return { data:null, error:{ message:'Sync service unavailable right now — check your connection and reload.' } }; },
+      signUp: async()=>{ __sbFail(); return { data:null, error:{ message:'Sync service unavailable right now — check your connection and reload.' } }; },
+      signOut: async()=>({ error:null })
+    },
+    from: function(){
+      __sbFail();
+      var chain = {
+        select:function(){ return chain; }, insert:function(){ return chain; }, upsert:function(){ return chain; },
+        update:function(){ return chain; }, delete:function(){ return chain; }, eq:function(){ return chain; },
+        order:function(){ return chain; }, limit:function(){ return chain; },
+        maybeSingle: async function(){ return { data:null, error:{ message:'offline' } }; },
+        single: async function(){ return { data:null, error:{ message:'offline' } }; },
+        then:function(resolve){ resolve({ data:null, error:{ message:'offline' } }); }
+      };
+      return chain;
+    }
+  };
+}
 
 const DEFAULT_STATE = {
   rules:{ maxDailyLoss:null, maxTrades:null, riskPerTrade:null, minRR:null, maxConsecLosses:null, accountBalance:null, coolingOffMinutes:null, maxRiskPerTrade:null, currency:'USD', accountType:'standard' },
@@ -10072,6 +10119,11 @@ document.addEventListener('keydown', function(e){
       else { raf = null; el.style.transform = ''; }
     }
     function onMove(e){
+      // Touch (and pen) scrolling fires pointermove too — applying a live
+      // 3D rotate/perspective transform mid-scroll is what was making cards
+      // look skewed and "cut off" past the screen edge on phones. Only
+      // real mouse hover should ever drive the tilt.
+      if(e.pointerType && e.pointerType !== 'mouse') return;
       var r = el.getBoundingClientRect();
       var x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height;
       targetRy = (x-0.5)*maxTilt*2;
@@ -10079,7 +10131,8 @@ document.addEventListener('keydown', function(e){
       active = true;
       if(!raf) raf = requestAnimationFrame(loop);
     }
-    function onLeave(){
+    function onLeave(e){
+      if(e && e.pointerType && e.pointerType !== 'mouse') return;
       active = false; targetRx = 0; targetRy = 0;
       if(!raf) raf = requestAnimationFrame(loop);
     }
@@ -10107,6 +10160,7 @@ document.addEventListener('keydown', function(e){
       }
       mloop();
       document.addEventListener('pointermove', function(e){
+        if(e.pointerType && e.pointerType !== 'mouse') return;
         mtx = (0.5 - e.clientY/innerHeight) * 14;
         mty = (e.clientX/innerWidth - 0.5) * 14;
       }, {passive:true});
