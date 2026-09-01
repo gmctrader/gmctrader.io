@@ -694,6 +694,23 @@ html[data-theme="dark"] #bootSplash{
 .boot-bar span:nth-child(6){animation-delay:.6s;}
 .boot-bar span:nth-child(7){animation-delay:.72s;}
 @keyframes bootTick{0%,100%{background:var(--steel-hi);}30%{background:var(--bronze-bright);box-shadow:0 0 8px rgba(18,185,136,0.6);}}
+/* ---- Enter button: hidden until the animation has had a moment to
+   play, then the trader dismisses the splash on their own terms rather
+   than it auto-closing on them. ---- */
+.boot-enter-btn{
+  margin-top:4px;opacity:0;transform:translateY(10px) scale(.94);pointer-events:none;
+  transition:opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1);
+  background:linear-gradient(135deg, var(--bronze-bright), var(--bronze));
+  color:var(--bronze-ink);border:none;padding:13px 32px;border-radius:100px;
+  font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+  cursor:pointer;box-shadow:0 6px 0 var(--bronze-dim), 0 16px 34px rgba(16,185,129,0.32);
+}
+.boot-enter-btn.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;animation:bootEnterPulse 1.8s ease-in-out infinite;}
+@keyframes bootEnterPulse{0%,100%{box-shadow:0 6px 0 var(--bronze-dim), 0 16px 34px rgba(16,185,129,0.32);}50%{box-shadow:0 6px 0 var(--bronze-dim), 0 20px 48px rgba(16,185,129,0.52);}}
+.boot-enter-btn:hover{transform:translateY(-2px) scale(1.03);}
+.boot-enter-btn:active{transform:translateY(3px) scale(.98);box-shadow:0 2px 0 var(--bronze-dim);}
+html.motion-reduced .boot-enter-btn.show{animation:none !important;}
+@media(prefers-reduced-motion:reduce){.boot-enter-btn.show{animation:none !important;}}
 html.motion-reduced #bootSplash::before, html.motion-reduced #bootSplash::after,
 html.motion-reduced .boot-rain-col, html.motion-reduced .boot-particles span,
 html.motion-reduced .boot-emblem-ring, html.motion-reduced .boot-emblem-plate,
@@ -1349,6 +1366,27 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .trade-pnl .rr{font-size:10.5px;color:var(--slate);}
 .empty-state{text-align:center;color:var(--slate);font-size:13px;padding:38px 10px;}
 .empty-state .glyph{font-size:26px;display:block;margin-bottom:10px;opacity:0.5;}
+/* ---- JOURNAL, mobile: the fixed-width badge/screenshot + right-aligned
+   P/L used to fight the trade text for space on narrow phones and get
+   clipped. Below 600px, the row wraps into two lines (badge+meta on top,
+   P/L as a full-width strip underneath) and the toolbar stacks instead of
+   squeezing a search box and two selects onto one cramped row. ---- */
+@media(max-width:600px){
+  .journal-toolbar{flex-direction:column;align-items:stretch;}
+  .journal-toolbar .journal-search{width:100%;min-width:0;}
+  .journal-toolbar select.trader-filter{width:100%;}
+  .trade-row{flex-wrap:wrap;padding:10px 12px;gap:8px 10px;}
+  .trade-shot{width:36px;height:36px;}
+  .trade-badge{width:32px;height:32px;font-size:10px;}
+  .trade-meta{flex:1 1 auto;min-width:0;}
+  .trade-meta .top{font-size:12.5px;}
+  .trade-pnl{flex:1 1 100%;text-align:left;display:flex;align-items:baseline;gap:8px;
+    margin-top:2px;padding-top:8px;border-top:1px dashed var(--steel);}
+  .trade-pnl b{display:inline;font-size:14.5px;}
+  .journal-day-header{flex-wrap:wrap;row-gap:4px;}
+  .journal-day-header .jdh-meta{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px;}
+  .journal-trade-scroll{max-height:min(640px,62vh);}
+}
 
 /* ============ LOGIC CHIP PICKER (tap-to-select, no typing) ============ */
 .hint-inline{font-size:9.5px;color:var(--slate-dim);text-transform:none;letter-spacing:0.02em;font-weight:500;margin-left:6px;}
@@ -1912,14 +1950,17 @@ if(window.gdMotionLevel() === 'reduced') document.documentElement.classList.add(
       </div>
     </div>
     <div class="boot-bar"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <button type="button" id="bootEnterBtn" class="boot-enter-btn"><span>Enter the Terminal</span></button>
   </div>
 </div>
 <script>
 // Hard safety net: if the main boot script ever throws before it can hide
-// the splash, don't leave the user staring at it forever.
+// the splash, don't leave the user staring at it forever. Skipped while
+// the Enter gate is active — that state means we're deliberately waiting
+// on a click, not stuck.
 setTimeout(function(){
   var el = document.getElementById('bootSplash');
-  if(el && el.style.display !== 'none'){ el.classList.add('boot-splash-hide'); setTimeout(function(){ el.style.display='none'; }, 650); }
+  if(el && el.style.display !== 'none' && !window.__gdBootGateActive){ el.classList.add('boot-splash-hide'); setTimeout(function(){ el.style.display='none'; }, 650); }
 }, 8000);
 </script>
 <div class="theme-toggle-fab" id="themeToggleFab" onclick="toggleGdTheme()" title="Choose your background theme">
@@ -3978,11 +4019,31 @@ function showBootSplash(){
 function hideBootSplash(){
   const el = document.getElementById('bootSplash');
   if(!el || el.classList.contains('boot-splash-hide')) return;
+  const btn = document.getElementById('bootEnterBtn');
+  if(btn) btn.classList.remove('show');
+  window.__gdBootGateActive = false;
   const wait = Math.max(0, BOOT_SPLASH_MIN_MS - (Date.now() - bootSplashShownAt));
   setTimeout(()=>{
     el.classList.add('boot-splash-hide');
     setTimeout(()=>{ el.style.display = 'none'; }, 650);
   }, wait);
+}
+// Gate used specifically right before the sign-in / account-activation
+// screens: instead of auto-dismissing, the splash reveals an "Enter the
+// Terminal" button once the 3D intro has had a moment to play, and only
+// calls hideBootSplash() once the trader actually clicks it. Post-login
+// transitions (onAuthed, resuming a demo) stay automatic — this only
+// gates the very first "welcome" moment.
+window.__gdBootGateActive = false;
+function gateBootSplash(){
+  const btn = document.getElementById('bootEnterBtn');
+  if(!btn){ hideBootSplash(); return; }
+  window.__gdBootGateActive = true;
+  setTimeout(()=>{ if(window.__gdBootGateActive) btn.classList.add('show'); }, 1100);
+  btn.addEventListener('click', function onEnterClick(){
+    btn.removeEventListener('click', onEnterClick);
+    hideBootSplash();
+  }, {once:true});
 }
 
 async function onAuthed(user){
@@ -9301,7 +9362,7 @@ document.addEventListener('keydown', function(e){
     if(data.session){
       if(linkType === 'invite' || linkType === 'recovery'){
         showSetPasswordScreen(data.session.user, linkType);
-        hideBootSplash();
+        gateBootSplash();
       } else {
         await onAuthed(data.session.user); // hides the splash itself once the app is ready
       }
@@ -9311,9 +9372,9 @@ document.addEventListener('keydown', function(e){
       hideBootSplash();
     } else if(isDemoExpired()){
       renderDemoStatus();
-      hideBootSplash();
+      gateBootSplash();
     } else {
-      hideBootSplash();
+      gateBootSplash();
     }
   }catch(e){
     console.error(e);
