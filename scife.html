@@ -174,10 +174,12 @@ body{position:relative;}
 .btn-ghost{background:rgba(255,255,255,0.03);color:var(--slate);border:1px solid var(--steel-hi);box-shadow:none;}
 .btn-ghost::after{display:none;}
 .btn-ghost:hover{background:rgba(255,255,255,0.06);filter:none;}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel-solid);backdrop-filter:blur(10px);color:var(--platinum);
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--panel-solid);backdrop-filter:blur(10px);color:var(--platinum);
   border:1px solid var(--steel-hi);padding:10px 18px;border-radius:11px;font-size:13.5px;z-index:999;opacity:0;pointer-events:none;transition:opacity .25s;
-  box-shadow:0 12px 30px -10px rgba(0,0,0,0.4);}
-.toast.show{opacity:1;}
+  box-shadow:0 12px 30px -10px rgba(0,0,0,0.4);max-width:90vw;text-align:center;}
+.toast.show{opacity:1;pointer-events:auto;}
+.toast.tappable{cursor:pointer;}
+.toast.tappable:hover{border-color:var(--bronze-bright);}
 
 /* ---- main app shell ---- */
 #app{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;max-width:640px;margin:0 auto;padding:0 16px 16px;position:relative;z-index:1;}
@@ -2300,10 +2302,12 @@ function onKeyInput(scope){
   if(keySaved) keySaved.style.display = (keyInput.value && keyInput.value === savedKey) ? 'inline' : 'none';
 }
 
-function showToast(msg){
+function showToast(msg, onTap){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._timer); t._timer = setTimeout(()=>t.classList.remove('show'), 3200);
+  t.classList.toggle('tappable', !!onTap);
+  t.onclick = onTap ? function(){ t.classList.remove('show'); onTap(); } : null;
+  clearTimeout(t._timer); t._timer = setTimeout(()=>t.classList.remove('show'), onTap ? 6500 : 3200);
 }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
@@ -2729,55 +2733,99 @@ let calendarFailedToastShown = false;
 // This feed is built for MT4/5 EAs calling WebRequest server-side — it has
 // no Access-Control-Allow-Origin header for arbitrary web origins, so a
 // direct browser fetch() is routinely blocked by CORS before it even gets
-// a response to check. A public CORS proxy re-fetches it server-side and
-// hands back the JSON with the right headers, giving it a real chance to
-// load from a browser at all. Tried in order; first one that works wins.
+// a response to check. Several public CORS proxies re-fetch it server-side
+// and hand back the JSON with the right headers. Every candidate is raced
+// in parallel (not tried one-by-one) so a single dead/rate-limited proxy
+// no longer costs a full timeout before the next one even gets a turn —
+// on a network where one proxy is blocked, the others still have a shot
+// within the same few seconds instead of queueing behind it.
 const CALENDAR_URL_CANDIDATES = [
   CALENDAR_URL,
+  'https://corsproxy.io/?url=' + encodeURIComponent(CALENDAR_URL),
   'https://api.allorigins.win/raw?url=' + encodeURIComponent(CALENDAR_URL),
-  'https://corsproxy.io/?url=' + encodeURIComponent(CALENDAR_URL)
+  'https://api.allorigins.win/get?url=' + encodeURIComponent(CALENDAR_URL),
+  'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(CALENDAR_URL),
+  'https://thingproxy.freeboard.io/fetch/' + CALENDAR_URL
 ];
 function fetchWithTimeout(url, opts, ms){
   const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), ms || 8000);
+  const timer = setTimeout(()=>ctrl.abort(), ms || 10000);
   return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(()=>clearTimeout(timer));
 }
+// Some proxies (allorigins' /get) wrap the payload as {contents: "...json..."}
+// instead of returning the array directly — handle both shapes here so any
+// candidate above can be added without special-casing it at the call site.
+async function fetchCalendarFrom(url){
+  const res = await fetchWithTimeout(url, { cache: 'no-store' }, 10000);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(Array.isArray(data)) return data;
+  if(data && typeof data.contents === 'string'){
+    const parsed = JSON.parse(data.contents);
+    if(Array.isArray(parsed)) return parsed;
+  }
+  throw new Error('unexpected calendar response shape');
+}
+// Promise.any-with-fallback: modern browsers get true parallel racing;
+// anything without Promise.any (rare) falls back to sequential attempts
+// rather than breaking outright.
+function raceCalendarFetches(urls){
+  if(typeof Promise.any === 'function'){
+    return Promise.any(urls.map(fetchCalendarFrom));
+  }
+  return (async ()=>{
+    let lastErr;
+    for(const url of urls){
+      try{ return await fetchCalendarFrom(url); }catch(e){ lastErr = e; }
+    }
+    throw lastErr;
+  })();
+}
+// Short backoff retries right after a failure (network hiccups are often
+// transient), then falls silent until the next scheduled 30-minute refresh
+// so a genuinely dead network doesn't spin retries forever.
+const CALENDAR_RETRY_DELAYS_MS = [15000, 45000, 120000];
+let calendarRetryTimer = null;
+let calendarRetryCount = 0;
 // Fetches the calendar if the cached copy is missing/stale, caching the
 // result in the same `scife` jsonb column settings/memory/actionLog already
 // live in. Safe to call often — it's a no-op when the cache is fresh, and
-// coalesces concurrent calls into a single in-flight request.
-function ensureEconomicCalendar(){
+// coalesces concurrent calls into a single in-flight request. Pass true to
+// force a fetch even if the cache looks fresh (used by manual retry).
+function ensureEconomicCalendar(force){
   const cache = scife.newsCache;
-  const isFresh = cache && cache.fetchedAt && (Date.now() - new Date(cache.fetchedAt).getTime() < CALENDAR_REFRESH_MS);
+  const isFresh = !force && cache && cache.fetchedAt && (Date.now() - new Date(cache.fetchedAt).getTime() < CALENDAR_REFRESH_MS);
   if(isFresh) return Promise.resolve();
   if(calendarFetchInFlight) return calendarFetchInFlight;
+  clearTimeout(calendarRetryTimer);
   calendarFetchInFlight = (async ()=>{
-    let lastErr = null;
-    for(const url of CALENDAR_URL_CANDIDATES){
-      try{
-        const res = await fetchWithTimeout(url, { cache: 'no-store' }, 8000);
-        if(!res.ok) throw new Error('HTTP ' + res.status);
-        const events = await res.json();
-        if(!Array.isArray(events)) throw new Error('unexpected calendar response shape');
-        scife.newsCache = { events, fetchedAt: new Date().toISOString() };
-        saveScife();
-        calendarFailedToastShown = false; // a later manual retry deserves its own toast if it fails again
-        calendarFetchInFlight = null;
-        return;
-      }catch(e){
-        lastErr = e;
-        // Try the next candidate (direct → proxy → proxy) before giving up.
+    try{
+      const events = await raceCalendarFetches(CALENDAR_URL_CANDIDATES);
+      scife.newsCache = { events, fetchedAt: new Date().toISOString() };
+      saveScife();
+      calendarFailedToastShown = false; // a later failure deserves its own toast again
+      calendarRetryCount = 0;
+      updateUsdBiasBadge();
+    }catch(aggErr){
+      // Keep whatever was cached before (even if stale) rather than wiping
+      // it — a transient network/CORS hiccup shouldn't blank out news
+      // context for the rest of the session if we already had something.
+      console.warn('Economic calendar fetch failed on all sources:', (aggErr && aggErr.errors) || aggErr);
+      if(calendarRetryCount < CALENDAR_RETRY_DELAYS_MS.length){
+        const delay = CALENDAR_RETRY_DELAYS_MS[calendarRetryCount++];
+        calendarRetryTimer = setTimeout(()=>{ ensureEconomicCalendar(true); }, delay);
       }
+      if(!calendarFailedToastShown && !(scife.newsCache && scife.newsCache.events)){
+        calendarFailedToastShown = true;
+        showToast('Could not load economic news — tap to retry', ()=>{
+          calendarFailedToastShown = false;
+          calendarRetryCount = 0;
+          ensureEconomicCalendar(true).then(updateUsdBiasBadge);
+        });
+      }
+    }finally{
+      calendarFetchInFlight = null;
     }
-    // Keep whatever was cached before (even if stale) rather than wiping
-    // it — a transient network/CORS hiccup shouldn't blank out news
-    // context for the rest of the session if we already had something.
-    console.warn('Economic calendar fetch failed on all sources:', lastErr);
-    if(!calendarFailedToastShown && !(scife.newsCache && scife.newsCache.events)){
-      calendarFailedToastShown = true;
-      showToast('Could not load economic news right now — everything else still works.');
-    }
-    calendarFetchInFlight = null;
   })();
   return calendarFetchInFlight;
 }
