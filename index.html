@@ -64,6 +64,10 @@ function gdLogoFallback(img){
   --gold:#a16207;
   --gold-dim:#8a6d1f;
   --gold-ink:#ffffff;
+  /* Base backdrop for the Equity Curve's forced-dark "instrument panel" —
+     always dark regardless of light/dark mode, but each theme below tints
+     it to match its own accent instead of a fixed navy. */
+  --eq-dark-base:#0a1119;
   --r-sm:8px; --r-md:13px; --r-lg:18px;
 }
 /* Registered custom property so animated gradient borders can rotate
@@ -83,6 +87,7 @@ html[data-theme="dark"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#2dd4c8; --neon-purple:#8b5cf6; --neon-magenta:#0d9488;
   --gold-bright:#ffdf9e; --gold:#f2c877; --gold-dim:#8a6b28; --gold-ink:#03110c;
+  --eq-dark-base:#0b131a;
 }
 html[data-theme="dark"] body{
   background:
@@ -125,6 +130,7 @@ html[data-theme="red"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#d9636f; --neon-purple:#9c7fc9; --neon-magenta:#e0a165;
   --gold-bright:#e0a165; --gold:#c67f47; --gold-dim:#5c3d1e; --gold-ink:#160c04;
+  --eq-dark-base:#0d0b0d;
 }
 html[data-theme="red"] body{
   background:
@@ -155,6 +161,7 @@ html[data-theme="blue"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#5f92c4; --neon-purple:#9c7fc9; --neon-magenta:#e3b876;
   --gold-bright:#e3b876; --gold:#bd9256; --gold-dim:#544526; --gold-ink:#100c04;
+  --eq-dark-base:#0b0f13;
 }
 html[data-theme="blue"] body{
   background:
@@ -185,6 +192,7 @@ html[data-theme="purple"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#9c7fc9; --neon-purple:#9c7fc9; --neon-magenta:#c589d9;
   --gold-bright:#e0ab72; --gold:#b98a52; --gold-dim:#513c1f; --gold-ink:#0f0a04;
+  --eq-dark-base:#0d0c12;
 }
 html[data-theme="purple"] body{
   background:
@@ -215,6 +223,7 @@ html[data-theme="gold"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#d4a24e; --neon-purple:#9c7fc9; --neon-magenta:#f2c27c;
   --gold-bright:#f2c27c; --gold:#d4a24e; --gold-dim:#5c4014; --gold-ink:#160e02;
+  --eq-dark-base:#0e0c09;
 }
 html[data-theme="gold"] body{
   background:
@@ -245,6 +254,7 @@ html[data-theme="slate"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#9aa7b3; --neon-purple:#9c7fc9; --neon-magenta:#d9c48a;
   --gold-bright:#d9c48a; --gold:#b39f68; --gold-dim:#4d452c; --gold-ink:#100e08;
+  --eq-dark-base:#0d1013;
 }
 html[data-theme="slate"] body{
   background:
@@ -373,12 +383,18 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
      Settings, so the ambient glow, win-rate ring, etc. always match the
      chosen theme instead of being locked to a fixed emerald look. */
   --steel:rgba(240,244,242,0.09); --steel-hi:rgba(240,244,242,0.18);
-  --platinum:#eef6f2; --slate:#93a6a1; --slate-dim:#6c827c;
+  /* --platinum/--slate intentionally NOT overridden unconditionally here —
+     every accent theme (dark/red/blue/purple/gold/slate) already ships
+     light-appropriate text tones for a dark surface, so this card just
+     inherits them and its numbers pick up the same hue as the rest of the
+     app. Only bare "light mode" (no data-theme, whose --platinum/--slate
+     are tuned for a WHITE background) needs a safe override below so text
+     stays legible against this card's always-dark backdrop. */
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   background:
     radial-gradient(ellipse 700px 420px at 18% -10%, color-mix(in srgb, var(--bronze-bright) 14%, transparent), transparent 60%),
     radial-gradient(ellipse 620px 380px at 100% 100%, rgba(255,255,255,0.03), transparent 55%),
-    #0a1119;
+    var(--eq-dark-base);
   border-color:rgba(240,244,242,0.09);
   color:var(--platinum);
 }
@@ -420,6 +436,9 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
 .eq-stat b .cur-sign{font-size:0.7em;font-weight:500;color:var(--slate);margin-right:1px;letter-spacing:0;}
 .eq-stat span{font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate);}
 .card.eq-dark-card .eq-footer-row{border-top-color:rgba(240,244,242,0.1);}
+html:not([data-theme]) .card.eq-dark-card{
+  --platinum:#eef6f2; --slate:#93a6a1; --slate-dim:#6c827c;
+}
 
 /* ---- equity curve footer: best streak / win rate donut / worst streak ---- */
 .eq-footer-row{display:flex;align-items:stretch;justify-content:space-between;gap:14px;margin-top:20px;padding-top:20px;border-top:1px solid var(--steel);}
@@ -8154,8 +8173,8 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
     const val = maxY - niceStep*g;
     const gy = sy(val);
     floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.05)" stroke-width="0.6" stroke-dasharray="1,5"/>`;
-    const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val));
-    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="0.02em" fill="rgba(150,164,159,0.62)">${lbl}</text>`;
+    const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val)).toLocaleString();
+    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="500" letter-spacing="0.03em" fill="var(--platinum)" fill-opacity="0.56">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
     const gx = padL + plotW*(g/6);
@@ -8164,9 +8183,9 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
   for(let i=0;i<points.length;i++){
     if(i!==0 && i%xStep!==0 && i!==points.length-1) continue;
-    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="rgba(150,164,159,0.62)">${i}</text>`;
+    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="500" letter-spacing="0.02em" fill="var(--platinum)" fill-opacity="0.42">${i}</text>`;
   }
-  axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.16em" font-weight="600" fill="rgba(150,164,159,0.5)">TRADE NUMBER</text>`;
+  axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.18em" font-weight="600" fill="var(--bronze-bright)" fill-opacity="0.68">TRADE NUMBER</text>`;
 
   // Hairline-thin instrument trace: the core stroke is now a fine 0.28px
   // line (down from 0.55), with the glow/hot passes scaled down to match so
