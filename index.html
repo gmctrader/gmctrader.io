@@ -368,12 +368,15 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
 /* ---- equity curve card: forced dark "instrument panel" theme, matching the
    reference design, regardless of the app's light/dark mode setting ---- */
 .card.eq-dark-card{
+  /* Note: this card no longer forces its own --bronze-bright/--neon-*
+     hues — it inherits whatever accent the trader has selected in
+     Settings, so the ambient glow, win-rate ring, etc. always match the
+     chosen theme instead of being locked to a fixed emerald look. */
   --steel:rgba(240,244,242,0.09); --steel-hi:rgba(240,244,242,0.18);
   --platinum:#eef6f2; --slate:#93a6a1; --slate-dim:#6c827c;
-  --neon-green:#2dd4a8; --neon-cyan:#2dd4c8; --bronze-bright:#2dd4a8;
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   background:
-    radial-gradient(ellipse 700px 420px at 18% -10%, rgba(45,212,168,0.10), transparent 60%),
+    radial-gradient(ellipse 700px 420px at 18% -10%, color-mix(in srgb, var(--bronze-bright) 14%, transparent), transparent 60%),
     radial-gradient(ellipse 620px 380px at 100% 100%, rgba(255,255,255,0.03), transparent 55%),
     #0a1119;
   border-color:rgba(240,244,242,0.09);
@@ -385,19 +388,36 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
   font-size:10px;letter-spacing:0.08em;color:var(--slate);
 }
 .card.eq-dark-card .equity-total.neg{
-  background:none;-webkit-text-fill-color:var(--loss-bright);color:var(--loss-bright);filter:none;animation:none;
+  background:linear-gradient(100deg, #ffb4c2 0%, var(--loss-bright) 32%, #7f1d2b 70%, var(--loss-bright) 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 22px color-mix(in srgb, var(--loss-bright) 45%, transparent));
+  animation:pnlBlaze 3.4s ease-in-out infinite;
 }
 .card.eq-dark-card .equity-total.pos{
-  background:none;-webkit-text-fill-color:var(--win-bright);color:var(--win-bright);filter:none;animation:none;
+  background:linear-gradient(100deg, #baf7da 0%, var(--win-bright) 32%, #0b5c42 70%, var(--win-bright) 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 22px color-mix(in srgb, var(--win-bright) 45%, transparent));
+  animation:pnlBlaze 3.4s ease-in-out infinite;
 }
-.card.eq-dark-card .equity-total-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate);margin-top:4px;text-align:right;}
+.card.eq-dark-card .equity-total .cur-sign,
+.card.eq-dark-card .equity-total .pnl-sign{
+  -webkit-text-fill-color:inherit;
+}
+.card.eq-dark-card .equity-total-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--slate);margin-top:6px;text-align:right;}
 .eq-stat-row{display:flex;gap:26px;flex-wrap:wrap;margin-top:20px;}
 .eq-stat{display:flex;align-items:center;gap:10px;}
 .eq-stat-ico{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;}
-.eq-stat-ico.up{background:rgba(45,212,168,0.14);color:var(--win-bright);}
-.eq-stat-ico.down{background:rgba(255,93,122,0.14);color:var(--loss-bright);}
+.eq-stat-ico.up{background:color-mix(in srgb, var(--win-bright) 16%, transparent);color:var(--win-bright);}
+.eq-stat-ico.down{background:color-mix(in srgb, var(--loss-bright) 16%, transparent);color:var(--loss-bright);}
 .eq-stat-ico svg{width:16px;height:16px;}
-.eq-stat b{display:block;font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--platinum);line-height:1.15;}
+.eq-stat b{
+  display:block;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;
+  color:var(--platinum);line-height:1.15;letter-spacing:-0.01em;
+  font-feature-settings:"tnum" 1,"lnum" 1;font-variant-numeric:tabular-nums lining-nums;
+}
+.eq-stat b .cur-sign{font-size:0.7em;font-weight:500;color:var(--slate);margin-right:1px;letter-spacing:0;}
 .eq-stat span{font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate);}
 .card.eq-dark-card .eq-footer-row{border-top-color:rgba(240,244,242,0.1);}
 
@@ -803,7 +823,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
   box-shadow:0 14px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25); }
 .med-small .medallion-fallback{font-size:22px;}
 @media(max-width:420px){ .medallion-fallback{font-size:22px;} }
-.medallion-caption{ position:absolute;bottom:-40px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--bronze-bright);font-weight:700;white-space:nowrap;text-shadow:0 0 16px rgba(16,185,129,0.35); }
+.medallion-caption{ position:absolute;bottom:-40px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--bronze-bright);font-weight:700;white-space:nowrap;text-shadow:0 0 16px color-mix(in srgb, var(--bronze-bright) 35%, transparent); }
 .medallion-crack{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;}
 .medallion-plate.broken{
   background:
@@ -827,7 +847,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
     inset 0 -1px 0 rgba(0,0,0,0.04),
     0 18px 34px rgba(15,23,22,0.10),
     0 42px 90px rgba(15,23,22,0.20),
-    0 70px 150px -30px rgba(16,185,129,0.22);
+    0 70px 150px -30px color-mix(in srgb, var(--bronze-bright) 22%, transparent);
   background-clip:padding-box;
   transform:perspective(1400px) rotateX(1.4deg);
   transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s ease;
@@ -839,7 +859,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
     inset 0 -1px 0 rgba(0,0,0,0.04),
     0 22px 42px rgba(15,23,22,0.12),
     0 54px 110px rgba(15,23,22,0.24),
-    0 80px 170px -30px rgba(16,185,129,0.26);
+    0 80px 170px -30px color-mix(in srgb, var(--bronze-bright) 26%, transparent);
 }
 @media(max-width:840px){.auth-card{transform:none;}.auth-card:hover{transform:translateY(-3px);}}
 .auth-card::before{
@@ -853,13 +873,13 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
   font-family:'Fraunces',serif;font-size:35px;font-weight:680;margin:0 0 6px;letter-spacing:-0.022em;font-variation-settings:"opsz" 90;
   background:linear-gradient(135deg, var(--bronze-bright), var(--platinum) 55%, var(--amber));
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--platinum);
-  text-shadow:0 18px 38px rgba(16,185,129,0.24);
+  text-shadow:0 18px 38px color-mix(in srgb, var(--bronze-bright) 24%, transparent);
   filter:drop-shadow(0 5px 12px rgba(0,0,0,0.16));
 }
 .auth-sub{font-size:12.5px;color:var(--slate);margin-bottom:28px;letter-spacing:0.02em;line-height:1.5;}
 .auth-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--steel);}
 .auth-tab{ flex:1;text-align:center;padding:10px 0;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase; color:var(--slate);cursor:pointer;border-bottom:1.5px solid transparent;font-weight:500; transition:color .15s ease; }
-.auth-tab.active{color:var(--bronze-bright);border-bottom-color:var(--bronze);box-shadow:0 1px 12px rgba(45,212,191,0.25);}
+.auth-tab.active{color:var(--bronze-bright);border-bottom-color:var(--bronze);box-shadow:0 1px 12px color-mix(in srgb, var(--bronze-bright) 25%, transparent);}
 .auth-field{margin-bottom:16px;}
 .auth-field label{display:block;font-size:10.5px;color:var(--slate);margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;font-weight:500;}
 .auth-field input{
@@ -867,20 +887,42 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
   padding:11px 13px;border-radius:var(--r-sm);font-family:'Instrument Sans',sans-serif;font-size:16px;outline:none;
   transition:border-color .15s ease, box-shadow .15s ease;
 }
-.auth-field input:focus{border-color:var(--bronze-dim);box-shadow:0 0 0 3px rgba(16,185,129,0.14), 0 0 18px rgba(45,212,191,0.16);}
+.auth-field input:focus{border-color:var(--bronze-dim);box-shadow:0 0 0 3px color-mix(in srgb, var(--bronze-bright) 14%, transparent), 0 0 18px color-mix(in srgb, var(--bronze-bright) 16%, transparent);}
 .auth-msg{font-size:12px;margin-bottom:14px;line-height:1.5;padding:10px 12px;border-radius:var(--r-sm);display:none;}
 .auth-msg.show{display:block;}
 .auth-msg.error{background:rgba(244,63,94,0.08);color:#9f1239;border:1px solid rgba(244,63,94,0.3);}
 .auth-msg.info{background:rgba(16,185,129,0.08);color:#065f46;border:1px solid rgba(16,185,129,0.3);}
+.auth-field-wrap{position:relative;}
+.auth-field-wrap input{padding-right:42px;}
+.auth-pw-toggle{
+  position:absolute;top:50%;right:4px;transform:translateY(-50%);
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;color:var(--slate);cursor:pointer;border-radius:8px;
+  transition:color .15s ease, background .15s ease;
+}
+.auth-pw-toggle:hover{color:var(--platinum);background:rgba(255,255,255,0.06);}
+.auth-pw-toggle svg{width:17px;height:17px;}
+.auth-pw-toggle .icon-off{display:none;}
+.auth-pw-toggle.showing .icon-on{display:none;}
+.auth-pw-toggle.showing .icon-off{display:block;}
 .btn-gold{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:9px;
   width:100%;background:linear-gradient(135deg, var(--bronze-bright), var(--bronze));
   color:var(--bronze-ink);border:none;padding:13px 0;border-radius:var(--r-sm);font-family:'Instrument Sans',sans-serif;
   font-weight:600;font-size:13.5px;letter-spacing:0.02em;cursor:pointer;transition:opacity .15s ease, transform .1s ease;
-  box-shadow:0 5px 0 var(--bronze-dim), 0 12px 26px rgba(16,185,129,0.22);
+  box-shadow:0 5px 0 var(--bronze-dim), 0 12px 26px color-mix(in srgb, var(--bronze-bright) 22%, transparent);
 }
 .btn-gold:hover{opacity:0.94;transform:translateY(-1px);}
 .btn-gold:active{transform:translateY(3px);box-shadow:0 2px 0 var(--bronze-dim);}
 .btn-gold:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-gold .btn-label{display:inline-flex;align-items:center;justify-content:center;gap:9px;}
+.btn-gold .btn-spinner{
+  width:14px;height:14px;border-radius:50%;flex:none;display:none;
+  border:2px solid color-mix(in srgb, var(--bronze-ink) 35%, transparent);
+  border-top-color:var(--bronze-ink);animation:btnSpin 0.7s linear infinite;
+}
+.btn-gold.is-loading .btn-spinner{display:inline-block;}
+@keyframes btnSpin{to{transform:rotate(360deg);}}
 .auth-foot{text-align:center;font-size:11px;color:var(--slate-dim);margin-top:20px;line-height:1.5;}
 .auth-divider{display:flex;align-items:center;gap:12px;margin:22px 0 16px;}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--steel);}
@@ -900,7 +942,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
   font-family:'Fraunces',serif;font-size:36px;font-weight:680;line-height:1.14;letter-spacing:-0.02em;margin:0 0 14px;
   background:linear-gradient(135deg, var(--platinum) 15%, var(--bronze-bright) 55%, var(--amber) 90%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--platinum);
-  text-shadow:0 20px 46px rgba(16,185,129,0.22);
+  text-shadow:0 20px 46px color-mix(in srgb, var(--bronze-bright) 22%, transparent);
   filter:drop-shadow(0 8px 16px rgba(0,0,0,0.14));
 }
 .auth-lede{font-size:13px;color:var(--slate);line-height:1.6;margin:0 0 26px;}
@@ -1637,7 +1679,13 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 
 /* ============ EQUITY RIBBON CHART ============ */
 .equity-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px;}
-.equity-total{font-family:'Fraunces',serif;font-size:46px;font-weight:650;line-height:1;letter-spacing:-0.024em;font-variation-settings:"opsz" 100;position:relative;display:inline-block;}
+.equity-total{
+  font-family:'Fraunces',serif;font-size:46px;font-weight:650;line-height:1;
+  letter-spacing:-0.022em;font-variation-settings:"opsz" 100;position:relative;display:inline-block;
+  font-feature-settings:"tnum" 1,"lnum" 1;font-variant-numeric:tabular-nums lining-nums;
+}
+.equity-total .pnl-sign{font-weight:560;opacity:0.88;}
+.equity-total .cur-sign{font-size:0.56em;font-weight:560;opacity:0.72;letter-spacing:0;margin-right:1px;vertical-align:0.14em;}
 .equity-total.pos{
   background:linear-gradient(100deg, #86efac 0%, #10b981 38%, #34d399 62%, #ffe3a3 100%);
   background-size:220% 100%;
@@ -2036,12 +2084,18 @@ setTimeout(function(){
       </div>
       <div class="auth-field">
         <label for="authPassword">Password</label>
-        <input type="password" id="authPassword" name="password" placeholder="••••••••" autocomplete="current-password" required>
+        <div class="auth-field-wrap">
+          <input type="password" id="authPassword" name="password" placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="auth-pw-toggle" aria-label="Show password" onclick="toggleAuthPasswordVisibility(this,'authPassword')">
+            <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.9 19.9 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 7 11 7a19.9 19.9 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
       </div>
       <div style="text-align:right;margin:-8px 0 16px 0;">
         <button type="button" class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</button>
       </div>
-      <button type="submit" class="btn-gold" id="authSubmitBtn">Enter the terminal</button>
+      <button type="submit" class="btn-gold" id="authSubmitBtn"><span class="btn-spinner"></span><span class="btn-label" id="authSubmitLabel">Enter the terminal</span></button>
       <div class="auth-foot">Invitation only. Data is isolated per account with row-level access control.</div>
       <div class="auth-divider"><span>or</span></div>
       <button type="button" class="btn-demo" id="startDemoBtn" onclick="openDemoEmailGate()">Start the 7-day Proving Ground</button>
@@ -3936,12 +3990,14 @@ async function handleAuthSubmit(){
   const password = document.getElementById('authPassword').value;
   const msg = document.getElementById('authMsg');
   const btn = document.getElementById('authSubmitBtn');
+  const label = document.getElementById('authSubmitLabel');
   msg.classList.remove('show');
 
   if(!email || !password){
     showAuthMsg('Enter both an email and password.', 'error'); return;
   }
-  btn.disabled = true;
+  btn.disabled = true; btn.classList.add('is-loading');
+  const prevLabel = label.textContent; label.textContent = 'Signing in…';
   try{
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if(error) throw error;
@@ -3949,7 +4005,16 @@ async function handleAuthSubmit(){
   }catch(e){
     showAuthMsg(e.message || 'Something went wrong. Try again.', 'error');
   }
-  btn.disabled = false;
+  btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = prevLabel;
+}
+
+function toggleAuthPasswordVisibility(btn, inputId){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  const showing = input.type === 'password';
+  input.type = showing ? 'text' : 'password';
+  btn.classList.toggle('showing', showing);
+  btn.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
 }
 
 async function handleForgotPassword(){
@@ -3959,7 +4024,9 @@ async function handleForgotPassword(){
     return;
   }
   const btn = document.getElementById('authSubmitBtn');
-  btn.disabled = true;
+  const label = document.getElementById('authSubmitLabel');
+  btn.disabled = true; btn.classList.add('is-loading');
+  const prevLabel = label ? label.textContent : null; if(label) label.textContent = 'Sending…';
   try{
     const { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + window.location.pathname
@@ -3969,7 +4036,7 @@ async function handleForgotPassword(){
   }catch(e){
     showAuthMsg(e.message || 'Something went wrong. Try again.', 'error');
   }
-  btn.disabled = false;
+  btn.disabled = false; btn.classList.remove('is-loading'); if(label) label.textContent = prevLabel;
 }
 
 /* ============ INVITE / SET PASSWORD FLOW ============ */
@@ -5540,7 +5607,13 @@ function animateCount(el, from, to, isMoney, decimals){
     const p = Math.min(1, (now-start)/dur);
     const eased = 1 - Math.pow(1-p, 3);
     const val = from + (to-from)*eased;
-    el.textContent = (isMoney? (val>=0?('+'+curSym()):('-'+curSym())) : '') + (isMoney ? Math.abs(val).toFixed(decimals||0) : Math.round(val));
+    if(isMoney){
+      const sign = val>=0 ? '+' : '\u2212';
+      const amount = Math.abs(val).toLocaleString(undefined, {minimumFractionDigits:decimals||0, maximumFractionDigits:decimals||0});
+      el.innerHTML = `<span class="pnl-sign">${sign}</span><span class="cur-sign">${curSym()}</span>${amount}`;
+    } else {
+      el.textContent = Math.round(val);
+    }
     if(p<1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -8277,9 +8350,10 @@ function setEquityStats(trades, maxDD){
   const grossWin = wins.reduce((s,t)=>s+pnlOf(t),0);
   const grossLoss = losses.reduce((s,t)=>s+Math.abs(pnlOf(t)),0);
   pfEl.textContent = grossLoss>0 ? (grossWin/grossLoss).toFixed(2) : (grossWin>0?'∞':'—');
-  awEl.textContent = curSym()+(wins.length?(grossWin/wins.length).toFixed(0):'0');
-  alEl.textContent = curSym()+(losses.length?(grossLoss/losses.length).toFixed(0):'0');
-  if(ddEl) ddEl.textContent = curSym()+Math.round(maxDD||0);
+  const fmtMoney = n => `<span class="cur-sign">${curSym()}</span>${Math.round(n).toLocaleString()}`;
+  awEl.innerHTML = fmtMoney(wins.length ? grossWin/wins.length : 0);
+  alEl.innerHTML = fmtMoney(losses.length ? grossLoss/losses.length : 0);
+  if(ddEl) ddEl.innerHTML = fmtMoney(maxDD||0);
 }
 
 /* ============ CARD FULLSCREEN (mobile expand) ============
