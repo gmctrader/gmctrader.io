@@ -67,7 +67,7 @@ function gdLogoFallback(img){
   /* Base backdrop for the Equity Curve's forced-dark "instrument panel" —
      always dark regardless of light/dark mode, but each theme below tints
      it to match its own accent instead of a fixed navy. */
-  --eq-dark-base:#0a1119;
+  --eq-dark-base:#000000;
   --r-sm:8px; --r-md:13px; --r-lg:18px;
 }
 /* Registered custom property so animated gradient borders can rotate
@@ -87,7 +87,7 @@ html[data-theme="dark"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#2dd4c8; --neon-purple:#8b5cf6; --neon-magenta:#0d9488;
   --gold-bright:#ffdf9e; --gold:#f2c877; --gold-dim:#8a6b28; --gold-ink:#03110c;
-  --eq-dark-base:#0b131a;
+  --eq-dark-base:#000000;
 }
 html[data-theme="dark"] body{
   background:
@@ -130,7 +130,7 @@ html[data-theme="red"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#d9636f; --neon-purple:#9c7fc9; --neon-magenta:#e0a165;
   --gold-bright:#e0a165; --gold:#c67f47; --gold-dim:#5c3d1e; --gold-ink:#160c04;
-  --eq-dark-base:#0d0b0d;
+  --eq-dark-base:#000000;
 }
 html[data-theme="red"] body{
   background:
@@ -161,7 +161,7 @@ html[data-theme="blue"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#5f92c4; --neon-purple:#9c7fc9; --neon-magenta:#e3b876;
   --gold-bright:#e3b876; --gold:#bd9256; --gold-dim:#544526; --gold-ink:#100c04;
-  --eq-dark-base:#0b0f13;
+  --eq-dark-base:#000000;
 }
 html[data-theme="blue"] body{
   background:
@@ -192,7 +192,7 @@ html[data-theme="purple"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#9c7fc9; --neon-purple:#9c7fc9; --neon-magenta:#c589d9;
   --gold-bright:#e0ab72; --gold:#b98a52; --gold-dim:#513c1f; --gold-ink:#0f0a04;
-  --eq-dark-base:#0d0c12;
+  --eq-dark-base:#000000;
 }
 html[data-theme="purple"] body{
   background:
@@ -223,7 +223,7 @@ html[data-theme="gold"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#d4a24e; --neon-purple:#9c7fc9; --neon-magenta:#f2c27c;
   --gold-bright:#f2c27c; --gold:#d4a24e; --gold-dim:#5c4014; --gold-ink:#160e02;
-  --eq-dark-base:#0e0c09;
+  --eq-dark-base:#000000;
 }
 html[data-theme="gold"] body{
   background:
@@ -254,7 +254,7 @@ html[data-theme="slate"]{
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
   --neon-green:#2dd4a8; --neon-red:#ff5d7a; --neon-cyan:#9aa7b3; --neon-purple:#9c7fc9; --neon-magenta:#d9c48a;
   --gold-bright:#d9c48a; --gold:#b39f68; --gold-dim:#4d452c; --gold-ink:#100e08;
-  --eq-dark-base:#0d1013;
+  --eq-dark-base:#000000;
 }
 html[data-theme="slate"] body{
   background:
@@ -391,9 +391,11 @@ button:focus-visible,.side-navbtn:focus-visible,.btn:focus-visible,select:focus-
      are tuned for a WHITE background) needs a safe override below so text
      stays legible against this card's always-dark backdrop. */
   --win:#2be08a; --win-bright:#22c67c; --loss:#ff5d7a; --loss-bright:#ff7a92;
+  /* Clean black instrument panel — a whisper of the chosen accent in the
+     corner for depth, but the panel itself reads as true black rather
+     than a tinted navy/graphite. */
   background:
-    radial-gradient(ellipse 700px 420px at 18% -10%, color-mix(in srgb, var(--bronze-bright) 14%, transparent), transparent 60%),
-    radial-gradient(ellipse 620px 380px at 100% 100%, rgba(255,255,255,0.03), transparent 55%),
+    radial-gradient(ellipse 700px 420px at 18% -10%, color-mix(in srgb, var(--bronze-bright) 7%, transparent), transparent 60%),
     var(--eq-dark-base);
   border-color:rgba(240,244,242,0.09);
   color:var(--platinum);
@@ -3564,6 +3566,15 @@ const CURRENCIES = {
 const CURRENCY_OPTIONS_HTML = Object.entries(CURRENCIES).map(([code,c])=>
   `<option value="${code}">${c.symbol} — ${c.name} (${code})</option>`).join('');
 function curSym(){ return (CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol; }
+// Compact "high-class" money formatting for headline figures — 2139 -> "2.1k",
+// 18400 -> "18.4k", 1250000 -> "1.3M". Sign is handled by the caller; this
+// always returns a magnitude string.
+function shortMoney(n){
+  const abs = Math.abs(n);
+  if(abs >= 1000000) return (abs/1000000).toFixed(abs>=10000000?0:1).replace(/\.0$/,'')+'M';
+  if(abs >= 1000) return (abs/1000).toFixed(1).replace(/\.0$/,'')+'k';
+  return abs.toLocaleString(undefined,{maximumFractionDigits:0});
+}
 function updateCurrencyLabels(){ document.querySelectorAll('.cur-sym').forEach(el=>el.textContent=curSym()); }
 // The prop firm challenge can be denominated in a different currency to the
 // personal account (e.g. a ZAR trader on a USD FTMO challenge), so every
@@ -5616,7 +5627,7 @@ document.addEventListener('mousemove', (e)=>{
 })();
 
 /* ============ COUNT-UP NUMBER ANIMATION ============ */
-function animateCount(el, from, to, isMoney, decimals){
+function animateCount(el, from, to, isMoney, decimals, short){
   if(!el) return;
   const dur = 550;
   const start = performance.now();
@@ -5627,7 +5638,7 @@ function animateCount(el, from, to, isMoney, decimals){
     const val = from + (to-from)*eased;
     if(isMoney){
       const sign = val>=0 ? '+' : '\u2212';
-      const amount = Math.abs(val).toLocaleString(undefined, {minimumFractionDigits:decimals||0, maximumFractionDigits:decimals||0});
+      const amount = short ? shortMoney(val) : Math.abs(val).toLocaleString(undefined, {minimumFractionDigits:decimals||0, maximumFractionDigits:decimals||0});
       el.innerHTML = `<span class="pnl-sign">${sign}</span><span class="cur-sign">${curSym()}</span>${amount}`;
     } else {
       el.textContent = Math.round(val);
@@ -8168,21 +8179,29 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   // runs or the chart throws and the whole card falls back to its zero state.
   // Ticks now land on the nice/rounded values computed above.
   let floorLines = '', axisLabels = '';
-  for(let g=0; g<=4; g++){
+  // Walk every nice-step multiple between minY and maxY (not a fixed 4
+  // hops down from the top) — minY/maxY are already floor/ceil snapped to
+  // niceStep, so the true data range can span more than 4 steps (e.g. a
+  // -$2,139 drawdown against a +$500 peak needs 6 steps of $500, not 4).
+  // Fixing the loop at 4 previously clipped the bottom labels, so the
+  // lowest grid line read "-$1,500" while the curve actually dropped to
+  // -$2,139 with no line/label to show it.
+  const numYSteps = Math.min(10, Math.max(1, Math.round(spanY/niceStep)));
+  for(let g=0; g<=numYSteps; g++){
     const val = maxY - niceStep*g;
     const gy = sy(val);
-    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="rgba(255,255,255,0.05)" stroke-width="0.6" stroke-dasharray="1,5"/>`;
-    const lbl = (val>=0?'':'-') + curSym() + Math.abs(Math.round(val)).toLocaleString();
-    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="500" letter-spacing="0.03em" fill="var(--platinum)" fill-opacity="0.56">${lbl}</text>`;
+    floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="var(--bronze-bright)" stroke-opacity="0.09" stroke-width="0.6" stroke-dasharray="1,5"/>`;
+    const lbl = (val>=0?'':'-') + curSym() + shortMoney(val);
+    axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="600" letter-spacing="0.03em" fill="var(--bronze-bright)" fill-opacity="0.85">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
     const gx = padL + plotW*(g/6);
-    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="rgba(255,255,255,0.028)" stroke-width="0.6" stroke-dasharray="1,5"/>`;
+    floorLines += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+plotH}" stroke="var(--bronze-bright)" stroke-opacity="0.05" stroke-width="0.6" stroke-dasharray="1,5"/>`;
   }
   const xStep = Math.max(1, Math.ceil((points.length-1)/Math.min(15, Math.max(1,points.length-1))));
   for(let i=0;i<points.length;i++){
     if(i!==0 && i%xStep!==0 && i!==points.length-1) continue;
-    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="500" letter-spacing="0.02em" fill="var(--platinum)" fill-opacity="0.42">${i}</text>`;
+    axisLabels += `<text x="${sx(i)}" y="${padT+plotH+18}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="500" letter-spacing="0.02em" fill="var(--bronze-bright)" fill-opacity="0.6">${i}</text>`;
   }
   axisLabels += `<text x="${padL+plotW/2}" y="${padT+plotH+34}" text-anchor="middle" font-family="'Instrument Sans',sans-serif" font-size="9.5" letter-spacing="0.18em" font-weight="600" fill="var(--bronze-bright)" fill-opacity="0.68">TRADE NUMBER</text>`;
 
@@ -8273,7 +8292,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       <rect x="0" y="0" width="${W}" height="${H+6}" fill="url(#vignette-${containerId})" pointer-events="none"/>
       ${floorLines}
       ${axisLabels}
-      <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="rgba(238,246,242,0.16)" stroke-width="0.7" stroke-dasharray="1,3.5"/>
+      <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="var(--bronze-bright)" stroke-opacity="0.22" stroke-width="0.7" stroke-dasharray="1,3.5"/>
       <g clip-path="url(#eqReveal-${containerId})">
         <g clip-path="url(#plotBounds-${containerId})">
           <g mask="url(#topFadeMask-${containerId})">
@@ -8319,14 +8338,14 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       let nearest = 0, best = Infinity;
       topPts.forEach((p,i)=>{ const d = Math.abs(p[0]-loc.x); if(d<best){best=d; nearest=i;} });
       const val = points[nearest].y;
-      showTip(e.clientX, e.clientY, `<b>${points[nearest].label}</b><br>${val>=0?('+'+curSym()):('-'+curSym())}${Math.abs(val).toFixed(0)}`);
+      showTip(e.clientX, e.clientY, `<b>${points[nearest].label}</b><br>${val>=0?('+'+curSym()):('-'+curSym())}${shortMoney(val)}`);
     });
     hitRect.addEventListener('mouseleave', hideTip);
   }
 
   const totalPnl = cum;
   if(totalEl){
-    animateCount(totalEl, 0, totalPnl, true, 0);
+    animateCount(totalEl, 0, totalPnl, true, 0, true);
     totalEl.className = 'equity-total ' + (totalPnl>=0?'pos':'neg');
   }
   const subEl = document.getElementById(subId);
@@ -8368,7 +8387,7 @@ function setEquityStats(trades, maxDD){
   const grossWin = wins.reduce((s,t)=>s+pnlOf(t),0);
   const grossLoss = losses.reduce((s,t)=>s+Math.abs(pnlOf(t)),0);
   pfEl.textContent = grossLoss>0 ? (grossWin/grossLoss).toFixed(2) : (grossWin>0?'∞':'—');
-  const fmtMoney = n => `<span class="cur-sign">${curSym()}</span>${Math.round(n).toLocaleString()}`;
+  const fmtMoney = n => `<span class="cur-sign">${curSym()}</span>${shortMoney(n)}`;
   awEl.innerHTML = fmtMoney(wins.length ? grossWin/wins.length : 0);
   alEl.innerHTML = fmtMoney(losses.length ? grossLoss/losses.length : 0);
   if(ddEl) ddEl.innerHTML = fmtMoney(maxDD||0);
