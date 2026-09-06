@@ -2125,6 +2125,93 @@ body::before{ opacity:0.014; }
 #view-journal .journal-toolbar{ margin:16px 0 6px; }
 #view-journal .trade-tags{ row-gap:6px; }
 #view-journal .trade-row{ overflow:hidden; }
+
+/* ================================================================
+   JOURNAL REDESIGN V2 — remove the last "school portal" tells:
+   course-catalog-style nav grouping, a shouty uppercase eyebrow
+   chip on every card, and a hamburger-drawer as primary mobile
+   nav. Adds a persistent "today" dateline (the thing an actual
+   journal leads with) and a proper bottom tab bar for phones.
+   Nothing below renames or removes an id/class the app reads —
+   it only restyles, adds new elements, or reorders via flex.
+   ================================================================ */
+
+/* ---- sidebar: plain dividers instead of "subject" category labels ---- */
+.side-divider{ height:1px; margin:16px 12px 10px; background:var(--j-border,var(--steel)); opacity:.8; }
+
+/* ---- card eyebrow: a quiet caption under the title, not a tracked-out
+   uppercase chip stapled to the top-right corner ---- */
+.card h2{ flex-wrap:wrap; row-gap:4px; }
+.card h2 .eyebrow{
+  display:block; width:100%; margin-left:0; order:5;
+  font-family:var(--j-serif); font-style:italic; font-weight:420;
+  font-size:12.5px; letter-spacing:0; text-transform:none; opacity:.68;
+}
+/* small live counters (e.g. "3 pending") stay as an inline pill,
+   right-aligned on the title row — these aren't captions */
+.card h2 .h2-badge{
+  margin-left:auto; font-family:var(--j-mono); font-size:11px; color:var(--slate);
+  background:var(--steel); padding:4px 10px; border-radius:100px; letter-spacing:0.02em;
+}
+.card h2 .h2-badge:empty{ display:none; }
+
+/* ---- the journal dateline: today's date, streak and discipline score,
+   surfaced where a diary would put them — above everything, on every
+   screen — instead of buried in a drawer only desktop ever sees ---- */
+.journal-dateline{
+  display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding:0 0 18px; margin-bottom:22px; border-bottom:1px solid var(--j-border,var(--steel));
+  cursor:pointer;
+}
+.journal-dateline .jd-date{
+  font-family:var(--j-serif); font-style:italic; font-weight:460; font-size:19px;
+  color:var(--platinum); letter-spacing:-0.01em;
+}
+.journal-dateline .jd-meta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.jd-chip{
+  font-family:var(--j-mono); font-size:11px; color:var(--slate); display:inline-flex; align-items:baseline; gap:4px;
+  padding:5px 12px; border-radius:100px; border:1px solid var(--j-border,var(--steel)); background:var(--panel);
+}
+.jd-chip b{ color:var(--platinum); font-weight:600; font-size:12px; }
+.jd-chip.jd-score b{ color:var(--bronze-bright); }
+.jd-sync{ width:7px; height:7px; border-radius:50%; background:var(--win); box-shadow:0 0 6px rgba(43,224,138,0.6); flex-shrink:0; }
+.jd-sync.sync-saving{ background:var(--amber); animation:pulse 1s ease-in-out infinite; }
+.jd-sync.sync-offline{ background:var(--loss-bright); }
+.jd-sync.sync-conflict{ background:var(--amber); animation:pulse .7s ease-in-out infinite; }
+@media(max-width:600px){
+  .journal-dateline{ padding-bottom:14px; margin-bottom:16px; }
+  .journal-dateline .jd-date{ font-size:16.5px; }
+  .jd-chip{ font-size:10px; padding:4px 10px; }
+}
+
+/* ---- bottom tab bar: the real fix for "feels like a school portal"
+   on a phone. Primary destinations live one thumb-reach away; the
+   rest of the sidebar's list becomes a "More" sheet instead of the
+   default, only way in. ---- */
+.tab-bar{ display:none; }
+@media(max-width:960px){
+  .tab-bar{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:41;
+    background:var(--panel-solid); border-top:1px solid var(--j-border,var(--steel));
+    padding:7px 4px calc(7px + env(safe-area-inset-bottom)); backdrop-filter:blur(20px) saturate(140%);
+    box-shadow:0 -8px 30px -18px rgba(0,0,0,0.4);
+  }
+  .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0;
+    background:none; border:none; color:var(--slate); font-family:'Instrument Sans',sans-serif;
+    font-size:9.5px; font-weight:500; letter-spacing:0.01em; padding:7px 2px; border-radius:14px; cursor:pointer;
+  }
+  .tab-btn svg{ width:20px; height:20px; opacity:.7; transition:opacity .15s ease, transform .15s ease; }
+  .tab-btn.active{ color:var(--bronze-bright); }
+  .tab-btn.active svg{ opacity:1; transform:translateY(-1px); }
+  .main{ padding-bottom:calc(80px + env(safe-area-inset-bottom)) !important; }
+  /* the hamburger stays as a secondary way into the full drawer, but the
+     tab bar's "More" button is the primary one now — de-emphasize it */
+  .hamburger{ opacity:.75; }
+}
+@media(max-width:380px){
+  .tab-btn span{ font-size:9px; }
+}
 </style></head>
 <body>
 <script>
@@ -2495,7 +2582,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
         Order Book
       </button>
-      <div class="side-nav-label">Mind &amp; Method</div>
+      <div class="side-divider"></div>
       <button class="side-navbtn" data-view="playbook">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Playbook
@@ -2508,7 +2595,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
         Psychology
       </button>
-      <div class="side-nav-label">System &amp; Rules</div>
+      <div class="side-divider"></div>
       <button class="side-navbtn" data-view="rules">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/></svg>
         Rule Builder
@@ -2521,7 +2608,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         Session
       </button>
-      <div class="side-nav-label">More</div>
+      <div class="side-divider"></div>
       <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
         SciFe
@@ -2563,11 +2650,91 @@ setTimeout(function(){
       <div class="mark" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><img src="logo.png" style="width:96%;height:96%;object-fit:contain;border-radius:8px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.18));"></div>
       <h1>Ghost Discipline</h1>
     </div>
-    <button class="hamburger" onclick="toggleSidebar()"><span></span></button>
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Open menu"><span></span></button>
   </div>
+
+  <nav class="tab-bar" id="tabBar" aria-label="Primary">
+    <button class="tab-btn active" data-view="dashboard" onclick="gdTabClick(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3z"/><path d="M8 9h9M8 13h6"/></svg>
+      <span>Today</span>
+    </button>
+    <button class="tab-btn" data-view="journal" onclick="gdTabClick(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/></svg>
+      <span>Journal</span>
+    </button>
+    <button class="tab-btn" data-view="analytics" onclick="gdTabClick(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+      <span>Analytics</span>
+    </button>
+    <button class="tab-btn" data-view="orders" onclick="gdTabClick(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/></svg>
+      <span>Orders</span>
+    </button>
+    <button class="tab-btn" id="tabMoreBtn" onclick="toggleSidebar(true)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+      <span>More</span>
+    </button>
+  </nav>
 
   <main class="main" id="hud">
     <div class="demo-top-banner" id="demoTopBanner" style="display:none;">👻 Trial — Proving Ground</div>
+
+    <div class="journal-dateline" id="journalDateline" role="button" tabindex="0">
+      <div class="jd-date"><span id="jdDate">—</span></div>
+      <div class="jd-meta">
+        <span class="jd-chip"><b id="jdStreakVal">0</b>&nbsp;day streak</span>
+        <span class="jd-chip jd-score"><b id="jdScoreVal">—</b>&nbsp;discipline</span>
+        <span class="jd-sync" id="jdSyncDot" title="Sync status"></span>
+      </div>
+    </div>
+    <script>
+    (function(){
+      var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      var d=new Date();
+      var dateEl=document.getElementById('jdDate');
+      if(dateEl) dateEl.textContent = days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()];
+
+      function mirror(){
+        var s=document.getElementById('sdpStreak'), sc=document.getElementById('sdpScore');
+        var sv=document.getElementById('jdStreakVal'), scv=document.getElementById('jdScoreVal');
+        if(s&&sv&&sv.textContent!==s.textContent) sv.textContent=s.textContent;
+        if(sc&&scv&&scv.textContent!==sc.textContent) scv.textContent=sc.textContent;
+        var dot=document.getElementById('syncDot'), jdot=document.getElementById('jdSyncDot');
+        if(dot&&jdot){
+          var state = dot.className.replace('dot','').trim();
+          jdot.className = 'jd-sync ' + state;
+        }
+      }
+      mirror();
+      setInterval(mirror, 900);
+
+      var dl=document.getElementById('journalDateline');
+      if(dl){
+        var go=function(){ var b=document.querySelector('.side-navbtn[data-view="dashboard"]'); if(b) b.click(); };
+        dl.addEventListener('click', go);
+        dl.addEventListener('keydown', function(e){ if(e.key==='Enter') go(); });
+      }
+
+      // Keep the mobile tab bar in sync no matter how a view is opened
+      // (tab tap, sidebar drawer, keyboard shortcut, deep link, etc.)
+      document.querySelectorAll('.side-navbtn[data-view]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var v = btn.dataset.view;
+          document.querySelectorAll('.tab-btn[data-view]').forEach(function(b){
+            b.classList.toggle('active', b.dataset.view===v);
+          });
+        });
+      });
+    })();
+    function gdTabClick(el){
+      var v = el.dataset.view;
+      document.querySelectorAll('.tab-btn[data-view]').forEach(function(b){ b.classList.remove('active'); });
+      el.classList.add('active');
+      var b = document.querySelector('.side-navbtn[data-view="'+v+'"]');
+      if(b) b.click();
+    }
+    </script>
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
@@ -2704,7 +2871,7 @@ setTimeout(function(){
       </div>
       <div class="grid">
         <div class="card tilt">
-          <h2>Morning <span class="accent">Brief</span><span class="eyebrow" id="briefDateLabel"></span></h2>
+          <h2>Morning <span class="accent">Brief</span><span class="h2-badge" id="briefDateLabel"></span></h2>
           <div id="briefMorningBody"></div>
         </div>
         <div class="card tilt">
@@ -2800,7 +2967,7 @@ setTimeout(function(){
       </div>
 
       <div class="card tilt" style="margin-top:18px">
-        <h2>Wins vs Losses <span class="accent">— Last 14 Days</span><span class="eyebrow" id="dashChartTotal"></span></h2>
+        <h2>Wins vs Losses <span class="accent">— Last 14 Days</span><span class="h2-badge" id="dashChartTotal"></span></h2>
         <div class="chart3d-wrap"><div class="chart3d" id="dashChart3d"></div></div>
         <div class="chart-legend">
           <span><i class="legend-dot" style="background:var(--win)"></i>Wins</span>
@@ -3027,7 +3194,7 @@ setTimeout(function(){
         </div>
         <div class="card tilt">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <h2 style="margin-bottom:0;">Pending <span class="accent">Orders</span><span class="eyebrow" id="ordersCount"></span></h2>
+            <h2 style="margin-bottom:0;">Pending <span class="accent">Orders</span><span class="h2-badge" id="ordersCount"></span></h2>
             <button class="btn btn-sm btn-ghost" onclick="openLotCalc()" title="Lot size calculator" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">🧮 <span class="lot-calc-btn-label">Lot Calc</span></button>
           </div>
           <div class="trade-list" id="ordersList" style="margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
@@ -3137,7 +3304,7 @@ setTimeout(function(){
       </div>
 
       <div class="card tilt" style="margin-top:18px" id="snPendingCard">
-        <h2>Awaiting <span class="accent">Outcome</span><span class="eyebrow" id="snPendingCount"></span></h2>
+        <h2>Awaiting <span class="accent">Outcome</span><span class="h2-badge" id="snPendingCount"></span></h2>
         <div id="snPendingList"></div>
       </div>
 
