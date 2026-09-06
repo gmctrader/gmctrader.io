@@ -2111,6 +2111,20 @@ body::before{ opacity:0.014; }
   .hero-stat{ min-width:104px; padding:10px 13px; }
   .card{ padding:16px; }
 }
+
+/* ---- Journal view: fix the cramped 50/50 split — Performance Snapshot
+   becomes a slim stat strip, Trade Journal gets the full width it needs
+   for its tag rows to breathe (they already wrap; they just never had
+   room to). Scoped to this view only, so the shared .grid class used by
+   Dashboard/other views is untouched. ---- */
+#view-journal > .grid{ display:flex; flex-direction:column; gap:20px; }
+#view-journal > .grid > .card:first-child{ padding-bottom:24px; }
+#view-journal > .grid > .card:first-child .stat-row{ margin-top:14px; }
+#view-journal > .grid > .card:first-child .stat{ min-width:120px; }
+#view-journal > .grid > .card:first-child .btn-block{ max-width:240px; margin-left:auto; margin-right:auto; }
+#view-journal .journal-toolbar{ margin:16px 0 6px; }
+#view-journal .trade-tags{ row-gap:6px; }
+#view-journal .trade-row{ overflow:hidden; }
 </style></head>
 <body>
 <script>
@@ -5729,21 +5743,19 @@ function pnlOf(t){
 document.addEventListener('mousemove', (e)=>{
   const gx = (e.clientX / window.innerWidth) - 0.5;
   const gy = (e.clientY / window.innerHeight) - 0.5;
+  // Cursor-driven tilt/parallax dialed down to ~4% of its original strength
+  // (kept, not removed, so the effect still reads as "alive" without the
+  // dramatic swing) — see also attachTilt()'s maxTilt further down.
   document.querySelectorAll('.bg-video-layer video').forEach(v=>{
-    v.style.transform = `translate(-50%,-50%) scale(1.1) rotateX(${-gy*5}deg) rotateY(${gx*5}deg)`;
+    v.style.transform = `translate(-50%,-50%) scale(1.1) rotateX(${-gy*0.2}deg) rotateY(${gx*0.2}deg)`;
   });
   const authVid = document.getElementById('authBgVideo');
   if(authVid){
-    authVid.style.transform = `translate(-50%,-50%) scale(1.12) rotateX(${-gy*7}deg) rotateY(${gx*7}deg)`;
+    authVid.style.transform = `translate(-50%,-50%) scale(1.12) rotateX(${-gy*0.28}deg) rotateY(${gx*0.28}deg)`;
   }
-  document.querySelectorAll('.card.tilt').forEach(card=>{
-    const r = card.getBoundingClientRect();
-    const inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
-    if(!inside){ card.style.transform = ''; return; }
-    const px = (e.clientX - r.left)/r.width - 0.5;
-    const py = (e.clientY - r.top)/r.height - 0.5;
-    card.style.transform = `perspective(900px) rotateY(${px*4}deg) rotateX(${-py*4}deg)`;
-  });
+  // .card.tilt is now handled entirely by attachTilt()'s pointermove
+  // listener (below) — this loop used to duplicate/fight that transform,
+  // which is part of what made the cursor effect feel so strong.
   [document.getElementById('authMedallion'), document.getElementById('medSmall')].forEach(med=>{
     if(!med) return;
     const r = med.getBoundingClientRect();
@@ -5751,7 +5763,7 @@ document.addEventListener('mousemove', (e)=>{
     if(!inside) return;
     const px = (e.clientX - r.left)/r.width - 0.5;
     const py = (e.clientY - r.top)/r.height - 0.5;
-    med.style.transform = `rotateY(${px*24}deg) rotateX(${-py*24}deg)`;
+    med.style.transform = `rotateY(${px*0.96}deg) rotateX(${-py*0.96}deg)`;
   });
 });
 
@@ -10556,8 +10568,10 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   function attachTilt(el, opts){
     if(!el || el.__tiltBound) return;
     el.__tiltBound = true;
-    var maxTilt = (opts && opts.maxTilt) || 6;
-    var lift = (opts && opts.lift) || 1.012;
+    // Dialed to ~4% of the original tilt strength (was maxTilt 6 / lift
+    // 1.012) — kept alive rather than removed, but now barely perceptible.
+    var maxTilt = (opts && opts.maxTilt) || 0.24;
+    var lift = (opts && opts.lift) || 1.0005;
     var raf = null, curRx=0, curRy=0, targetRx=0, targetRy=0, active=false;
 
     // Free the element from the one-shot entrance animation once it's
@@ -10596,7 +10610,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   }
 
   function scanCards(root){
-    (root||document).querySelectorAll('.card.tilt').forEach(function(el){ attachTilt(el, {maxTilt:5, lift:1.012}); });
+    (root||document).querySelectorAll('.card.tilt').forEach(function(el){ attachTilt(el, {maxTilt:0.2, lift:1.0005}); });
   }
 
   function boot(){
@@ -10615,8 +10629,8 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
       mloop();
       document.addEventListener('pointermove', function(e){
         if(e.pointerType && e.pointerType !== 'mouse') return;
-        mtx = (0.5 - e.clientY/innerHeight) * 14;
-        mty = (e.clientX/innerWidth - 0.5) * 14;
+        mtx = (0.5 - e.clientY/innerHeight) * 0.56;
+        mty = (e.clientX/innerWidth - 0.5) * 0.56;
       }, {passive:true});
     }
     // Re-scan for cards the app injects into panels after boot (e.g. the
