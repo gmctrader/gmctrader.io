@@ -1347,6 +1347,37 @@ body{
   .stage{ height:190px; }
   .bubble{ max-width:92%; }
 }
+
+/* ================================================================
+   DESKTOP REDESIGN — this whole screen was built to one phone-width
+   column (#app maxes at 640px) with no wider treatment at all, so on
+   a real monitor it sits as a narrow strip stranded in a sea of
+   background — the opposite of "feels best on PC." This gives it a
+   deliberately wider stage once there's room for one: the neural
+   core gets more presence instead of looking like a shrunk mobile
+   widget, the quick-action chips get to wrap into a proper row
+   instead of a horizontal-scroll strip (a mobile-only pattern), and
+   the chat column widens just enough to stay readable without
+   turning into a single stranded line down the middle of the page.
+   Nothing here renames or removes anything the JS reads.
+   ================================================================ */
+@media(min-width:860px){
+  #app{ max-width:760px; padding:0 24px 24px; }
+  .topbar{ padding-top:22px; padding-bottom:18px; }
+  .topbar .title{ font-size:21px; }
+  .stage{ height:320px; border-radius:28px; }
+  .neural-core-wrap{ max-width:420px; }
+  .quick-row-wrap::after{ display:none; }
+  .quick-row{ flex-wrap:wrap; overflow-x:visible; justify-content:center; padding-bottom:0; }
+  .quick-chip{ font-size:13px; padding:9px 16px; }
+  .bubble{ max-width:72%; }
+  .composer-row{ padding:11px 11px 11px 20px; }
+  #signalPage{ max-width:680px; }
+}
+@media(min-width:1200px){
+  #app{ max-width:860px; }
+  .stage{ height:360px; }
+}
 </style>
 </head>
 <body>

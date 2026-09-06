@@ -2212,6 +2212,36 @@ body::before{ opacity:0.014; }
 @media(max-width:380px){
   .tab-btn span{ font-size:9px; }
 }
+
+/* ================================================================
+   DESKTOP REDESIGN — real monitors, not a stretched tablet view.
+   Every rule above caps .main at a fixed max-width but never gives it
+   anywhere to sit within the leftover space, so on any screen wider
+   than ~1550px the whole app trails off into empty backdrop on the
+   right instead of reading as a considered layout — the one thing
+   that reads as "unfinished" on a proper desktop. This centers the
+   working column in whatever room is actually available, then lets
+   it widen a step further on larger monitors so the extra width goes
+   to the data-dense grids that benefit from it (the hero ticker, the
+   3-up stat cards) rather than sitting there as idle whitespace.
+   Nothing here touches structure, ids, or anything read by JS.
+   ================================================================ */
+@media(min-width:961px){
+  .main{ margin:0 auto; }
+}
+@media(min-width:1440px){
+  .main{ max-width:1360px; padding:48px 60px 100px; }
+  .hero-row{ padding:8px 6px; }
+  .hero-stat{ padding:16px 22px; min-width:150px; }
+  .hero-stat .hero-value{ font-size:24px; }
+  #aiCoachCard{ padding:40px 44px; }
+  .ai-insight{ font-size:18px; max-width:68ch; }
+}
+@media(min-width:1760px){
+  .main{ max-width:1540px; }
+  .grid{ gap:32px; }
+  .grid3{ gap:32px; }
+}
 </style></head>
 <body>
 <script>
