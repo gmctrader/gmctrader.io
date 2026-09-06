@@ -2213,6 +2213,30 @@ body::before{ opacity:0.014; }
   .tab-btn span{ font-size:9px; }
 }
 
+/* ---- mobile edge-overflow fixes ----
+   A few pieces of text/pills were sized for their max-content width and,
+   as flex children, refused to shrink or wrap — instead of respecting the
+   card's edge they ran past it and got silently clipped by the page-level
+   overflow-x:hidden guard (so the tail of a long date badge or a long
+   rule-review sentence just disappeared off the right side on narrow
+   phones). Forcing min-width:0 lets these items shrink to fit their row;
+   forcing wrap/break lets long words fall to a new line instead of
+   pushing the box wider than the viewport. ---- */
+.check-item{ min-width:0; word-break:break-word; overflow-wrap:anywhere; }
+.check-item > span:first-child{ flex-shrink:0; }
+.card h2{ min-width:0; }
+.card h2 .h2-badge{ min-width:0; max-width:100%; white-space:normal; word-break:break-word; overflow-wrap:anywhere; box-sizing:border-box; }
+.topbar-row, .topbar-row > div{ min-width:0; }
+.page-title, .page-sub{ word-break:break-word; overflow-wrap:anywhere; }
+.trade-row{ min-width:0; }
+.trade-meta{ min-width:0; }
+.trade-meta .top, .trade-meta .bottom{ word-break:break-word; overflow-wrap:anywhere; }
+.stat-row .stat{ min-width:0; }
+.hero-row .hero-stat{ min-width:0; }
+@media(max-width:600px){
+  .card h2{ column-gap:8px; }
+}
+
 /* ================================================================
    DESKTOP REDESIGN — real monitors, not a stretched tablet view.
    Every rule above caps .main at a fixed max-width but never gives it
@@ -5117,7 +5141,10 @@ function hydrateState(row){
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, row.psychology || {}));
   state.brief = Object.assign({}, DEFAULT_STATE.brief, row.brief || {});
   state.trades = row.trades || [];
-  state.backtestSessions = row.backtestSessions || [];
+  // The Supabase column is snake_case ('backtest_sessions'); fall back to
+  // the old camelCase key too, in case any row got saved under it before
+  // this was fixed, so nobody's existing sessions silently vanish.
+  state.backtestSessions = row.backtest_sessions || row.backtestSessions || [];
   state.streak = row.streak || DEFAULT_STATE.streak;
   state.day = row.day || DEFAULT_STATE.day;
   state.consecutiveLosses = row.consecutive_losses || 0;
@@ -5153,7 +5180,7 @@ function buildSavePayload(){
     psychology: state.psychology,
     brief: state.brief,
     trades: state.trades,
-    backtestSessions: state.backtestSessions,
+    backtest_sessions: state.backtestSessions,
     streak: state.streak,
     day: state.day,
     consecutive_losses: state.consecutiveLosses,
@@ -9635,15 +9662,97 @@ function backtestTradesFor(sessionId){
   return state.trades.filter(t=>t.backtestSession===sessionId);
 }
 function btStatsFor(sessionId){
-  const trades = backtestTradesFor(sessionId);
+  // Chronological order (oldest first) so the equity curve, streaks, and
+  // drawdown all read left-to-right the way they actually happened —
+  // the trade list itself stays newest-first elsewhere for readability.
+  const trades = backtestTradesFor(sessionId).slice()
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.id-b.id));
   const total = trades.length;
   const wins = trades.filter(t=>t.result==='win').length;
+  const losses = total - wins;
   const winRate = total ? Math.round(wins/total*100) : 0;
   // Simple R accounting: a win banks its logged R:R, a loss costs 1R.
   // Matches how the live Journal already treats R-multiples elsewhere.
-  const totalR = trades.reduce((s,t)=> s + (t.result==='win' ? (parseFloat(t.rr)||0) : -1), 0);
+  const rOf = t => t.result==='win' ? (parseFloat(t.rr)||0) : -1;
+  const totalR = trades.reduce((s,t)=> s + rOf(t), 0);
   const avgR = total ? +(totalR/total).toFixed(2) : 0;
-  return { total, wins, winRate, totalR:+totalR.toFixed(2), avgR };
+
+  const winRs = trades.filter(t=>t.result==='win').map(rOf);
+  const lossRs = trades.filter(t=>t.result!=='win').map(rOf);
+  const grossWinR = winRs.reduce((s,r)=>s+r,0);
+  const grossLossR = Math.abs(lossRs.reduce((s,r)=>s+r,0));
+  const profitFactor = grossLossR>0 ? +(grossWinR/grossLossR).toFixed(2) : (grossWinR>0 ? Infinity : null);
+  const avgWinR = winRs.length ? +(grossWinR/winRs.length).toFixed(2) : 0;
+  const avgLossR = lossRs.length ? +(grossLossR/lossRs.length).toFixed(2) : 0;
+  const bestR = trades.length ? Math.max(...trades.map(rOf)) : 0;
+  const worstR = trades.length ? Math.min(...trades.map(rOf)) : 0;
+
+  // Equity curve (cumulative R) + max drawdown, walked in trade order.
+  let cum = 0, peak = 0, maxDD = 0;
+  const curve = [{i:0, r:0}];
+  trades.forEach((t,i)=>{
+    cum += rOf(t);
+    peak = Math.max(peak, cum);
+    maxDD = Math.max(maxDD, peak-cum);
+    curve.push({i:i+1, r:+cum.toFixed(2), win: t.result==='win'});
+  });
+
+  // Longest win/loss streaks, plus the current one (from the most recent
+  // trade backwards) — a quick read on whether the strategy is "hot" or
+  // "cold" right now, not just its lifetime average.
+  let longestWinStreak=0, longestLossStreak=0, curWinStreak=0, curLossStreak=0;
+  trades.forEach(t=>{
+    if(t.result==='win'){ curWinStreak++; curLossStreak=0; }
+    else { curLossStreak++; curWinStreak=0; }
+    longestWinStreak = Math.max(longestWinStreak, curWinStreak);
+    longestLossStreak = Math.max(longestLossStreak, curLossStreak);
+  });
+  let currentStreak = 0, currentStreakType = null;
+  for(let i=trades.length-1;i>=0;i--){
+    const isWin = trades[i].result==='win';
+    if(currentStreakType===null) currentStreakType = isWin ? 'win' : 'loss';
+    if((isWin && currentStreakType==='win') || (!isWin && currentStreakType==='loss')) currentStreak++;
+    else break;
+  }
+
+  return { total, wins, losses, winRate, totalR:+totalR.toFixed(2), avgR,
+    profitFactor, avgWinR, avgLossR, bestR:+bestR.toFixed(2), worstR:+worstR.toFixed(2),
+    maxDD:+maxDD.toFixed(2), curve, longestWinStreak, longestLossStreak, currentStreak, currentStreakType };
+}
+// Small dependency-free SVG line chart for a backtest session's cumulative
+// R curve — deliberately simpler than the live Equity Curve (straight
+// segments, no catmull-rom smoothing) since backtest data is coarser
+// (per-trade R, not real timestamps/$ amounts) and doesn't need it.
+function renderBacktestEquitySvg(curve){
+  if(!curve || curve.length<2){
+    return '<div class="empty-state" style="padding:30px 0;"><span class="glyph">📈</span>Log a trade to start this session\'s R curve.</div>';
+  }
+  const W=680, H=200, padL=40, padR=16, padT=16, padB=26;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const xs = curve.map(p=>p.i), ys = curve.map(p=>p.r);
+  const minY = Math.min(0, ...ys), maxY = Math.max(0, ...ys);
+  const span = (maxY-minY) || 1;
+  const sx = i => padL + (curve.length<=1?0:(i/(curve.length-1))*plotW);
+  const sy = v => padT + plotH - ((v-minY)/span)*plotH;
+  const baseY = sy(0);
+  const overallUp = curve[curve.length-1].r >= 0;
+  const color = overallUp ? 'var(--win-bright)' : 'var(--loss-bright)';
+  const linePath = curve.map((p,i)=>`${i?'L':'M'}${sx(p.i)},${sy(p.r)}`).join(' ');
+  const areaPath = `M${sx(0)},${baseY} ` + curve.map(p=>`L${sx(p.i)},${sy(p.r)}`).join(' ') + ` L${sx(curve[curve.length-1].i)},${baseY} Z`;
+  let grid = `<line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="var(--steel-hi)" stroke-width="1"/>`;
+  grid += `<text x="${padL-8}" y="${baseY+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="var(--slate)">0R</text>`;
+  grid += `<text x="${padL-8}" y="${padT+8}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="var(--slate)">${maxY>=0?'+':''}${maxY.toFixed(1)}R</text>`;
+  grid += `<text x="${padL-8}" y="${padT+plotH+2}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="var(--slate)">${minY.toFixed(1)}R</text>`;
+  let markers = '';
+  curve.slice(1).forEach(p=>{
+    markers += `<circle cx="${sx(p.i)}" cy="${sy(p.r)}" r="2.6" fill="${p.win?'var(--win-bright)':'var(--loss-bright)'}" stroke="var(--void)" stroke-width="1"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible;" preserveAspectRatio="xMidYMid meet">
+    ${grid}
+    <path d="${areaPath}" fill="${color}" fill-opacity="0.12" stroke="none"/>
+    <path d="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${markers}
+  </svg>`;
 }
 
 function openNewBacktestModal(){
@@ -9782,6 +9891,8 @@ function renderBacktestView(){
     <button class="btn btn-ghost btn-sm" onclick="exitBacktestSession()">Exit to Sessions</button>`;
 
   const trades = backtestTradesFor(session.id).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.id-a.id));
+  const pfDisplay = st.profitFactor==null ? '—' : (st.profitFactor===Infinity ? '∞' : st.profitFactor.toFixed(2));
+  const streakLabel = st.currentStreak ? `${st.currentStreak} ${st.currentStreakType==='win'?'win':'loss'}${st.currentStreak>1?'s':''}` : '—';
   detail.innerHTML = `
     <div class="topbar-row">
       <div>
@@ -9799,7 +9910,37 @@ function renderBacktestView(){
       <div class="hero-stat ${st.total ? (st.avgR>=0?'pos':'neg') : ''}"><div class="hero-label">Avg R</div><div class="hero-value">${st.avgR>=0?'+':''}${st.avgR}</div></div>
       <div class="hero-stat ${st.total ? (st.totalR>=0?'pos':'neg') : ''}"><div class="hero-label">Total R</div><div class="hero-value">${st.totalR>=0?'+':''}${st.totalR}R</div></div>
     </div>
-    <div class="card tilt">
+
+    <div class="card tilt" style="margin-top:18px;">
+      <div class="equity-head">
+        <div>
+          <h2 style="margin-bottom:4px">R <span class="accent">Curve</span></h2>
+          <div class="equity-sub">cumulative R across this session's logged trades</div>
+        </div>
+        <div class="equity-total" style="color:${st.totalR>=0?'var(--win-bright)':'var(--loss-bright)'}">${st.totalR>=0?'+':''}${st.totalR}R</div>
+      </div>
+      <div class="equity-wrap">${renderBacktestEquitySvg(st.curve)}</div>
+    </div>
+
+    <div class="grid" style="margin-top:18px;">
+      <div class="card tilt">
+        <h2>Performance <span class="accent">Breakdown</span></h2>
+        <div class="stat-row">
+          <div class="stat ${st.profitFactor==null?'':(st.profitFactor>=1?'good':'bad')}"><b>${pfDisplay}</b><span>Profit Factor</span></div>
+          <div class="stat"><b>${st.wins}W / ${st.losses}L</b><span>Record</span></div>
+          <div class="stat good"><b>+${st.avgWinR}R</b><span>Avg Win</span></div>
+          <div class="stat bad"><b>-${st.avgLossR}R</b><span>Avg Loss</span></div>
+          <div class="stat good"><b>+${st.bestR}R</b><span>Best Trade</span></div>
+          <div class="stat bad"><b>${st.worstR}R</b><span>Worst Trade</span></div>
+          <div class="stat bad"><b>-${st.maxDD}R</b><span>Max Drawdown</span></div>
+          <div class="stat"><b>${streakLabel}</b><span>Current Streak</span></div>
+          <div class="stat good"><b>${st.longestWinStreak}</b><span>Longest Win Streak</span></div>
+          <div class="stat bad"><b>${st.longestLossStreak}</b><span>Longest Loss Streak</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tilt" style="margin-top:18px;">
       <h2>Trade <span class="accent">Log</span><span class="h2-badge">${trades.length}</span></h2>
       ${trades.length ? `<div class="trade-list">${trades.map(t=>`
         <div class="trade-row">
