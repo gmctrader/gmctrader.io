@@ -1,12 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+// Set the real theme (from a prior visit) before first paint, so there's
+// no flash of the light "portal" look while the rest of the page loads.
+try{ document.documentElement.setAttribute('data-theme', localStorage.getItem('gd_theme') || 'dark'); }catch(e){}
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#03050a">
 <title>Ghost Discipline — GMC Traders</title>
 <script>(function(){try{var t=localStorage.getItem('gd_theme');if(t&&t!=='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <script>
@@ -1096,6 +1101,8 @@ html.motion-reduced #authMedallion .medallion-plate{ animation:none !important; 
 .side-brand span{display:block;font-size:9.5px;color:var(--slate);letter-spacing:0.12em;text-transform:uppercase;margin-top:3px;}
 
 .side-nav{display:flex;flex-direction:column;gap:3px;flex:1;overflow-y:auto;}
+.side-nav-label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--slate-dim);padding:16px 12px 4px;user-select:none;}
 .side-navbtn{
   display:flex;align-items:center;gap:12px;font-family:'Instrument Sans',sans-serif;background:transparent;border:none;
   color:var(--slate);padding:11px 13px;font-size:13px;font-weight:500;cursor:pointer;border-radius:12px;
@@ -1962,6 +1969,148 @@ html[data-theme="gold"] input:focus,html[data-theme="gold"] select:focus,html[da
 html[data-theme="slate"] input:focus,html[data-theme="slate"] select:focus,html[data-theme="slate"] textarea:focus{ box-shadow:0 0 0 3px rgba(154,167,179,0.22); }
 html[data-theme="dark"] input:focus,html[data-theme="dark"] select:focus,html[data-theme="dark"] textarea:focus{ box-shadow:0 0 0 3px rgba(45,212,168,0.2); }
 body{ transition:background-color .4s cubic-bezier(.16,1,.3,1); }
+
+/* ================================================================
+   JOURNAL REDESIGN — visual system rewrite (CSS/layout only)
+   Every selector below already exists in the markup/JS above; nothing
+   here renames an id, class, or changes what JS reads/writes. This
+   block simply lands later in the cascade to restate how things look,
+   and uses flex `order` to re-sequence the dashboard without touching
+   the DOM. Goal: read like a considered AI research journal — quieter
+   chrome, editorial type, one clear "lead entry" per screen — instead
+   of a grid-of-tiles admin portal.
+   ================================================================ */
+
+/* ---- tokens: softer geometry, calmer motion, a paper-grain feel ---- */
+:root{
+  --r-sm:10px; --r-md:16px; --r-lg:26px;
+  --j-serif:'Fraunces',serif; --j-sans:'Instrument Sans',sans-serif; --j-mono:'IBM Plex Mono',monospace;
+  --j-border:var(--steel); --j-border-hi:var(--steel-hi);
+}
+html[data-theme="dark"] body{
+  background:
+    radial-gradient(ellipse 1200px 700px at 15% -12%, rgba(45,212,168,0.055), transparent 62%),
+    radial-gradient(ellipse 1000px 800px at 100% 100%, rgba(242,200,119,0.035), transparent 58%),
+    #05070c;
+}
+body::before{ opacity:0.014; }
+
+/* ---- calm the boot moment: drop the "hacking a terminal" motif ---- */
+.boot-rain, .boot-particles{ display:none !important; }
+.boot-emblem .brk{ animation:none; opacity:.5; }
+.boot-emblem-ring-1, .boot-emblem-ring-2{ animation-duration:5.5s; opacity:.5; }
+
+/* ---- sidebar: quiet, editorial nav instead of a boxed portal menu ---- */
+.sidebar{
+  width:264px; background:linear-gradient(185deg, var(--void-2), var(--void));
+  border-right:1px solid var(--j-border); padding:26px 14px;
+}
+.side-brand{ padding:2px 8px 22px; margin-bottom:10px; border-bottom:1px solid var(--j-border); }
+.side-brand h1{ font-size:16.5px; font-weight:520; }
+.side-brand span{ font-family:var(--j-mono); font-size:8.5px; opacity:.75; }
+.side-nav-label{ padding:20px 14px 6px; font-size:9px; opacity:.6; }
+.side-navbtn{
+  border-radius:10px; padding:10px 14px 10px 15px; font-size:13px; font-weight:500;
+  border-left:2px solid transparent; margin-left:0;
+}
+.side-navbtn:hover{ background:var(--steel); color:var(--platinum); }
+.side-navbtn.active{
+  background:linear-gradient(90deg, rgba(45,212,168,0.13), rgba(45,212,168,0.02) 85%);
+  border-left:2px solid var(--bronze-bright); color:var(--platinum); font-weight:600;
+  box-shadow:none;
+}
+.side-navbtn.active svg{ opacity:1; }
+.side-navbtn.active svg path, .side-navbtn.active svg circle, .side-navbtn.active svg rect{ stroke:var(--bronze-bright) !important; }
+.side-discipline-pill{ border-radius:14px; }
+
+/* ---- main canvas ---- */
+.main{ max-width:1180px; padding:44px 48px 100px; }
+.page-title{ font-size:32px; font-weight:540; }
+.page-sub{ font-family:var(--j-serif); font-style:italic; font-size:14.5px; opacity:.8; }
+
+/* ---- cards: paper panels, not admin tiles ---- */
+.card{
+  border:1px solid var(--j-border); border-radius:var(--r-lg); padding:30px 32px;
+  box-shadow:0 1px 0 rgba(255,255,255,0.02) inset;
+}
+.card.tilt:hover{ box-shadow:0 24px 50px rgba(0,0,0,0.32); }
+.card h2{ font-family:var(--j-serif); font-weight:480; font-size:19px; letter-spacing:-0.01em; }
+.card h2 .accent{ font-weight:560; }
+
+/* ---- the AI Coach card becomes the lead journal entry ---- */
+.card.card-ai{
+  border-color:rgba(45,212,168,0.16);
+  background:linear-gradient(160deg, rgba(45,212,168,0.05), var(--panel) 55%);
+}
+#aiCoachCard{ padding:36px 38px; }
+#aiCoachCard h2{ font-size:22px; margin-bottom:14px; }
+.ai-insight{
+  font-family:var(--j-serif); font-size:17px; line-height:1.65; font-style:italic;
+  color:var(--platinum); opacity:.95; max-width:64ch;
+}
+.ai-source{ font-family:var(--j-mono); font-size:10px; margin-top:14px; opacity:.6; }
+#traderIdentityCard{ padding:24px 28px; }
+#traderIdentityCard h2{ font-size:15.5px; }
+
+/* ---- hero stats: a quiet ticker strip, not four bordered tiles ---- */
+.hero-row{
+  display:flex; gap:0; border:1px solid var(--j-border); border-radius:var(--r-md);
+  padding:6px 4px; margin-bottom:22px; overflow-x:auto; background:var(--panel);
+}
+.hero-stat{
+  flex:1 1 0; min-width:132px; border:none; border-radius:0; background:transparent;
+  padding:14px 20px; position:relative;
+}
+.hero-stat::before{ display:none; }
+.hero-stat:not(:last-child)::after{
+  content:''; position:absolute; right:0; top:16%; bottom:16%; width:1px; background:var(--j-border);
+}
+.hero-stat:hover{ transform:none; box-shadow:none; background:var(--steel); border-radius:12px; }
+.hero-stat .hero-icon{ width:22px;height:22px;border-radius:7px;margin-bottom:8px; }
+.hero-stat .hero-icon svg{ width:12px;height:12px; }
+.hero-stat .hero-value{ font-size:22px; }
+
+/* ---- buttons: flatten the skeuomorphic bevel ---- */
+.btn{ border-radius:11px; font-weight:600; }
+.btn-primary{
+  background:var(--bronze-bright); color:var(--bronze-ink);
+  box-shadow:0 1px 0 rgba(255,255,255,0.35) inset, 0 10px 22px -8px rgba(16,185,129,0.35);
+}
+.btn-primary::before{ display:none; }
+.btn-primary:hover{ background:var(--bronze); transform:translateY(-1px); box-shadow:0 12px 26px -8px rgba(16,185,129,0.4); }
+.btn-primary:active{ box-shadow:0 4px 10px -4px rgba(16,185,129,0.3); transform:translateY(1px); }
+.btn-ghost{ border-radius:11px; }
+
+/* ---- dashboard reflow: AI entry leads, ticker + context follow ---- */
+#view-dashboard.active{ display:flex; flex-direction:column; gap:20px; }
+#view-dashboard > .topbar-row{ order:0; margin-bottom:0; }
+#aiCoachCard{ order:1; }
+#traderIdentityCard{ order:2; }
+#heroStatsRow{ order:3; margin-bottom:0; }
+#momentumBanner{ order:4; }
+#view-dashboard > .grid:nth-of-type(1){ order:5; margin-top:0 !important; }
+#view-dashboard > .grid:nth-of-type(2){ order:6; margin-top:0 !important; }
+#view-dashboard > .grid:nth-of-type(3){ order:7; margin-top:0 !important; }
+#view-dashboard > .card:last-child{ order:8; margin-top:0 !important; }
+
+/* ---- mobile ---- */
+@media(max-width:600px){
+  .main{ padding:18px 16px calc(76px + env(safe-area-inset-bottom)); }
+  .card{ padding:20px 20px; border-radius:18px; }
+  #aiCoachCard{ padding:24px 22px; }
+  #aiCoachCard h2{ font-size:18px; }
+  .ai-insight{ font-size:15px; }
+  .page-title{ font-size:22px; }
+  .hero-row{ padding:4px; }
+  .hero-stat{ min-width:118px; padding:12px 16px; scroll-snap-align:start; }
+  .hero-row{ scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; }
+  .hero-stat .hero-value{ font-size:19px; }
+  .side-brand h1{ font-size:15px; }
+}
+@media(max-width:380px){
+  .hero-stat{ min-width:104px; padding:10px 13px; }
+  .card{ padding:16px; }
+}
 </style></head>
 <body>
 <script>
@@ -2298,7 +2447,7 @@ setTimeout(function(){
       <div class="mark"><img src="logo.png" alt="GMC Traders"></div>
       <div>
         <h1>Ghost Discipline</h1>
-        <span>GMC Traders Desk</span>
+        <span>AI Trading Journal</span>
       </div>
       <div class="ai-live-pill" title="AI Copilot is reading your live data"><span class="ai-live-dot"></span>AI</div>
     </div>
@@ -2332,6 +2481,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
         Order Book
       </button>
+      <div class="side-nav-label">Mind &amp; Method</div>
       <button class="side-navbtn" data-view="playbook">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Playbook
@@ -2340,6 +2490,11 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M7 2v4M17 2v4"/></svg>
         Strategy Notes
       </button>
+      <button class="side-navbtn" data-view="psychology">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
+        Psychology
+      </button>
+      <div class="side-nav-label">System &amp; Rules</div>
       <button class="side-navbtn" data-view="rules">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/></svg>
         Rule Builder
@@ -2352,10 +2507,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         Session
       </button>
-      <button class="side-navbtn" data-view="psychology">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
-        Psychology
-      </button>
+      <div class="side-nav-label">More</div>
       <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
         SciFe
@@ -2429,6 +2581,11 @@ setTimeout(function(){
         <div class="ai-source" id="aiCoachSource"></div>
       </div>
 
+      <div class="card card-ai tilt" id="traderIdentityCard" style="margin-bottom:18px;">
+        <h2><span class="ai-orb"></span>Trader <span class="accent">Identity</span><span class="ai-chip">AI-detected</span></h2>
+        <div class="identity-empty">Log a few trades with a mood tag to start building your profile.</div>
+      </div>
+
       <div class="grid">
         <div class="card tilt">
           <h2>Discipline <span class="accent">Seal</span></h2>
@@ -2497,12 +2654,12 @@ setTimeout(function(){
         <div class="card tilt">
           <div class="equity-head">
             <div>
-              <h2 style="margin-bottom:4px">Pending <span class="accent">Orders</span></h2>
+              <h2 style="margin-bottom:4px">Trade <span class="accent">Log</span><span class="eyebrow" id="tradeLogEyebrow">most recent, newest first</span></h2>
             </div>
-            <button class="btn btn-sm btn-ghost" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();">Order Book →</button>
+            <button class="btn btn-sm btn-ghost" onclick="document.querySelector('.side-navbtn[data-view=journal]').click();">Full Journal →</button>
           </div>
-          <div class="trade-list" id="ordersListOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
-          <div id="ordersOverviewMore" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--slate);cursor:pointer;font-weight:500;letter-spacing:0.01em;" onclick="document.querySelector('.side-navbtn[data-view=orders]').click();"></div>
+          <div class="trade-list" id="tradeLogOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph">📓</span>No trades logged yet. Close a trade to start your log.</div></div>
+          <div id="tradeLogOverviewMore" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--slate);cursor:pointer;font-weight:500;letter-spacing:0.01em;" onclick="document.querySelector('.side-navbtn[data-view=journal]').click();"></div>
         </div>
       </div>
 
@@ -5657,7 +5814,7 @@ function renderAll(){
   renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
   renderEquityChart('equityChart','equityTotal','equitySub');
-  renderOrders(); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); renderStrategyNotes();
+  renderOrders(); renderTradeLogOverview(); renderTraderIdentity(); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); renderStrategyNotes();
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
 }
@@ -9272,6 +9429,85 @@ function buildOrderRowsHTML(orders){
   }).join('');
 }
 const ORDERS_OVERVIEW_LIMIT = 4;
+const TRADE_LOG_OVERVIEW_LIMIT = 5;
+function renderTradeLogOverview(){
+  const list = document.getElementById('tradeLogOverview');
+  const moreEl = document.getElementById('tradeLogOverviewMore');
+  if(!list) return;
+  const trades = filteredTrades().slice().sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
+  if(trades.length===0){
+    list.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>No trades logged yet. Close a trade to start your log.</div>';
+    if(moreEl) moreEl.style.display = 'none';
+    return;
+  }
+  const shown = trades.slice(0, TRADE_LOG_OVERVIEW_LIMIT);
+  list.innerHTML = shown.map(journalTradeRowHtml).join('');
+  const remainder = trades.length - shown.length;
+  if(moreEl){
+    moreEl.style.display = remainder>0 ? 'block' : 'none';
+    moreEl.textContent = remainder>0 ? `+${remainder} more logged — open the Journal →` : '';
+  }
+}
+/* ============ TRADER IDENTITY (AI-read profile built from real trade history) ============ */
+function computeTraderIdentity(){
+  const trades = filteredTrades();
+  if(trades.length < 5) return { ready:false, count: trades.length };
+  const wins = trades.filter(t=>t.result==='win');
+  const losses = trades.filter(t=>t.result==='loss');
+  const winRate = trades.length ? Math.round(wins.length/trades.length*100) : 0;
+  const avgRR = trades.length ? (trades.reduce((s,t)=>s+(parseFloat(t.rr)||0),0)/trades.length) : 0;
+  const countMood = arr => { const m={}; arr.forEach(t=>{ if(t.mood) m[t.mood]=(m[t.mood]||0)+1; }); return m; };
+  const topOf = obj => Object.entries(obj).sort((a,b)=>b[1]-a[1])[0] || null;
+  const topWinMood = topOf(countMood(wins));
+  const topLossMood = topOf(countMood(losses));
+  const revengeFomoLosses = losses.filter(t=>t.mood==='revenge'||t.mood==='fomo').length;
+  const revengeFomoShare = losses.length ? revengeFomoLosses/losses.length : 0;
+  const calmShare = trades.length ? trades.filter(t=>t.mood==='calm'||t.mood==='confident').length/trades.length : 0;
+  const violations = trades.filter(t=>(t.ruleViolationLabels||[]).length>0).length;
+  const disciplineRate = trades.length ? Math.round((1-violations/trades.length)*100) : 100;
+
+  let archetype, desc;
+  if(revengeFomoShare >= 0.4 && losses.length >= 3){
+    archetype = 'The Emotional Chaser';
+    desc = `${Math.round(revengeFomoShare*100)}% of losing trades were tagged FOMO or revenge at entry. The edge holds up fine on planned setups — it's the reactive entries that are quietly funding the drawdowns.`;
+  } else if(calmShare >= 0.6 && winRate >= 50){
+    archetype = 'The Disciplined Sniper';
+    desc = `${Math.round(calmShare*100)}% of trades were taken calm or confident, and the ${winRate}% win rate reflects it. Patience at entry is doing more work here than prediction.`;
+  } else if(winRate < 40 && trades.length >= 8){
+    archetype = 'The Rebuilder';
+    desc = `${winRate}% win rate over ${trades.length} trades signals a stretch for tightening entries, not for sizing up.${topLossMood?` Losses skew toward ${(MOOD_LABELS[topLossMood[0]]||topLossMood[0]).replace(/^\S+\s/,'')} at entry.`:''}`;
+  } else if(avgRR >= 2 && winRate < 50){
+    archetype = 'The Patient Asymmetrist';
+    desc = `Win rate is ${winRate}%, but an average ${avgRR.toFixed(1)}R target means the wins do the heavy lifting. This style lives or dies on holding for the full target rather than being right often.`;
+  } else {
+    archetype = 'The Developing Trader';
+    desc = `${trades.length} trades logged, ${winRate}% win rate, ${avgRR.toFixed(1)}R average target. The pattern isn't locked in yet — keep tagging mood and strategy on every trade so this reads sharper over time.`;
+  }
+  return { ready:true, archetype, desc, winRate, avgRR, disciplineRate, tradeCount: trades.length,
+    topWinMood: topWinMood ? topWinMood[0] : null, topLossMood: topLossMood ? topLossMood[0] : null };
+}
+function renderTraderIdentity(){
+  const el = document.getElementById('traderIdentityCard');
+  if(!el) return;
+  const id = computeTraderIdentity();
+  const header = `<h2><span class="ai-orb"></span>Trader <span class="accent">Identity</span><span class="ai-chip">AI-detected</span></h2>`;
+  if(!id.ready){
+    const left = 5 - id.count;
+    el.innerHTML = header + `<div class="identity-empty">Log ${left} more trade${left===1?'':'s'} with a mood tag and a real read on how you trade will start forming here.</div>`;
+    return;
+  }
+  const stripMoodEmoji = m => (MOOD_LABELS[m]||m||'').replace(/^\S+\s/,'');
+  el.innerHTML = header + `
+    <div class="identity-title">${id.archetype}</div>
+    <div class="identity-desc">${id.desc}</div>
+    <div class="identity-traits">
+      <span class="identity-trait"><b>${id.winRate}%</b>win rate</span>
+      <span class="identity-trait"><b>${id.avgRR.toFixed(1)}R</b>avg target</span>
+      <span class="identity-trait"><b>${id.disciplineRate}%</b>rules held</span>
+      ${id.topWinMood ? `<span class="identity-trait">sharpest ${stripMoodEmoji(id.topWinMood)}</span>` : ''}
+      ${id.topLossMood ? `<span class="identity-trait">costliest ${stripMoodEmoji(id.topLossMood)}</span>` : ''}
+    </div>`;
+}
 function renderOrders(){
   const list = document.getElementById('ordersList');
   const countEl = document.getElementById('ordersCount');
@@ -9597,8 +9833,11 @@ document.addEventListener('keydown', function(e){
   }
 });
 (function(){
-  let stored = 'light';
-  try{ stored = localStorage.getItem('gd_theme') || 'light'; }catch(e){}
+  // Dark is the brand's default read (obsidian/gold/platinum) — light stays
+  // available from the swatch popout, but a first-time visitor should land
+  // on the premium instrument-panel look, not a bright admin-portal one.
+  let stored = 'dark';
+  try{ stored = localStorage.getItem('gd_theme') || 'dark'; }catch(e){}
   applyGdTheme(stored);
 })();
 
@@ -9928,6 +10167,17 @@ document.addEventListener('keydown', function(e){
 .ai-source{font-size:10px;color:var(--slate-dim);margin-top:8px;font-family:'IBM Plex Mono',monospace;
   letter-spacing:0.02em;min-height:14px;}
 .ai-source.real::before{content:'✓ ';color:var(--bronze-bright);}
+/* ---- Trader Identity card: an AI-read profile of how this trader actually trades ---- */
+.identity-empty{font-size:13.5px;color:var(--slate);line-height:1.6;}
+.identity-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;letter-spacing:-0.01em;
+  background:linear-gradient(120deg, var(--platinum), var(--bronze-bright));-webkit-background-clip:text;background-clip:text;color:transparent;
+  margin-bottom:6px;}
+.identity-desc{font-size:13.5px;line-height:1.65;color:var(--slate);margin-bottom:14px;max-width:640px;}
+.identity-traits{display:flex;flex-wrap:wrap;gap:8px;}
+.identity-trait{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--slate);
+  background:rgba(15,23,22,0.035);border:1px solid var(--steel);border-radius:100px;padding:6px 12px;letter-spacing:0.01em;}
+.identity-trait b{color:var(--platinum);font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,244,242,0.03);}
 </style>
 
 <script>
