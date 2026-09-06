@@ -2621,6 +2621,10 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M7 2v4M17 2v4"/></svg>
         Strategy Notes
       </button>
+      <button class="side-navbtn" data-view="backtest">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3.5a4 4 0 01-1.2 2.86L11 12l2.8 2.64A4 4 0 0115 17.5V21H9v-3.5a4 4 0 011.2-2.86L13 12l-2.8-2.64A4 4 0 019 6.5z"/></svg>
+        Backtest
+      </button>
       <button class="side-navbtn" data-view="psychology">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
         Psychology
@@ -3505,6 +3509,30 @@ setTimeout(function(){
       </div>
     </div>
 
+    <!-- BACKTEST -->
+    <div class="view" id="view-backtest">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Backtest</h2>
+          <div class="page-sub">Prove a strategy against old charts before you risk it live.</div>
+        </div>
+        <div class="topbar-actions" id="btListActions">
+          <button class="btn btn-primary" onclick="openNewBacktestModal()">+ New Session</button>
+        </div>
+      </div>
+
+      <div id="btActiveBanner" class="demo-pill" style="display:none;justify-content:space-between;margin-bottom:20px;"></div>
+
+      <div id="btSessionListWrap">
+        <div class="card tilt" id="btEmptyState" style="display:none;">
+          <div class="empty-state"><span class="glyph">🧪</span>No backtest sessions yet. Start one to test a strategy against historical charts — trades logged here never touch your live streak, discipline score, or daily-loss gate.</div>
+        </div>
+        <div id="btSessionList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;"></div>
+      </div>
+
+      <div id="btSessionDetail" style="display:none;"></div>
+    </div>
+
     <!-- PSYCHOLOGY -->
     <div class="view" id="view-psychology">
       <div class="topbar-row">
@@ -3725,6 +3753,48 @@ setTimeout(function(){
   </div>
 </div>
 
+<!-- NEW BACKTEST SESSION -->
+<div class="overlay" id="btNewSessionOverlay">
+  <div class="modal">
+    <h3 style="margin-bottom:2px;">New Backtest Session</h3>
+    <div class="sub" style="margin-bottom:0;">Name it so you can compare it against other tests later.</div>
+    <div class="field"><label>Session name</label><input type="text" id="bt_name" placeholder="e.g. OTE + FVG — EURUSD, Jan–Mar 2024"></div>
+    <div class="row2">
+      <div class="field"><label>Symbol / Pair <span class="hint-inline">optional</span></label><input type="text" id="bt_symbol" placeholder="e.g. EURUSD"></div>
+      <div class="field"><label>Strategy <span class="hint-inline">optional</span></label><select id="bt_strategy"></select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Period start <span class="hint-inline">optional</span></label><input type="date" id="bt_start"></div>
+      <div class="field"><label>Period end <span class="hint-inline">optional</span></label><input type="date" id="bt_end"></div>
+    </div>
+    <div class="field"><label>Notes <span class="hint-inline">optional</span></label><textarea id="bt_notes" placeholder="What are you testing, and why?"></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('btNewSessionOverlay')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="createBacktestSession()">Create &amp; Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG BACKTEST TRADE -->
+<div class="overlay" id="btTradeOverlay">
+  <div class="modal">
+    <h3 style="margin-bottom:2px;">Log Backtest Trade</h3>
+    <div class="sub" id="btTradeSessionLabel" style="margin-bottom:0;"></div>
+    <div class="field"><label>Result</label>
+      <select id="bt_result"><option value="win">Win</option><option value="loss">Loss</option></select>
+    </div>
+    <div class="row2">
+      <div class="field"><label>R:R achieved</label><input type="number" step="0.1" id="bt_rr" placeholder="e.g. 2"></div>
+      <div class="field"><label>Trade date <span class="hint-inline">historical date tested</span></label><input type="date" id="bt_tradeDate"></div>
+    </div>
+    <div class="field"><label>Notes <span class="hint-inline">optional</span></label><textarea id="bt_tradeNotes" placeholder="Setup, confluence, why it worked or didn't."></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('btTradeOverlay')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitBacktestTrade()">Save Trade</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOT SIZE CALCULATOR -->
 <div class="overlay" id="lotCalcOverlay">
   <div class="modal" style="max-width:480px;">
@@ -3845,7 +3915,12 @@ const DEFAULT_STATE = {
   day:{ date:null, tradesCount:0, lossUsed:0, ruleBrokenToday:false },
   consecutiveLosses:0,
   rulesCompleted:false,
-  brief:{ newsApiKey:'', watchedPairs:'' }
+  brief:{ newsApiKey:'', watchedPairs:'' },
+  // Backtest sessions live entirely alongside real trades in state.trades
+  // (each tagged with a backtestSession id) but are excluded from every
+  // live view via liveTrades()/filteredTrades() — see the BACKTEST MODE
+  // section for the full isolation contract.
+  backtestSessions:[]
 };
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 // Daily Brief settings (news API key, watched pairs) now sync through the same
@@ -4592,7 +4667,7 @@ const DEMO_EMAIL_KEY = 'ghostDiscipline_demoEmail';
 const DEMO_STATE_KEY = 'ghostDiscipline_demoState';
 const DEMO_FP_KEY = 'ghostDiscipline_deviceFp';
 // Rooms that stay locked during the trial — full arsenal is reserved for real access.
-const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','journal','about','brief','stratnotes'];
+const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','journal','about','brief','stratnotes','backtest'];
 
 // Lightweight, dependency-free device fingerprint (canvas + WebGL + hardware
 // signals hashed together). This raises the bar against casual repeat-trial
@@ -5042,6 +5117,7 @@ function hydrateState(row){
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, row.psychology || {}));
   state.brief = Object.assign({}, DEFAULT_STATE.brief, row.brief || {});
   state.trades = row.trades || [];
+  state.backtestSessions = row.backtestSessions || [];
   state.streak = row.streak || DEFAULT_STATE.streak;
   state.day = row.day || DEFAULT_STATE.day;
   state.consecutiveLosses = row.consecutive_losses || 0;
@@ -5077,6 +5153,7 @@ function buildSavePayload(){
     psychology: state.psychology,
     brief: state.brief,
     trades: state.trades,
+    backtestSessions: state.backtestSessions,
     streak: state.streak,
     day: state.day,
     consecutive_losses: state.consecutiveLosses,
@@ -5285,7 +5362,7 @@ function monthKeyFor(date){ return date.getFullYear()+'-'+String(date.getMonth()
 function monthLabel(date){ return date.toLocaleDateString(undefined,{month:'long', year:'numeric'}); }
 
 function computePeriodStats(startIso, endIso){
-  const trades = state.trades.filter(t => t.date >= startIso && t.date <= endIso);
+  const trades = liveTrades().filter(t => t.date >= startIso && t.date <= endIso);
   const tradeCount = trades.length;
   const wins = trades.filter(t=>t.result==='win').length;
   const pnl = trades.reduce((s,t)=>s+pnlOf(t),0);
@@ -5883,6 +5960,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='orders') renderOrders();
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
     if(btn.dataset.view==='stratnotes') renderStrategyNotes();
+    if(btn.dataset.view==='backtest') renderBacktestView();
     toggleSidebar(false);
     window.scrollTo({top:0, behavior:'smooth'});
   });
@@ -5908,9 +5986,17 @@ function onTraderFilterChange(){
   });
   renderAll();
 }
+// Every live view (Journal, Analytics, Calendar, Order Book, leaderboards,
+// periodic review, confluence auto-detect) reads trades through here or
+// through filteredTrades() below — never state.trades directly — so a
+// backtest trade can never bleed into a real stat, streak, or compliance
+// number just by existing in the same array.
+function liveTrades(){
+  return state.trades.filter(t=>!t.backtestSession);
+}
 function filteredTrades(){
-  if(activeTraderFilter==='all') return state.trades;
-  return state.trades.filter(t=>t.trader===activeTraderFilter);
+  if(activeTraderFilter==='all') return liveTrades();
+  return liveTrades().filter(t=>t.trader===activeTraderFilter);
 }
 // Raw amount, in the trade's OWN account currency — exactly what the trader
 // typed in at the time (a $13 prop win stays 13, in $). Pair this with
@@ -7774,7 +7860,7 @@ function renderJournal(){
 /* ============ LEADERBOARDS ============ */
 function buildLeaderboard(keyFn, nameFn){
   const map = {};
-  state.trades.forEach(t=>{
+  liveTrades().forEach(t=>{
     const key = keyFn(t) || '__none';
     if(!map[key]) map[key] = { trades:0, wins:0, rrSum:0, pnl:0 };
     map[key].trades++;
@@ -8108,7 +8194,7 @@ function buildSnConfluenceStats(){
   // pulled in from a preset strategy shares its id with STRATEGY_TYPES logic
   // (e.g. 'bos', 'choch'), so a closed trade logged with that same logic ticked
   // feeds this score automatically — no separate check-in needed.
-  (state.trades||[]).forEach(t=>{
+  (liveTrades()||[]).forEach(t=>{
     if(!Array.isArray(t.logics) || !t.logics.length) return;
     if(t.result!=='win' && t.result!=='loss') return;
     t.logics.forEach(id=>{
@@ -9531,6 +9617,202 @@ async function submitTrade(){
   renderAll();
 }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ============ BACKTEST MODE ============
+   An isolated trade lane for proving a strategy against historical charts.
+   Backtest trades live in the same state.trades array (so they ride along
+   with the normal save/sync pipeline) but are tagged with a backtestSession
+   id and created through submitBacktestTrade() below — a path that never
+   touches state.day, state.streak, state.consecutiveLosses, or the rule-
+   violation engine, so testing can't trip a real daily-loss gate or reset
+   a real discipline streak. liveTrades() (defined above, used by
+   filteredTrades() and every stats function) filters them out everywhere
+   else, so Journal/Analytics/Calendar/Order Book/Prop Firm compliance see
+   exactly what they saw before this feature existed. ============ */
+let activeBacktestSession = null;
+
+function backtestTradesFor(sessionId){
+  return state.trades.filter(t=>t.backtestSession===sessionId);
+}
+function btStatsFor(sessionId){
+  const trades = backtestTradesFor(sessionId);
+  const total = trades.length;
+  const wins = trades.filter(t=>t.result==='win').length;
+  const winRate = total ? Math.round(wins/total*100) : 0;
+  // Simple R accounting: a win banks its logged R:R, a loss costs 1R.
+  // Matches how the live Journal already treats R-multiples elsewhere.
+  const totalR = trades.reduce((s,t)=> s + (t.result==='win' ? (parseFloat(t.rr)||0) : -1), 0);
+  const avgR = total ? +(totalR/total).toFixed(2) : 0;
+  return { total, wins, winRate, totalR:+totalR.toFixed(2), avgR };
+}
+
+function openNewBacktestModal(){
+  document.getElementById('bt_name').value = '';
+  document.getElementById('bt_symbol').value = '';
+  document.getElementById('bt_start').value = '';
+  document.getElementById('bt_end').value = '';
+  document.getElementById('bt_notes').value = '';
+  const stratSel = document.getElementById('bt_strategy');
+  stratSel.innerHTML = '<option value="">None</option>' +
+    state.psychology.strategies.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  document.getElementById('btNewSessionOverlay').classList.add('show');
+}
+
+async function createBacktestSession(){
+  const name = document.getElementById('bt_name').value.trim();
+  if(!name){ showToast('Give this session a name.'); return; }
+  const session = {
+    id: 'bt_'+Date.now(),
+    name,
+    symbol: document.getElementById('bt_symbol').value.trim() || null,
+    strategy: document.getElementById('bt_strategy').value || null,
+    start: document.getElementById('bt_start').value || null,
+    end: document.getElementById('bt_end').value || null,
+    notes: document.getElementById('bt_notes').value.trim(),
+    createdAt: Date.now()
+  };
+  state.backtestSessions.push(session);
+  closeModal('btNewSessionOverlay');
+  await saveState();
+  enterBacktestSession(session.id);
+}
+
+function enterBacktestSession(id){
+  activeBacktestSession = id;
+  renderBacktestView();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function exitBacktestSession(){
+  activeBacktestSession = null;
+  renderBacktestView();
+}
+async function deleteBacktestSession(id){
+  if(!confirm("Delete this backtest session and all its trades? This can't be undone.")) return;
+  state.backtestSessions = state.backtestSessions.filter(s=>s.id!==id);
+  state.trades = state.trades.filter(t=>t.backtestSession!==id);
+  if(activeBacktestSession===id) activeBacktestSession = null;
+  await saveState();
+  renderBacktestView();
+}
+
+function openBacktestTradeModal(){
+  const session = state.backtestSessions.find(s=>s.id===activeBacktestSession);
+  document.getElementById('btTradeSessionLabel').textContent = 'Adding to: ' + (session ? session.name : '');
+  document.getElementById('bt_result').value = 'win';
+  document.getElementById('bt_rr').value = '';
+  document.getElementById('bt_tradeDate').value = '';
+  document.getElementById('bt_tradeNotes').value = '';
+  document.getElementById('btTradeOverlay').classList.add('show');
+}
+
+async function submitBacktestTrade(){
+  if(!activeBacktestSession) return;
+  const result = document.getElementById('bt_result').value;
+  const rr = document.getElementById('bt_rr').value;
+  const tradeDate = document.getElementById('bt_tradeDate').value || todayStr();
+  const notes = document.getElementById('bt_tradeNotes').value;
+  const session = state.backtestSessions.find(s=>s.id===activeBacktestSession);
+  const newTrade = {
+    id: Date.now(), date: tradeDate, result, rr: rr || null, notes,
+    strategy: session ? session.strategy : null,
+    pair: session ? session.symbol : null,
+    backtestSession: activeBacktestSession
+  };
+  state.trades.push(newTrade);
+  closeModal('btTradeOverlay');
+  await saveState();
+  renderBacktestView();
+  showToast('Backtest trade logged.');
+}
+
+async function deleteBacktestTrade(tradeId){
+  state.trades = state.trades.filter(t=>t.id!==tradeId);
+  await saveState();
+  renderBacktestView();
+}
+
+function renderBacktestView(){
+  const listWrap = document.getElementById('btSessionListWrap');
+  const detail = document.getElementById('btSessionDetail');
+  const banner = document.getElementById('btActiveBanner');
+  const listActions = document.getElementById('btListActions');
+  if(!listWrap) return;
+
+  if(activeBacktestSession && !state.backtestSessions.find(s=>s.id===activeBacktestSession)){
+    activeBacktestSession = null;
+  }
+
+  if(!activeBacktestSession){
+    detail.style.display = 'none';
+    listWrap.style.display = 'block';
+    banner.style.display = 'none';
+    if(listActions) listActions.style.display = 'flex';
+    const sessions = state.backtestSessions.slice().sort((a,b)=>b.createdAt-a.createdAt);
+    document.getElementById('btEmptyState').style.display = sessions.length ? 'none' : 'block';
+    document.getElementById('btSessionList').innerHTML = sessions.map(s=>{
+      const st = btStatsFor(s.id);
+      const stratObj = s.strategy ? state.psychology.strategies.find(x=>x.id===s.strategy) : null;
+      return `
+      <div class="card tilt" style="cursor:pointer;" onclick="enterBacktestSession('${s.id}')">
+        <h2>${escapeHtml(s.name)}${s.symbol ? `<span class="h2-badge">${escapeHtml(s.symbol)}</span>` : ''}</h2>
+        ${stratObj ? `<div class="hint" style="margin-bottom:10px;">${escapeHtml(stratObj.name)}</div>` : ''}
+        <div class="stat-row">
+          <div class="stat"><b>${st.total}</b><span>Trades</span></div>
+          <div class="stat ${st.total ? (st.winRate>=50?'good':'bad') : ''}"><b>${st.winRate}%</b><span>Win Rate</span></div>
+          <div class="stat ${st.total ? (st.totalR>=0?'good':'bad') : ''}"><b>${st.totalR>=0?'+':''}${st.totalR}R</b><span>Total R</span></div>
+        </div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="event.stopPropagation();deleteBacktestSession('${s.id}')">Delete</button>
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="event.stopPropagation();enterBacktestSession('${s.id}')">Open →</button>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // active session detail
+  listWrap.style.display = 'none';
+  detail.style.display = 'block';
+  if(listActions) listActions.style.display = 'none';
+  const session = state.backtestSessions.find(s=>s.id===activeBacktestSession);
+  const st = btStatsFor(session.id);
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <span>🧪 <b>Backtest Mode</b> · ${escapeHtml(session.name)} — these trades never touch your live stats or streak</span>
+    <button class="btn btn-ghost btn-sm" onclick="exitBacktestSession()">Exit to Sessions</button>`;
+
+  const trades = backtestTradesFor(session.id).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.id-a.id));
+  detail.innerHTML = `
+    <div class="topbar-row">
+      <div>
+        <h2 class="page-title" style="font-size:26px;">${escapeHtml(session.name)}</h2>
+        <div class="page-sub">${session.symbol ? escapeHtml(session.symbol)+' · ' : ''}${session.start||'—'} → ${session.end||'—'}</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm" onclick="deleteBacktestSession('${session.id}')">Delete Session</button>
+        <button class="btn btn-primary" onclick="openBacktestTradeModal()">+ Log Trade</button>
+      </div>
+    </div>
+    <div class="hero-row" id="btHeroRow">
+      <div class="hero-stat"><div class="hero-label">Trades</div><div class="hero-value">${st.total}</div></div>
+      <div class="hero-stat ${st.total ? (st.winRate>=50?'pos':'neg') : ''}"><div class="hero-label">Win Rate</div><div class="hero-value">${st.winRate}%</div></div>
+      <div class="hero-stat ${st.total ? (st.avgR>=0?'pos':'neg') : ''}"><div class="hero-label">Avg R</div><div class="hero-value">${st.avgR>=0?'+':''}${st.avgR}</div></div>
+      <div class="hero-stat ${st.total ? (st.totalR>=0?'pos':'neg') : ''}"><div class="hero-label">Total R</div><div class="hero-value">${st.totalR>=0?'+':''}${st.totalR}R</div></div>
+    </div>
+    <div class="card tilt">
+      <h2>Trade <span class="accent">Log</span><span class="h2-badge">${trades.length}</span></h2>
+      ${trades.length ? `<div class="trade-list">${trades.map(t=>`
+        <div class="trade-row">
+          <div class="trade-badge ${t.result}">${t.result==='win'?'W':'L'}</div>
+          <div class="trade-meta">
+            <div class="top">${t.date||''}${t.rr?` · ${t.rr}R`:''}</div>
+            <div class="bottom">${t.notes ? escapeHtml(t.notes) : 'No notes'}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="deleteBacktestTrade(${t.id})">Remove</button>
+        </div>`).join('')}</div>`
+        : `<div class="empty-state"><span class="glyph">🎯</span>No trades yet — log the first one from this session's historical chart.</div>`}
+    </div>`;
+}
 
 /* ============ ORDER BOOK: pre-executed trade journal ============ */
 function onOrderStrategyChange(){
