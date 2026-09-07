@@ -339,7 +339,7 @@ html[data-theme="slate"] .theme-toggle-fab .ico-moon{opacity:1;transform:rotate(
 .swatch-slate{ background:linear-gradient(135deg,#1a2024,#9aa7b3); }
 *{box-sizing:border-box;}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-x:none;scroll-behavior:smooth;}
-html,body{margin:0;padding:0;min-height:100%;width:100%;max-width:100%;overflow-x:hidden;}
+html,body{margin:0;padding:0;min-height:100%;width:100%;max-width:100%;overflow-x:hidden;overflow-x:clip;}
 body{
   background:
     radial-gradient(ellipse 1000px 620px at 18% -10%, rgba(16,185,129,0.07), transparent 60%),
@@ -804,7 +804,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 .auth-vignette{position:absolute;inset:0;pointer-events:none;z-index:2;
   background:radial-gradient(ellipse 1400px 900px at 50% 45%, transparent 55%, rgba(255,255,255,0.65) 100%);
 }
-.auth-blob{position:absolute;border-radius:44% 56% 62% 38%/40% 44% 56% 60%;filter:blur(90px);pointer-events:none;z-index:0;opacity:0.25;}
+.auth-blob{position:absolute;border-radius:44% 56% 62% 38%/40% 44% 56% 60%;filter:blur(90px);pointer-events:none;z-index:0;opacity:0.25;contain:paint;will-change:transform;}
 .auth-blob-cyan{width:480px;height:480px;background:var(--neon-green);top:-160px;left:-140px;animation:driftA 16s ease-in-out infinite;}
 .auth-blob-purple{width:520px;height:520px;background:var(--neon-cyan);bottom:-200px;right:-160px;animation:driftB 19s ease-in-out infinite;}
 .auth-blob-magenta{width:380px;height:380px;background:var(--neon-purple);bottom:10%;left:8%;animation:driftC 14s ease-in-out infinite;opacity:0.3;}
@@ -1073,7 +1073,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 /* ============ APP SHELL ============ */
 #appShell{display:none;min-height:100vh;width:100%;max-width:100%;overflow-x:hidden;position:relative;}
 #appShell.show{display:flex;}
-.shell-blob{position:fixed;border-radius:44% 56% 62% 38%/40% 44% 56% 60%;filter:blur(130px);pointer-events:none;z-index:-1;opacity:0.16;}
+.shell-blob{position:fixed;border-radius:44% 56% 62% 38%/40% 44% 56% 60%;filter:blur(130px);pointer-events:none;z-index:-1;opacity:0.16;contain:paint;will-change:transform;}
 .shell-blob-a{width:560px;height:560px;background:var(--neon-green);top:-180px;right:-160px;animation:driftA 28s ease-in-out infinite;}
 .shell-blob-b{width:500px;height:500px;background:var(--neon-cyan);bottom:-200px;left:-140px;opacity:0.1;animation:driftB 32s ease-in-out infinite;}
 .shell-blob-c{width:400px;height:400px;background:var(--neon-purple);top:40%;left:50%;opacity:0.06;animation:driftC 26s ease-in-out infinite;}
@@ -1424,7 +1424,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .clock-sub{text-align:center;font-size:11.5px;color:var(--slate);margin-top:5px;text-transform:uppercase;letter-spacing:0.1em;}
 
 .trade-list{margin-top:16px;display:flex;flex-direction:column;gap:8px;max-height:440px;overflow-y:auto;}
-.trade-row{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--steel);border-radius:12px;transition:border-color .15s ease;background:rgba(15,23,22,0.025);}
+.trade-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:11px 13px;border:1px solid var(--steel);border-radius:12px;transition:border-color .15s ease;background:rgba(15,23,22,0.025);max-width:100%;}
 .trade-row:hover{border-color:var(--steel-hi);}
 .trade-badge{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
   font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10.5px;flex-shrink:0;}
@@ -1433,7 +1433,9 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .trade-meta{flex:1;min-width:0;}
 .trade-meta .top{font-size:13px;color:var(--platinum);font-weight:500;}
 .trade-meta .bottom{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.trade-tags{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.trade-tags{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;max-width:100%;}
+.trade-meta .bottom, .trade-meta .top{overflow-wrap:anywhere;word-break:break-word;}
+.tag-chip{overflow-wrap:anywhere;word-break:break-word;max-width:100%;}
 .tag-chip{font-size:9.5px;padding:2px 8px;border-radius:100px;background:rgba(16,185,129,0.1);color:var(--bronze-bright);border:1px solid rgba(16,185,129,0.25);text-transform:uppercase;letter-spacing:0.04em;}
 .tag-chip.trader{background:rgba(91,102,99,0.12);color:#3f4a47;border-color:rgba(91,102,99,0.28);}
 .tag-chip.mood{background:rgba(245,166,35,0.1);color:var(--amber);border-color:rgba(245,166,35,0.28);text-transform:none;letter-spacing:0.01em;}
