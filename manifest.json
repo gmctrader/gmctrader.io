@@ -18,21 +18,28 @@
       "name": "New Journal Entry",
       "short_name": "Journal",
       "description": "Jump straight to your trade journal",
-      "url": "./index.html?view=journal",
+      "url": "./app.html?view=journal",
       "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Order Book",
       "short_name": "Orders",
       "description": "Open the order book",
-      "url": "./index.html?view=orders",
+      "url": "./app.html?view=orders",
       "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Analytics",
       "short_name": "Analytics",
       "description": "Check your performance analytics",
-      "url": "./index.html?view=analytics",
+      "url": "./app.html?view=analytics",
+      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Team",
+      "short_name": "Team",
+      "description": "Weekly Desk Review with your trading partners",
+      "url": "./app.html?view=team",
       "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
     },
     {

@@ -18,8 +18,9 @@
 const CACHE_VERSION = 'gd-shell-v3';
 const APP_SHELL = [
   './index.html',
-  './scife.html',
+  './app.html',
   './landing.html',
+  './scife.html',
   './manifest.json',
   './scife-manifest.json',
   './icon.png',
