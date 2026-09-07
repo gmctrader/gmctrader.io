@@ -1473,6 +1473,9 @@ setTimeout(function(){
       <div class="icon-btn" role="button" tabindex="0" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()" title="Settings" aria-label="Open settings">⚙</div>
     </div>
   </div>
+  <div id="chatQuotaBanner" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(16,185,129,0.07);border-bottom:1px solid var(--steel);color:var(--slate);">
+    <span></span>
+  </div>
 
   <div class="stage-3d-wrap" id="stage3dWrap">
     <div class="stage" id="stage">
@@ -1689,6 +1692,7 @@ setTimeout(function(){
     </div>
 
     <div class="settings-pane active" id="paneAi" role="tabpanel">
+      <div class="hint" id="sharedKeyBanner" style="display:none;margin-bottom:14px;padding:10px 12px;border-radius:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);"></div>
       <div class="field">
         <label>AI provider</label>
         <div class="provider-search"><input type="text" id="settingsProviderSearch" placeholder="Search 25+ providers…" autocomplete="off" oninput="filterProviders('settings', this.value)"><span class="p-count" id="settingsProviderCount"></span></div>
@@ -1804,7 +1808,24 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false }, chartMemory:{}, sigSessions:[] };
+let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'' }, chartMemory:{}, sigSessions:[] };
+/* ============ SHARED PLAN KEY ============
+   The trader running this deployment supplies one Gemini key that everyone
+   uses by default (nobody needs to go get their own to start chatting).
+   Never rendered into any input, never logged. Same honesty note as the
+   scan-limit system further down: a trader who opens devtools can read this
+   constant out of the page source same as they always could with any
+   client-side secret — what this protects against is the ordinary path
+   (running out the free daily cap, then just... not being capped). */
+const SHARED_PROVIDER = 'google';
+const SHARED_MODEL = 'gemini-3.5-flash-lite';
+const SHARED_KEY = 'AQ.Ab8RN6JeNHwWtI7ZIbzNp8i8uzYP4gJfMgPGst3S-9e5fReqAQ';
+const FREE_DAILY_CHAT_LIMIT = 15;   // Free tier: chats/day on the shared key
+let userTier = 'free';              // 'free' | 'pro' | 'elite' — set from trader_data.tier in loadTraderRow()
+function telegramUpgradeLink(pkg){
+  const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
+  return 'https://t.me/GhostTradersEmpire?text=' + encodeURIComponent(text);
+}
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -2540,6 +2561,7 @@ async function loadTraderRow(){
   const { data, error } = await sb.from('trader_data').select('*').eq('user_id', currentUser.id).maybeSingle();
   if(error){ showToast('Could not load your journal: ' + (error.message||error.code)); return; }
   traderRow = data || {};
+  userTier = ['free','pro','elite'].includes(traderRow.tier) ? traderRow.tier : 'free';
   const s = traderRow.scife || {};
   const provider = s.provider || 'google';
   // apiKeys is the new per-provider map; fall back to migrating an old
@@ -2555,7 +2577,7 @@ async function loadTraderRow(){
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
     voiceURI: s.voiceURI || '',
-    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin },
+    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin, chatCount: u.chatCount || 0, chatDayKey: u.chatDayKey || '' },
     chartMemory: (s.chartMemory && typeof s.chartMemory === 'object') ? s.chartMemory : {},
     sigSessions: Array.isArray(s.sigSessions) ? s.sigSessions.filter(k=>SIGNAL_SESSIONS[k]) : []
   };
@@ -2685,9 +2707,76 @@ window.addEventListener('storage', (e)=>{ if(e.key==='gd_theme') applyGdTheme(e.
 applyGdTheme((function(){ try{ return localStorage.getItem('gd_theme'); }catch(e){ return 'light'; } })());
 
 
-/* The key currently in effect for chat calls — whatever is saved for the active provider. */
+/* ============ DAILY CHAT LIMIT (shared plan key, Free tier only) ============
+   Separate counter from the weekly Signal-scan limit above — this one
+   covers ordinary chat turns on the shared key. Pro/Elite and anyone who's
+   saved their own key for the active provider are never capped here. */
+function todayKey(){
+  const d = new Date();
+  return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+}
+function rolloverChatDay(){
+  const tk = todayKey();
+  if(scife.usage.chatDayKey !== tk){ scife.usage.chatDayKey = tk; scife.usage.chatCount = 0; }
+}
+function chatsRemainingToday(){
+  if(scife.usage.isAdmin) return Infinity;
+  rolloverChatDay();
+  return Math.max(0, FREE_DAILY_CHAT_LIMIT - scife.usage.chatCount);
+}
+function usingSharedKey(){
+  return !(scife.apiKeys && scife.apiKeys[scife.provider]);
+}
+// Re-pulls usage from the synced row (same pattern as refreshUsageFromServer
+// above) right before spending it, so two tabs/devices can't both slip a
+// message through on a stale local copy — then claims one chat turn.
+async function claimDailyChat(){
+  if(userTier !== 'free') return true;
+  if(!usingSharedKey()) return true; // trader's own key — not our quota to enforce
+  if(currentUser){
+    try{
+      const { data } = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
+      const u = (data && data.scife && data.scife.usage) || {};
+      scife.usage.scanCount = u.scanCount || scife.usage.scanCount;
+      scife.usage.chatCount = u.chatCount || 0;
+      scife.usage.chatDayKey = u.chatDayKey || '';
+      scife.usage.isAdmin = !!u.isAdmin;
+    }catch(e){ /* offline — fall back to local copy */ }
+  }
+  rolloverChatDay();
+  if(scife.usage.isAdmin) return true;
+  if(scife.usage.chatCount >= FREE_DAILY_CHAT_LIMIT) return false;
+  scife.usage.chatCount += 1;
+  await saveScife();
+  updateChatQuotaBanner();
+  return true;
+}
+function updateChatQuotaBanner(){
+  const el = document.getElementById('chatQuotaBanner');
+  if(!el) return;
+  if(userTier !== 'free'){ el.style.display = 'none'; return; }
+  const remaining = chatsRemainingToday();
+  el.style.display = 'flex';
+  el.innerHTML = `<span>Free plan — ${remaining}/${FREE_DAILY_CHAT_LIMIT} SciFe chats left today</span><a href="${telegramUpgradeLink('Pro')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;text-decoration:none;">Upgrade →</a>`;
+  el.style.color = remaining === 0 ? 'var(--loss)' : 'var(--slate)';
+  el.classList.toggle('empty', remaining === 0);
+}
+
+/* The key currently in effect for chat calls — the trader's own saved key
+   for the active provider if they've set one, otherwise the shared plan key
+   (forced onto SHARED_PROVIDER/SHARED_MODEL so it's always a valid pairing). */
 function activeApiKey(){
-  return (scife.apiKeys && scife.apiKeys[scife.provider]) || '';
+  const own = scife.apiKeys && scife.apiKeys[scife.provider];
+  if(own) return own;
+  return SHARED_KEY;
+}
+function activeProviderCfg(){
+  const own = scife.apiKeys && scife.apiKeys[scife.provider];
+  return own ? (PROVIDERS[scife.provider] || PROVIDERS.openai) : PROVIDERS[SHARED_PROVIDER];
+}
+function activeModel(){
+  const own = scife.apiKeys && scife.apiKeys[scife.provider];
+  return own ? scife.model : SHARED_MODEL;
 }
 
 async function saveScife(){
@@ -2721,6 +2810,17 @@ function openSettings(){
   populateVoiceSelect();
   document.getElementById('memoryCountHint').textContent = scife.memory.length + ' notes remembered';
   renderAdminSection();
+  const banner = document.getElementById('sharedKeyBanner');
+  if(banner){
+    if(usingSharedKey()){
+      banner.style.display = 'block';
+      banner.innerHTML = userTier === 'free'
+        ? `You're chatting for free on the shared plan key — no setup needed. That's capped at ${FREE_DAILY_CHAT_LIMIT} chats/day; paste your own key below any time to remove the cap, or <a href="${telegramUpgradeLink('Pro')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">upgrade</a>.`
+        : `You're on the shared plan key with no daily cap on your paid plan. Paste your own key below any time if you'd rather use a different provider.`;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
   const search = document.getElementById('settingsProviderSearch');
   if(search){ search.value = ''; filterProviders('settings', ''); }
   switchSettingsTab('ai');
@@ -2757,6 +2857,7 @@ function startApp(){
   addBubble('system', memoryOpeningLine());
   setupSpeechRecognition();
   initChatScrollWatch();
+  updateChatQuotaBanner();
 }
 function memoryOpeningLine(){
   if(scife.memory.length){
@@ -5393,7 +5494,15 @@ function sendTyped(){
 }
 
 async function sendMessage(text){
-  if(!activeApiKey()){ showToast('Add your API key in settings first'); openSettings(); return; }
+  if(usingSharedKey()){
+    const allowed = await claimDailyChat();
+    if(!allowed){
+      addBubble('system', `Free plan's daily SciFe limit (${FREE_DAILY_CHAT_LIMIT}/day) is used up — it resets at midnight UTC, or upgrade any time for more.`);
+      updateChatQuotaBanner();
+      return;
+    }
+    updateChatQuotaBanner();
+  }
   addBubble('user', text);
   history.push({ role:'user', content:text });
   addTyping();
@@ -5443,18 +5552,19 @@ async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
   const maxTokens = opts.maxTokens || 500; // a little headroom for the trailing trade-action JSON block
   const temperature = opts.temperature !== undefined ? opts.temperature : 0.7;
-  const cfg = PROVIDERS[scife.provider] || PROVIDERS.openai;
+  const cfg = activeProviderCfg();
   const apiKey = activeApiKey();
+  const model = activeModel();
   if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
   const images = [opts.image, opts.image2, opts.image3].filter(Boolean);
-  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
-  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
-  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images);
+  if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
+  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
+  return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
 }
 
 /* Covers OpenAI, Groq, OpenRouter, and Mistral — they all speak the same
    /chat/completions shape, just at a different base URL. */
-async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images){
+async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model){
   const messages = [{ role:'system', content: systemPrompt }];
   turns.forEach((t,i)=>{
     if(images && images.length && t.role==='user' && i===turns.length-1){
@@ -5469,7 +5579,7 @@ async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens,
   const res = await fetch(cfg.baseURL, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + apiKey },
-    body: JSON.stringify({ model: scife.model, messages, temperature, max_tokens:maxTokens })
+    body: JSON.stringify({ model: model || scife.model, messages, temperature, max_tokens:maxTokens })
   });
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
@@ -5498,7 +5608,7 @@ async function callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens,
   return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "I didn't catch that — try again?";
 }
 
-async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images){
+async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model){
   const messages = turns.map((t,i)=>{
     if(images && images.length && t.role==='user' && i===turns.length-1){
       return { role:t.role, content:[
@@ -5517,7 +5627,7 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: scife.model,
+      model: model || scife.model,
       max_tokens: maxTokens,
       temperature,
       system: systemPrompt,
@@ -5536,8 +5646,8 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
   return (block && block.text) || "I didn't catch that — try again?";
 }
 
-async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images){
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${scife.model}:generateContent?key=${apiKey}`;
+async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model || scife.model}:generateContent?key=${apiKey}`;
   const contents = turns.map((t,i)=>{
     const parts = [];
     if(images && images.length && t.role==='user' && i===turns.length-1){

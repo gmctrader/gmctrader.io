@@ -560,6 +560,19 @@ html[data-theme="dark"] .gd-ripple{background:rgba(255,255,255,0.24);}
   transition:transform .15s ease,color .2s ease;}
 .cmdk-launcher:hover{transform:translateY(-2px);color:var(--platinum);}
 @media (max-width:760px){ .cmdk-launcher{display:none;} }
+/* Persistent "Ask SciFe" launcher — visible on every room in the terminal,
+   not just the sidebar link, so help/analysis is always one tap away. */
+.scife-fab{position:fixed;bottom:20px;right:20px;z-index:999;width:52px;height:52px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;cursor:pointer;font-size:22px;
+  background:linear-gradient(135deg, var(--bronze-bright), var(--bronze));color:var(--bronze-ink);
+  box-shadow:0 12px 28px -8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
+  border:none;transition:transform .15s ease;}
+.scife-fab.show{display:flex;}
+.scife-fab:hover{transform:translateY(-2px) scale(1.05);}
+.scife-fab .fab-tip{position:absolute;bottom:64px;right:0;background:var(--panel-solid);color:var(--platinum);
+  font-size:11.5px;padding:6px 10px;border-radius:8px;border:1px solid var(--steel-hi);white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s ease;}
+.scife-fab:hover .fab-tip{opacity:1;}
 ::selection{background:rgba(16,185,129,0.28);}
 /* ============ BACKGROUND VIDEO LAYER ============ */
 .bg-video-layer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:-3;overflow:hidden;background:var(--void);perspective:1400px;opacity:0.112;}
@@ -2370,6 +2383,9 @@ setTimeout(function(){
   <div class="auth-wrap">
     <div class="auth-brand">
       <p class="auth-kicker">GMC Traders · Private terminal</p>
+      <p style="margin:-6px 0 8px 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">
+        <a href="landing.html" style="color:var(--bronze-bright);text-decoration:none;font-weight:600;">← Back to the front door</a>
+      </p>
       <div class="auth-emblem">
         <div class="medallion" id="authMedallion">
           <div class="medallion-plate">
@@ -2483,6 +2499,41 @@ setTimeout(function(){
     <div class="btn-row" style="margin-top:10px;">
       <button class="side-logout" style="width:100%;" onclick="closeModal('demoLockedFeatureOverlay')">Stay in the Proving Ground</button>
     </div>
+  </div>
+</div>
+
+<!-- ONBOARDING QUESTIONNAIRE (shown once, right after an invited trader's first
+     login) — helps SciFe personalise its coaching from turn one instead of
+     starting cold. Free tier must answer to continue; Pro/Elite can skip. -->
+<div class="overlay" id="onboardingOverlay">
+  <div class="modal" style="max-width:480px;" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <h3 class="serif" id="onboardingTitle">A few questions for SciFe</h3>
+    <div class="sub">Nothing here is graded — it just helps SciFe's coaching fit how you actually trade. Takes under a minute.</div>
+    <div class="auth-msg" id="onboardingMsg" role="alert"></div>
+    <div class="field">
+      <label>What markets do you mainly trade?</label>
+      <input type="text" id="ob_markets" placeholder="e.g. XAUUSD, EURUSD, indices">
+    </div>
+    <div class="field">
+      <label>How long have you been trading?</label>
+      <select id="ob_experience">
+        <option value="">Select…</option>
+        <option value="new">Under 6 months</option>
+        <option value="1-2y">1–2 years</option>
+        <option value="3-5y">3–5 years</option>
+        <option value="5y+">5+ years</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>What usually breaks your discipline first?</label>
+      <input type="text" id="ob_weakness" placeholder="e.g. revenge trading after a loss">
+    </div>
+    <div class="field">
+      <label>What's the #1 goal you want this journal to help with?</label>
+      <input type="text" id="ob_goal" placeholder="e.g. stop overtrading, pass a prop challenge">
+    </div>
+    <button class="btn-gold" id="onboardingSubmitBtn" onclick="submitOnboarding()">Save & Continue</button>
+    <button class="btn-ghost" id="onboardingSkipBtn" style="margin-top:10px;width:100%;" onclick="skipOnboarding()">Skip for now</button>
   </div>
 </div>
 
@@ -3996,6 +4047,33 @@ function accountTagHtml(accountId){
 }
 let currentUser = null;
 let isDemoMode = false;
+
+/* ============ SUBSCRIPTION TIERS ============
+   Three tiers on the real (invited, non-demo) account: 'free' | 'pro' | 'elite'.
+   Lives on trader_data.tier (plain text column, defaults to 'free' — see the
+   migration note above loadOrCreateTraderData()). There is no payment
+   processor wired up: upgrading is manual — a trader messages the Telegram
+   with the package they want, and the owner flips their `tier` column in the
+   Supabase table editor. onboarding_done / profile follow the same pattern.
+   Nothing here is enforced by RLS beyond the trader's own row being private —
+   same honesty note as everywhere else in this file: a trader editing their
+   own client-side `userTier` var in devtools can fake a higher tier for
+   themselves for the current session, but it never touches the server copy,
+   so it reverts on next load/save and doesn't help them steal from anyone
+   else's account. */
+let userTier = 'free';                 // 'free' | 'pro' | 'elite'
+let userProfile = {};                  // onboarding questionnaire answers
+const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite' };
+// Rooms held back on the Free tier — same lock-badge/tease mechanism as the
+// Proving Ground demo lock, just a shorter, less restrictive list since these
+// are real invited accounts, not anonymous trials. Tune freely.
+const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm'];
+function isFreeTier(){ return !isDemoMode && userTier === 'free'; }
+function telegramUpgradeLink(wantedTier){
+  const pkg = TIER_LABELS[wantedTier] || 'Pro';
+  const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
+  return 'https://t.me/GhostTradersEmpire?text=' + encodeURIComponent(text);
+}
 let pendingViolation = false;
 let closingOrderId = null;
 let selectedMood = null;
@@ -4599,6 +4677,7 @@ async function handleLogout(){
   document.getElementById('appShell').classList.remove('show');
   document.getElementById('gateScreen').classList.remove('show');
   document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('scifeFab')?.classList.remove('show');
 }
 async function resetDeviceForNewAccount(){
   if(isDemoMode){ exitDemo(); return; }
@@ -4674,6 +4753,7 @@ async function onAuthed(user){
     routeFromShortcutParams();
   }
   renderDemoStatus();
+  document.getElementById('scifeFab')?.classList.add('show');
   hideBootSplash();
 }
 
@@ -4826,6 +4906,7 @@ async function startDemo(){
   }
   renderDemoStatus();
   applyDemoLocks();
+  document.getElementById('scifeFab')?.classList.add('show');
   showToast(isDemoAdmin() ? 'Admin logged in — unlimited access' : `Proving Ground started — ${demoDaysRemaining()} days on the clock`);
 }
 // A fresh trial can only ever be granted once per email/device by the server,
@@ -4937,6 +5018,81 @@ function applyDemoLocks(){
   const monkField = document.getElementById('psychMonkField');
   if(monkField) monkField.classList.toggle('field-locked', isDemoMode);
 }
+/* ============ FREE TIER LOCKS (real accounts) ============
+   Same lock-badge + tease-modal mechanism as the Proving Ground demo lock
+   above, just driven by userTier instead of isDemoMode, and pointed at the
+   Telegram upgrade link with the package name pre-filled. Demo mode's own
+   locks always win (a demo trader isn't on any real tier yet). */
+function applyTierLocks(){
+  if(isDemoMode) return; // demo locks already cover this case
+  document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
+    const view = btn.dataset.view;
+    const locked = isFreeTier() && FREE_LOCKED_VIEWS.includes(view);
+    btn.classList.toggle('demo-locked', locked);
+    let badge = btn.querySelector('.lock-badge');
+    if(locked){
+      if(!badge){
+        badge = document.createElement('span');
+        badge.className = 'lock-badge';
+        badge.textContent = '🔒 PRO';
+        btn.appendChild(badge);
+      }
+    } else if(badge){
+      badge.remove();
+    }
+  });
+}
+function showTierLockedFeatureTease(view){
+  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', backtest:'Backtest', stratnotes:'Strategy Notes' };
+  const label = labels[view] || 'This room';
+  document.getElementById('demoLockedFeatureTitle').textContent = `${label} is a Pro feature`;
+  document.getElementById('demoLockedFeatureCopy').textContent = `${label} is part of the Pro and Elite packages. Message the Telegram below and we'll get you upgraded.`;
+  const link = document.querySelector('#demoLockedFeatureOverlay .btn-telegram');
+  if(link) link.href = telegramUpgradeLink('pro');
+  document.getElementById('demoLockedFeatureOverlay').classList.add('show');
+}
+/* ============ ONBOARDING QUESTIONNAIRE ============
+   queueOnboardingQuestions() is called from loadOrCreateTraderData() for any
+   trader whose row has onboarding_done !== true. It waits for the boot
+   splash/gate to clear so it never fights the rules-setup gate for attention. */
+function queueOnboardingQuestions(){
+  const tryShow = ()=>{
+    if(document.getElementById('appShell').classList.contains('show') || document.getElementById('gateScreen').classList.contains('show')){
+      document.getElementById('onboardingSkipBtn').style.display = isFreeTier() ? 'none' : 'block';
+      document.getElementById('onboardingOverlay').classList.add('show');
+    } else {
+      setTimeout(tryShow, 300);
+    }
+  };
+  setTimeout(tryShow, 400);
+}
+async function saveOnboardingAnswers(profile){
+  userProfile = profile;
+  const { error } = await sb.from('trader_data')
+    .update({ profile, onboarding_done: true })
+    .eq('user_id', currentUser.id);
+  if(error) showToast('Could not save your answers: ' + (error.message||error.code));
+}
+async function submitOnboarding(){
+  const markets = document.getElementById('ob_markets').value.trim();
+  const experience = document.getElementById('ob_experience').value;
+  const weakness = document.getElementById('ob_weakness').value.trim();
+  const goal = document.getElementById('ob_goal').value.trim();
+  if(!markets || !experience || !weakness || !goal){
+    const msg = document.getElementById('onboardingMsg');
+    msg.textContent = 'Please answer every question — this is what SciFe uses to personalise itself.';
+    msg.className = 'auth-msg show error';
+    return;
+  }
+  await saveOnboardingAnswers({ markets, experience, weakness, goal });
+  document.getElementById('onboardingOverlay').classList.remove('show');
+  showToast('Thanks — SciFe will use this from your next chat.');
+}
+async function skipOnboarding(){
+  if(isFreeTier()) return; // Free tier can't skip — button is hidden for them anyway
+  await sb.from('trader_data').update({ onboarding_done: true }).eq('user_id', currentUser.id);
+  document.getElementById('onboardingOverlay').classList.remove('show');
+}
 function openDemoTease(title, copy){
   document.getElementById('demoLockedFeatureTitle').textContent = title;
   document.getElementById('demoLockedFeatureCopy').textContent = copy;
@@ -5017,6 +5173,7 @@ function exitDemo(){
   document.getElementById('authScreen').style.display = 'flex';
   renderDemoStatus();
   applyDemoLocks();
+  document.getElementById('scifeFab')?.classList.remove('show');
   showToast('Left the Proving Ground — your trial progress is saved on this device');
 }
 function renderDemoStatus(){
@@ -5041,7 +5198,12 @@ function renderDemoStatus(){
   }
 }
 
-/* ============ DATA LOAD/SAVE ============ */
+/* ============ DATA LOAD/SAVE ============
+   Migration needed once in Supabase's SQL editor for the columns below:
+     alter table trader_data add column if not exists tier text not null default 'free';
+     alter table trader_data add column if not exists profile jsonb not null default '{}'::jsonb;
+     alter table trader_data add column if not exists onboarding_done boolean not null default false;
+*/
 async function loadOrCreateTraderData(){
   const { data, error } = await sb.from('trader_data').select('*').eq('user_id', currentUser.id).maybeSingle();
   if(error){ console.error('Ghost Discipline load failed:', error); showToast('Could not load your data: ' + (error.message||error.code||'unknown error')); return; }
@@ -5058,13 +5220,21 @@ async function loadOrCreateTraderData(){
       day: DEFAULT_STATE.day,
       consecutive_losses: 0,
       rules_completed: false,
+      tier: 'free',
+      profile: {},
+      onboarding_done: false,
       version: 1
     }).select().single();
     if(insertErr){ console.error('Ghost Discipline profile creation failed:', insertErr); showToast('Could not create your profile: ' + (insertErr.message||insertErr.code||'unknown error')); return; }
     hydrateState(created);
+    // Brand-new invited trader — ask the onboarding questions once, right
+    // after their journal shell exists but before they start using it.
+    queueOnboardingQuestions();
   } else {
     hydrateState(data);
+    if(!data.onboarding_done) queueOnboardingQuestions();
   }
+  applyTierLocks();
 }
 
 // Shared by real accounts (hydrateState) and the local Proving Ground demo (startDemo),
@@ -5150,6 +5320,8 @@ function hydrateState(row){
   state.consecutiveLosses = row.consecutive_losses || 0;
   state.rulesCompleted = !!row.rules_completed;
   dataVersion = typeof row.version === 'number' ? row.version : 1;
+  userTier = TIER_LABELS[row.tier] ? row.tier : 'free';
+  userProfile = (row.profile && typeof row.profile === 'object') ? row.profile : {};
   // Old trades/orders tagged 'propfirm' (the single account that used to
   // exist) now need to point at that account's migrated id so daily-loss /
   // drawdown math still finds them.
@@ -5972,6 +6144,11 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     if(isDemoMode && DEMO_LOCKED_VIEWS.includes(btn.dataset.view)){
       showLockedFeatureTease(btn.dataset.view);
+      toggleSidebar(false);
+      return;
+    }
+    if(isFreeTier() && FREE_LOCKED_VIEWS.includes(btn.dataset.view)){
+      showTierLockedFeatureTease(btn.dataset.view);
       toggleSidebar(false);
       return;
     }
@@ -10949,6 +11126,35 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
     anthropic:   { compat:'anthropic', baseURL:'https://api.anthropic.com/v1/messages' }
   };
 
+  // ---- Shared plan key (house key, not the trader's own) ----
+  // Used automatically whenever a trader hasn't saved their own key, for
+  // every tier. Free tier shares a daily cap with the main SciFe chat
+  // (scife.html) via the same trader_data.scife.usage counter; Pro/Elite
+  // ride the shared key with no cap. Never surfaced in any input field.
+  var SHARED_PROVIDER = 'google';
+  var SHARED_MODEL = 'gemini-3.5-flash-lite';
+  var SHARED_KEY = 'AQ.Ab8RN6JeNHwWtI7ZIbzNp8i8uzYP4gJfMgPGst3S-9e5fReqAQ';
+  var FREE_DAILY_CHAT_LIMIT = 15;
+  function todayKeyLocal(){ var d=new Date(); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
+  // Re-checks + increments the shared daily counter straight against the
+  // synced row (not a local cache) so it can't be reset by reloading or
+  // switching devices. Returns true if this call is allowed to proceed.
+  function claimSharedUsage(){
+    if(typeof userTier !== 'undefined' && userTier !== 'free') return Promise.resolve(true);
+    if(typeof sb === 'undefined' || typeof currentUser === 'undefined' || !currentUser) return Promise.resolve(true);
+    return sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle().then(function(res){
+      var s = (res.data && res.data.scife) || {};
+      var usage = (s.usage && typeof s.usage==='object') ? s.usage : {};
+      var today = todayKeyLocal();
+      if(usage.chatDayKey !== today){ usage.chatDayKey = today; usage.chatCount = 0; }
+      if(usage.isAdmin) return true;
+      if((usage.chatCount||0) >= FREE_DAILY_CHAT_LIMIT) return false;
+      usage.chatCount = (usage.chatCount||0) + 1;
+      s.usage = usage;
+      return sb.from('trader_data').update({ scife: s }).eq('user_id', currentUser.id).then(function(){ return true; }).catch(function(){ return true; });
+    }).catch(function(){ return true; });
+  }
+
   // Short, single-purpose system prompts — mirrors the style of
   // scife.html's buildSystemPrompt, one per insight card.
   var AI_SYSTEM_PROMPTS = {
@@ -11023,7 +11229,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
     var src = document.getElementById(m.sourceId);
     if(src && !src.__promptShown){
       src.__promptShown = true;
-      src.innerHTML = 'No AI key saved yet — <a href="scife.html" style="color:var(--bronze-bright);font-weight:600;">add a free one in SciFe →</a>';
+      src.innerHTML = 'Free plan\'s daily SciFe limit is used up — <a href="' + telegramUpgradeLink('pro') + '" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">upgrade for more →</a>';
     }
   }
 
@@ -11119,29 +11325,45 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
         var provider = scifeCfg && scifeCfg.provider;
         var apiKey = provider && scifeCfg.apiKeys && scifeCfg.apiKeys[provider];
         var providerCfg = provider && AI_PROVIDERS[provider];
-        if(!providerCfg || !apiKey){ showNoKeyPrompt(kind); return; }
+        var usingShared = false;
+        if(!providerCfg || !apiKey){
+          // Fall back to the shared house key rather than telling the trader
+          // to go add one — that's the whole point of the shared plan.
+          provider = SHARED_PROVIDER; providerCfg = AI_PROVIDERS[SHARED_PROVIDER]; apiKey = SHARED_KEY; usingShared = true;
+        }
 
         var btn = document.querySelector('.ai-refresh-btn[onclick*="\'' + kind + '\'"]');
-        if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = '✨ Thinking…'; }
+        var doCall = function(){
+          if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = '✨ Thinking…'; }
 
-        window.__gdScifeModel = scifeCfg.model;
-        var system = AI_SYSTEM_PROMPTS[kind];
-        var userText = 'Here is the trader\'s current data as JSON:\n\n' + JSON.stringify(buildContext(kind), null, 2) + '\n\nWrite the insight now.';
-        var maxTokens = 300;
+          window.__gdScifeModel = usingShared ? SHARED_MODEL : scifeCfg.model;
+          var system = AI_SYSTEM_PROMPTS[kind];
+          var userText = 'Here is the trader\'s current data as JSON:\n\n' + JSON.stringify(buildContext(kind), null, 2) + '\n\nWrite the insight now.';
+          var maxTokens = 300;
 
-        var callPromise = providerCfg.compat === 'anthropic' ? callAnthropicSimple(apiKey, system, userText, maxTokens)
-          : providerCfg.compat === 'gemini' ? callGeminiSimple(apiKey, system, userText, maxTokens)
-          : callOpenAICompatibleSimple(providerCfg, apiKey, system, userText, maxTokens);
+          var callPromise = providerCfg.compat === 'anthropic' ? callAnthropicSimple(apiKey, system, userText, maxTokens)
+            : providerCfg.compat === 'gemini' ? callGeminiSimple(apiKey, system, userText, maxTokens)
+            : callOpenAICompatibleSimple(providerCfg, apiKey, system, userText, maxTokens);
 
-        callPromise.then(function(text){
-          if(!text) throw new Error('Empty response');
-          writeCache(kind, text);
-          showRealInsight(kind, text, provider);
-        }).catch(function(err){
-          console.warn('gdAskAI(' + kind + ') failed, keeping heuristic text:', err);
-        }).finally(function(){
-          if(btn){ btn.disabled = false; btn.classList.remove('spin'); btn.textContent = '✨ Ask AI'; }
-        });
+          callPromise.then(function(text){
+            if(!text) throw new Error('Empty response');
+            writeCache(kind, text);
+            showRealInsight(kind, text, usingShared ? 'SciFe (free plan)' : provider);
+          }).catch(function(err){
+            console.warn('gdAskAI(' + kind + ') failed, keeping heuristic text:', err);
+          }).finally(function(){
+            if(btn){ btn.disabled = false; btn.classList.remove('spin'); btn.textContent = '✨ Ask AI'; }
+          });
+        };
+
+        if(usingShared){
+          claimSharedUsage().then(function(allowed){
+            if(!allowed){ showNoKeyPrompt(kind); return; }
+            doCall();
+          });
+        } else {
+          doCall();
+        }
       }catch(e){ console.warn('gdAskAI error:', e); }
     });
   };
@@ -11173,6 +11395,10 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
 <div class="cmdk-launcher" id="cmdkLauncher" onclick="window.openCommandPalette && window.openCommandPalette()" title="Command palette">
   <span>Jump to…</span><span class="kbd">⌘K</span>
 </div>
+
+<button class="scife-fab" id="scifeFab" onclick="handleSciFe()" aria-label="Ask SciFe">
+  <span class="fab-tip">Ask SciFe — help &amp; analysis</span>✦
+</button>
 
 <!-- ============ POINTER-DRIVEN 3D TILT ============
      Gives every .card.tilt real rotateX/rotateY that tracks the cursor

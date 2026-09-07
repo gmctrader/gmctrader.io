@@ -15,10 +15,11 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v2';
+const CACHE_VERSION = 'gd-shell-v3';
 const APP_SHELL = [
   './index.html',
   './scife.html',
+  './landing.html',
   './manifest.json',
   './scife-manifest.json',
   './icon.png',
