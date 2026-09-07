@@ -1002,6 +1002,36 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 }
 .side-navbtn.demo-locked{opacity:0.62;}
 .side-navbtn.demo-locked:hover{opacity:0.85;}
+/* ============ TEAM (Elite) ============ */
+.side-navbtn .notif-dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--loss,#f43f5e);box-shadow:0 0 0 2px rgba(0,0,0,0.25);flex-shrink:0;}
+.team-handle-pill{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--bronze-bright);background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);border-radius:20px;padding:5px 12px;}
+.team-card-list{display:flex;flex-direction:column;gap:10px;}
+.team-card-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel-2,rgba(255,255,255,0.03));border:1px solid var(--steel-hi);border-radius:var(--r-sm,10px);padding:12px 14px;flex-wrap:wrap;}
+.team-card-row .members{font-size:11.5px;color:var(--slate);}
+.team-member-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-family:'IBM Plex Mono',monospace;background:rgba(255,255,255,0.05);border:1px solid var(--steel-hi);border-radius:20px;padding:2px 9px;margin:2px 3px 0 0;}
+.team-member-chip.pending{opacity:0.55;font-style:italic;}
+.invite-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.25);border-radius:var(--r-sm,10px);padding:12px 14px;margin-bottom:8px;flex-wrap:wrap;}
+.team-week-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.team-week-nav b{font-family:'IBM Plex Mono',monospace;}
+.team-pnl-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;}
+.team-pnl-table th,.team-pnl-table td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--steel-hi);white-space:nowrap;}
+.team-pnl-table th{color:var(--slate);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;}
+.team-pnl-table td.num{font-family:'IBM Plex Mono',monospace;}
+.team-pnl-table tr.total-row td{font-weight:700;border-top:2px solid var(--steel-hi);border-bottom:none;}
+.team-member-col{border-left:2px solid var(--steel-hi);}
+.leak-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;}
+@media(max-width:700px){.leak-grid{grid-template-columns:1fr;}}
+.leak-check{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--platinum);padding:4px 0;cursor:pointer;}
+.leak-check input{margin-top:3px;flex-shrink:0;}
+.routine-slider-row{margin-bottom:14px;}
+.routine-slider-row label{display:block;font-size:12.5px;color:var(--slate);margin-bottom:4px;}
+.routine-slider-row input[type=range]{width:100%;}
+.setup-log-mini{font-size:12px;color:var(--slate);}
+.setup-log-mini table{width:100%;border-collapse:collapse;}
+.setup-log-mini td,.setup-log-mini th{padding:5px 6px;border-bottom:1px solid var(--steel-hi);}
+.commit-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.elite-lock-banner{text-align:center;padding:40px 20px;}
+.elite-lock-banner .ic{font-size:38px;margin-bottom:10px;}
 #r_presetRow.demo-locked{opacity:0.55;position:relative;}
 #r_presetRow.demo-locked button{cursor:not-allowed;}
 #r_presetRow.demo-locked::after{content:'🔒 Presets unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
@@ -2781,6 +2811,11 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         Session
       </button>
+      <button class="side-navbtn" data-view="team">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Team
+        <span class="notif-dot" id="teamNotifDot" style="display:none;"></span>
+      </button>
       <div class="side-divider"></div>
       <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
@@ -3644,6 +3679,107 @@ setTimeout(function(){
           <h2>Live <span class="accent">Clock</span></h2>
           <div class="clock-big" id="liveClock">--:--:--</div>
           <div class="clock-sub" id="liveClockSub">checking session…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM (Elite) -->
+    <div class="view" id="view-team">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Team</h2>
+          <div class="page-sub">Link up with other traders, run your Weekly Desk Review together, auto-calculated from your real journals.</div>
+        </div>
+        <div id="teamHandlePillWrap"></div>
+      </div>
+
+      <!-- Locked (non-Elite) state -->
+      <div class="card tilt elite-lock-banner" id="teamEliteLock" style="display:none;">
+        <div class="ic">👥🔒</div>
+        <h2 style="justify-content:center;">Team is an <span class="accent">Elite</span> feature</h2>
+        <p class="page-sub" style="max-width:440px;margin:6px auto 18px;">Invite trading partners by @handle, run synced weekly desk reviews, and see each other's real PnL &amp; setup logs side by side — auto-calculated, no spreadsheets.</p>
+        <a class="btn btn-gold" id="teamUpgradeLink" href="#" target="_blank" rel="noopener">Request Elite →</a>
+      </div>
+
+      <!-- Unlocked (Elite) state -->
+      <div id="teamEliteContent" style="display:none;">
+
+        <!-- Handle claim -->
+        <div class="card tilt" id="teamHandleCard" style="display:none;">
+          <h2>Claim your <span class="accent">@handle</span><span class="eyebrow">how teammates find & invite you</span></h2>
+          <div class="row2" style="align-items:flex-end;">
+            <div class="field" style="flex:1;">
+              <label>Your handle</label>
+              <input type="text" id="team_handleInput" placeholder="e.g. ghostwolf" maxlength="20" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+            </div>
+            <button class="btn btn-primary" onclick="claimMyHandle()" style="flex-shrink:0;">Save handle</button>
+          </div>
+          <div class="hint" id="teamHandleMsg">Lowercase letters, numbers, underscore. 3–20 characters. This is how you'll invite and be invited — pick one and stick with it.</div>
+        </div>
+
+        <!-- Incoming invites / notifications -->
+        <div class="card tilt" id="teamInvitesCard" style="display:none;">
+          <h2>Invites &amp; <span class="accent">Notifications</span><span class="h2-badge" id="teamInviteCount"></span></h2>
+          <div id="teamInvitesList"></div>
+        </div>
+
+        <!-- My teams / create / invite -->
+        <div class="card tilt">
+          <h2>Your <span class="accent">Teams</span><span class="eyebrow">a team can hold 2 or more traders</span></h2>
+          <div class="team-card-list" id="teamListWrap"><div class="hint">No teams yet — create one below.</div></div>
+          <div class="row2" style="margin-top:16px;align-items:flex-end;">
+            <div class="field" style="flex:1;"><label>New team name</label><input type="text" id="team_newTeamName" placeholder="e.g. GMC Desk"></div>
+            <button class="btn btn-ghost" onclick="createMyTeam()" style="flex-shrink:0;">+ Create team</button>
+          </div>
+        </div>
+
+        <!-- Invite by handle (per selected team) -->
+        <div class="card tilt" id="teamInviteFormCard" style="display:none;">
+          <h2>Invite a <span class="accent">Trader</span><span class="eyebrow">by @handle, to “<span id="teamInviteTargetName">—</span>”</span></h2>
+          <div class="row2" style="align-items:flex-end;">
+            <div class="field" style="flex:1;"><label>Trader's @handle</label><input type="text" id="team_inviteHandle" placeholder="e.g. desertfox" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_@]/g,'')"></div>
+            <button class="btn btn-primary" onclick="sendTeamInvite()" style="flex-shrink:0;">Send invite</button>
+          </div>
+          <div class="hint" id="teamInviteMsg">They'll get a notification in their own portal to accept or decline — nothing is shared until they accept.</div>
+        </div>
+
+        <!-- Weekly Desk Review -->
+        <div class="card tilt" id="teamReviewCard" style="display:none;">
+          <h2>Weekly Desk <span class="accent">Review</span><span class="eyebrow">auto-calculated · live-synced with your team</span></h2>
+          <div class="team-week-nav">
+            <select id="team_selectTeam" onchange="onTeamSelectChange()" style="max-width:220px;"></select>
+            <button class="btn btn-sm btn-ghost" onclick="shiftTeamWeek(-1)">← Prev week</button>
+            <b id="teamWeekLabel">—</b>
+            <button class="btn btn-sm btn-ghost" onclick="shiftTeamWeek(1)">Next week →</button>
+            <span class="hint" id="teamSyncHint" style="margin-left:auto;">🔄 syncing live</span>
+          </div>
+
+          <div id="teamReviewBody">
+            <!-- 1. PnL Snapshot -->
+            <h3 style="font-size:14px;margin:18px 0 8px;">1 · Weekly PnL Snapshot <span class="eyebrow">auto-pulled from each trader's journal</span></h3>
+            <div style="overflow-x:auto;"><table class="team-pnl-table" id="teamPnlTable"></table></div>
+
+            <!-- 2. Setup log -->
+            <h3 style="font-size:14px;margin:22px 0 8px;">2 · Liquidity Sweep / SMC Setup Log <span class="eyebrow">every trade this week, per trader</span></h3>
+            <div id="teamSetupLogWrap" class="setup-log-mini"></div>
+
+            <!-- 3. Leak detection -->
+            <h3 style="font-size:14px;margin:22px 0 8px;">3 · Leak Detection <span class="eyebrow">go through it together, out loud</span></h3>
+            <div id="teamLeakWrap"></div>
+
+            <!-- 4. Routine & discipline audit -->
+            <h3 style="font-size:14px;margin:22px 0 8px;">4 · Routine &amp; Discipline Audit <span class="eyebrow">score 1–10, independent of outcome</span></h3>
+            <div id="teamRoutineWrap"></div>
+
+            <!-- 5. Brainstorm -->
+            <h3 style="font-size:14px;margin:22px 0 8px;">5 · Brainstorm &amp; Knowledge Transfer <span class="eyebrow">shared notes — synced live</span></h3>
+            <div class="field"><textarea id="team_brainstorm" placeholder="What did one of you see this week that the other missed?" style="min-height:110px;" onblur="saveTeamBrainstorm()"></textarea></div>
+            <div class="hint" id="teamBrainstormHint"></div>
+
+            <!-- 6. Commitments -->
+            <h3 style="font-size:14px;margin:22px 0 8px;">6 · Next Week's Commitments <span class="eyebrow">one focus area each</span></h3>
+            <div class="commit-grid" id="teamCommitWrap"></div>
+          </div>
         </div>
       </div>
     </div>
