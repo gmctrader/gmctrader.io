@@ -90,6 +90,68 @@ a{color:inherit;}
 .budget-readout{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
   font-size:11.5px;color:var(--slate-dim);margin-top:4px;position:relative;z-index:1;}
 .budget-readout b{color:var(--bronze-bright);}
+.budget-bar{position:relative;height:8px;border-radius:100px;background:var(--steel);margin-top:20px;overflow:hidden;}
+.budget-bar-fill{height:100%;border-radius:100px;width:0%;
+  background:linear-gradient(90deg, var(--bronze-bright), var(--gold-bright));transition:width .18s ease, background .2s ease;}
+.budget-bar-fill.over{background:linear-gradient(90deg, var(--loss), #ff8fa3);}
+.budget-bar-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;color:var(--slate-dim);margin-top:8px;}
+.budget-bar-labels b{color:var(--bronze-bright);}
+.budget-verdict-row{margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+  color:var(--slate-dim);text-align:center;}
+.budget-verdict-row b{font-weight:600;}
+
+/* ---------- playground grid (mini interactive demos) ---------- */
+.playground-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px;}
+.demo-mini{padding:24px 22px 22px 22px;}
+.demo-mini .demo-title{font-size:16px;margin-bottom:4px;}
+.demo-mini .demo-sub{font-size:12px;line-height:1.55;margin-bottom:18px;}
+
+/* rule-lock toggles */
+.rule-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--steel-hi);font-size:12.5px;}
+.rule-toggle:last-of-type{border-bottom:none;}
+.switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;position:absolute;}
+.switch .track{position:absolute;inset:0;background:var(--steel);border-radius:100px;cursor:pointer;transition:background .2s ease;}
+.switch .track .thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:var(--slate);transition:transform .2s ease, background .2s ease;}
+.switch input:checked ~ .track{background:rgba(45,212,168,0.28);}
+.switch input:checked ~ .track .thumb{transform:translateX(16px);background:var(--bronze-bright);}
+.seal-status{margin-top:16px;padding:13px;border-radius:var(--r-sm);text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.02em;border:1px solid var(--steel-hi);
+  transition:background .25s ease, color .25s ease, border-color .25s ease;}
+.seal-status.sealed{color:var(--win);border-color:rgba(43,224,138,0.35);background:rgba(43,224,138,0.08);}
+.seal-status.cracked{color:var(--loss);border-color:rgba(255,93,122,0.35);background:rgba(255,93,122,0.08);}
+
+/* expectancy calculator */
+.slider-row{margin-bottom:18px;}
+.slider-row label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--slate);
+  margin-bottom:9px;font-family:'IBM Plex Mono',monospace;}
+.slider-row label b{color:var(--platinum);font-weight:600;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:100px;
+  background:var(--steel);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--bronze-bright);cursor:pointer;box-shadow:0 0 0 4px rgba(45,212,168,0.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--bronze-bright);
+  border:none;cursor:pointer;box-shadow:0 0 0 4px rgba(45,212,168,0.15);}
+.expectancy-readout{margin-top:20px;text-align:center;}
+.expectancy-value{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;transition:color .2s ease;}
+.expectancy-value.pos{color:var(--win);}
+.expectancy-value.neg{color:var(--loss);}
+.expectancy-label{font-size:10.5px;color:var(--slate-dim);margin-top:3px;text-transform:none;}
+.expectancy-verdict{font-size:12px;color:var(--slate);margin-top:12px;line-height:1.55;min-height:36px;}
+
+/* streak tracker */
+.streak-pips{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 16px 0;}
+.pip{width:19px;height:19px;border-radius:6px;background:var(--steel);border:1px solid var(--steel-hi);
+  cursor:pointer;transition:background .15s ease, border-color .15s ease, transform .1s ease;}
+.pip:active{transform:scale(0.88);}
+.pip.kept{background:rgba(43,224,138,0.28);border-color:var(--win);}
+.pip.broken{background:rgba(255,93,122,0.24);border-color:var(--loss);}
+.streak-readout{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--slate-dim);}
+.streak-readout b{color:var(--bronze-bright);}
+.streak-hint{font-size:11px;color:var(--slate-dim);margin-top:10px;line-height:1.5;}
 
 /* ---------- pricing ---------- */
 .pricing{max-width:1100px;margin:90px auto 0 auto;padding:0 24px;}
@@ -115,10 +177,96 @@ a{color:inherit;}
 .tier-features li .ic{flex-shrink:0;width:16px;height:16px;margin-top:1px;}
 .tier-cta{display:block;text-align:center;width:100%;}
 
+/* ---------- context sections (steps + feature grid) ---------- */
+.section-head{text-align:center;margin-bottom:36px;}
+.section-head h2{font-family:'Fraunces',serif;font-size:clamp(24px,3.6vw,34px);font-weight:650;margin:0 0 10px 0;}
+.section-head p{color:var(--slate);font-size:14.5px;max-width:520px;margin:0 auto;}
+
+.steps-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.step{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-lg);padding:26px;}
+.step-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--bronze-bright);
+  border:1px solid rgba(45,212,168,0.35);border-radius:100px;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.step h3{font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin:0 0 8px 0;}
+.step p{font-size:13px;color:var(--slate);margin:0;line-height:1.55;}
+
+.features-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.feature{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-md);padding:22px;}
+.feature h3{font-family:'Fraunces',serif;font-size:16px;font-weight:650;margin:0 0 8px 0;
+  display:flex;align-items:center;gap:9px;}
+.feature h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--bronze-bright);flex-shrink:0;}
+.feature p{font-size:12.5px;color:var(--slate);margin:0;line-height:1.6;}
+
+.faq-wrap{max-width:760px;margin:88px auto 0 auto;padding:0 24px;}
+.faq{border-top:1px solid var(--steel-hi);}
+.faq-item{border-bottom:1px solid var(--steel-hi);}
+.faq-item summary{list-style:none;cursor:pointer;padding:18px 4px;display:flex;justify-content:space-between;
+  align-items:center;gap:16px;font-family:'Fraunces',serif;font-size:16px;font-weight:600;}
+.faq-item summary::-webkit-details-marker{display:none;}
+.faq-item summary::after{content:'+';font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--bronze-bright);
+  flex-shrink:0;transition:transform .2s ease;}
+.faq-item[open] summary::after{transform:rotate(45deg);}
+.faq-item p{font-size:13.5px;color:var(--slate);margin:0 0 20px 0;padding:0 4px;line-height:1.65;max-width:64ch;}
+
 /* ---------- footer ---------- */
 .foot{max-width:900px;margin:90px auto 40px auto;padding:0 24px;text-align:center;color:var(--slate-dim);
   font-size:12px;}
 .foot a{color:var(--bronze-bright);text-decoration:none;font-weight:600;}
+.foot p{margin:0 0 10px 0;}
+.foot .legal{font-size:11px;color:var(--slate-dim);opacity:0.7;max-width:520px;margin:18px auto 0 auto;line-height:1.6;}
+
+/* =========================================================
+   MOBILE — tablet and below
+   ========================================================= */
+@media(max-width:760px){
+  .nav{padding:16px 18px;}
+  .nav-brand{font-size:16px;}
+  .nav-brand img{width:26px;height:26px;}
+  .btn{padding:9px 14px;font-size:12.5px;}
+
+  .hero{margin-top:5vh;padding:0 20px;}
+  .invite-badge{font-size:10px;padding:6px 13px;text-align:left;white-space:normal;}
+  .hero h1{font-size:clamp(30px,8vw,42px);}
+  .hero-sub{font-size:14.5px;padding:0 4px;}
+  .hero-ctas{flex-direction:column;align-items:stretch;}
+  .hero-ctas .btn{width:100%;padding:14px 18px;}
+  .typewriter-wrap{height:auto;min-height:40px;padding:0 8px;}
+  #typewriter{font-size:13px;text-align:center;}
+
+  .demo-wrap{margin-top:48px;padding:0 16px;}
+  .demo-card{padding:20px 18px 16px 18px;}
+  .demo-head{flex-direction:column;align-items:flex-start;gap:10px;}
+  .demo-hint{white-space:normal;}
+  .budget-readout{font-size:10.5px;}
+  .playground-grid{grid-template-columns:1fr;gap:14px;margin-top:16px;}
+  .demo-mini{padding:20px 18px 18px 18px;}
+
+  .steps-wrap,.features-wrap,.faq-wrap{margin-top:64px;padding:0 18px;}
+  .steps{grid-template-columns:1fr;gap:14px;}
+  .features{grid-template-columns:1fr;gap:12px;}
+  .section-head{margin-bottom:26px;}
+  .section-head p{padding:0 8px;}
+
+  .pricing{margin-top:64px;padding:0 16px;}
+  .pricing-head{margin-bottom:30px;}
+  .tiers{gap:16px;}
+  .tier{padding:24px 20px;}
+  .tier.featured{transform:none;}
+  .tier-price{font-size:24px;}
+
+  .foot{padding:0 20px;margin-top:64px;}
+}
+
+@media(max-width:420px){
+  .nav-brand{font-size:14px;}
+  .nav-brand img{width:22px;height:22px;}
+  .nav-cta{gap:6px;}
+  .btn{padding:8px 12px;font-size:11.5px;}
+  .hero h1{font-size:clamp(28px,9vw,36px);}
+  .tier{padding:20px 16px;}
+}
 </style>
 </head>
 <body>
@@ -144,11 +292,16 @@ a{color:inherit;}
 </div>
 
 <div class="demo-wrap">
+  <div class="section-head" style="margin-bottom:28px;">
+    <h2>Try the terminal, right here</h2>
+    <p>Four simplified pieces of the real logic. Drag, toggle, click — see how it thinks before you ask for an invite.</p>
+  </div>
+
   <div class="demo-card">
     <div class="demo-head">
       <div>
         <div class="demo-title">Drag your risk budget</div>
-        <div class="demo-sub">This is exactly the kind of confluence panel that lives inside the real terminal — drag any point.</div>
+        <div class="demo-sub">Each dot is the % of your account you're willing to risk that day. The bar tracks your running total against a 6% weekly cap — the same cap the terminal locks in before Monday's open.</div>
       </div>
       <div class="demo-hint">try it — drag a dot</div>
     </div>
@@ -167,9 +320,114 @@ a{color:inherit;}
     <div class="budget-readout">
       <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
     </div>
-    <div class="budget-readout" style="margin-top:10px;">
-      <span>Weekly risk allocated: <b id="budgetTotal">—</b></span>
-      <span>Discipline says: <b id="budgetVerdict">—</b></span>
+    <div class="budget-bar"><div class="budget-bar-fill" id="budgetBarFill"></div></div>
+    <div class="budget-bar-labels">
+      <span>Weekly risk used: <b id="budgetTotal">—</b></span>
+      <span>Weekly cap: 6.0%</span>
+    </div>
+    <div class="budget-verdict-row">Discipline says: <b id="budgetVerdict">—</b></div>
+  </div>
+
+  <div class="playground-grid">
+    <div class="demo-card demo-mini">
+      <div class="demo-title">Lock your rules</div>
+      <div class="demo-sub">All three on, the seal holds. Flip one off and see exactly what "breaking a rule" looks like in the terminal.</div>
+      <div class="rule-toggle">
+        <span>No trades against the higher-timeframe trend</span>
+        <label class="switch"><input type="checkbox" class="rule-check" checked><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="rule-toggle">
+        <span>Stop trading after 2 losses in a row</span>
+        <label class="switch"><input type="checkbox" class="rule-check" checked><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="rule-toggle">
+        <span>No size increase right after a win</span>
+        <label class="switch"><input type="checkbox" class="rule-check" checked><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="seal-status sealed" id="sealStatus">Sealed — all 3 rules holding</div>
+    </div>
+
+    <div class="demo-card demo-mini">
+      <div class="demo-title">Is your edge even real?</div>
+      <div class="demo-sub">Move your actual win rate and reward:risk. This is the maths Analytics runs on every setup in your journal.</div>
+      <div class="slider-row">
+        <label>Win rate <b id="winRateVal">45%</b></label>
+        <input type="range" id="winRateSlider" min="20" max="80" value="45">
+      </div>
+      <div class="slider-row">
+        <label>Reward : risk <b id="rrVal">1.5R</b></label>
+        <input type="range" id="rrSlider" min="5" max="40" value="15">
+      </div>
+      <div class="expectancy-readout">
+        <div class="expectancy-value" id="expectancyValue">—</div>
+        <div class="expectancy-label">expected return per trade</div>
+        <div class="expectancy-verdict" id="expectancyVerdict"></div>
+      </div>
+    </div>
+
+    <div class="demo-card demo-mini">
+      <div class="demo-title">The seal, day by day</div>
+      <div class="demo-sub">Fourteen sessions. Click a square to mark it kept or broken — same streak logic as your real journal.</div>
+      <div class="streak-pips" id="streakPips"></div>
+      <div class="streak-readout">Current streak: <b id="streakCount">—</b></div>
+      <div class="streak-hint">Green = kept the plan. Red = broke it. Click again to clear.</div>
+    </div>
+  </div>
+</div>
+
+<div class="steps-wrap">
+  <div class="section-head">
+    <h2>How the terminal actually works</h2>
+    <p>Three steps, every trading day. None of them involve willpower alone.</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Lock the rules before the open</h3>
+      <p>Set your max risk, your setups, your no-trade windows — before price moves your judgement. Once the session starts, the rules are the rules.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Log the trade as you take it</h3>
+      <p>Every entry, exit and reason gets written down in real time, in the same journal — not reconstructed from memory that night, flattering yourself along the way.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Get scored, not soothed</h3>
+      <p>SciFe reviews the session against the rules you set and tells you plainly whether you kept your word. No spreadsheet you can quietly edit after the fact.</p>
+    </div>
+  </div>
+</div>
+
+<div class="features-wrap">
+  <div class="section-head">
+    <h2>What's inside the terminal</h2>
+    <p>One workspace for the whole trading day — not six tabs and a spreadsheet.</p>
+  </div>
+  <div class="features">
+    <div class="feature">
+      <h3><span class="dot"></span>Journal &amp; calendar</h3>
+      <p>Every trade, tagged by setup and session, laid out on a calendar so patterns in your own behaviour are impossible to miss.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="dot"></span>Risk rules engine</h3>
+      <p>The confluence panel above — drag your weekly risk budget and watch the verdict change from "room to work" to "pushing it," live.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="dot"></span>SciFe, your AI coach</h3>
+      <p>Trained on your own journal, SciFe answers questions about your patterns and calls out rule breaks — it doesn't just cheerlead.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="dot"></span>Analytics &amp; playbook</h3>
+      <p>Win rate, expectancy and drawdown broken down by setup, so you know which parts of your plan are actually working.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="dot"></span>Backtest &amp; strategy notes</h3>
+      <p>Test a rule change against your own trade history before you risk live money finding out it doesn't hold up.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="dot"></span>Prop firm compliance</h3>
+      <p>A dedicated room that tracks your account against your prop firm's drawdown and consistency rules, so a breach doesn't blindside you.</p>
     </div>
   </div>
 </div>
@@ -177,7 +435,7 @@ a{color:inherit;}
 <div class="pricing">
   <div class="pricing-head">
     <h2>Three ways in, once you're invited</h2>
-    <p>No self-serve checkout — message the Telegram below with the package you want and you'll be upgraded by hand.</p>
+    <p>No self-serve checkout — message the Telegram below with the package you want and you'll be upgraded by hand. Prices are monthly, in USD, cancel any time with a message.</p>
   </div>
   <div class="tiers">
     <div class="tier">
@@ -196,8 +454,8 @@ a{color:inherit;}
     <div class="tier featured">
       <div class="tier-badge">Most traders pick this</div>
       <div class="tier-name">Pro</div>
-      <div class="tier-price">Message for price</div>
-      <div class="tier-desc">The full arsenal — every room unlocked, SciFe uncapped.</div>
+      <div class="tier-price">$39 <span>/ month</span></div>
+      <div class="tier-desc">The full arsenal — every room unlocked, SciFe uncapped. What most invited traders settle into.</div>
       <ul class="tier-features">
         <li><span class="ic">✓</span> Everything in Free</li>
         <li><span class="ic">✓</span> Analytics, Playbook, Backtest, Strategy Notes, Prop Firm</li>
@@ -208,22 +466,53 @@ a{color:inherit;}
     </div>
     <div class="tier">
       <div class="tier-name">Elite</div>
-      <div class="tier-price">Message for price</div>
-      <div class="tier-desc">Everything in Pro, plus priority support and early access to new rooms.</div>
+      <div class="tier-price">$89 <span>/ month</span></div>
+      <div class="tier-desc">Everything in Pro, plus a closer line to the people building it.</div>
       <ul class="tier-features">
         <li><span class="ic">✓</span> Everything in Pro</li>
-        <li><span class="ic">✓</span> Priority Telegram support</li>
+        <li><span class="ic">✓</span> Priority Telegram support — same-day replies</li>
         <li><span class="ic">✓</span> First access to new terminal features</li>
         <li><span class="ic">✓</span> Direct input on the roadmap</li>
+        <li><span class="ic">✓</span> A monthly 1:1 review of your journal with the team</li>
       </ul>
       <a class="btn btn-ghost tier-cta" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Elite%20package." target="_blank" rel="noopener">Request Elite →</a>
     </div>
   </div>
 </div>
 
+<div class="faq-wrap">
+  <div class="section-head">
+    <h2>Before you message us</h2>
+    <p>The questions almost everyone asks before their first session.</p>
+  </div>
+  <div class="faq">
+    <details class="faq-item">
+      <summary>Why invitation only?</summary>
+      <p>Ghost Discipline started as a private tool inside GMC Traders. It stayed invite-only on purpose — every member is vouched for by someone already inside, which keeps the rooms full of people who actually take their rules seriously.</p>
+    </details>
+    <details class="faq-item">
+      <summary>What is SciFe?</summary>
+      <p>SciFe is the AI coach built into every plan. It reads your journal, not a generic script, and answers questions about your own trading patterns — including the ones you'd rather it not notice.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Can I start free and upgrade later?</summary>
+      <p>Yes. The Free plan is a genuine starting point, not a trial — the journal, calendar and rate-limited SciFe access don't expire. Message the Telegram whenever you want Pro or Elite unlocked.</p>
+    </details>
+    <details class="faq-item">
+      <summary>How does billing actually work?</summary>
+      <p>There's no card form. You message the Telegram with the plan you want, and the team upgrades your account by hand and arranges payment directly with you. You can downgrade or cancel the same way, any time.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Is this financial advice?</summary>
+      <p>No. Ghost Discipline is a risk-management and journaling tool — it helps you follow rules you set for yourself. It doesn't tell you what to trade, and nothing in the terminal should be treated as investment advice.</p>
+    </details>
+  </div>
+</div>
+
 <div class="foot">
-  Ghost Discipline is an invitation-only terminal for GMC Traders. Already invited? <a href="index.html">Sign in →</a><br>
-  Questions or upgrades — <a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">t.me/GhostTradersEmpire</a>
+  <p>Ghost Discipline is an invitation-only terminal for GMC Traders. Already invited? <a href="index.html">Sign in →</a></p>
+  <p>Questions or upgrades — <a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">t.me/GhostTradersEmpire</a></p>
+  <p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past discipline doesn't guarantee future results.</p>
 </div>
 
 <script>
@@ -253,20 +542,29 @@ tick();
 
 /* ---------- draggable budget/confluence demo ---------- */
 const svg = document.getElementById('budgetSvg');
+const svgNS = 'http://www.w3.org/2000/svg';
 const W = 860, H = 220, PAD = 30;
 const N = 5; // Mon..Fri
-let values = [42, 68, 30, 85, 55]; // arbitrary starting "risk used" % per day
+const DAY_MAX = 4;     // sensible ceiling for how much of an account to risk in one day, in %
+const WEEKLY_CAP = 6;  // total weekly risk cap, in %
+let values = [1.0, 1.5, 0.5, 1.8, 1.2]; // % of account risked each day — starts right at the cap
 function xFor(i){ return PAD + i * (W - PAD*2) / (N-1); }
-function yFor(v){ return H - PAD - (v/100) * (H - PAD*2); }
+function yFor(v){ return H - PAD - (v/DAY_MAX) * (H - PAD*2); }
 
 const gridG = document.getElementById('gridLines');
 for(let i=0;i<=4;i++){
   const y = PAD + i*(H-PAD*2)/4;
-  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  const line = document.createElementNS(svgNS,'line');
   line.setAttribute('x1', PAD); line.setAttribute('x2', W-PAD);
   line.setAttribute('y1', y); line.setAttribute('y2', y);
   line.setAttribute('stroke', 'rgba(240,244,242,0.07)'); line.setAttribute('stroke-width','1');
   gridG.appendChild(line);
+  const label = document.createElementNS(svgNS,'text');
+  label.setAttribute('x', 2); label.setAttribute('y', y+3.5);
+  label.setAttribute('font-size','9'); label.setAttribute('font-family','IBM Plex Mono, monospace');
+  label.setAttribute('fill','rgba(240,244,242,0.32)');
+  label.textContent = (DAY_MAX - i).toFixed(0) + '%';
+  gridG.appendChild(label);
 }
 
 const lineEl = document.getElementById('budgetLine');
@@ -280,24 +578,34 @@ function pathD(){
 function fillD(){
   return pathD() + ` L ${xFor(N-1)},${H-PAD} L ${xFor(0)},${H-PAD} Z`;
 }
-function verdictFor(avg){
-  if(avg < 40) return 'Room to work';
-  if(avg < 70) return 'On plan';
-  return 'Pushing it';
-}
 function redraw(){
   lineEl.setAttribute('d', pathD());
   fillEl.setAttribute('d', fillD());
   circles.forEach((c,i)=>{ c.setAttribute('cx', xFor(i)); c.setAttribute('cy', yFor(values[i])); });
-  const avg = Math.round(values.reduce((a,b)=>a+b,0)/values.length);
-  document.getElementById('budgetTotal').textContent = avg + '% of weekly risk';
+
+  const sum = values.reduce((a,b)=>a+b,0);
+  const ratio = sum / WEEKLY_CAP;
+  document.getElementById('budgetTotal').textContent = sum.toFixed(1) + '%';
+
+  const barFill = document.getElementById('budgetBarFill');
+  barFill.style.width = Math.min(ratio,1)*100 + '%';
+  barFill.classList.toggle('over', ratio > 1);
+
   const verdictEl = document.getElementById('budgetVerdict');
-  verdictEl.textContent = verdictFor(avg);
-  verdictEl.style.color = avg < 40 ? 'var(--win)' : avg < 70 ? 'var(--bronze-bright)' : 'var(--loss)';
+  if(ratio > 1){
+    verdictEl.textContent = `Over budget by ${(sum-WEEKLY_CAP).toFixed(1)}%`;
+    verdictEl.style.color = 'var(--loss)';
+  } else if(ratio >= 0.7){
+    verdictEl.textContent = 'On plan';
+    verdictEl.style.color = 'var(--bronze-bright)';
+  } else {
+    verdictEl.textContent = 'Room to work';
+    verdictEl.style.color = 'var(--win)';
+  }
 }
 
 values.forEach((v,i)=>{
-  const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  const c = document.createElementNS(svgNS,'circle');
   c.setAttribute('r', 8);
   c.setAttribute('fill', '#0b131a');
   c.setAttribute('stroke', '#2dd4a8');
@@ -327,8 +635,8 @@ circles.forEach((c,i)=>{
 svg.addEventListener('pointermove', (e)=>{
   if(dragIndex === null) return;
   const { py } = svgPoint(e);
-  let v = 100 - ((py - PAD) / (H - PAD*2)) * 100;
-  v = Math.max(0, Math.min(100, Math.round(v)));
+  let v = DAY_MAX - ((py - PAD) / (H - PAD*2)) * DAY_MAX;
+  v = Math.max(0, Math.min(DAY_MAX, Math.round(v*10)/10));
   values[dragIndex] = v;
   redraw();
 });
@@ -339,6 +647,74 @@ function endDrag(){
 }
 svg.addEventListener('pointerup', endDrag);
 svg.addEventListener('pointerleave', endDrag);
+
+/* ---------- rule lock / seal ---------- */
+const ruleChecks = document.querySelectorAll('.rule-check');
+const sealStatus = document.getElementById('sealStatus');
+function updateSeal(){
+  const checkedArr = Array.from(ruleChecks);
+  const brokenCount = checkedArr.filter(c=>!c.checked).length;
+  if(brokenCount === 0){
+    sealStatus.textContent = 'Sealed — all 3 rules holding';
+    sealStatus.className = 'seal-status sealed';
+  } else {
+    sealStatus.textContent = `Cracked — ${brokenCount} rule${brokenCount>1?'s':''} broken`;
+    sealStatus.className = 'seal-status cracked';
+  }
+}
+ruleChecks.forEach(c => c.addEventListener('change', updateSeal));
+updateSeal();
+
+/* ---------- expectancy calculator ---------- */
+const winRateSlider = document.getElementById('winRateSlider');
+const rrSlider = document.getElementById('rrSlider');
+const winRateVal = document.getElementById('winRateVal');
+const rrVal = document.getElementById('rrVal');
+const expectancyValue = document.getElementById('expectancyValue');
+const expectancyVerdict = document.getElementById('expectancyVerdict');
+function updateExpectancy(){
+  const wr = parseInt(winRateSlider.value, 10) / 100;
+  const rr = parseInt(rrSlider.value, 10) / 10;
+  winRateVal.textContent = Math.round(wr*100) + '%';
+  rrVal.textContent = rr.toFixed(1) + 'R';
+  const exp = (wr * rr) - (1 - wr);
+  const sign = exp >= 0 ? '+' : '';
+  expectancyValue.textContent = sign + exp.toFixed(2) + 'R';
+  expectancyValue.className = 'expectancy-value ' + (exp >= 0 ? 'pos' : 'neg');
+  if(exp > 0.15){
+    expectancyVerdict.textContent = 'Solid — this edge pays you over enough trades.';
+  } else if(exp > 0){
+    expectancyVerdict.textContent = 'Positive, but thin — a rough stretch of variance will test it.';
+  } else {
+    expectancyVerdict.textContent = 'Negative — this loses money long-run, no matter how good individual trades feel.';
+  }
+}
+[winRateSlider, rrSlider].forEach(s => s.addEventListener('input', updateExpectancy));
+updateExpectancy();
+
+/* ---------- streak tracker ---------- */
+const streakPipsEl = document.getElementById('streakPips');
+const streakCountEl = document.getElementById('streakCount');
+let pipStates = ['kept','kept','broken','kept','kept','kept','kept','broken','kept','kept','kept','neutral','neutral','neutral'];
+function renderPips(){
+  streakPipsEl.innerHTML = '';
+  pipStates.forEach((state, i) => {
+    const el = document.createElement('div');
+    el.className = 'pip' + (state !== 'neutral' ? ' ' + state : '');
+    el.addEventListener('click', () => {
+      pipStates[i] = state === 'neutral' ? 'kept' : state === 'kept' ? 'broken' : 'neutral';
+      renderPips();
+    });
+    streakPipsEl.appendChild(el);
+  });
+  let streak = 0;
+  for(let i = pipStates.length - 1; i >= 0; i--){
+    if(pipStates[i] === 'kept') streak++;
+    else break;
+  }
+  streakCountEl.textContent = streak + (streak === 1 ? ' day' : ' days');
+}
+renderPips();
 </script>
 </body>
 </html>
