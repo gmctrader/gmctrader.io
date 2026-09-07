@@ -3757,7 +3757,7 @@ setTimeout(function(){
           <div id="teamReviewBody">
             <!-- 1. PnL Snapshot -->
             <h3 style="font-size:14px;margin:18px 0 8px;">1 · Weekly PnL Snapshot <span class="eyebrow">auto-pulled from each trader's journal</span></h3>
-            <div style="overflow-x:auto;"><table class="team-pnl-table" id="teamPnlTable"></table></div>
+            <div style="overflow-x:auto;" id="teamPnlTable"></div>
 
             <!-- 2. Setup log -->
             <h3 style="font-size:14px;margin:22px 0 8px;">2 · Liquidity Sweep / SMC Setup Log <span class="eyebrow">every trade this week, per trader</span></h3>
@@ -4268,7 +4268,10 @@ const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite' };
 // Proving Ground demo lock, just a shorter, less restrictive list since these
 // are real invited accounts, not anonymous trials. Tune freely.
 const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm'];
+// Rooms held back until Elite specifically (blocks Free AND Pro).
+const ELITE_LOCKED_VIEWS = ['team'];
 function isFreeTier(){ return !isDemoMode && userTier === 'free'; }
+function isElite(){ return !isDemoMode && userTier === 'elite'; }
 function telegramUpgradeLink(wantedTier){
   const pkg = TIER_LABELS[wantedTier] || 'Pro';
   const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
@@ -5227,28 +5230,32 @@ function applyTierLocks(){
   if(isDemoMode) return; // demo locks already cover this case
   document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     const view = btn.dataset.view;
-    const locked = isFreeTier() && FREE_LOCKED_VIEWS.includes(view);
+    const eliteLocked = ELITE_LOCKED_VIEWS.includes(view) && !isElite();
+    const locked = eliteLocked || (isFreeTier() && FREE_LOCKED_VIEWS.includes(view));
     btn.classList.toggle('demo-locked', locked);
     let badge = btn.querySelector('.lock-badge');
     if(locked){
       if(!badge){
         badge = document.createElement('span');
         badge.className = 'lock-badge';
-        badge.textContent = '🔒 PRO';
         btn.appendChild(badge);
       }
+      badge.textContent = eliteLocked ? '🔒 ELITE' : '🔒 PRO';
     } else if(badge){
       badge.remove();
     }
   });
 }
 function showTierLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', backtest:'Backtest', stratnotes:'Strategy Notes' };
+  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team' };
   const label = labels[view] || 'This room';
-  document.getElementById('demoLockedFeatureTitle').textContent = `${label} is a Pro feature`;
-  document.getElementById('demoLockedFeatureCopy').textContent = `${label} is part of the Pro and Elite packages. Message the Telegram below and we'll get you upgraded.`;
+  const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
+  document.getElementById('demoLockedFeatureTitle').textContent = eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`;
+  document.getElementById('demoLockedFeatureCopy').textContent = eliteOnly
+    ? `${label} is part of the Elite package only. Message the Telegram below and we'll get you upgraded.`
+    : `${label} is part of the Pro and Elite packages. Message the Telegram below and we'll get you upgraded.`;
   const link = document.querySelector('#demoLockedFeatureOverlay .btn-telegram');
-  if(link) link.href = telegramUpgradeLink('pro');
+  if(link) link.href = telegramUpgradeLink(eliteOnly ? 'elite' : 'pro');
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 /* ============ ONBOARDING QUESTIONNAIRE ============
@@ -5435,6 +5442,7 @@ async function loadOrCreateTraderData(){
     if(!data.onboarding_done) queueOnboardingQuestions();
   }
   applyTierLocks();
+  if(!isDemoMode) initTeamFeature();
 }
 
 // Shared by real accounts (hydrateState) and the local Proving Ground demo (startDemo),
@@ -6339,11 +6347,500 @@ function routeFromShortcutParams(){
   }catch(e){ /* non-fatal — just skip the deep link */ }
 }
 
+/* ============ TEAM (Elite) — cross-account desk partners ============
+   Backend migration required once in Supabase's SQL editor — see the
+   team-schema.sql file shipped alongside this app. Tables used here:
+     profiles (user_id, handle)
+     teams (id, name, created_by)
+     team_members (id, team_id, user_id, handle, status, invited_by)
+     notifications (id, to_user_id, from_user_id, type, team_id, payload, status)
+     team_weekly_reviews (id, team_id, week_start, leaks, routine, brainstorm, commitments)
+     team_weekly_snapshots (id, team_id, user_id, week_start, handle, stats)
+   Same honesty note as the rest of this file: Elite gating on the client is
+   a UX convenience, not a security boundary — RLS on these tables is what
+   actually stops a Free/Pro trader (or anyone) from reading a team's data;
+   see team-schema.sql for the policies that enforce it server-side. */
+let myHandle = null;
+let myTeams = [];                 // [{id,name,created_by,members:[{user_id,handle,status,invited_by}]}]
+let myNotifications = [];
+let teamSelectedId = null;
+let teamWeekStart = null;         // Date, Monday 00:00 local
+let teamChannel = null;
+let teamDataLoaded = false;
+let teamCurrentReviewRow = null;  // cached team_weekly_reviews row for the selected team+week
+let teamCurrentSnapshots = [];    // cached team_weekly_snapshots rows for the selected team+week
+
+const TEAM_LEAK_ITEMS = [
+  {code:'early_entry', label:'Entered before the sweep was confirmed (anticipating instead of reacting)'},
+  {code:'against_bias', label:'Traded against HTF bias / draw on liquidity'},
+  {code:'chased', label:'Chased price after missing the original entry'},
+  {code:'moved_sl', label:'Moved stop loss further away mid-trade'},
+  {code:'early_close', label:'Closed a winner early out of fear'},
+  {code:'oversized', label:'Oversized a position relative to plan risk'},
+  {code:'revenge', label:'Revenge-traded after a loss same session'},
+  {code:'outside_hours', label:'Took a setup outside planned session hours'},
+  {code:'ignored_news', label:'Ignored a high-impact news event on the calendar'},
+  {code:'outside_playbook', label:'Traded a pair/setup outside your defined playbook'},
+  {code:'skipped_journal', label:'Skipped journaling the trade the same day'},
+  {code:'boredom_fomo', label:"Let boredom/FOMO trigger an entry with no real confluence"}
+];
+const TEAM_DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function mondayOf(d){
+  const dt = new Date(d); dt.setHours(0,0,0,0);
+  const day = dt.getDay(); const diff = (day===0?-6:1-day);
+  dt.setDate(dt.getDate()+diff);
+  return dt;
+}
+function teamDateStr(d){ return d.toISOString().slice(0,10); }
+function teamWeekDateList(monday){
+  const arr=[]; for(let i=0;i<7;i++){ const d=new Date(monday); d.setDate(d.getDate()+i); arr.push(teamDateStr(d)); }
+  return arr;
+}
+function teamWeekLabelStr(monday){
+  const end = new Date(monday); end.setDate(end.getDate()+6);
+  const fmt = (d)=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  return `${fmt(monday)} – ${fmt(end)}`;
+}
+function sessionFromTime(timeStr){
+  if(!timeStr) return '—';
+  const m = /(\d+):(\d+)\s*([AP]M)?/i.exec(timeStr);
+  if(!m) return '—';
+  let h = parseInt(m[1],10);
+  const ampm = (m[3]||'').toUpperCase();
+  if(ampm==='PM' && h<12) h+=12;
+  if(ampm==='AM' && h===12) h=0;
+  if(h>=0 && h<7) return 'Asia';
+  if(h>=7 && h<12) return 'London';
+  if(h>=12 && h<17) return 'NY AM';
+  return 'NY PM';
+}
+function sweepTypeFromTrade(t){
+  const logics = (t.logics||[]).join(' ').toLowerCase();
+  if(logics.includes('equal high')||logics.includes('equal low')) return 'Equal highs/lows';
+  if(logics.includes('sweep')) return t.result==='win' ? 'Liquidity sweep' : 'Sweep (failed)';
+  if(logics.includes('session')) return 'Session high/low raid';
+  return t.strategyType || 'Sweep/SMC';
+}
+
+/* ---------- init / load ---------- */
+async function initTeamFeature(){
+  teamWeekStart = mondayOf(new Date());
+  if(!isElite()){ updateTeamNotifDot(); return; }
+  await loadTeamData();
+}
+async function loadTeamData(){
+  if(!currentUser) return;
+  try{
+    const { data: prof } = await sb.from('profiles').select('handle').eq('user_id', currentUser.id).maybeSingle();
+    myHandle = prof ? prof.handle : null;
+
+    const { data: notifs } = await sb.from('notifications').select('*').eq('to_user_id', currentUser.id).order('created_at', {ascending:false}).limit(30);
+    myNotifications = notifs || [];
+
+    const { data: myMemberRows } = await sb.from('team_members').select('team_id,status').eq('user_id', currentUser.id);
+    const teamIds = [...new Set((myMemberRows||[]).map(r=>r.team_id))];
+    let teams = [];
+    if(teamIds.length){
+      const { data: teamRows } = await sb.from('teams').select('*').in('id', teamIds);
+      const { data: allMembers } = await sb.from('team_members').select('*').in('team_id', teamIds);
+      teams = (teamRows||[]).map(tm=>({
+        id: tm.id, name: tm.name, created_by: tm.created_by,
+        members: (allMembers||[]).filter(m=>m.team_id===tm.id)
+      }));
+    }
+    myTeams = teams;
+    teamDataLoaded = true;
+    if(!teamSelectedId){
+      const firstAccepted = myTeams.find(t=>t.members.some(m=>m.user_id===currentUser.id && m.status==='accepted'));
+      if(firstAccepted) teamSelectedId = firstAccepted.id;
+    }
+    subscribeTeamRealtime();
+    updateTeamNotifDot();
+    renderTeamView();
+    if(teamSelectedId) await loadWeeklyReviewForSelectedTeam();
+  }catch(e){ console.error('Team load failed:', e); }
+}
+function subscribeTeamRealtime(){
+  if(teamChannel) { try{ sb.removeChannel(teamChannel); }catch(e){} teamChannel=null; }
+  if(!currentUser) return;
+  teamChannel = sb.channel('team-live-'+currentUser.id)
+    .on('postgres_changes', {event:'*', schema:'public', table:'notifications', filter:'to_user_id=eq.'+currentUser.id}, ()=>{ loadTeamData(); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'team_members', filter:'user_id=eq.'+currentUser.id}, ()=>{ loadTeamData(); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'team_weekly_reviews'}, (payload)=>{
+      if(teamSelectedId && payload.new && payload.new.team_id===teamSelectedId) loadWeeklyReviewForSelectedTeam(true);
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'team_weekly_snapshots'}, (payload)=>{
+      const row = payload.new || payload.old;
+      if(teamSelectedId && row && row.team_id===teamSelectedId) loadWeeklyReviewForSelectedTeam(true);
+    })
+    .subscribe();
+}
+function updateTeamNotifDot(){
+  const dot = document.getElementById('teamNotifDot');
+  if(!dot) return;
+  const pendingInvites = (myNotifications||[]).filter(n=>n.status==='unread').length;
+  dot.style.display = (isElite() && pendingInvites>0) ? 'inline-block' : 'none';
+}
+
+/* ---------- render: top-level view toggle ---------- */
+function renderTeamView(){
+  const lock = document.getElementById('teamEliteLock');
+  const content = document.getElementById('teamEliteContent');
+  if(!isElite()){
+    lock.style.display = 'block';
+    content.style.display = 'none';
+    const link = document.getElementById('teamUpgradeLink');
+    if(link) link.href = telegramUpgradeLink('elite');
+    return;
+  }
+  lock.style.display = 'none';
+  content.style.display = 'block';
+  if(!teamDataLoaded){ loadTeamData(); return; }
+  renderTeamHandlePill();
+  renderTeamInvitesUI();
+  renderTeamListUI();
+  renderTeamSelectDropdown();
+  document.getElementById('teamReviewCard').style.display = teamSelectedId ? 'block' : 'none';
+  if(teamSelectedId) document.getElementById('teamWeekLabel').textContent = teamWeekLabelStr(teamWeekStart);
+}
+function renderTeamHandlePill(){
+  const wrap = document.getElementById('teamHandlePillWrap');
+  const card = document.getElementById('teamHandleCard');
+  if(myHandle){
+    wrap.innerHTML = `<span class="team-handle-pill">@${escapeHtml(myHandle)}</span>`;
+    card.style.display = 'none';
+  } else {
+    wrap.innerHTML = '';
+    card.style.display = 'block';
+  }
+}
+function renderTeamInvitesUI(){
+  const card = document.getElementById('teamInvitesCard');
+  const list = document.getElementById('teamInvitesList');
+  const pending = (myNotifications||[]).filter(n=>n.type==='team_invite' && n.status==='unread');
+  document.getElementById('teamInviteCount').textContent = pending.length ? pending.length : '';
+  if(!pending.length){ card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = pending.map(n=>{
+    const p = n.payload || {};
+    return `<div class="invite-row">
+      <div><b>${escapeHtml(p.from_handle||'A trader')}</b> invited you to join <b>${escapeHtml(p.team_name||'a team')}</b></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="respondToInvite('${n.id}','${n.team_id}',true)">Accept</button>
+        <button class="btn btn-ghost btn-sm" onclick="respondToInvite('${n.id}','${n.team_id}',false)">Decline</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderTeamListUI(){
+  const wrap = document.getElementById('teamListWrap');
+  if(!myTeams.length){ wrap.innerHTML = '<div class="hint">No teams yet — create one below.</div>'; return; }
+  wrap.innerHTML = myTeams.map(t=>{
+    const mine = t.members.find(m=>m.user_id===currentUser.id);
+    if(!mine || mine.status==='declined') return '';
+    const chips = t.members.map(m=>`<span class="team-member-chip ${m.status!=='accepted'?'pending':''}">@${escapeHtml(m.handle||'?')}${m.status!=='accepted'?' · pending':''}</span>`).join('');
+    const selected = t.id===teamSelectedId;
+    return `<div class="team-card-row">
+      <div>
+        <div style="font-weight:600;color:var(--platinum);">${escapeHtml(t.name)}</div>
+        <div class="members">${chips}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm ${selected?'btn-primary':'btn-ghost'}" onclick="selectTeamForReview('${t.id}')">${selected?'Viewing':'Open review'}</button>
+        <button class="btn btn-sm btn-ghost" onclick="openInviteFormFor('${t.id}','${escapeHtml(t.name).replace(/'/g,"&#39;")}')">+ Invite</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="hint">No teams yet — create one below.</div>';
+}
+function renderTeamSelectDropdown(){
+  const sel = document.getElementById('team_selectTeam');
+  const accepted = myTeams.filter(t=>t.members.some(m=>m.user_id===currentUser.id && m.status==='accepted'));
+  sel.innerHTML = accepted.map(t=>`<option value="${t.id}" ${t.id===teamSelectedId?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
+}
+
+/* ---------- handle / team / invite actions ---------- */
+async function claimMyHandle(){
+  const raw = (document.getElementById('team_handleInput').value||'').trim().toLowerCase();
+  const msg = document.getElementById('teamHandleMsg');
+  if(raw.length<3 || raw.length>20){ msg.textContent = 'Handle must be 3–20 characters.'; msg.style.color='var(--loss,#f43f5e)'; return; }
+  const { error } = await sb.from('profiles').upsert({ user_id: currentUser.id, handle: raw }, {onConflict:'user_id'});
+  if(error){
+    msg.textContent = (error.code==='23505') ? 'That handle is already taken — try another.' : ('Could not save handle: '+(error.message||error.code));
+    msg.style.color = 'var(--loss,#f43f5e)';
+    return;
+  }
+  myHandle = raw;
+  msg.textContent = 'Saved!'; msg.style.color = 'var(--bronze-bright)';
+  renderTeamHandlePill();
+}
+async function createMyTeam(){
+  if(!myHandle){ showToast('Claim your @handle first.'); return; }
+  const name = (document.getElementById('team_newTeamName').value||'').trim();
+  if(!name){ showToast('Give your team a name.'); return; }
+  const { data: team, error } = await sb.from('teams').insert({ name, created_by: currentUser.id }).select().single();
+  if(error){ showToast('Could not create team: '+(error.message||error.code)); return; }
+  await sb.from('team_members').insert({ team_id: team.id, user_id: currentUser.id, handle: myHandle, status:'accepted', invited_by: currentUser.id });
+  document.getElementById('team_newTeamName').value = '';
+  await loadTeamData();
+  selectTeamForReview(team.id);
+}
+let teamInviteTargetId = null;
+function openInviteFormFor(teamId, teamName){
+  teamInviteTargetId = teamId;
+  document.getElementById('teamInviteFormCard').style.display = 'block';
+  document.getElementById('teamInviteTargetName').textContent = teamName;
+  document.getElementById('teamInviteFormCard').scrollIntoView({behavior:'smooth', block:'center'});
+}
+async function sendTeamInvite(){
+  if(!teamInviteTargetId){ showToast('Pick a team to invite into first.'); return; }
+  const handle = (document.getElementById('team_inviteHandle').value||'').trim().toLowerCase().replace('@','');
+  const msg = document.getElementById('teamInviteMsg');
+  if(!handle){ return; }
+  const { data: target } = await sb.from('profiles').select('user_id,handle').eq('handle', handle).maybeSingle();
+  if(!target){ msg.textContent = 'No trader found with that handle.'; msg.style.color='var(--loss,#f43f5e)'; return; }
+  if(target.user_id===currentUser.id){ msg.textContent = "That's your own handle."; msg.style.color='var(--loss,#f43f5e)'; return; }
+  const team = myTeams.find(t=>t.id===teamInviteTargetId);
+  const { error: memErr } = await sb.from('team_members').insert({ team_id: teamInviteTargetId, user_id: target.user_id, handle: target.handle, status:'pending', invited_by: currentUser.id });
+  if(memErr){ msg.textContent = (memErr.code==='23505') ? 'Already invited or on this team.' : ('Could not invite: '+(memErr.message||memErr.code)); msg.style.color='var(--loss,#f43f5e)'; return; }
+  await sb.from('notifications').insert({ to_user_id: target.user_id, from_user_id: currentUser.id, type:'team_invite', team_id: teamInviteTargetId, payload:{ team_name: team?team.name:'a team', from_handle: myHandle }, status:'unread' });
+  msg.textContent = `Invite sent to @${handle}.`; msg.style.color='var(--bronze-bright)';
+  document.getElementById('team_inviteHandle').value = '';
+  await loadTeamData();
+}
+async function respondToInvite(notifId, teamId, accept){
+  await sb.from('team_members').update({ status: accept?'accepted':'declined' }).eq('team_id', teamId).eq('user_id', currentUser.id);
+  await sb.from('notifications').update({ status:'read' }).eq('id', notifId);
+  const notif = myNotifications.find(n=>n.id===notifId);
+  if(notif) await sb.from('notifications').insert({ to_user_id: notif.from_user_id, from_user_id: currentUser.id, type: accept?'invite_accepted':'invite_declined', team_id: teamId, payload:{ from_handle: myHandle }, status:'unread' });
+  showToast(accept ? "You're on the team." : 'Invite declined.');
+  await loadTeamData();
+  if(accept) selectTeamForReview(teamId);
+}
+function onTeamSelectChange(){
+  const sel = document.getElementById('team_selectTeam');
+  if(sel && sel.value) selectTeamForReview(sel.value);
+}
+function selectTeamForReview(teamId){
+  teamSelectedId = teamId;
+  renderTeamSelectDropdown();
+  document.getElementById('teamReviewCard').style.display = 'block';
+  document.getElementById('teamWeekLabel').textContent = teamWeekLabelStr(teamWeekStart);
+  loadWeeklyReviewForSelectedTeam();
+}
+function shiftTeamWeek(delta){
+  teamWeekStart.setDate(teamWeekStart.getDate() + delta*7);
+  document.getElementById('teamWeekLabel').textContent = teamWeekLabelStr(teamWeekStart);
+  loadWeeklyReviewForSelectedTeam();
+}
+
+/* ---------- weekly snapshot (auto-calc from real journal) ---------- */
+function computeMyWeeklySnapshot(monday){
+  const dateList = teamWeekDateList(monday);
+  const weekTrades = (state.trades||[]).filter(t=>dateList.includes(t.date));
+  const byDay = dateList.map((ds,i)=>{
+    const dayTrades = weekTrades.filter(t=>t.date===ds);
+    const pairs = [...new Set(dayTrades.map(t=>t.pair).filter(Boolean))];
+    const wins = dayTrades.filter(t=>t.result==='win').length;
+    const losses = dayTrades.filter(t=>t.result==='loss').length;
+    const rSum = dayTrades.reduce((s,t)=>{ const r=parseFloat(t.rr); if(isNaN(r)) return s; return s + (t.result==='loss' ? -Math.abs(r) : Math.abs(r)); },0);
+    const ruleFollowed = dayTrades.length ? dayTrades.every(t=>!(t.ruleViolations||[]).length) : null;
+    return { day: TEAM_DAY_NAMES[i], date: ds, pairs: pairs.join(', '), trades: dayTrades.length, wins, losses, r: +rSum.toFixed(2), ruleFollowed };
+  });
+  const winners = weekTrades.filter(t=>t.result==='win' && t.rr);
+  const losers = weekTrades.filter(t=>t.result==='loss' && t.rr);
+  const netR = +weekTrades.reduce((s,t)=>{ const r=parseFloat(t.rr); if(isNaN(r)) return s; return s+(t.result==='loss'?-Math.abs(r):Math.abs(r)); },0).toFixed(2);
+  const winRatePct = weekTrades.length ? Math.round((weekTrades.filter(t=>t.result==='win').length/weekTrades.length)*100) : 0;
+  const avgRWin = winners.length ? +(winners.reduce((s,t)=>s+Math.abs(parseFloat(t.rr)),0)/winners.length).toFixed(2) : 0;
+  const avgRLoss = losers.length ? +(losers.reduce((s,t)=>s+Math.abs(parseFloat(t.rr)),0)/losers.length).toFixed(2) : 0;
+  const biggestLossR = losers.length ? +Math.max(...losers.map(t=>Math.abs(parseFloat(t.rr)))).toFixed(2) : 0;
+  const aPlusCount = weekTrades.filter(t=>!(t.ruleViolations||[]).length && t.rr).length;
+  const offPlanCount = weekTrades.filter(t=>(t.ruleViolations||[]).length>0).length;
+  const setups = weekTrades.map(t=>({ date:t.date, session: sessionFromTime(t.time), sweepType: sweepTypeFromTrade(t), bias: t.strategyType||'—', trigger: t.pair||'—', result: t.rr ? (t.result==='loss'? '-'+Math.abs(parseFloat(t.rr)) : '+'+Math.abs(parseFloat(t.rr))) : '—', notes: t.notes||'' }));
+  return { byDay, netR, winRatePct, avgRWin, avgRLoss, biggestLossR, aPlusCount, offPlanCount, setups };
+}
+async function pushMySnapshot(teamId, monday){
+  const stats = computeMyWeeklySnapshot(monday);
+  await sb.from('team_weekly_snapshots').upsert({
+    team_id: teamId, user_id: currentUser.id, week_start: teamDateStr(monday), handle: myHandle, stats, updated_at: new Date().toISOString()
+  }, {onConflict:'team_id,user_id,week_start'});
+  return stats;
+}
+async function loadWeeklyReviewForSelectedTeam(silent){
+  if(!teamSelectedId) return;
+  const weekStr = teamDateStr(teamWeekStart);
+  if(!silent) document.getElementById('teamSyncHint').textContent = '🔄 syncing…';
+  await pushMySnapshot(teamSelectedId, teamWeekStart);
+  const { data: snaps } = await sb.from('team_weekly_snapshots').select('*').eq('team_id', teamSelectedId).eq('week_start', weekStr);
+  teamCurrentSnapshots = snaps || [];
+  let { data: reviewRow } = await sb.from('team_weekly_reviews').select('*').eq('team_id', teamSelectedId).eq('week_start', weekStr).maybeSingle();
+  if(!reviewRow){
+    const { data: created } = await sb.from('team_weekly_reviews').insert({ team_id: teamSelectedId, week_start: weekStr, leaks:{}, routine:{}, brainstorm:'', commitments:{} }).select().single();
+    reviewRow = created;
+  }
+  teamCurrentReviewRow = reviewRow;
+  const team = myTeams.find(t=>t.id===teamSelectedId);
+  const members = team ? team.members.filter(m=>m.status==='accepted') : [];
+  renderTeamPnlTable(teamCurrentSnapshots, members);
+  renderTeamSetupLog(teamCurrentSnapshots);
+  renderTeamLeaks(reviewRow, members);
+  renderTeamRoutine(reviewRow, members);
+  document.getElementById('team_brainstorm').value = reviewRow.brainstorm || '';
+  renderTeamCommitments(reviewRow, members);
+  document.getElementById('teamSyncHint').textContent = '🔄 synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+/* ---------- render: PnL / setup log ---------- */
+function snapFor(userId, snaps){ const s = snaps.find(x=>x.user_id===userId); return s ? s.stats : null; }
+function renderTeamPnlTable(snaps, members){
+  const wrap = document.getElementById('teamPnlTable');
+  if(!members.length){ wrap.innerHTML = '<div class="hint">Waiting on teammates to accept.</div>'; return; }
+  const dailyHead = `<tr><th>Day</th>${members.map(m=>`<th class="team-member-col" colspan="3">@${escapeHtml(m.handle||'?')}</th>`).join('')}</tr>
+    <tr><th></th>${members.map(()=>`<th class="team-member-col">Trades</th><th>W/L</th><th>R</th>`).join('')}</tr>`;
+  const dayRows = TEAM_DAY_NAMES.map((dn,i)=>{
+    return `<tr><td>${dn}</td>${members.map(m=>{
+      const s = snapFor(m.user_id, snaps);
+      const d = s ? s.byDay[i] : null;
+      if(!d || !d.trades) return `<td class="team-member-col num">–</td><td class="num">–</td><td class="num">–</td>`;
+      return `<td class="team-member-col num">${d.trades}</td><td class="num">${d.wins}/${d.losses}</td><td class="num">${d.r>0?'+':''}${d.r}</td>`;
+    }).join('')}</tr>`;
+  }).join('');
+  const totalRow = `<tr class="total-row"><td>Total</td>${members.map(m=>{
+    const s = snapFor(m.user_id, snaps);
+    if(!s) return `<td class="team-member-col num">–</td><td class="num">–</td><td class="num">–</td>`;
+    const trades = s.byDay.reduce((a,d)=>a+d.trades,0);
+    const wins = s.byDay.reduce((a,d)=>a+d.wins,0);
+    const losses = s.byDay.reduce((a,d)=>a+d.losses,0);
+    return `<td class="team-member-col num">${trades}</td><td class="num">${wins}/${losses}</td><td class="num">${s.netR>0?'+':''}${s.netR}</td>`;
+  }).join('')}</tr>`;
+  const compareRows = [
+    ['Net R for the week', m=>`${m.netR>0?'+':''}${m.netR}`],
+    ['Win rate %', m=>`${m.winRatePct}%`],
+    ['Avg R per winner', m=>`+${m.avgRWin}`],
+    ['Avg R per loser', m=>`-${m.avgRLoss}`],
+    ['Biggest single loss (R)', m=>`-${m.biggestLossR}`],
+    ['# of clean (rule-following) setups', m=>`${m.aPlusCount}`],
+    ['# of impulsive / off-plan trades', m=>`${m.offPlanCount}`],
+  ].map(([label,fn])=>`<tr><td>${label}</td>${members.map(m=>{ const s=snapFor(m.user_id,snaps); return `<td class="num">${s?fn(s):'–'}</td>`; }).join('')}</tr>`).join('');
+  wrap.innerHTML = `<table class="team-pnl-table">${dailyHead}${dayRows}${totalRow}</table>
+    <h4 style="font-size:12.5px;color:var(--slate);margin:16px 0 6px;">Quick Compare</h4>
+    <table class="team-pnl-table"><tr><th>Metric</th>${members.map(m=>`<th class="team-member-col">@${escapeHtml(m.handle||'?')}</th>`).join('')}</tr>${compareRows}</table>`;
+}
+function renderTeamSetupLog(snaps){
+  const wrap = document.getElementById('teamSetupLogWrap');
+  const rows = [];
+  snaps.forEach(s=>{
+    (s.stats.setups||[]).forEach(su=>rows.push({handle:s.handle, ...su}));
+  });
+  rows.sort((a,b)=>a.date<b.date?1:-1);
+  if(!rows.length){ wrap.innerHTML = '<div class="hint">No trades logged this week yet.</div>'; return; }
+  wrap.innerHTML = `<table><tr><th>Date</th><th>Trader</th><th>Session</th><th>Sweep type</th><th>Bias</th><th>Pair</th><th>Result (R)</th><th>Notes</th></tr>
+    ${rows.map(r=>`<tr><td>${r.date}</td><td>@${escapeHtml(r.handle||'?')}</td><td>${r.session}</td><td>${escapeHtml(r.sweepType)}</td><td>${escapeHtml(r.bias)}</td><td>${escapeHtml(r.trigger)}</td><td>${r.result}</td><td>${escapeHtml(r.notes)}</td></tr>`).join('')}
+    </table>`;
+}
+
+/* ---------- render + save: leaks / routine / brainstorm / commitments (shared, synced) ---------- */
+function renderTeamLeaks(reviewRow, members){
+  const wrap = document.getElementById('teamLeakWrap');
+  const leaks = reviewRow.leaks || {};
+  wrap.innerHTML = members.map(m=>{
+    const mine = m.user_id===currentUser.id;
+    const mySet = new Set((leaks[m.user_id]&&leaks[m.user_id].checklist)||[]);
+    const biggest = (leaks[m.user_id]&&leaks[m.user_id].biggestLeak)||'';
+    return `<div style="margin-bottom:16px;">
+      <div style="font-weight:600;color:var(--platinum);margin-bottom:6px;">@${escapeHtml(m.handle||'?')}${mine?' (you)':''}</div>
+      <div class="leak-grid">${TEAM_LEAK_ITEMS.map(li=>`
+        <label class="leak-check"><input type="checkbox" ${mySet.has(li.code)?'checked':''} ${mine?'':'disabled'} onchange="toggleTeamLeak('${li.code}', this.checked)"> ${escapeHtml(li.label)}</label>
+      `).join('')}</div>
+      <div class="field" style="margin-top:6px;"><label>Biggest leak this week</label>
+        <input type="text" value="${escapeHtml(biggest)}" ${mine?`onblur="saveTeamLeakBiggest(this.value)"`:'disabled'} placeholder="${mine?'One sentence…':'—'}">
+      </div>
+    </div>`;
+  }).join('');
+}
+async function toggleTeamLeak(code, checked){
+  const leaks = Object.assign({}, teamCurrentReviewRow.leaks||{});
+  const mine = Object.assign({checklist:[], biggestLeak:''}, leaks[currentUser.id]||{});
+  const set = new Set(mine.checklist);
+  if(checked) set.add(code); else set.delete(code);
+  mine.checklist = [...set];
+  leaks[currentUser.id] = mine;
+  teamCurrentReviewRow.leaks = leaks;
+  await sb.from('team_weekly_reviews').update({ leaks, updated_at:new Date().toISOString() }).eq('id', teamCurrentReviewRow.id);
+}
+async function saveTeamLeakBiggest(val){
+  const leaks = Object.assign({}, teamCurrentReviewRow.leaks||{});
+  const mine = Object.assign({checklist:[], biggestLeak:''}, leaks[currentUser.id]||{});
+  mine.biggestLeak = val;
+  leaks[currentUser.id] = mine;
+  teamCurrentReviewRow.leaks = leaks;
+  await sb.from('team_weekly_reviews').update({ leaks, updated_at:new Date().toISOString() }).eq('id', teamCurrentReviewRow.id);
+}
+function renderTeamRoutine(reviewRow, members){
+  const wrap = document.getElementById('teamRoutineWrap');
+  const routine = reviewRow.routine || {};
+  wrap.innerHTML = members.map(m=>{
+    const mine = m.user_id===currentUser.id;
+    const r = Object.assign({prep:5,sessions:5,journal:5}, routine[m.user_id]||{});
+    const fld = (key,label)=>`<div class="routine-slider-row"><label>${label}: <b>${r[key]}</b>/10</label><input type="range" min="1" max="10" value="${r[key]}" ${mine?`oninput="this.previousElementSibling.querySelector('b').textContent=this.value" onchange="saveTeamRoutineField('${key}', this.value)"`:'disabled'}></div>`;
+    return `<div style="margin-bottom:14px;">
+      <div style="font-weight:600;color:var(--platinum);margin-bottom:4px;">@${escapeHtml(m.handle||'?')}${mine?' (you)':''}</div>
+      ${fld('prep','Pre-market prep followed')}
+      ${fld('sessions','Only traded planned sessions/setups')}
+      ${fld('journal','Journaled every trade same-day')}
+    </div>`;
+  }).join('');
+}
+async function saveTeamRoutineField(key, val){
+  const routine = Object.assign({}, teamCurrentReviewRow.routine||{});
+  const mine = Object.assign({prep:5,sessions:5,journal:5}, routine[currentUser.id]||{});
+  mine[key] = parseInt(val,10);
+  routine[currentUser.id] = mine;
+  teamCurrentReviewRow.routine = routine;
+  await sb.from('team_weekly_reviews').update({ routine, updated_at:new Date().toISOString() }).eq('id', teamCurrentReviewRow.id);
+}
+async function saveTeamBrainstorm(){
+  if(!teamCurrentReviewRow) return;
+  const val = document.getElementById('team_brainstorm').value;
+  teamCurrentReviewRow.brainstorm = val;
+  await sb.from('team_weekly_reviews').update({ brainstorm: val, updated_at:new Date().toISOString() }).eq('id', teamCurrentReviewRow.id);
+  document.getElementById('teamBrainstormHint').textContent = 'Saved & synced to your team.';
+}
+function renderTeamCommitments(reviewRow, members){
+  const wrap = document.getElementById('teamCommitWrap');
+  const commit = reviewRow.commitments || {};
+  wrap.innerHTML = members.map(m=>{
+    const mine = m.user_id===currentUser.id;
+    const c = Object.assign({goal:'',leak:'',test:'',checkinDay:''}, commit[m.user_id]||{});
+    const inp = (key,label,ph)=>`<div class="field"><label>${label}</label><input type="text" value="${escapeHtml(c[key])}" placeholder="${ph}" ${mine?`onblur="saveTeamCommitField('${key}', this.value)"`:'disabled'}></div>`;
+    return `<div class="card tilt" style="padding:14px;">
+      <div style="font-weight:600;color:var(--platinum);margin-bottom:6px;">@${escapeHtml(m.handle||'?')}${mine?' (you)':''}</div>
+      ${inp('goal','One process goal for next week','e.g. Wait for confirmed sweep + shift')}
+      ${inp('leak','One leak to eliminate','e.g. Revenge trading')}
+      ${inp('test','One thing to test / research','e.g. NY PM equal-highs pattern')}
+      ${inp('checkinDay','Accountability check-in day','e.g. Wednesday')}
+    </div>`;
+  }).join('');
+}
+async function saveTeamCommitField(key, val){
+  const commit = Object.assign({}, teamCurrentReviewRow.commitments||{});
+  const mine = Object.assign({goal:'',leak:'',test:'',checkinDay:''}, commit[currentUser.id]||{});
+  mine[key] = val;
+  commit[currentUser.id] = mine;
+  teamCurrentReviewRow.commitments = commit;
+  await sb.from('team_weekly_reviews').update({ commitments: commit, updated_at:new Date().toISOString() }).eq('id', teamCurrentReviewRow.id);
+}
+
 /* ============ NAV (left sidebar) ============ */
 document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     if(isDemoMode && DEMO_LOCKED_VIEWS.includes(btn.dataset.view)){
       showLockedFeatureTease(btn.dataset.view);
+      toggleSidebar(false);
+      return;
+    }
+    if(ELITE_LOCKED_VIEWS.includes(btn.dataset.view) && !isElite()){
+      showTierLockedFeatureTease(btn.dataset.view);
       toggleSidebar(false);
       return;
     }
@@ -6365,6 +6862,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
     if(btn.dataset.view==='stratnotes') renderStrategyNotes();
     if(btn.dataset.view==='backtest') renderBacktestView();
+    if(btn.dataset.view==='team') renderTeamView();
     toggleSidebar(false);
     window.scrollTo({top:0, behavior:'smooth'});
   });
