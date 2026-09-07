@@ -1378,6 +1378,23 @@ body{
   #app{ max-width:860px; }
   .stage{ height:360px; }
 }
+
+/* ================================================================
+   POLISH PASS — matches the same layer added to index.html. CSS-only,
+   additive, placed last so it wins on equal specificity. Nothing here
+   renames or removes anything the JS reads.
+   ================================================================ */
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--steel-hi);border-radius:10px;border:2px solid transparent;background-clip:padding-box;}
+::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb, var(--bronze-bright) 30%, var(--steel-hi));background-clip:padding-box;}
+
+.chat{gap:14px;}
+.bubble{box-shadow:0 10px 26px -14px rgba(0,0,0,0.45);}
+.bubble.assistant{line-height:1.6;}
+.composer-row{box-shadow:0 10px 26px -16px rgba(0,0,0,0.45);}
+.send-btn:focus-visible, .mic-btn:focus-visible, .quick-chip:focus-visible{outline:2px solid var(--bronze-bright);outline-offset:2px;}
+.quick-chip{transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;}
 </style>
 </head>
 <body>
