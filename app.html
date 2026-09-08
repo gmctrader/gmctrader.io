@@ -1015,6 +1015,25 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 .team-week-nav b{font-family:'IBM Plex Mono',monospace;}
 .team-pnl-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;}
 .team-pnl-table th,.team-pnl-table td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--steel-hi);white-space:nowrap;}
+.team-pnl-table td:first-child,.team-pnl-table th:first-child{white-space:normal;min-width:118px;max-width:168px;position:sticky;left:0;background:var(--panel);z-index:1;}
+.team-pnl-table td.num.metric-best{color:var(--bronze-bright);font-weight:700;}
+.team-pnl-table td.num.metric-best::after{content:' ★';font-size:10px;}
+.team-section-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px;}
+.team-section-head .num-badge{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;color:var(--bronze-bright);
+  border:1px solid var(--steel-hi);background:linear-gradient(135deg, rgba(16,185,129,0.14), rgba(184,134,11,0.10));}
+.team-section-head h3{font-size:14px;margin:0;}
+.team-member-name{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.team-handle-badge{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+  font-weight:700;padding:4px 11px;border-radius:100px;letter-spacing:0.01em;
+  background:linear-gradient(135deg, rgba(16,185,129,0.14), rgba(16,185,129,0.03));
+  border:1px solid rgba(16,185,129,0.28);color:var(--bronze-bright);}
+.team-handle-badge.is-mate{background:linear-gradient(135deg, rgba(184,134,11,0.14), rgba(184,134,11,0.03));
+  border-color:rgba(184,134,11,0.28);color:var(--gold-bright);}
+.team-handle-badge .you-tag{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:10px;color:var(--slate);text-transform:uppercase;letter-spacing:0.05em;}
+#teamReviewCard{background:linear-gradient(165deg, var(--panel) 0%, var(--panel) 60%, rgba(16,185,129,0.05) 100%);}
+#teamReviewCard h2{background:linear-gradient(135deg, var(--platinum) 30%, var(--bronze-bright) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;width:fit-content;}
 .team-pnl-table th{color:var(--slate);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;}
 .team-pnl-table td.num{font-family:'IBM Plex Mono',monospace;}
 .team-pnl-table tr.total-row td{font-weight:700;border-top:2px solid var(--steel-hi);border-bottom:none;}
@@ -1101,7 +1120,7 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 .gate-card{background:var(--panel);border:1px solid var(--steel);border-radius:var(--r-lg);padding:34px;backdrop-filter:blur(16px);}
 
 /* ============ APP SHELL ============ */
-#appShell{display:none;min-height:100vh;width:100%;max-width:100%;overflow-x:hidden;position:relative;}
+#appShell{display:none;min-height:100vh;width:100%;max-width:100%;overflow-x:hidden;overflow-x:clip;position:relative;}
 #appShell.show{display:flex;}
 .shell-blob{position:fixed;border-radius:44% 56% 62% 38%/40% 44% 56% 60%;filter:blur(130px);pointer-events:none;z-index:-1;opacity:0.16;contain:paint;will-change:transform;}
 .shell-blob-a{width:560px;height:560px;background:var(--neon-green);top:-180px;right:-160px;animation:driftA 28s ease-in-out infinite;}
@@ -3756,28 +3775,28 @@ setTimeout(function(){
 
           <div id="teamReviewBody">
             <!-- 1. PnL Snapshot -->
-            <h3 style="font-size:14px;margin:18px 0 8px;">1 · Weekly PnL Snapshot <span class="eyebrow">auto-pulled from each trader's journal</span></h3>
+            <div class="team-section-head"><span class="num-badge">01</span><h3>Weekly PnL Snapshot <span class="eyebrow">auto-pulled from each trader's journal</span></h3></div>
             <div style="overflow-x:auto;" id="teamPnlTable"></div>
 
             <!-- 2. Setup log -->
-            <h3 style="font-size:14px;margin:22px 0 8px;">2 · Liquidity Sweep / SMC Setup Log <span class="eyebrow">every trade this week, per trader</span></h3>
+            <div class="team-section-head"><span class="num-badge">02</span><h3>Liquidity Sweep / SMC Setup Log <span class="eyebrow">every trade this week, per trader</span></h3></div>
             <div id="teamSetupLogWrap" class="setup-log-mini"></div>
 
             <!-- 3. Leak detection -->
-            <h3 style="font-size:14px;margin:22px 0 8px;">3 · Leak Detection <span class="eyebrow">go through it together, out loud</span></h3>
+            <div class="team-section-head"><span class="num-badge">03</span><h3>Leak Detection <span class="eyebrow">go through it together, out loud</span></h3></div>
             <div id="teamLeakWrap"></div>
 
             <!-- 4. Routine & discipline audit -->
-            <h3 style="font-size:14px;margin:22px 0 8px;">4 · Routine &amp; Discipline Audit <span class="eyebrow">score 1–10, independent of outcome</span></h3>
+            <div class="team-section-head"><span class="num-badge">04</span><h3>Routine &amp; Discipline Audit <span class="eyebrow">score 1–10, independent of outcome</span></h3></div>
             <div id="teamRoutineWrap"></div>
 
             <!-- 5. Brainstorm -->
-            <h3 style="font-size:14px;margin:22px 0 8px;">5 · Brainstorm &amp; Knowledge Transfer <span class="eyebrow">shared notes — synced live</span></h3>
+            <div class="team-section-head"><span class="num-badge">05</span><h3>Brainstorm &amp; Knowledge Transfer <span class="eyebrow">shared notes — synced live</span></h3></div>
             <div class="field"><textarea id="team_brainstorm" placeholder="What did one of you see this week that the other missed?" style="min-height:110px;" onblur="saveTeamBrainstorm()"></textarea></div>
             <div class="hint" id="teamBrainstormHint"></div>
 
             <!-- 6. Commitments -->
-            <h3 style="font-size:14px;margin:22px 0 8px;">6 · Next Week's Commitments <span class="eyebrow">one focus area each</span></h3>
+            <div class="team-section-head"><span class="num-badge">06</span><h3>Next Week's Commitments <span class="eyebrow">one focus area each</span></h3></div>
             <div class="commit-grid" id="teamCommitWrap"></div>
           </div>
         </div>
@@ -6368,6 +6387,29 @@ let teamWeekStart = null;         // Date, Monday 00:00 local
 let teamChannel = null;
 let teamDataLoaded = false;
 let teamCurrentReviewRow = null;  // cached team_weekly_reviews row for the selected team+week
+// Some mobile browsers (iOS Safari in particular) never move document.activeElement
+// onto an <input type="range"> during a touch drag, so the activeElement guard below
+// couldn't tell a slider was mid-drag and would snap it back to the last-synced value
+// under your thumb. This tracks real touch/mouse interaction directly instead of
+// relying on focus, and holds the lock a little past release to cover the save's
+// round trip back through realtime.
+let teamInteractionLockUntil = 0;
+function armTeamInteractionLock(ms){ teamInteractionLockUntil = Date.now() + ms; }
+['pointerdown','touchstart'].forEach(evt=>document.addEventListener(evt, e=>{
+  const wrap = e.target.closest && e.target.closest('#teamLeakWrap, #teamRoutineWrap, #teamCommitWrap');
+  if(!wrap) return;
+  armTeamInteractionLock(8000); // held while the finger/mouse is down
+  if(e.target.matches && e.target.matches('input[type=range]')) e.target.focus();
+}, {passive:true}));
+['pointerup','touchend','touchcancel','change'].forEach(evt=>document.addEventListener(evt, e=>{
+  const wrap = e.target.closest && e.target.closest('#teamLeakWrap, #teamRoutineWrap, #teamCommitWrap');
+  if(!wrap) return;
+  armTeamInteractionLock(900); // short buffer so our own save's realtime echo doesn't race back in
+}, {passive:true}));
+document.addEventListener('input', e=>{
+  const wrap = e.target.closest && e.target.closest('#teamRoutineWrap');
+  if(wrap) armTeamInteractionLock(8000); // keep extending while actively dragging
+}, {passive:true});
 let teamCurrentSnapshots = [];    // cached team_weekly_snapshots rows for the selected team+week
 
 const TEAM_LEAK_ITEMS = [
@@ -6713,14 +6755,15 @@ async function loadWeeklyReviewForSelectedTeam(silent){
   // "glitched" and stopped accepting input. Skip the rebuild for a wrap
   // while the person is actively focused inside it; it'll pick up the
   // latest data next time it re-renders (after they move on).
+  const interacting = Date.now() < teamInteractionLockUntil;
   const leakWrap = document.getElementById('teamLeakWrap');
-  if(!leakWrap || !leakWrap.contains(document.activeElement)) renderTeamLeaks(reviewRow, members);
+  if(!leakWrap || (!leakWrap.contains(document.activeElement) && !interacting)) renderTeamLeaks(reviewRow, members);
   const routineWrap = document.getElementById('teamRoutineWrap');
-  if(!routineWrap || !routineWrap.contains(document.activeElement)) renderTeamRoutine(reviewRow, members);
+  if(!routineWrap || (!routineWrap.contains(document.activeElement) && !interacting)) renderTeamRoutine(reviewRow, members);
   const brainstormEl = document.getElementById('team_brainstorm');
   if(brainstormEl && document.activeElement !== brainstormEl) brainstormEl.value = reviewRow.brainstorm || '';
   const commitWrap = document.getElementById('teamCommitWrap');
-  if(!commitWrap || !commitWrap.contains(document.activeElement)) renderTeamCommitments(reviewRow, members);
+  if(!commitWrap || (!commitWrap.contains(document.activeElement) && !interacting)) renderTeamCommitments(reviewRow, members);
   document.getElementById('teamSyncHint').textContent = '🔄 synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
@@ -6748,14 +6791,26 @@ function renderTeamPnlTable(snaps, members){
     return `<td class="team-member-col num">${trades}</td><td class="num">${wins}/${losses}</td><td class="num">${s.netR>0?'+':''}${s.netR}</td>`;
   }).join('')}</tr>`;
   const compareRows = [
-    ['Net R for the week', m=>`${m.netR>0?'+':''}${m.netR}`],
-    ['Win rate %', m=>`${m.winRatePct}%`],
-    ['Avg R per winner', m=>`+${m.avgRWin}`],
-    ['Avg R per loser', m=>`-${m.avgRLoss}`],
-    ['Biggest single loss (R)', m=>`-${m.biggestLossR}`],
-    ['# of clean (rule-following) setups', m=>`${m.aPlusCount}`],
-    ['# of impulsive / off-plan trades', m=>`${m.offPlanCount}`],
-  ].map(([label,fn])=>`<tr><td>${label}</td>${members.map(m=>{ const s=snapFor(m.user_id,snaps); return `<td class="num">${s?fn(s):'–'}</td>`; }).join('')}</tr>`).join('');
+    ['Net R for the week', m=>`${m.netR>0?'+':''}${m.netR}`, m=>m.netR, 'high'],
+    ['Win rate %', m=>`${m.winRatePct}%`, m=>m.winRatePct, 'high'],
+    ['Avg R per winner', m=>`+${m.avgRWin}`, m=>m.avgRWin, 'high'],
+    ['Avg R per loser', m=>`-${m.avgRLoss}`, m=>m.avgRLoss, 'low'],
+    ['Biggest single loss (R)', m=>`-${m.biggestLossR}`, m=>m.biggestLossR, 'low'],
+    ['# of clean (rule-following) setups', m=>`${m.aPlusCount}`, m=>m.aPlusCount, 'high'],
+    ['# of impulsive / off-plan trades', m=>`${m.offPlanCount}`, m=>m.offPlanCount, 'low'],
+  ].map(([label,fn,val,dir])=>{
+    // Only crown a winner when every member has a value and they're not tied —
+    // avoids a false "★" when data is missing or the numbers are identical.
+    const vals = members.map(m=>{ const s=snapFor(m.user_id,snaps); return s?val(s):null; });
+    const allPresent = vals.every(v=>v!==null && v!==undefined && !isNaN(v));
+    const best = allPresent ? (dir==='low' ? Math.min(...vals) : Math.max(...vals)) : null;
+    const tied = allPresent && vals.filter(v=>v===best).length>1;
+    return `<tr><td>${label}</td>${members.map((m,i)=>{
+      const s=snapFor(m.user_id,snaps);
+      const isBest = allPresent && !tied && vals[i]===best;
+      return `<td class="num${isBest?' metric-best':''}">${s?fn(s):'–'}</td>`;
+    }).join('')}</tr>`;
+  }).join('');
   wrap.innerHTML = `<table class="team-pnl-table">${dailyHead}${dayRows}${totalRow}</table>
     <h4 style="font-size:12.5px;color:var(--slate);margin:16px 0 6px;">Quick Compare</h4>
     <table class="team-pnl-table"><tr><th>Metric</th>${members.map(m=>`<th class="team-member-col">@${escapeHtml(m.handle||'?')}</th>`).join('')}</tr>${compareRows}</table>`;
@@ -6773,6 +6828,9 @@ function renderTeamSetupLog(snaps){
     </table>`;
 }
 
+function teamHandleBadge(handle, mine){
+  return `<div class="team-member-name"><span class="team-handle-badge${mine?'':' is-mate'}">@${escapeHtml(handle||'?')}</span>${mine?'<span class="you-tag">You</span>':''}</div>`;
+}
 /* ---------- render + save: leaks / routine / brainstorm / commitments (shared, synced) ---------- */
 function renderTeamLeaks(reviewRow, members){
   const wrap = document.getElementById('teamLeakWrap');
@@ -6782,7 +6840,7 @@ function renderTeamLeaks(reviewRow, members){
     const mySet = new Set((leaks[m.user_id]&&leaks[m.user_id].checklist)||[]);
     const biggest = (leaks[m.user_id]&&leaks[m.user_id].biggestLeak)||'';
     return `<div style="margin-bottom:16px;">
-      <div style="font-weight:600;color:var(--platinum);margin-bottom:6px;">@${escapeHtml(m.handle||'?')}${mine?' (you)':''}</div>
+      ${teamHandleBadge(m.handle, mine)}
       <div class="leak-grid">${TEAM_LEAK_ITEMS.map(li=>`
         <label class="leak-check"><input type="checkbox" ${mySet.has(li.code)?'checked':''} ${mine?'':'disabled'} onchange="toggleTeamLeak('${li.code}', this.checked)"> ${escapeHtml(li.label)}</label>
       `).join('')}</div>
@@ -6818,7 +6876,7 @@ function renderTeamRoutine(reviewRow, members){
     const r = Object.assign({prep:5,sessions:5,journal:5}, routine[m.user_id]||{});
     const fld = (key,label)=>`<div class="routine-slider-row"><label>${label}: <b>${r[key]}</b>/10</label><input type="range" min="1" max="10" value="${r[key]}" ${mine?`oninput="this.previousElementSibling.querySelector('b').textContent=this.value" onchange="saveTeamRoutineField('${key}', this.value)"`:'disabled'}></div>`;
     return `<div style="margin-bottom:14px;">
-      <div style="font-weight:600;color:var(--platinum);margin-bottom:4px;">@${escapeHtml(m.handle||'?')}${mine?' (you)':''}</div>
+      ${teamHandleBadge(m.handle, mine)}
       ${fld('prep','Pre-market prep followed')}
       ${fld('sessions','Only traded planned sessions/setups')}
       ${fld('journal','Journaled every trade same-day')}
@@ -6848,7 +6906,7 @@ function renderTeamCommitments(reviewRow, members){
     const c = Object.assign({goal:'',leak:'',test:'',checkinDay:''}, commit[m.user_id]||{});
     const inp = (key,label,ph)=>`<div class="field"><label>${label}</label><input type="text" value="${escapeHtml(c[key])}" placeholder="${ph}" ${mine?`onblur="saveTeamCommitField('${key}', this.value)"`:'disabled'}></div>`;
     return `<div class="card tilt" style="padding:14px;">
-      <div style="font-weight:600;color:var(--platinum);margin-bottom:6px;">@${escapeHtml(m.handle||'?')}${mine?' (you)':''}</div>
+      ${teamHandleBadge(m.handle, mine)}
       ${inp('goal','One process goal for next week','e.g. Wait for confirmed sweep + shift')}
       ${inp('leak','One leak to eliminate','e.g. Revenge trading')}
       ${inp('test','One thing to test / research','e.g. NY PM equal-highs pattern')}
