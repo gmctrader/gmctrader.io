@@ -3710,7 +3710,7 @@ setTimeout(function(){
           <div class="row2" style="align-items:flex-end;">
             <div class="field" style="flex:1;">
               <label>Your handle</label>
-              <input type="text" id="team_handleInput" placeholder="e.g. ghostwolf" maxlength="20" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+              <input type="text" id="team_handleInput" placeholder="e.g. ghostwolf" maxlength="20" oninput="sanitizeHandleInput(this,/[^a-z0-9_]/g)">
             </div>
             <button class="btn btn-primary" onclick="claimMyHandle()" style="flex-shrink:0;">Save handle</button>
           </div>
@@ -3737,7 +3737,7 @@ setTimeout(function(){
         <div class="card tilt" id="teamInviteFormCard" style="display:none;">
           <h2>Invite a <span class="accent">Trader</span><span class="eyebrow">by @handle, to “<span id="teamInviteTargetName">—</span>”</span></h2>
           <div class="row2" style="align-items:flex-end;">
-            <div class="field" style="flex:1;"><label>Trader's @handle</label><input type="text" id="team_inviteHandle" placeholder="e.g. desertfox" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_@]/g,'')"></div>
+            <div class="field" style="flex:1;"><label>Trader's @handle</label><input type="text" id="team_inviteHandle" placeholder="e.g. desertfox" oninput="sanitizeHandleInput(this,/[^a-z0-9_@]/g)"></div>
             <button class="btn btn-primary" onclick="sendTeamInvite()" style="flex-shrink:0;">Send invite</button>
           </div>
           <div class="hint" id="teamInviteMsg">They'll get a notification in their own portal to accept or decline — nothing is shared until they accept.</div>
@@ -6559,6 +6559,27 @@ function renderTeamSelectDropdown(){
   sel.innerHTML = accepted.map(t=>`<option value="${t.id}" ${t.id===teamSelectedId?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
 }
 
+/* ---------- input sanitizers ----------
+   FIX: the old inline `this.value = this.value.toLowerCase().replace(...)`
+   ran on every keystroke and always reassigned el.value, even when the
+   sanitized string was identical to what was already there. Reassigning
+   .value unconditionally resets the cursor to the end of the field in a
+   lot of mobile browsers/webviews, so typing anywhere but the very end
+   (or typing a character that gets filtered) made the caret jump away
+   mid-word — it looked like the field "glitched" and refused input.
+   This version only touches .value when the sanitized text actually
+   differs, and explicitly restores the caret position afterward. */
+function sanitizeHandleInput(el, disallowed){
+  const before = el.value;
+  const cleaned = before.toLowerCase().replace(disallowed, '');
+  if(cleaned === before) return; // no-op: never touch .value/caret if nothing changed
+  const start = el.selectionStart, end = el.selectionEnd;
+  const removedBeforeCaret = before.slice(0, start).length - before.slice(0, start).toLowerCase().replace(disallowed,'').length;
+  el.value = cleaned;
+  const newPos = Math.max(0, (start||0) - removedBeforeCaret);
+  try{ el.setSelectionRange(newPos, newPos); }catch(e){ /* some input types don't support this */ }
+}
+
 /* ---------- handle / team / invite actions ---------- */
 async function claimMyHandle(){
   const raw = (document.getElementById('team_handleInput').value||'').trim().toLowerCase();
@@ -6683,9 +6704,21 @@ async function loadWeeklyReviewForSelectedTeam(silent){
   const members = team ? team.members.filter(m=>m.status==='accepted') : [];
   renderTeamPnlTable(teamCurrentSnapshots, members);
   renderTeamSetupLog(teamCurrentSnapshots);
-  renderTeamLeaks(reviewRow, members);
-  renderTeamRoutine(reviewRow, members);
-  document.getElementById('team_brainstorm').value = reviewRow.brainstorm || '';
+  // FIX: realtime pushes a fresh row on every save to team_weekly_reviews —
+  // including the save this device just made itself. Re-rendering these
+  // wraps unconditionally on every echo replaced the DOM out from under
+  // whichever field was mid-edit (the leak checklist, "biggest leak" text
+  // box, or a routine slider like "Only traded planned sessions/setups"),
+  // which killed focus/drag mid-interaction and looked like the field
+  // "glitched" and stopped accepting input. Skip the rebuild for a wrap
+  // while the person is actively focused inside it; it'll pick up the
+  // latest data next time it re-renders (after they move on).
+  const leakWrap = document.getElementById('teamLeakWrap');
+  if(!leakWrap || !leakWrap.contains(document.activeElement)) renderTeamLeaks(reviewRow, members);
+  const routineWrap = document.getElementById('teamRoutineWrap');
+  if(!routineWrap || !routineWrap.contains(document.activeElement)) renderTeamRoutine(reviewRow, members);
+  const brainstormEl = document.getElementById('team_brainstorm');
+  if(brainstormEl && document.activeElement !== brainstormEl) brainstormEl.value = reviewRow.brainstorm || '';
   renderTeamCommitments(reviewRow, members);
   document.getElementById('teamSyncHint').textContent = '🔄 synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
