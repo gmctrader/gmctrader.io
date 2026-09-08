@@ -6719,7 +6719,8 @@ async function loadWeeklyReviewForSelectedTeam(silent){
   if(!routineWrap || !routineWrap.contains(document.activeElement)) renderTeamRoutine(reviewRow, members);
   const brainstormEl = document.getElementById('team_brainstorm');
   if(brainstormEl && document.activeElement !== brainstormEl) brainstormEl.value = reviewRow.brainstorm || '';
-  renderTeamCommitments(reviewRow, members);
+  const commitWrap = document.getElementById('teamCommitWrap');
+  if(!commitWrap || !commitWrap.contains(document.activeElement)) renderTeamCommitments(reviewRow, members);
   document.getElementById('teamSyncHint').textContent = '🔄 synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
