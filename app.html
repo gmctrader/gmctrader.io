@@ -4870,7 +4870,7 @@ function showAuthMsg(text, type){
 
 async function handleLogout(){
   if(isDemoMode){ exitDemo(); return; }
-  await sb.auth.signOut();
+  try{ await sb.auth.signOut(); }catch(e){ console.error('signOut error (continuing local logout):', e); }
   currentUser = null;
   state = JSON.parse(JSON.stringify(DEFAULT_STATE));
   conflictPending = null;
