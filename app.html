@@ -6690,8 +6690,12 @@ async function leaveTeam(teamId){
     ? `Leave "${name}"? You'll lose access to its Weekly Desk Review and need a new invite to rejoin.`
     : `Leave "${name}"? You're the only active trader on it, so the team will be dissolved.`;
   if(!confirm(warning)) return;
-  const { error } = await sb.from('team_members').delete().eq('team_id', teamId).eq('user_id', currentUser.id);
+  const { data: deletedRows, error } = await sb.from('team_members').delete().eq('team_id', teamId).eq('user_id', currentUser.id).select();
   if(error){ showToast('Could not leave team: '+(error.message||error.code)); return; }
+  if(!deletedRows || !deletedRows.length){
+    showToast("Couldn't leave the team — check that a delete policy exists on team_members.");
+    return;
+  }
   const remainingAccepted = team.members.filter(m=>m.user_id!==currentUser.id && m.status==='accepted');
   if(remainingAccepted.length){
     await sb.from('notifications').insert(remainingAccepted.map(m=>({
