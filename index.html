@@ -81,6 +81,7 @@ a{color:inherit;}
   letter-spacing:-0.02em;margin:0 0 18px 0;}
 .hero h1 .accent{background:linear-gradient(120deg, var(--bronze-bright), var(--gold-bright));
   -webkit-background-clip:text;background-clip:text;color:transparent;}
+.hero h1 .accent .ch{background:inherit;-webkit-background-clip:text;background-clip:text;color:transparent;}
 .typewriter-wrap{height:34px;display:flex;align-items:center;justify-content:center;margin-bottom:22px;}
 #typewriter{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--slate);letter-spacing:0.01em;}
 #typewriter .cursor{display:inline-block;width:2px;height:16px;background:var(--bronze-bright);
@@ -209,6 +210,13 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .step h3{font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin:0 0 8px 0;}
 .step p{font-size:13px;color:var(--slate);margin:0;line-height:1.55;}
 
+.philosophy-wrap{max-width:760px;margin:96px auto 0 auto;padding:0 24px;}
+.philosophy-card{position:relative;padding:8px 0 8px 26px;border-left:2px solid rgba(45,212,168,0.35);}
+.philosophy-card h2{font-family:'Fraunces',serif;font-style:italic;font-weight:560;font-size:clamp(22px,3.2vw,29px);
+  margin:0 0 18px 0;line-height:1.3;color:var(--platinum);}
+.philosophy-card p{font-size:14.5px;color:var(--slate);line-height:1.75;margin:0 0 16px 0;max-width:64ch;}
+.philosophy-card p:last-child{margin-bottom:0;}
+
 .features-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
 .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
 .feature{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-md);padding:22px;}
@@ -261,7 +269,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   .playground-grid{grid-template-columns:1fr;gap:14px;margin-top:16px;}
   .demo-mini{padding:20px 18px 18px 18px;}
 
-  .steps-wrap,.features-wrap,.faq-wrap{margin-top:64px;padding:0 18px;}
+  .steps-wrap,.features-wrap,.faq-wrap,.philosophy-wrap{margin-top:64px;padding:0 18px;}
+  .philosophy-card{padding-left:18px;}
+  .philosophy-card p{font-size:13.5px;}
   .steps{grid-template-columns:1fr;gap:14px;}
   .features{grid-template-columns:1fr;gap:12px;}
   .section-head{margin-bottom:26px;}
@@ -285,6 +295,31 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   .hero h1{font-size:clamp(28px,9vw,36px);}
   .tier{padding:20px 16px;}
 }
+
+/* =========================================================
+   SCROLL REVEAL — typed-in headlines, tilted-in cards
+   ========================================================= */
+[data-reveal="type"] .ch{opacity:0;transition:opacity 0s step-end;}
+[data-reveal="type"].revealed .ch{opacity:1;}
+[data-reveal="type"] .type-cursor{display:inline-block;width:2px;height:0.85em;background:var(--bronze-bright);
+  margin-left:2px;vertical-align:-0.1em;opacity:0;animation:blink .9s steps(1) infinite;}
+[data-reveal="type"].revealed .type-cursor{opacity:1;transition:opacity 0s step-end;}
+[data-reveal="type"].revealed.type-done .type-cursor{animation:none;opacity:0;transition:opacity .5s ease;}
+
+[data-reveal="card"]{opacity:0;transform:perspective(1000px) rotateX(22deg) translateY(30px) scale(0.97);
+  transition:opacity .65s cubic-bezier(.22,.7,.24,1), transform .75s cubic-bezier(.22,.7,.24,1);
+  will-change:transform, opacity;}
+[data-reveal="card"].revealed{opacity:1;transform:perspective(1000px) rotateX(0deg) translateY(0) scale(1);}
+
+@media(max-width:760px){
+  [data-reveal="card"]{transform:perspective(700px) rotateX(14deg) translateY(20px) scale(0.98);}
+}
+
+@media(prefers-reduced-motion: reduce){
+  [data-reveal="type"] .ch{opacity:1 !important;transition:none !important;}
+  [data-reveal="type"] .type-cursor{display:none !important;}
+  [data-reveal="card"]{opacity:1 !important;transform:none !important;transition:none !important;}
+}
 </style>
 </head>
 <body>
@@ -299,9 +334,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 <div class="hero">
   <div class="invite-badge"><span class="dot"></span> Invitation only — access is not open to the public</div>
-  <h1>Keep your word.<br>Then take the <span class="accent">trade.</span></h1>
+  <h1 data-reveal="type">Keep your word.<br>Then take the <span class="accent">trade.</span></h1>
   <div class="typewriter-wrap"><span id="typewriter"></span></div>
-  <p class="hero-sub">A private trading terminal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan. Every trader inside was invited by someone who already trades here.</p>
+  <p class="hero-sub">A private trading terminal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan. Every trader inside was invited by someone who already trades here. No leaderboard to perform for, no chat to hype you into a bad entry — just the plan you set, and whether you kept it.</p>
   <div class="hero-ctas">
     <a class="btn btn-gold" href="app.html">Enter the terminal →</a>
     <a class="btn btn-ghost" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20an%20invitation%20to%20Ghost%20Discipline." target="_blank" rel="noopener">Request an invitation</a>
@@ -311,11 +346,11 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 <div class="demo-wrap">
   <div class="section-head" style="margin-bottom:28px;">
-    <h2>Try the terminal, right here</h2>
+    <h2 data-reveal="type">Try the terminal, right here</h2>
     <p>Four simplified pieces of the real logic. Drag, toggle, click — see how it thinks before you ask for an invite.</p>
   </div>
 
-  <div class="demo-card">
+  <div class="demo-card" data-reveal="card">
     <div class="demo-head">
       <div>
         <div class="demo-title">Drag your risk budget</div>
@@ -347,7 +382,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   </div>
 
   <div class="playground-grid">
-    <div class="demo-card demo-mini">
+    <div class="demo-card demo-mini" data-reveal="card">
       <div class="demo-title">Lock your rules</div>
       <div class="demo-sub">All three on, the seal holds. Flip one off and see exactly what "breaking a rule" looks like in the terminal.</div>
       <div class="rule-toggle">
@@ -365,7 +400,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       <div class="seal-status sealed" id="sealStatus">Sealed — all 3 rules holding</div>
     </div>
 
-    <div class="demo-card demo-mini">
+    <div class="demo-card demo-mini" data-reveal="card">
       <div class="demo-title">Is your edge even real?</div>
       <div class="demo-sub">Move your actual win rate and reward:risk. This is the maths Analytics runs on every setup in your journal.</div>
       <div class="slider-row">
@@ -383,7 +418,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       </div>
     </div>
 
-    <div class="demo-card demo-mini">
+    <div class="demo-card demo-mini" data-reveal="card">
       <div class="demo-title">The seal, day by day</div>
       <div class="demo-sub">Fourteen sessions. Click a square to mark it kept or broken — same streak logic as your real journal.</div>
       <div class="streak-pips" id="streakPips"></div>
@@ -395,21 +430,21 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 <div class="steps-wrap">
   <div class="section-head">
-    <h2>How the terminal actually works</h2>
+    <h2 data-reveal="type">How the terminal actually works</h2>
     <p>Three steps, every trading day. None of them involve willpower alone.</p>
   </div>
   <div class="steps">
-    <div class="step">
+    <div class="step" data-reveal="card">
       <div class="step-num">1</div>
       <h3>Lock the rules before the open</h3>
       <p>Set your max risk, your setups, your no-trade windows — before price moves your judgement. Once the session starts, the rules are the rules.</p>
     </div>
-    <div class="step">
+    <div class="step" data-reveal="card">
       <div class="step-num">2</div>
       <h3>Log the trade as you take it</h3>
       <p>Every entry, exit and reason gets written down in real time, in the same journal — not reconstructed from memory that night, flattering yourself along the way.</p>
     </div>
-    <div class="step">
+    <div class="step" data-reveal="card">
       <div class="step-num">3</div>
       <h3>Get scored, not soothed</h3>
       <p>SciFe reviews the session against the rules you set and tells you plainly whether you kept your word. No spreadsheet you can quietly edit after the fact.</p>
@@ -417,37 +452,45 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   </div>
 </div>
 
+<div class="philosophy-wrap">
+  <div class="philosophy-card" data-reveal="card">
+    <h2 data-reveal="type">The rule was never the hard part</h2>
+    <p>Anyone can write down "risk 1% per trade" at 6am, coffee in hand, market closed. The rule breaks at 11:47am, three losses deep, when the setup that just cost you money shows up again and every instinct says this time it's different. Ghost Discipline doesn't stop you from taking that trade. It just makes sure you can't quietly forget you took it — or convince yourself later that the rule didn't really apply that day.</p>
+    <p>That's the whole design. Not a smarter strategy, not a signal to follow — a mirror that doesn't flatter you. The seal is either sealed or it's cracked. SciFe reads your actual journal, not a story you tell it. And every trader who joins was vouched for by someone who's already sat with that mirror and kept coming back anyway.</p>
+  </div>
+</div>
+
 <div class="features-wrap">
   <div class="section-head">
-    <h2>What's inside the terminal</h2>
+    <h2 data-reveal="type">What's inside the terminal</h2>
     <p>One workspace for the whole trading day — not six tabs and a spreadsheet.</p>
   </div>
   <div class="features">
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>Journal &amp; calendar</h3>
       <p>Every trade, tagged by setup and session, laid out on a calendar so patterns in your own behaviour are impossible to miss.</p>
     </div>
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>Risk rules engine</h3>
       <p>The confluence panel above — drag your weekly risk budget and watch the verdict change from "room to work" to "pushing it," live.</p>
     </div>
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>SciFe, your AI coach</h3>
       <p>Trained on your own journal, SciFe answers questions about your patterns and calls out rule breaks — it doesn't just cheerlead.</p>
     </div>
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>Analytics &amp; playbook</h3>
       <p>Win rate, expectancy and drawdown broken down by setup, so you know which parts of your plan are actually working.</p>
     </div>
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>Backtest &amp; strategy notes</h3>
       <p>Test a rule change against your own trade history before you risk live money finding out it doesn't hold up.</p>
     </div>
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>Prop firm compliance</h3>
       <p>A dedicated room that tracks your account against your prop firm's drawdown and consistency rules, so a breach doesn't blindside you.</p>
     </div>
-    <div class="feature">
+    <div class="feature" data-reveal="card">
       <h3><span class="dot"></span>Team <span style="font-size:10px;letter-spacing:.04em;color:var(--bronze-bright);border:1px solid rgba(212,175,55,.35);border-radius:20px;padding:2px 7px;margin-left:6px;vertical-align:middle;">ELITE</span></h3>
       <p>Link up with your trading partners by @handle. Your Weekly Desk Review auto-calculates from each of your real journals and syncs live — no spreadsheets, no copy-pasting screenshots.</p>
     </div>
@@ -456,11 +499,11 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 <div class="pricing">
   <div class="pricing-head">
-    <h2>Three ways in, once you're invited</h2>
+    <h2 data-reveal="type">Three ways in, once you're invited</h2>
     <p>No self-serve checkout — message the Telegram below with the package you want and you'll be upgraded by hand. Prices are monthly, in USD, cancel any time with a message.</p>
   </div>
   <div class="tiers">
-    <div class="tier">
+    <div class="tier" data-reveal="card">
       <div class="tier-name">Free</div>
       <div class="tier-price">$0 <span>/ forever</span></div>
       <div class="tier-desc">The core journal, with SciFe included on a shared, rate-limited plan.</div>
@@ -473,7 +516,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       </ul>
       <a class="btn btn-ghost tier-cta" href="app.html">Enter free</a>
     </div>
-    <div class="tier featured">
+    <div class="tier featured" data-reveal="card">
       <div class="tier-badge">Most traders pick this</div>
       <div class="tier-name">Pro</div>
       <div class="tier-price">$39 <span>/ month</span></div>
@@ -486,7 +529,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       </ul>
       <a class="btn btn-gold tier-cta" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Pro%20package." target="_blank" rel="noopener">Request Pro →</a>
     </div>
-    <div class="tier">
+    <div class="tier" data-reveal="card">
       <div class="tier-name">Elite</div>
       <div class="tier-price">$89 <span>/ month</span></div>
       <div class="tier-desc">Everything in Pro, plus a closer line to the people building it.</div>
@@ -505,29 +548,37 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 <div class="faq-wrap">
   <div class="section-head">
-    <h2>Before you message us</h2>
+    <h2 data-reveal="type">Before you message us</h2>
     <p>The questions almost everyone asks before their first session.</p>
   </div>
   <div class="faq">
-    <details class="faq-item">
+    <details class="faq-item" data-reveal="card">
       <summary>Why invitation only?</summary>
       <p>Ghost Discipline started as a private tool inside GMC Traders. It stayed invite-only on purpose — every member is vouched for by someone already inside, which keeps the rooms full of people who actually take their rules seriously.</p>
     </details>
-    <details class="faq-item">
+    <details class="faq-item" data-reveal="card">
       <summary>What is SciFe?</summary>
       <p>SciFe is the AI coach built into every plan. It reads your journal, not a generic script, and answers questions about your own trading patterns — including the ones you'd rather it not notice.</p>
     </details>
-    <details class="faq-item">
+    <details class="faq-item" data-reveal="card">
       <summary>Can I start free and upgrade later?</summary>
       <p>Yes. The Free plan is a genuine starting point, not a trial — the journal, calendar and rate-limited SciFe access don't expire. Message the Telegram whenever you want Pro or Elite unlocked.</p>
     </details>
-    <details class="faq-item">
+    <details class="faq-item" data-reveal="card">
       <summary>How does billing actually work?</summary>
       <p>There's no card form. You message the Telegram with the plan you want, and the team upgrades your account by hand and arranges payment directly with you. You can downgrade or cancel the same way, any time.</p>
     </details>
-    <details class="faq-item">
+    <details class="faq-item" data-reveal="card">
       <summary>Is this financial advice?</summary>
       <p>No. Ghost Discipline is a risk-management and journaling tool — it helps you follow rules you set for yourself. It doesn't tell you what to trade, and nothing in the terminal should be treated as investment advice.</p>
+    </details>
+    <details class="faq-item" data-reveal="card">
+      <summary>What actually happens when I break a rule?</summary>
+      <p>Nothing punitive — no lockout, no lecture popup. The seal on your Rules room flips from sealed to cracked, and that break sits in your journal exactly as it happened, tagged and dated. SciFe will bring it up when it's relevant, and your Weekly Desk Review (if you're on a team) shows it to your teammates too. The discomfort of a visible, permanent record is the entire mechanism — nobody's watching over your shoulder except the version of you that has to read it back later.</p>
+    </details>
+    <details class="faq-item" data-reveal="card">
+      <summary>Can teammates see my full journal, or just the weekly summary?</summary>
+      <p>Just the weekly summary. Your desk partners see the Weekly Desk Review — win rate, R, rule breaks, routine scores — for the week you've selected. They don't get a standing window into every trade you've ever logged. You control what's shared by choosing what week to open for review, and nothing syncs until you accept a team invite in the first place.</p>
     </details>
   </div>
 </div>
@@ -539,6 +590,73 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 
 <script>
+/* ---------- scroll reveal: typed headlines + tilted-in cards ---------- */
+(function(){
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function wrapChars(node, counter, stepMs){
+    Array.from(node.childNodes).forEach(child=>{
+      if(child.nodeType === Node.TEXT_NODE){
+        const frag = document.createDocumentFragment();
+        for(const ch of child.textContent){
+          const span = document.createElement('span');
+          span.className = 'ch';
+          span.textContent = ch;
+          span.style.transitionDelay = (counter.i * stepMs) + 'ms';
+          counter.i++;
+          frag.appendChild(span);
+        }
+        node.replaceChild(frag, child);
+      } else if(child.nodeType === Node.ELEMENT_NODE){
+        wrapChars(child, counter, stepMs);
+      }
+    });
+  }
+
+  const typeEls = document.querySelectorAll('[data-reveal="type"]');
+  typeEls.forEach(el=>{
+    if(reduceMotion) return;
+    const stepMs = el.tagName === 'H1' ? 26 : 16;
+    const counter = { i: 0 };
+    wrapChars(el, counter, stepMs);
+    const cursor = document.createElement('span');
+    cursor.className = 'type-cursor';
+    el.appendChild(cursor);
+    const totalMs = counter.i * stepMs + 500;
+    el.dataset.typeDuration = totalMs;
+  });
+
+  const cardEls = document.querySelectorAll('[data-reveal="card"]');
+  // stagger cards within their shared parent so a row cascades in together
+  const seenParents = new Set();
+  cardEls.forEach(el=>{
+    const parent = el.parentElement;
+    if(!seenParents.has(parent)){
+      seenParents.add(parent);
+      Array.from(parent.children).filter(c=>c.matches && c.matches('[data-reveal="card"]'))
+        .forEach((c,i)=>{ c.style.transitionDelay = Math.min(i,5) * 90 + 'ms'; });
+    }
+  });
+
+  if(!('IntersectionObserver' in window) || reduceMotion){
+    document.querySelectorAll('[data-reveal]').forEach(el=> el.classList.add('revealed','type-done'));
+  } else {
+    const obs = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          const el = entry.target;
+          el.classList.add('revealed');
+          if(el.dataset.typeDuration){
+            setTimeout(()=> el.classList.add('type-done'), parseInt(el.dataset.typeDuration,10));
+          }
+          obs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
+    document.querySelectorAll('[data-reveal]').forEach(el=> obs.observe(el));
+  }
+})();
+
 /* ---------- typewriter ---------- */
 const PHRASES = [
   'Rules before setups.',
