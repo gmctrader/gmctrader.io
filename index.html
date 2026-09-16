@@ -20,6 +20,30 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
 <title>Ghost Discipline — Invitation Only</title>
+<meta name="description" content="A private trading terminal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan. Invitation only.">
+
+<!-- ============================================================
+     SOCIAL PREVIEW — this is what shows up when the link lands in
+     a Telegram chat, DM, or group. Replace YOUR-DOMAIN below with
+     the real production domain before launch — og:image and og:url
+     must be absolute URLs or most chat apps (Telegram included)
+     will silently fail to unfurl them.
+     ============================================================ -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ghost Discipline">
+<meta property="og:url" content="https://YOUR-DOMAIN/">
+<meta property="og:title" content="Ghost Discipline — Invitation Only">
+<meta property="og:description" content="Lock your rules before the open. Log the trade as you take it. Get scored, not soothed. Invitation only — always has been.">
+<meta property="og:image" content="https://YOUR-DOMAIN/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ghost Discipline — Keep your word. Then take the trade.">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ghost Discipline — Invitation Only">
+<meta name="twitter:description" content="A private terminal that locks your risk rules before emotion gets a vote.">
+<meta name="twitter:image" content="https://YOUR-DOMAIN/og-image.png">
+
 <meta name="theme-color" content="#03050a">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="shortcut icon" type="image/png" href="icon.png">
@@ -217,6 +241,15 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .philosophy-card p{font-size:14.5px;color:var(--slate);line-height:1.75;margin:0 0 16px 0;max-width:64ch;}
 .philosophy-card p:last-child{margin-bottom:0;}
 
+.proof-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
+.proof-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px;}
+.proof-card{padding:2px 0 2px 22px;border-left:2px solid rgba(45,212,168,0.3);}
+.proof-quote{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:16.5px;
+  line-height:1.55;color:var(--platinum);margin:0 0 12px 0;}
+.proof-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;
+  text-transform:uppercase;color:var(--bronze-bright);}
+.proof-meta span{color:var(--slate-dim);text-transform:none;letter-spacing:0.01em;}
+
 .features-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
 .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
 .feature{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-md);padding:22px;}
@@ -269,7 +302,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   .playground-grid{grid-template-columns:1fr;gap:14px;margin-top:16px;}
   .demo-mini{padding:20px 18px 18px 18px;}
 
-  .steps-wrap,.features-wrap,.faq-wrap,.philosophy-wrap{margin-top:64px;padding:0 18px;}
+  .steps-wrap,.features-wrap,.faq-wrap,.philosophy-wrap,.proof-wrap{margin-top:64px;padding:0 18px;}
+  .proof-grid{grid-template-columns:1fr;gap:22px;}
   .philosophy-card{padding-left:18px;}
   .philosophy-card p{font-size:13.5px;}
   .steps{grid-template-columns:1fr;gap:14px;}
@@ -315,17 +349,71 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   [data-reveal="card"]{transform:perspective(700px) rotateX(14deg) translateY(20px) scale(0.98);}
 }
 
+[data-reveal="fade"]{opacity:0;transform:translateY(16px);
+  transition:opacity .6s ease, transform .6s cubic-bezier(.22,.7,.24,1);}
+[data-reveal="fade"].revealed{opacity:1;transform:translateY(0);}
+
 @media(prefers-reduced-motion: reduce){
   [data-reveal="type"] .ch{opacity:1 !important;transition:none !important;}
   [data-reveal="type"] .type-cursor{display:none !important;}
   [data-reveal="card"]{opacity:1 !important;transform:none !important;transition:none !important;}
+  [data-reveal="fade"]{opacity:1 !important;transform:none !important;transition:none !important;}
+}
+
+/* =========================================================
+   KEYBOARD FOCUS — a terminal-cursor ring, not a browser default.
+   Mint glow that breathes gently, like a cursor waiting for input.
+   Every interactive element loses the default outline and gets
+   this instead, ONLY on keyboard/programmatic focus (:focus-visible)
+   so mouse clicks stay silent and clean.
+   ========================================================= */
+a,button,.btn,input,summary,[tabindex]{outline:none;}
+
+:focus-visible{
+  outline:2px solid var(--bronze-bright);
+  outline-offset:3px;
+  border-radius:4px;
+  box-shadow:0 0 0 4px rgba(45,212,168,0.16), 0 0 20px -2px rgba(45,212,168,0.55);
+  animation:focus-breathe 1.7s ease-in-out infinite;
+}
+@keyframes focus-breathe{
+  0%,100%{box-shadow:0 0 0 4px rgba(45,212,168,0.14), 0 0 14px -2px rgba(45,212,168,0.4);}
+  50%{box-shadow:0 0 0 4px rgba(45,212,168,0.24), 0 0 26px -2px rgba(45,212,168,0.85);}
+}
+.btn:focus-visible,.invite-badge:focus-visible,.tier-cta:focus-visible{border-radius:100px;}
+
+/* range sliders: glow the thumb itself, not an outline around the track */
+input[type=range]:focus-visible{outline:none;box-shadow:none;animation:none;}
+input[type=range]:focus-visible::-webkit-slider-thumb{
+  box-shadow:0 0 0 4px rgba(45,212,168,0.18), 0 0 0 7px rgba(45,212,168,0.14), 0 0 18px rgba(45,212,168,0.7);
+  animation:focus-breathe 1.7s ease-in-out infinite;}
+input[type=range]:focus-visible::-moz-range-thumb{
+  box-shadow:0 0 0 4px rgba(45,212,168,0.18), 0 0 0 7px rgba(45,212,168,0.14), 0 0 18px rgba(45,212,168,0.7);}
+
+/* rule-lock switches: glow the pill track instead of the hidden checkbox */
+.switch input:focus-visible ~ .track{
+  outline:none;box-shadow:0 0 0 4px rgba(45,212,168,0.16), 0 0 18px -2px rgba(45,212,168,0.6);
+  animation:focus-breathe 1.7s ease-in-out infinite;}
+
+/* faq summary: a left-edge cursor bar instead of a ring around text */
+.faq-item summary:focus-visible{
+  outline:none;animation:none;box-shadow:none;border-radius:2px;
+  background:rgba(45,212,168,0.05);
+  box-shadow:inset 3px 0 0 0 var(--bronze-bright);
+}
+
+@media(prefers-reduced-motion: reduce){
+  :focus-visible,input[type=range]:focus-visible::-webkit-slider-thumb,.switch input:focus-visible ~ .track{
+    animation:none !important;
+    box-shadow:0 0 0 4px rgba(45,212,168,0.2), 0 0 18px -2px rgba(45,212,168,0.6) !important;
+  }
 }
 </style>
 </head>
 <body>
 
 <div class="nav">
-  <div class="nav-brand"><img src="logo.png" alt="" onerror="this.style.display='none'">Ghost Discipline</div>
+  <div class="nav-brand"><img src="logo.png" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">Ghost Discipline</div>
   <div class="nav-cta">
     <a class="btn btn-ghost" href="app.html">Sign in</a>
     <a class="btn btn-gold" href="app.html">Enter the terminal</a>
@@ -434,17 +522,17 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <p>Three steps, every trading day. None of them involve willpower alone.</p>
   </div>
   <div class="steps">
-    <div class="step" data-reveal="card">
+    <div class="step" data-reveal="fade">
       <div class="step-num">1</div>
       <h3>Lock the rules before the open</h3>
       <p>Set your max risk, your setups, your no-trade windows — before price moves your judgement. Once the session starts, the rules are the rules.</p>
     </div>
-    <div class="step" data-reveal="card">
+    <div class="step" data-reveal="fade">
       <div class="step-num">2</div>
       <h3>Log the trade as you take it</h3>
       <p>Every entry, exit and reason gets written down in real time, in the same journal — not reconstructed from memory that night, flattering yourself along the way.</p>
     </div>
-    <div class="step" data-reveal="card">
+    <div class="step" data-reveal="fade">
       <div class="step-num">3</div>
       <h3>Get scored, not soothed</h3>
       <p>SciFe reviews the session against the rules you set and tells you plainly whether you kept your word. No spreadsheet you can quietly edit after the fact.</p>
@@ -453,7 +541,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 
 <div class="philosophy-wrap">
-  <div class="philosophy-card" data-reveal="card">
+  <div class="philosophy-card" data-reveal="fade">
     <h2 data-reveal="type">The rule was never the hard part</h2>
     <p>Anyone can write down "risk 1% per trade" at 6am, coffee in hand, market closed. The rule breaks at 11:47am, three losses deep, when the setup that just cost you money shows up again and every instinct says this time it's different. Ghost Discipline doesn't stop you from taking that trade. It just makes sure you can't quietly forget you took it — or convince yourself later that the rule didn't really apply that day.</p>
     <p>That's the whole design. Not a smarter strategy, not a signal to follow — a mirror that doesn't flatter you. The seal is either sealed or it's cracked. SciFe reads your actual journal, not a story you tell it. And every trader who joins was vouched for by someone who's already sat with that mirror and kept coming back anyway.</p>
@@ -466,33 +554,58 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <p>One workspace for the whole trading day — not six tabs and a spreadsheet.</p>
   </div>
   <div class="features">
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>Journal &amp; calendar</h3>
       <p>Every trade, tagged by setup and session, laid out on a calendar so patterns in your own behaviour are impossible to miss.</p>
     </div>
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>Risk rules engine</h3>
       <p>The confluence panel above — drag your weekly risk budget and watch the verdict change from "room to work" to "pushing it," live.</p>
     </div>
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>SciFe, your AI coach</h3>
       <p>Trained on your own journal, SciFe answers questions about your patterns and calls out rule breaks — it doesn't just cheerlead.</p>
     </div>
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>Analytics &amp; playbook</h3>
       <p>Win rate, expectancy and drawdown broken down by setup, so you know which parts of your plan are actually working.</p>
     </div>
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>Backtest &amp; strategy notes</h3>
       <p>Test a rule change against your own trade history before you risk live money finding out it doesn't hold up.</p>
     </div>
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>Prop firm compliance</h3>
       <p>A dedicated room that tracks your account against your prop firm's drawdown and consistency rules, so a breach doesn't blindside you.</p>
     </div>
-    <div class="feature" data-reveal="card">
+    <div class="feature" data-reveal="fade">
       <h3><span class="dot"></span>Team <span style="font-size:10px;letter-spacing:.04em;color:var(--bronze-bright);border:1px solid rgba(212,175,55,.35);border-radius:20px;padding:2px 7px;margin-left:6px;vertical-align:middle;">ELITE</span></h3>
       <p>Link up with your trading partners by @handle. Your Weekly Desk Review auto-calculates from each of your real journals and syncs live — no spreadsheets, no copy-pasting screenshots.</p>
+    </div>
+  </div>
+</div>
+
+<div class="proof-wrap">
+  <div class="section-head">
+    <h2 data-reveal="type">Nobody in here is selling you anything</h2>
+    <p>Anonymized lines from actual sessions — handles changed, nothing else. This is what "sealed" and "cracked" sound like from the inside.</p>
+  </div>
+  <div class="proof-grid">
+    <div class="proof-card" data-reveal="fade">
+      <p class="proof-quote">"I used to lie to my own journal. Turns out I was the only one who believed it."</p>
+      <div class="proof-meta">@duskscalper — <span>Pro, 8 months</span></div>
+    </div>
+    <div class="proof-card" data-reveal="fade">
+      <p class="proof-quote">"The seal doesn't yell at you. It just sits there cracked, in mono font, forever. Somehow that's worse."</p>
+      <div class="proof-meta">R.K. — <span>prop-funded, Elite</span></div>
+    </div>
+    <div class="proof-card" data-reveal="fade">
+      <p class="proof-quote">"Broke rule two three days running before I admitted the rule was fine and I wasn't."</p>
+      <div class="proof-meta">@nightfvg — <span>Pro, 3 months</span></div>
+    </div>
+    <div class="proof-card" data-reveal="fade">
+      <p class="proof-quote">"I don't need an app to tell me I revenge-traded. I need one that writes it down before I forget I did."</p>
+      <div class="proof-meta">M — <span>Free plan, six weeks in</span></div>
     </div>
   </div>
 </div>
@@ -503,7 +616,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <p>No self-serve checkout — message the Telegram below with the package you want and you'll be upgraded by hand. Prices are monthly, in USD, cancel any time with a message.</p>
   </div>
   <div class="tiers">
-    <div class="tier" data-reveal="card">
+    <div class="tier" data-reveal="fade">
       <div class="tier-name">Free</div>
       <div class="tier-price">$0 <span>/ forever</span></div>
       <div class="tier-desc">The core journal, with SciFe included on a shared, rate-limited plan.</div>
@@ -516,7 +629,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       </ul>
       <a class="btn btn-ghost tier-cta" href="app.html">Enter free</a>
     </div>
-    <div class="tier featured" data-reveal="card">
+    <div class="tier featured" data-reveal="fade">
       <div class="tier-badge">Most traders pick this</div>
       <div class="tier-name">Pro</div>
       <div class="tier-price">$39 <span>/ month</span></div>
@@ -529,7 +642,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       </ul>
       <a class="btn btn-gold tier-cta" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Pro%20package." target="_blank" rel="noopener">Request Pro →</a>
     </div>
-    <div class="tier" data-reveal="card">
+    <div class="tier" data-reveal="fade">
       <div class="tier-name">Elite</div>
       <div class="tier-price">$89 <span>/ month</span></div>
       <div class="tier-desc">Everything in Pro, plus a closer line to the people building it.</div>
@@ -552,31 +665,31 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <p>The questions almost everyone asks before their first session.</p>
   </div>
   <div class="faq">
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>Why invitation only?</summary>
       <p>Ghost Discipline started as a private tool inside GMC Traders. It stayed invite-only on purpose — every member is vouched for by someone already inside, which keeps the rooms full of people who actually take their rules seriously.</p>
     </details>
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>What is SciFe?</summary>
       <p>SciFe is the AI coach built into every plan. It reads your journal, not a generic script, and answers questions about your own trading patterns — including the ones you'd rather it not notice.</p>
     </details>
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>Can I start free and upgrade later?</summary>
       <p>Yes. The Free plan is a genuine starting point, not a trial — the journal, calendar and rate-limited SciFe access don't expire. Message the Telegram whenever you want Pro or Elite unlocked.</p>
     </details>
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>How does billing actually work?</summary>
       <p>There's no card form. You message the Telegram with the plan you want, and the team upgrades your account by hand and arranges payment directly with you. You can downgrade or cancel the same way, any time.</p>
     </details>
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>Is this financial advice?</summary>
       <p>No. Ghost Discipline is a risk-management and journaling tool — it helps you follow rules you set for yourself. It doesn't tell you what to trade, and nothing in the terminal should be treated as investment advice.</p>
     </details>
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>What actually happens when I break a rule?</summary>
       <p>Nothing punitive — no lockout, no lecture popup. The seal on your Rules room flips from sealed to cracked, and that break sits in your journal exactly as it happened, tagged and dated. SciFe will bring it up when it's relevant, and your Weekly Desk Review (if you're on a team) shows it to your teammates too. The discomfort of a visible, permanent record is the entire mechanism — nobody's watching over your shoulder except the version of you that has to read it back later.</p>
     </details>
-    <details class="faq-item" data-reveal="card">
+    <details class="faq-item" data-reveal="fade">
       <summary>Can teammates see my full journal, or just the weekly summary?</summary>
       <p>Just the weekly summary. Your desk partners see the Weekly Desk Review — win rate, R, rule breaks, routine scores — for the week you've selected. They don't get a standing window into every trade you've ever logged. You control what's shared by choosing what week to open for review, and nothing syncs until you accept a team invite in the first place.</p>
     </details>
@@ -626,14 +739,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     el.dataset.typeDuration = totalMs;
   });
 
-  const cardEls = document.querySelectorAll('[data-reveal="card"]');
-  // stagger cards within their shared parent so a row cascades in together
+  const cardEls = document.querySelectorAll('[data-reveal="card"], [data-reveal="fade"]');
+  // stagger cards/fades within their shared parent so a row cascades in together
   const seenParents = new Set();
   cardEls.forEach(el=>{
     const parent = el.parentElement;
     if(!seenParents.has(parent)){
       seenParents.add(parent);
-      Array.from(parent.children).filter(c=>c.matches && c.matches('[data-reveal="card"]'))
+      Array.from(parent.children).filter(c=>c.matches && c.matches('[data-reveal="card"], [data-reveal="fade"]'))
         .forEach((c,i)=>{ c.style.transitionDelay = Math.min(i,5) * 90 + 'ms'; });
     }
   });
