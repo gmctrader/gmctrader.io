@@ -527,6 +527,39 @@ html[data-theme="dark"] .gd-ripple{background:rgba(255,255,255,0.24);}
   transition:transform .35s cubic-bezier(.2,.8,.2,1);font-family:'Instrument Sans',sans-serif;}
 .net-banner.show{transform:translateY(0);}
 
+/* ---- "your plan expires soon" reminder — same overlay pattern as the
+   offline banner above, amber instead of red, sits just under it if both
+   ever happen to show at once. ---- */
+.renewal-banner{position:fixed;top:0;left:0;right:0;z-index:1290;display:flex;align-items:center;justify-content:center;
+  gap:14px;flex-wrap:wrap;padding:9px 40px;font-size:12.5px;font-weight:600;letter-spacing:.01em;
+  background:var(--amber);color:#1a1105;transform:translateY(-100%);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1);font-family:'Instrument Sans',sans-serif;text-align:center;}
+.renewal-banner.show{transform:translateY(0);}
+.renewal-banner-cta{color:#1a1105;text-decoration:underline;font-weight:700;flex-shrink:0;}
+.renewal-banner-close{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;
+  color:#1a1105;font-size:13px;line-height:1;cursor:pointer;opacity:.65;padding:6px;}
+.renewal-banner-close:hover{opacity:1;}
+
+/* ---- persistent top-right plan badge: plan name + active/inactive dot ---- */
+.plan-badge{position:fixed;top:calc(14px + env(safe-area-inset-top));right:16px;z-index:997;display:flex;
+  align-items:center;gap:7px;padding:7px 13px;border-radius:20px;border:1px solid var(--steel-hi);
+  background:var(--panel-solid);color:var(--platinum);font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+  font-weight:600;letter-spacing:.02em;cursor:pointer;box-shadow:0 10px 24px -10px rgba(0,0,0,0.4);
+  transition:transform .15s ease;}
+.plan-badge:hover{transform:translateY(-2px);}
+.plan-badge .pb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--slate-dim);}
+.plan-badge .pb-dot.active{background:var(--win);box-shadow:0 0 8px var(--win);}
+.plan-badge .pb-dot.inactive{background:var(--loss);box-shadow:0 0 8px var(--loss);}
+.plan-badge .pb-dot.free{background:var(--slate-dim);}
+@media(max-width:960px){ .plan-badge{display:none;} }
+.plan-badge-mobile{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:16px;
+  border:1px solid var(--steel-hi);background:var(--graphite);color:var(--platinum);
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;cursor:pointer;flex-shrink:0;}
+.plan-badge-mobile .pb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--slate-dim);}
+.plan-badge-mobile .pb-dot.active{background:var(--win);}
+.plan-badge-mobile .pb-dot.inactive{background:var(--loss);}
+.plan-badge-mobile .pb-dot.free{background:var(--slate-dim);}
+
 /* ---- command palette (⌘K / Ctrl+K) ---- */
 .cmdk-overlay{position:fixed;inset:0;z-index:1400;background:rgba(3,5,10,0.5);backdrop-filter:blur(6px);
   -webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;
@@ -2885,7 +2918,18 @@ setTimeout(function(){
       <div class="mark" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><img src="logo.png" style="width:96%;height:96%;object-fit:contain;border-radius:8px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.18));"></div>
       <h1>Ghost Discipline</h1>
     </div>
+    <div class="plan-badge-mobile" id="planBadgeMobile" onclick="handlePlanBadgeClick()" title="">
+      <span class="pb-dot" id="planBadgeDotMobile"></span>
+      <span id="planBadgeLabelMobile">Free</span>
+    </div>
     <button class="hamburger" onclick="toggleSidebar()" aria-label="Open menu"><span></span></button>
+  </div>
+
+  <!-- Persistent top-right badge (desktop): current plan + a green/red
+       active dot. Tap for expiry details or, on Free, a quick upgrade link. -->
+  <div class="plan-badge" id="planBadge" onclick="handlePlanBadgeClick()" title="">
+    <span class="pb-dot" id="planBadgeDot"></span>
+    <span id="planBadgeLabel">Free</span>
   </div>
 
   <nav class="tab-bar" id="tabBar" aria-label="Primary">
@@ -4323,6 +4367,16 @@ let isDemoMode = false;
 let userTier = 'free';                 // 'free' | 'pro' | 'elite' | 'premium'
 let userProfile = {};                  // onboarding questionnaire answers
 const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite', premium:'Premium' };
+/* ============ BILLING / EXPIRY ============
+   userPaidUntil mirrors trader_data.paid_until: when the current paid
+   period runs out. null means either Free, or a manually-granted tier with
+   no expiry tracked (admin left billing cycle unset). userBillingCycle is
+   'monthly' | 'yearly' | null, just used to label things. The actual
+   downgrade-on-expiry is enforced server-side by expire_my_subscription_if_needed()
+   (SQL) — this file just calls it and reflects whatever it returns; it
+   never decides on its own that someone is expired. */
+let userPaidUntil = null;
+let userBillingCycle = null;
 // Rooms held back on the Free tier — same lock-badge/tease mechanism as the
 // Proving Ground demo lock, just a shorter, less restrictive list since these
 // are real invited accounts, not anonymous trials. Tune freely.
@@ -4985,12 +5039,16 @@ async function handleLogout(){
   state = JSON.parse(JSON.stringify(DEFAULT_STATE));
   conflictPending = null;
   dataVersion = 1;
+  userTier = 'free';
+  userPaidUntil = null;
+  userBillingCycle = null;
   if(saveRetryTimer){ clearTimeout(saveRetryTimer); saveRetryTimer = null; }
   document.getElementById('syncConflictOverlay')?.classList.remove('show');
   document.getElementById('appShell').classList.remove('show');
   document.getElementById('gateScreen').classList.remove('show');
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('scifeFab')?.classList.remove('show');
+  hideRenewalBanner();
 }
 async function resetDeviceForNewAccount(){
   if(isDemoMode){ exitDemo(); return; }
@@ -5219,6 +5277,7 @@ async function startDemo(){
   }
   renderDemoStatus();
   applyDemoLocks();
+  updatePlanBadge();
   document.getElementById('scifeFab')?.classList.add('show');
   showToast(isDemoAdmin() ? 'Admin logged in — unlimited access' : `Proving Ground started — ${demoDaysRemaining()} days on the clock`);
 }
@@ -5356,6 +5415,94 @@ function applyTierLocks(){
     }
   });
 }
+/* ============ PLAN BADGE (top-right) + PAID/EXPIRY REMINDERS ============
+   Shows which plan the trader is on plus a green/red dot: green while a
+   paid tier is active (or Free, which is inherently "active" — nothing to
+   pay), red once a paid tier's paid_until has passed but before the next
+   load has had a chance to auto-downgrade it. Also drives the amber
+   "renews soon" banner and the actual expiry check. */
+function daysUntilDate(dateVal){
+  if(!dateVal) return null;
+  return Math.ceil((new Date(dateVal) - new Date()) / 86400000);
+}
+function setPlanBadge(label, state, tooltip){
+  ['planBadgeLabel','planBadgeLabelMobile'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent = label; });
+  ['planBadgeDot','planBadgeDotMobile'].forEach(id=>{ const el=document.getElementById(id); if(el) el.className = 'pb-dot ' + state; });
+  ['planBadge','planBadgeMobile'].forEach(id=>{ const el=document.getElementById(id); if(el) el.title = tooltip; });
+}
+function updatePlanBadge(){
+  if(isDemoMode){ setPlanBadge('Demo', 'free', 'Proving Ground demo — not a real account, nothing to pay'); return; }
+  if(!currentUser){ setPlanBadge('—', 'free', ''); return; }
+  const label = TIER_LABELS[userTier] || 'Free';
+  if(userTier === 'free'){
+    setPlanBadge('Free', 'free', 'Free plan — click to see Pro/Elite/Premium');
+    return;
+  }
+  const expired = userPaidUntil && daysUntilDate(userPaidUntil) <= 0;
+  if(expired){
+    setPlanBadge(label, 'inactive', `${label} has expired — you'll be moved to Free shortly. Click to renew.`);
+    return;
+  }
+  let tip = `${label} plan — active`;
+  if(userPaidUntil) tip += `. Renews/expires ${new Date(userPaidUntil).toLocaleDateString()}`;
+  setPlanBadge(label, 'active', tip);
+}
+function handlePlanBadgeClick(){
+  if(isDemoMode || !currentUser) return;
+  if(userTier === 'free'){ window.open(telegramUpgradeLink('pro'), '_blank'); return; }
+  const expired = userPaidUntil && daysUntilDate(userPaidUntil) <= 0;
+  if(expired){ window.open(telegramUpgradeLink(userTier), '_blank'); return; }
+  if(userPaidUntil){
+    showToast(`${TIER_LABELS[userTier]} plan renews/expires ${new Date(userPaidUntil).toLocaleDateString()}.`);
+  } else {
+    showToast(`${TIER_LABELS[userTier]} plan is active — no expiry date set on this account.`);
+  }
+}
+function showRenewalBanner(days){
+  const dismissKey = 'gd_renewalDismissed_' + (userPaidUntil || '');
+  try{ if(localStorage.getItem(dismissKey)) return; }catch(e){}
+  const banner = document.getElementById('renewalBanner');
+  const text = document.getElementById('renewalBannerText');
+  const cta = document.getElementById('renewalBannerCta');
+  if(!banner) return;
+  text.textContent = `Your ${TIER_LABELS[userTier]||'plan'} ${days<=1 ? 'expires today' : `expires in ${days} days`} — renew to keep your access.`;
+  if(cta) cta.href = telegramUpgradeLink(userTier);
+  banner.classList.add('show');
+}
+function hideRenewalBanner(){
+  const banner = document.getElementById('renewalBanner');
+  if(banner) banner.classList.remove('show');
+}
+function dismissRenewalBanner(){
+  hideRenewalBanner();
+  try{ localStorage.setItem('gd_renewalDismissed_' + (userPaidUntil || ''), '1'); }catch(e){}
+}
+// Called on load, and periodically while the app stays open, so a session
+// left open across the expiry moment still gets downgraded without a
+// refresh. Only ever calls a function that touches the caller's OWN row,
+// and only ever downgrades — never upgrades — so it's safe to run freely.
+async function checkSubscriptionExpiry(){
+  if(isDemoMode || !currentUser) return;
+  updatePlanBadge();
+  if(userTier === 'free' || !userPaidUntil){ hideRenewalBanner(); return; }
+  const days = daysUntilDate(userPaidUntil);
+  if(days <= 0){
+    try{
+      const { data, error } = await sb.rpc('expire_my_subscription_if_needed');
+      if(!error && data){
+        userTier = 'free'; userPaidUntil = null; userBillingCycle = null;
+        applyTierLocks();
+        updatePlanBadge();
+        hideRenewalBanner();
+        showToast('Your plan has expired, so this account is back on Free. Message the Telegram to renew.');
+      }
+    }catch(e){ console.warn('expire_my_subscription_if_needed failed:', e); }
+    return;
+  }
+  if(days <= 3) showRenewalBanner(days); else hideRenewalBanner();
+}
+setInterval(checkSubscriptionExpiry, 3600000); // re-check hourly for sessions left open
+
 function showTierLockedFeatureTease(view){
   const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team' };
   const label = labels[view] || 'This room';
@@ -5490,6 +5637,8 @@ function exitDemo(){
   document.getElementById('authScreen').style.display = 'flex';
   renderDemoStatus();
   applyDemoLocks();
+  updatePlanBadge();
+  hideRenewalBanner();
   document.getElementById('scifeFab')?.classList.remove('show');
   showToast('Left the Proving Ground — your trial progress is saved on this device');
 }
@@ -5520,6 +5669,8 @@ function renderDemoStatus(){
      alter table trader_data add column if not exists tier text not null default 'free';
      alter table trader_data add column if not exists profile jsonb not null default '{}'::jsonb;
      alter table trader_data add column if not exists onboarding_done boolean not null default false;
+   Billing (paid_until / billing_cycle) and the tier check constraint that
+   now allows 'premium' live in admin_panel_setup.sql — run that too.
 */
 async function loadOrCreateTraderData(){
   const { data, error } = await sb.from('trader_data').select('*').eq('user_id', currentUser.id).maybeSingle();
@@ -5552,6 +5703,8 @@ async function loadOrCreateTraderData(){
     if(!data.onboarding_done) queueOnboardingQuestions();
   }
   applyTierLocks();
+  updatePlanBadge();
+  checkSubscriptionExpiry();
   if(!isDemoMode) initTeamFeature();
 }
 
@@ -5639,6 +5792,8 @@ function hydrateState(row){
   state.rulesCompleted = !!row.rules_completed;
   dataVersion = typeof row.version === 'number' ? row.version : 1;
   userTier = TIER_LABELS[row.tier] ? row.tier : 'free';
+  userPaidUntil = row.paid_until || null;
+  userBillingCycle = row.billing_cycle || null;
   userProfile = (row.profile && typeof row.profile === 'object') ? row.profile : {};
   // Old trades/orders tagged 'propfirm' (the single account that used to
   // exist) now need to point at that account's migrated id so daily-loss /
@@ -12556,6 +12711,11 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
 
 <!-- ============ 100x ENHANCEMENT PACK — command palette, offline banner ============ -->
 <div class="net-banner" id="netBanner">You're offline — changes are saved on this device and will sync when you're back.</div>
+<div class="renewal-banner" id="renewalBanner">
+  <span id="renewalBannerText"></span>
+  <a class="renewal-banner-cta" id="renewalBannerCta" href="#" target="_blank" rel="noopener">Renew now</a>
+  <button class="renewal-banner-close" onclick="dismissRenewalBanner()" aria-label="Dismiss">✕</button>
+</div>
 
 <div class="cmdk-overlay" id="cmdkOverlay">
   <div class="cmdk-box" role="dialog" aria-modal="true" aria-label="Command palette">
