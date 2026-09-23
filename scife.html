@@ -428,6 +428,16 @@ html.motion-reduced .stream-caret{animation:none !important;opacity:.7;}
 @keyframes micBreathe{0%,100%{box-shadow:0 0 0 5px rgba(242,169,78,0.2);}50%{box-shadow:0 0 0 10px rgba(242,169,78,0.08);}}
 .send-btn{background:linear-gradient(120deg, var(--bronze), var(--gold));color:#03110c;box-shadow:0 3px 0 var(--bronze-dim), 0 0 14px -4px rgba(18,185,136,0.6);}
 .send-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--bronze-dim);}
+#chatAttachBtn.capped{opacity:0.35;cursor:not-allowed;}
+.chat-img-preview-row{display:flex;gap:8px;padding:0 4px 8px;flex-wrap:wrap;}
+.chat-img-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--steel-hi);flex:none;}
+.chat-img-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.chat-img-thumb button{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;border:none;
+  background:var(--loss);color:#fff;font-size:11px;line-height:18px;text-align:center;cursor:pointer;padding:0;}
+#chatImageQuotaHint{color:var(--slate-dim);font-size:11px;}
+#chatImageQuotaHint.empty{color:var(--loss-bright);}
+.bubble-img{display:block;max-width:100%;border-radius:12px;margin-bottom:6px;}
+.bubble-img-caption{white-space:pre-wrap;}
 .send-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;filter:grayscale(.3);}
 
 /* ---- scroll-to-latest affordance ---- */
@@ -1534,13 +1544,17 @@ setTimeout(function(){
   </div>
 
   <div class="composer">
+    <div class="chat-img-preview-row" id="chatImgPreviewRow" style="display:none;"></div>
     <div class="composer-row">
       <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input" aria-label="Toggle voice input">🎤</button>
+      <button class="mic-btn" id="chatAttachBtn" onclick="onChatAttachClick()" title="Attach a chart/screenshot" aria-label="Attach image">📎</button>
+      <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="onChatImageFileChange(event)">
       <input id="textInput" type="text" placeholder="Talk to SciFe…" autocomplete="off" aria-label="Message SciFe"
-        oninput="document.getElementById('sendBtn').disabled = !this.value.trim();"
+        oninput="document.getElementById('sendBtn').disabled = !this.value.trim() && chatPendingImages.length===0;"
         onkeydown="if(event.key==='Enter'){sendTyped();}">
       <button class="send-btn" id="sendBtn" onclick="sendTyped()" aria-label="Send message" disabled>➤</button>
     </div>
+    <div class="hint" id="chatImageQuotaHint" style="display:none;margin-top:4px;"></div>
   </div>
 </div>
 
@@ -1825,7 +1839,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'' }, chartMemory:{}, sigSessions:[] };
+let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'', imgCount:0, imgDayKey:'' }, chartMemory:{}, sigSessions:[] };
 /* ============ SHARED PLAN KEY ============
    The trader running this deployment supplies one Gemini key that everyone
    uses by default (nobody needs to go get their own to start chatting).
@@ -2594,7 +2608,7 @@ async function loadTraderRow(){
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
     voiceURI: s.voiceURI || '',
-    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin, chatCount: u.chatCount || 0, chatDayKey: u.chatDayKey || '' },
+    usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin, chatCount: u.chatCount || 0, chatDayKey: u.chatDayKey || '', imgCount: u.imgCount || 0, imgDayKey: u.imgDayKey || '' },
     chartMemory: (s.chartMemory && typeof s.chartMemory === 'object') ? s.chartMemory : {},
     sigSessions: Array.isArray(s.sigSessions) ? s.sigSessions.filter(k=>SIGNAL_SESSIONS[k]) : []
   };
@@ -2680,14 +2694,14 @@ async function unlockAdmin(){
   document.getElementById('settingsAdminPassInput').value = '';
   renderAdminSection();
   updateScanBanner();
-  showToast('Admin unlocked — unlimited scans on this account');
+  showToast('Admin unlocked — unlimited scans and chat images on this account');
 }
 async function lockAdmin(){
   scife.usage.isAdmin = false;
   await saveScife();
   renderAdminSection();
   updateScanBanner();
-  showToast('Admin locked — back to 5 scans/week');
+  showToast('Admin locked — back to 5 scans/week, 3 chat images/day');
 }
 function renderAdminSection(){
   const hint = document.getElementById('settingsScanHint');
@@ -2695,9 +2709,10 @@ function renderAdminSection(){
   const unlocked = document.getElementById('settingsAdminUnlocked');
   if(!hint || !locked || !unlocked) return;
   rolloverUsageWeek();
-  hint.textContent = scife.usage.isAdmin
-    ? 'Admin access is active on this account — Signal scans are unlimited.'
-    : `${scansRemaining()}/${SCAN_LIMIT_PER_WEEK} Signal scans left this week. Enter the admin password for unlimited access.`;
+  rolloverImgDay();
+  hint.innerHTML = scife.usage.isAdmin
+    ? 'Admin access is active on this account — Signal scans and chat images are unlimited.'
+    : `${scansRemaining()}/${SCAN_LIMIT_PER_WEEK} Signal scans left this week, ${chatImagesRemainingToday()}/${CHAT_IMAGE_DAILY_LIMIT} chat images left today. Enter the admin password for unlimited access.`;
   locked.style.display = scife.usage.isAdmin ? 'none' : 'block';
   unlocked.style.display = scife.usage.isAdmin ? 'block' : 'none';
 }
@@ -2777,6 +2792,59 @@ function updateChatQuotaBanner(){
   el.innerHTML = `<span>Free plan — ${remaining}/${FREE_DAILY_CHAT_LIMIT} SciFe chats left today</span><a href="${telegramUpgradeLink('Pro')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;text-decoration:none;">Upgrade →</a>`;
   el.style.color = remaining === 0 ? 'var(--loss)' : 'var(--slate)';
   el.classList.toggle('empty', remaining === 0);
+}
+
+/* ============ DAILY CHAT-IMAGE LIMIT (3/day, unlimited for admin) ============
+   Separate again from both counters above: this gates attaching an image to
+   an ORDINARY chat message (not the Signal page's own chart upload, which
+   has its own 5/week limit and isn't touched by this). Gated purely on
+   isAdmin, same as the Signal scan limit — tier/shared-key don't factor in,
+   because the ask here was specifically "3 images/day unless admin". */
+const CHAT_IMAGE_DAILY_LIMIT = 3;
+function rolloverImgDay(){
+  const tk = todayKey();
+  if(scife.usage.imgDayKey !== tk){ scife.usage.imgDayKey = tk; scife.usage.imgCount = 0; }
+}
+function chatImagesRemainingToday(){
+  if(scife.usage.isAdmin) return Infinity;
+  rolloverImgDay();
+  return Math.max(0, CHAT_IMAGE_DAILY_LIMIT - (scife.usage.imgCount||0));
+}
+// Re-pulls usage before spending it, same reasoning as claimDailyChat — two
+// tabs/devices shouldn't be able to both slip an image through on a stale
+// local copy. Returns true/false rather than throwing so the caller can
+// just disable the attach button on false.
+async function claimDailyImage(){
+  if(currentUser){
+    try{
+      const { data } = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
+      const u = (data && data.scife && data.scife.usage) || {};
+      scife.usage.imgCount = u.imgCount || 0;
+      scife.usage.imgDayKey = u.imgDayKey || '';
+      scife.usage.isAdmin = !!u.isAdmin;
+    }catch(e){ /* offline — fall back to local copy */ }
+  }
+  rolloverImgDay();
+  if(scife.usage.isAdmin) return true;
+  if((scife.usage.imgCount||0) >= CHAT_IMAGE_DAILY_LIMIT) return false;
+  scife.usage.imgCount = (scife.usage.imgCount||0) + 1;
+  await saveScife();
+  updateChatImageQuotaHint();
+  return true;
+}
+function updateChatImageQuotaHint(){
+  const el = document.getElementById('chatImageQuotaHint');
+  const btn = document.getElementById('chatAttachBtn');
+  if(!el) return;
+  const remaining = chatImagesRemainingToday();
+  if(scife.usage.isAdmin){
+    el.style.display = 'none';
+  } else {
+    el.style.display = 'inline';
+    el.textContent = `${remaining}/${CHAT_IMAGE_DAILY_LIMIT} chat images left today`;
+    el.classList.toggle('empty', remaining === 0);
+  }
+  if(btn) btn.classList.toggle('capped', !scife.usage.isAdmin && remaining === 0);
 }
 
 /* The key currently in effect for chat calls — the trader's own saved key
@@ -2884,15 +2952,40 @@ function memoryOpeningLine(){
 }
 
 /* ============ JOURNAL SUMMARY (client-side stats fed to the model) ============ */
+// Small symbol map so per-account summaries can show real currency symbols
+// even though scife.html doesn't carry the main app's full CURRENCIES table.
+const CURRENCY_SYMBOLS = { USD:'$', EUR:'€', GBP:'£', JPY:'¥', AUD:'A$', CAD:'C$', CHF:'Fr', NZD:'NZ$', ZAR:'R', INR:'₹' };
+// Splits trades into Personal vs each configured Prop Firm account (by id) so
+// SciFe's numbers never blend a challenge's P/L into personal stats or vice
+// versa — mirrors the account-scope separation now in the main app. Trades
+// tagged with the legacy generic "propfirm" string (older SciFe-logged
+// trades, before per-account ids existed) are bucketed under whichever prop
+// firm account is first on file, so they don't silently vanish from every
+// account's numbers.
+function accountBuckets(){
+  const trades = (traderRow && traderRow.trades) || [];
+  const propFirms = Array.isArray(traderRow && traderRow.prop_firm) ? traderRow.prop_firm : [];
+  const personal = trades.filter(t=>!t.account || t.account==='personal');
+  const buckets = propFirms.map(pf=>({
+    pf,
+    trades: trades.filter(t=>t.account===pf.id || (t.account==='propfirm' && pf===propFirms[0]))
+  }));
+  return { personal, buckets };
+}
+function summarizeTradeGroup(label, trades, sym){
+  sym = sym || '';
+  if(!trades.length) return `${label}: no trades logged yet.`;
+  const wins = trades.filter(t=>t.result==='win').length;
+  const winRate = Math.round((wins/trades.length)*100);
+  const totalPnl = trades.reduce((a,t)=>a+pnlOf(t),0);
+  const today = todayStr();
+  const todaysTrades = trades.filter(t=>t.date===today);
+  const todayPnl = todaysTrades.reduce((a,t)=>a+pnlOf(t),0);
+  return `${label}: ${trades.length} trades, win rate ${winRate}%, lifetime P/L ${sym}${totalPnl.toFixed(0)}, today ${todaysTrades.length} trades / ${sym}${todayPnl.toFixed(0)}.`;
+}
 function summarizeJournal(){
   const trades = (traderRow && traderRow.trades) || [];
   const today = todayStr();
-  const todaysTrades = trades.filter(t=>t.date===today);
-  const wins = trades.filter(t=>t.result==='win').length;
-  const losses = trades.filter(t=>t.result==='loss').length;
-  const winRate = trades.length ? Math.round((wins/trades.length)*100) : null;
-  const totalPnl = trades.reduce((a,t)=>a+pnlOf(t),0);
-  const todayPnl = todaysTrades.reduce((a,t)=>a+pnlOf(t),0);
   const moodCounts = {};
   trades.forEach(t=>{ if(t.mood) moodCounts[t.mood] = (moodCounts[t.mood]||0)+1; });
   const topMood = Object.entries(moodCounts).sort((a,b)=>b[1]-a[1])[0];
@@ -2903,14 +2996,20 @@ function summarizeJournal(){
   const streak = (traderRow && traderRow.streak) || {};
   const rules = (traderRow && traderRow.rules) || {};
 
+  const { personal, buckets } = accountBuckets();
+  const personalSym = (CURRENCY_SYMBOLS[rules.currency] || '$');
+  const accountLines = [summarizeTradeGroup('PERSONAL', personal, personalSym)]
+    .concat(buckets.map(b=>summarizeTradeGroup(`PROP FIRM — ${b.pf.firmName||'Unnamed account'} (${b.pf.phase||'challenge'})`, b.trades, CURRENCY_SYMBOLS[b.pf.currency] || '$')));
+
   return [
-    `Total trades: ${trades.length}, win rate: ${winRate!==null?winRate+'%':'n/a'}, lifetime P/L: ${totalPnl.toFixed(0)}.`,
-    `Today (${today}): ${todaysTrades.length} trades, P/L ${todayPnl.toFixed(0)}, rule broken today: ${day.ruleBrokenToday?'yes':'no'}.`,
+    `ACCOUNTS (kept separate — never blend one account's numbers into another's when answering):`,
+    accountLines.join('\n'),
+    `Today (${today}) rule broken: ${day.ruleBrokenToday?'yes':'no'}.`,
     `Current discipline streak: ${streak.count||0} days.`,
     `Consecutive losses right now: ${(traderRow && traderRow.consecutive_losses)||0}.`,
-    topMood ? `Most logged emotion: ${topMood[0]} (${topMood[1]} times).` : '',
-    `Current rules — maxDailyLoss:${rules.maxDailyLoss ?? 'unset'}, maxTrades:${rules.maxTrades ?? 'unset'}, riskPerTrade:${rules.riskPerTrade ?? 'unset'}, minRR:${rules.minRR ?? 'unset'}, maxConsecLosses:${rules.maxConsecLosses ?? 'unset'}, accountBalance:${rules.accountBalance ?? 'unset'}, coolingOffMinutes:${rules.coolingOffMinutes ?? 'unset'}, maxRiskPerTrade:${rules.maxRiskPerTrade ?? 'unset'}, currency:${rules.currency ?? 'unset'}, accountType:${rules.accountType ?? 'unset'}.`,
-    recent.length ? `Recent trades:\n${recent.join('\n')}` : 'No trades logged yet.'
+    topMood ? `Most logged emotion overall: ${topMood[0]} (${topMood[1]} times).` : '',
+    `Current personal account rules — maxDailyLoss:${rules.maxDailyLoss ?? 'unset'}, maxTrades:${rules.maxTrades ?? 'unset'}, riskPerTrade:${rules.riskPerTrade ?? 'unset'}, minRR:${rules.minRR ?? 'unset'}, maxConsecLosses:${rules.maxConsecLosses ?? 'unset'}, accountBalance:${rules.accountBalance ?? 'unset'}, coolingOffMinutes:${rules.coolingOffMinutes ?? 'unset'}, maxRiskPerTrade:${rules.maxRiskPerTrade ?? 'unset'}, currency:${rules.currency ?? 'unset'}, accountType:${rules.accountType ?? 'unset'}.`,
+    recent.length ? `Recent trades (all accounts, tagged):\n${recent.join('\n')}` : 'No trades logged yet.'
   ].filter(Boolean).join('\n');
 }
 
@@ -3284,6 +3383,19 @@ function sigRolloverDayIfNeeded(){
 // Applies a {type:'log_trade'|'edit_trade', ...} action parsed from the
 // model's reply. Returns a short confirmation string to surface to the
 // trader (or an error string, prefixed so it reads clearly either way).
+// Resolves whatever the model put in action.account into a real account tag:
+// "personal", or a real prop firm id from traderRow.prop_firm. Falls back to
+// mapping the legacy generic "propfirm" string onto the first configured
+// account (backward-compat with how log_trade/edit_trade used to work before
+// per-account ids existed), and to "personal" if nothing matches — never lets
+// a hallucinated id silently create a phantom account bucket.
+function resolveActionAccount(rawAccount){
+  if(!rawAccount || rawAccount==='personal') return 'personal';
+  const propFirms = Array.isArray(traderRow && traderRow.prop_firm) ? traderRow.prop_firm : [];
+  if(propFirms.some(pf=>pf.id===rawAccount)) return rawAccount;
+  if(rawAccount==='propfirm' && propFirms[0]) return propFirms[0].id;
+  return 'personal';
+}
 async function applyTradeAction(action){
   if(!action || !action.type) return null;
   traderRow.trades = traderRow.trades || [];
@@ -3445,10 +3557,21 @@ async function applyRuleAction(action){
 function buildSystemPrompt(){
   const memNotes = scife.memory.length ? scife.memory.map(m=>'- '+m).join('\n') : 'None yet.';
   const strategies = ((traderRow && traderRow.psychology && traderRow.psychology.strategies) || []).map(s=>s.name).join(', ') || 'none saved';
-  const pf = (traderRow && traderRow.prop_firm) || {};
+  // traderRow.prop_firm is an ARRAY of accounts (the app supports running
+  // several challenges at once) — list every one by name/phase/id so an
+  // action block can target a specific account instead of a generic guess.
+  const propFirms = Array.isArray(traderRow && traderRow.prop_firm) ? traderRow.prop_firm.filter(pf=>pf.firmName || pf.startingBalance) : [];
+  const propFirmLines = propFirms.length
+    ? propFirms.map(pf=>`- id:${pf.id} name:"${pf.firmName||'Unnamed account'}" phase:${pf.phase||'challenge'} currency:${pf.currency||'USD'}`).join('\n')
+    : 'None configured.';
+  const pendingOrders = ((traderRow && traderRow.psychology && traderRow.psychology.orders) || []).filter(o=>o.status==='pending');
+  const mt5 = (traderRow && traderRow.scife && traderRow.scife.mt5) || {};
+  const mt5Snap = mt5.lastSnapshot;
   return `You are SciFe, a trading journal companion inside the Ghost Discipline app. You talk with the trader about their charts, their emotions while trading, and their journal — like a sharp, honest trading coach who knows them.
 
 Be concise (2-4 sentences unless asked for detail), warm but direct, and never just cheerlead — call out patterns like revenge trading, rule-breaking, or emotional overtrading when the data shows it. Use the journal data below to ground your answers; don't invent numbers that aren't there.
+
+PRECISION AND PATIENCE — this governs every setup opinion and every order you place: default to NOT having a trade. Say "no clean setup right now" plainly when that's true, rather than manufacturing a reason to act. Conviction has to be earned from what's actually visible (structure, the trader's own strategy rules, real confluence) before you propose one. When you DO propose or place an entry/SL/TP, the levels must be precise and justified against real structure on the chart or in the notes — a real swing point, a real order block/FVG edge, a real session high/low — never a rounded guess or an arbitrary R:R distance with nothing behind it. If you're not sure a level is precise, say so and give a range instead of a false-precision number.
 
 DURING A LOSING STREAK: When "Consecutive losses right now" is 2 or more, resist the reflex to just tell the trader to stop trading or take a break — that's not coaching, it's a shutdown, and it doesn't help them get better. Actually help them instead:
 - Ask what setup/pair they were trading and look at the recent trades above for a pattern — is it the same mistake repeating (chasing entries, moving stops, sizing up to "win it back"), or a run of statistically normal losses inside an otherwise sound strategy?
@@ -3456,8 +3579,16 @@ DURING A LOSING STREAK: When "Consecutive losses right now" is 2 or more, resist
 - If it looks like normal variance (setup was valid, rules were followed, just losses): say so directly — reassure them the process was fine and a losing streak inside a positive-expectancy system is expected, not a signal to panic.
 - If they ask for a break or to stop, support that fully. But don't volunteer "maybe you should stop trading today" as your default answer to a losing streak — offer to actually work the problem with them (review the trade, adjust the plan, talk through what they're feeling) before anything else.
 
-JOURNAL SNAPSHOT:
+JOURNAL SNAPSHOT (Personal and each Prop Firm account are kept separate on purpose — never answer "how am I doing" by blending a challenge's numbers into personal, or vice versa; if the trader doesn't specify which account, ask or answer for Personal by default and mention the prop account(s) separately):
 ${summarizeJournal()}
+
+PROP FIRM ACCOUNTS ON FILE:
+${propFirmLines}
+
+PENDING ORDERS ON THE ORDER BOOK RIGHT NOW: ${pendingOrders.length ? pendingOrders.map(o=>`id:${o.id} ${o.pair||'-'} ${o.direction||'-'} entry:${o.entry??'-'} sl:${o.sl??'-'} tp:${o.tp??'-'} account:${o.account||'personal'}${o.aiSuggested?' (AI-suggested, awaiting review)':''}`).join('; ') : 'none'}
+
+MT5 LIVE BRIDGE: ${mt5.enabled ? `enabled${mt5Snap ? ` — last known account snapshot (${new Date(mt5Snap.updatedAt||0).toLocaleString()}): balance ${mt5Snap.balance ?? '?'} equity ${mt5Snap.equity ?? '?'} margin ${mt5Snap.margin ?? '?'} open positions ${Array.isArray(mt5Snap.positions)?mt5Snap.positions.length:0}` : ' — no snapshot received from the EA yet'}` : 'disabled — the trader has not turned this on, so mt5_order actions will be queued but never reach a real account until they enable it and approve each one in Settings'}
+If asked "what's going on in my MT5 account", answer from the snapshot above — if there's none yet, say so plainly rather than guessing at balances or positions.
 
 ECONOMIC CALENDAR:
 ${summarizeEconomicCalendar()}
@@ -3465,19 +3596,23 @@ You DO have real, current data on scheduled macro news — including Non-Farm Pa
 
 USD/DXY AUTO-BIAS: the "USD/DXY auto-bias" line above is a pre-computed, rule-based read — it already weighed actual-vs-forecast surprises across NFP, CPI, PPI, PCE, GDP, retail sales, PMI, jobless claims, unemployment rate, and rate decisions (weighted by how much each type typically moves the dollar, how big the surprise was, how fresh it is, and the release's impact tier), not a guess. Bring it up proactively — not just when directly asked — whenever the trader asks about the dollar, DXY, a USD pair (EURUSD, GBPUSD, USDJPY, etc.), "what's moving the market," or whether news is bullish/bearish; and mention it in passing on setup analysis for any USD pair even if they didn't ask. State the bias plainly (Bullish/Bearish/Neutral) and walk through the 2-3 biggest contributing releases in your own words — actual vs forecast, and why that direction is USD-positive or -negative. If the trader is asking about a currency the auto-bias doesn't cover (e.g. straight EUR or JPY fundamentals), say so and reason qualitatively from what's in the calendar instead of applying the USD read to the wrong currency. Never present the auto-bias as certain market direction — it's a data-weighted read on sentiment, not a trade signal or a guarantee of where price goes next.
 
+IMAGES: the trader can attach a chart/screenshot directly in this chat (not just the separate Signal page). When an image is attached, actually look at it and ground your read in what's visibly there — real candles, real levels — rather than a generic answer; apply the same PRECISION AND PATIENCE standard above to anything you say about it.
+
 Known strategy names: ${strategies}
-Prop firm on file: ${pf.firmName ? pf.firmName+' ('+(pf.phase||'challenge')+')' : 'none configured'}
 Today's date: ${todayStr()}
 
-TRADE LOGGING & EDITING, AND RULE EDITING:
-You can log a new trade, edit an existing one, or change one of the trader's discipline rules directly from conversation — when the trader tells you about a trade they took, asks you to change/fix/delete a detail on one already in the journal, or asks you to change a rule (e.g. "set my max trades per day to 2"), actually do it instead of just talking about it or describing the change in prose.
+TRADE LOGGING & EDITING, RULE EDITING, PLACING ORDERS, AND MT5 COMMANDS:
+You can log a new trade, edit an existing one, change one of the trader's discipline rules, place a pending order on the Order Book, or queue an MT5 command — directly from conversation. Do this when the trader actually gives you something concrete to act on (a trade they took, a real change to make, a setup they want queued as a pending order, an instruction to send something to their MT5 account) — never for hypothetical or past-tense-recap conversation, and never for an order/trade you talked yourself into against the PRECISION AND PATIENCE standard above.
 To do this, end your reply with a single action block on its own line, and NOTHING else on that line. The format is exactly three '>' characters in each marker — not two, not more:
 <<<ACTION>>>{...json...}<<<END>>>
-For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"propfirm","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
+
+For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"<a prop firm id from the list above>","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
 For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
 For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
 Valid "rule" keys (use exactly one of these, spelled exactly like this — see current values in the JOURNAL SNAPSHOT above): maxDailyLoss, maxTrades, riskPerTrade, minRR, maxConsecLosses, accountBalance, coolingOffMinutes, maxRiskPerTrade, currency, accountType. "value" is a plain number for all of these except currency/accountType, which take a short string.
-Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit an id that actually appears in the JOURNAL SNAPSHOT above. Only include an action block when the trader is actually giving you a trade to log, a real change to make, or a real rule to change — never for hypothetical or past-tense-recap conversation. The action block is invisible to the trader (it is stripped out before display), so still say in plain words what you just logged/changed before it — but never print the literal action block text itself as part of your visible answer, and never describe the JSON to the trader instead of emitting a real action block.
+For placing a pending order on the Order Book: {"type":"place_order","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"rrPlanned":2,"account":"personal"|"<a prop firm id from the list above>","strategy":"name or omit","notes":"why — the actual structure/confluence backing entry/SL/TP"}. This lands on the Order Book tagged as AI-suggested and awaiting the trader's own review — it is never itself a live trade.
+For queuing an MT5 command (only meaningful if the trader has the MT5 bridge on — see MT5 LIVE BRIDGE above): {"type":"mt5_order","account":"<a prop firm id, or 'personal'>","action":"open"|"modify"|"close","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"lot":0.5,"notes":"why"}. This is queued and requires the trader's own explicit approval in Settings before it ever reaches their real account — say so plainly when you queue one, don't imply it already executed.
+Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit a trade id that actually appears in the JOURNAL SNAPSHOT above, and only use a prop firm id that actually appears in PROP FIRM ACCOUNTS ON FILE above. The action block is invisible to the trader (it is stripped out before display), so still say in plain words what you just did before it — but never print the literal action block text itself as part of your visible answer, and never describe the JSON to the trader instead of emitting a real action block.
 
 TONE WHEN LOGGING A TRADE — do not overreact: whether a rule was actually broken is checked in code against the trader's real rules after you reply, not guessed by you, so never announce "rule broken" or reset a streak yourself in your narration — that line gets appended automatically, with the exact rule(s), only when one truly tripped. Your own reply to a plain win or a plain loss that broke nothing should be the same even, matter-of-fact tone either way ("Logged." / "Got it, logged that one.") — a clean loss inside the trader's own rules is not a bad outcome and doesn't call for concern, a pep talk, or "are you okay?" energy. Save any coaching for when the trader actually asks for it or the data shows an actual pattern (see DURING A LOSING STREAK above).
 
@@ -5457,7 +5592,23 @@ function addBubble(role, text, opts){
   }
   const reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || window.gdMotionLevel() === 'reduced';
   if(role !== 'assistant' || opts.instant || reduceMotion){
-    div.textContent = text;
+    if(opts.images && opts.images.length){
+      opts.images.forEach(img=>{
+        const el = document.createElement('img');
+        el.className = 'bubble-img';
+        el.src = `data:${img.mime};base64,${img.data}`;
+        el.alt = 'Attached image';
+        div.appendChild(el);
+      });
+      if(text){
+        const cap = document.createElement('div');
+        cap.className = 'bubble-img-caption';
+        cap.textContent = text;
+        div.appendChild(cap);
+      }
+    } else {
+      div.textContent = text;
+    }
     return div;
   }
   streamBubbleText(div, text, log, stickToBottom);
@@ -5501,16 +5652,111 @@ function removeTyping(){
   if(t) t.remove();
 }
 
+/* ============ CHAT IMAGE ATTACH (main chat — up to 3/message, 3/day unless admin) ============
+   Separate, lighter-weight path from the Signal page's chart upload (no scan
+   animation, no strategy binding) — this is for "hey look at this" in the
+   middle of an ordinary conversation. Shares chatCompletion's existing
+   image/image2/image3 plumbing, so up to 3 images can go out in ONE message;
+   the daily cap below is spent once per SEND that includes at least one
+   image, not once per image. */
+let chatPendingImages = []; // [{mime, data}] — data is base64, no data-url prefix
+
+function onChatAttachClick(){
+  if(!currentModelSupportsVision()){
+    showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
+    return;
+  }
+  if(chatPendingImages.length >= 3){ showToast('3 images is the max per message.'); return; }
+  if(!scife.usage.isAdmin && chatImagesRemainingToday() === 0){
+    showToast(`Chat image limit reached for today (${CHAT_IMAGE_DAILY_LIMIT}/day) — resets at midnight UTC.`);
+    return;
+  }
+  document.getElementById('chatImageInput').click();
+}
+// Re-encodes to a size-capped JPEG through a canvas, same reasoning as the
+// Signal page's onChartFileChange: normalizes odd source formats/color
+// profiles and keeps the payload small, without the scan-animation UI that
+// function also drives.
+function normalizeChatImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = function(){
+      const img = new Image();
+      img.onload = function(){
+        const MAX_DIM = 2200;
+        let { width, height } = img;
+        if(width > MAX_DIM || height > MAX_DIM){
+          const scale = MAX_DIM / Math.max(width, height);
+          width = Math.round(width * scale); height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        const outDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        resolve({ mime:'image/jpeg', data: outDataUrl.slice(outDataUrl.indexOf(',')+1), previewUrl: outDataUrl });
+      };
+      img.onerror = ()=>reject(new Error("Couldn't read that image"));
+      img.src = reader.result;
+    };
+    reader.onerror = ()=>reject(new Error('File read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+async function onChatImageFileChange(e){
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('Please upload an image file'); return; }
+  if(file.size > 8*1024*1024){ showToast('Image too large — please use one under 8MB'); return; }
+  if(chatPendingImages.length >= 3){ showToast('3 images is the max per message.'); return; }
+  try{
+    const img = await normalizeChatImage(file);
+    chatPendingImages.push(img);
+    renderChatImagePreview();
+    document.getElementById('sendBtn').disabled = false;
+  }catch(err){ showToast(err.message || "Couldn't read that image"); }
+}
+function removeChatPendingImage(i){
+  chatPendingImages.splice(i,1);
+  renderChatImagePreview();
+  const input = document.getElementById('textInput');
+  document.getElementById('sendBtn').disabled = !(input.value.trim()) && chatPendingImages.length===0;
+}
+function renderChatImagePreview(){
+  const row = document.getElementById('chatImgPreviewRow');
+  if(!row) return;
+  if(chatPendingImages.length===0){ row.style.display='none'; row.innerHTML=''; return; }
+  row.style.display = 'flex';
+  row.innerHTML = chatPendingImages.map((img,i)=>`
+    <div class="chat-img-thumb">
+      <img src="data:${img.mime};base64,${img.data}" alt="Attached image ${i+1}">
+      <button onclick="removeChatPendingImage(${i})" title="Remove" aria-label="Remove image">✕</button>
+    </div>`).join('');
+}
+
 function sendTyped(){
   const input = document.getElementById('textInput');
   const text = input.value.trim();
-  if(!text) return;
+  if(!text && chatPendingImages.length===0) return;
   input.value = '';
   document.getElementById('sendBtn').disabled = true;
-  sendMessage(text);
+  const images = chatPendingImages.slice();
+  chatPendingImages = [];
+  renderChatImagePreview();
+  sendMessage(text || '(sent an image)', images);
 }
 
-async function sendMessage(text){
+async function sendMessage(text, images){
+  images = images || [];
+  if(images.length){
+    const allowed = await claimDailyImage();
+    if(!allowed){
+      addBubble('system', `Chat image limit reached for today (${CHAT_IMAGE_DAILY_LIMIT}/day) — resets at midnight UTC. Sending your message without the image${images.length>1?'s':''}.`);
+      images = [];
+    }
+  }
   if(usingSharedKey()){
     const allowed = await claimDailyChat();
     if(!allowed){
@@ -5520,13 +5766,17 @@ async function sendMessage(text){
     }
     updateChatQuotaBanner();
   }
-  addBubble('user', text);
-  history.push({ role:'user', content:text });
+  addBubble('user', text, { images, instant:true });
+  history.push({ role:'user', content: images.length ? `${text} [attached ${images.length} image${images.length>1?'s':''}]` : text });
   addTyping();
   setStage('thinking');
   try{
     await ensureEconomicCalendar();
-    const rawReply = await chatCompletion(buildSystemPrompt(), history.slice(-12));
+    const imgOpts = {};
+    if(images[0]) imgOpts.image = images[0];
+    if(images[1]) imgOpts.image2 = images[1];
+    if(images[2]) imgOpts.image3 = images[2];
+    const rawReply = await chatCompletion(buildSystemPrompt(), history.slice(-12), imgOpts);
     const { text: cleanReply, action } = extractTradeAction(rawReply);
     let result = null;
     if(action) result = await applyTradeAction(action);
