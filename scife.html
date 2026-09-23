@@ -2973,10 +2973,10 @@ function closeSettings(){ document.getElementById('settingsOverlay').classList.r
 async function saveSettings(){
   const newProvider = document.getElementById('settingsProviderSelect').value;
   const newKey = document.getElementById('settingsKeyInput').value.trim();
-  if(!newKey){ showToast('Paste an API key for ' + (PROVIDERS[newProvider]?.label || newProvider) + ' first'); return; }
   scife.provider = newProvider;
   scife.apiKeys = scife.apiKeys || {};
-  scife.apiKeys[newProvider] = newKey;
+  // A blank key means "use the shared plan": drop the saved key so chats go through the ai-proxy.
+  if(newKey) scife.apiKeys[newProvider] = newKey; else delete scife.apiKeys[newProvider];
   scife.model = document.getElementById('settingsModelSelect').value;
   scife.voiceOn = document.getElementById('settingsVoiceSwitch').classList.contains('on');
   scife.handsFree = document.getElementById('settingsHandsFreeSwitch').classList.contains('on');
@@ -2985,7 +2985,7 @@ async function saveSettings(){
   scife.voiceURI = voiceSel ? voiceSel.value : scife.voiceURI;
   await saveScife();
   closeSettings();
-  showToast('Saved — now talking to ' + (PROVIDERS[scife.provider]?.label || scife.provider));
+  showToast(newKey ? 'Saved — now talking to ' + (PROVIDERS[scife.provider]?.label || scife.provider) : 'Saved — using the shared plan');
 }
 async function clearMemory(){
   scife.memory = [];
