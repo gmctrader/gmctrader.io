@@ -2826,6 +2826,14 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l5-4 5 4v11"/><path d="M15 21v-7l4-3v10"/></svg>
         Prop Firm
       </button>
+      <button class="side-navbtn" data-view="propfirmrisk">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-5"/><path d="M12 7v.01"/></svg>
+        Prop Risk
+      </button>
+      <button class="side-navbtn" data-view="propfirmpayout">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+        Prop Payouts
+      </button>
       <button class="side-navbtn" data-view="session">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         Session
@@ -2972,6 +2980,7 @@ setTimeout(function(){
         </div>
         <div class="topbar-actions">
           <select class="trader-filter" id="globalTraderFilter" onchange="onTraderFilterChange()"></select>
+          <select class="trader-filter" id="globalAccountScope" onchange="onAccountScopeChange()"></select>
           <button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a Trade</button>
         </div>
       </div>
@@ -3155,6 +3164,7 @@ setTimeout(function(){
         </div>
         <div class="topbar-actions">
           <select class="trader-filter" id="globalTraderFilter2" onchange="onTraderFilterChange()"></select>
+          <select class="trader-filter" id="globalAccountScope2" onchange="onAccountScopeChange()"></select>
         </div>
       </div>
 
@@ -3268,6 +3278,7 @@ setTimeout(function(){
         </div>
         <div class="topbar-actions">
           <select class="trader-filter" id="globalTraderFilter3" onchange="onTraderFilterChange()"></select>
+          <select class="trader-filter" id="globalAccountScope3" onchange="onAccountScopeChange()"></select>
         </div>
       </div>
       <div class="card tilt fs-target" data-fs-label="Calendar">
@@ -3310,6 +3321,7 @@ setTimeout(function(){
         </div>
         <div class="topbar-actions">
           <select class="trader-filter" id="globalTraderFilter4" onchange="onTraderFilterChange()"></select>
+          <select class="trader-filter" id="globalAccountScope4" onchange="onAccountScopeChange()"></select>
           <button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a Trade</button>
         </div>
       </div>
@@ -3355,6 +3367,7 @@ setTimeout(function(){
         </div>
         <div class="topbar-actions">
           <select class="trader-filter" id="globalTraderFilter5" onchange="onTraderFilterChange()"></select>
+          <select class="trader-filter" id="globalAccountScope5" onchange="onAccountScopeChange()"></select>
         </div>
       </div>
       <div class="grid">
@@ -3668,6 +3681,29 @@ setTimeout(function(){
 
         <div id="pfComplianceWrap" style="align-self:start;position:sticky;top:20px;"></div>
       </div>
+    </div>
+
+    <!-- PROP FIRM RISK CONSOLE -->
+    <div class="view" id="view-propfirmrisk">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Prop Risk Console</h2>
+          <div class="page-sub">One challenge's balance, drawdown floor and daily-loss ceiling — live, on one instrument panel.</div>
+        </div>
+      </div>
+      <div class="pf-account-switch" id="pfRiskAccountSwitch"></div>
+      <div id="pfRiskBody"></div>
+    </div>
+
+    <!-- PROP FIRM PAYOUTS & COMPARE -->
+    <div class="view" id="view-propfirmpayout">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Prop Payouts &amp; Compare</h2>
+          <div class="page-sub">Every challenge side by side, plus when the next payout is actually likely to land.</div>
+        </div>
+      </div>
+      <div id="pfPayoutBody"></div>
     </div>
 
     <!-- SESSION -->
@@ -4286,7 +4322,7 @@ const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite' };
 // Rooms held back on the Free tier — same lock-badge/tease mechanism as the
 // Proving Ground demo lock, just a shorter, less restrictive list since these
 // are real invited accounts, not anonymous trials. Tune freely.
-const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm'];
+const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm','propfirmrisk','propfirmpayout'];
 // Rooms held back until Elite specifically (blocks Free AND Pro).
 const ELITE_LOCKED_VIEWS = ['team'];
 function isFreeTier(){ return !isDemoMode && userTier === 'free'; }
@@ -4311,6 +4347,55 @@ function resetMoodChoices(preselected){
 }
 let calViewDate = new Date();
 let activeTraderFilter = 'all';
+// ============ ACCOUNT SCOPE (separates Personal from Prop Firm everywhere) ============
+// 'personal' (default), 'all' (combined), or a specific prop firm account id.
+// Drives filteredTrades()/renderOrders() so the main Overview/Analytics/
+// Journal/Order Book numbers and equity curve never silently blend a prop
+// firm challenge's P/L into the personal account's stats — most traders
+// want those kept apart since they're different money with different rules.
+// Not persisted to state on purpose (mirrors activeTraderFilter): it's a
+// view choice, reset to Personal on every fresh load.
+let activeAccountScope = 'personal';
+function accountScopeLabel(scope){
+  if(scope==='all') return 'All Accounts';
+  if(scope==='personal' || !scope) return 'Personal';
+  const pf = getPropFirm(scope);
+  return pf ? ('🏛️ '+(pf.firmName||'Unnamed account')) : 'Prop Firm (removed)';
+}
+function renderAccountScopeOptions(){
+  const opts = ['<option value="personal">Personal</option>']
+    .concat((state.propFirms||[]).filter(pf=>pf.firmName || pf.startingBalance).map(pf=>`<option value="${pf.id}">🏛️ ${escapeHtml(pf.firmName||'Unnamed account')}</option>`))
+    .concat(['<option value="all">All Accounts (combined)</option>']);
+  ['globalAccountScope','globalAccountScope2','globalAccountScope3','globalAccountScope4','globalAccountScope5'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = opts.join('');
+    // If the previously active scope was a specific prop firm account that
+    // got deleted, fall back to Personal rather than silently landing on
+    // whatever the browser picks.
+    if(![...el.options].some(o=>o.value===activeAccountScope)) activeAccountScope = 'personal';
+    el.value = activeAccountScope;
+  });
+}
+function onAccountScopeChange(){
+  const evtEl = document.activeElement;
+  activeAccountScope = evtEl && evtEl.value ? evtEl.value : 'personal';
+  ['globalAccountScope','globalAccountScope2','globalAccountScope3','globalAccountScope4','globalAccountScope5'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = activeAccountScope;
+  });
+  renderAll();
+}
+// True if a trade/order's account tag belongs to the currently active scope.
+// Treats the legacy generic "propfirm" tag (older SciFe-logged trades, before
+// per-account ids existed) as belonging to every non-personal scope so it
+// never silently vanishes from view.
+function accountMatchesScope(acct){
+  const a = acct || 'personal';
+  if(activeAccountScope==='all') return true;
+  if(activeAccountScope==='personal') return a==='personal';
+  return a===activeAccountScope || a==='propfirm';
+}
 const STRAT_TAG_COLORS = {
   breakout:'#2dd4bf', reversal:'#f43f5e', trend:'#22c55e', scalp:'#8b90a0', news:'#34d399', range:'#565b6c', notes:'#a78bfa'
 };
@@ -4993,7 +5078,7 @@ const DEMO_EMAIL_KEY = 'ghostDiscipline_demoEmail';
 const DEMO_STATE_KEY = 'ghostDiscipline_demoState';
 const DEMO_FP_KEY = 'ghostDiscipline_deviceFp';
 // Rooms that stay locked during the trial — full arsenal is reserved for real access.
-const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','journal','about','brief','stratnotes','backtest'];
+const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','propfirmrisk','propfirmpayout','journal','about','brief','stratnotes','backtest'];
 
 // Lightweight, dependency-free device fingerprint (canvas + WebGL + hardware
 // signals hashed together). This raises the bar against casual repeat-trial
@@ -5266,7 +5351,7 @@ function applyTierLocks(){
   });
 }
 function showTierLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team' };
+  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team' };
   const label = labels[view] || 'This room';
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
   document.getElementById('demoLockedFeatureTitle').textContent = eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`;
@@ -5325,7 +5410,7 @@ function openDemoTease(title, copy){
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 function showLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
+  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
   const label = labels[view] || 'This room';
   openDemoTease(`${label} is for real accounts`, `The Proving Ground tests discipline, not the full arsenal — ${label} unlocks the moment you're in for real.`);
 }
@@ -6983,6 +7068,8 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='journal') renderJournal();
     if(btn.dataset.view==='orders') renderOrders();
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
+    if(btn.dataset.view==='propfirmrisk') { renderPropFirmRisk(); }
+    if(btn.dataset.view==='propfirmpayout') { renderPropFirmPayouts(); }
     if(btn.dataset.view==='stratnotes') renderStrategyNotes();
     if(btn.dataset.view==='backtest') renderBacktestView();
     if(btn.dataset.view==='team') renderTeamView();
@@ -7020,8 +7107,9 @@ function liveTrades(){
   return state.trades.filter(t=>!t.backtestSession);
 }
 function filteredTrades(){
-  if(activeTraderFilter==='all') return liveTrades();
-  return liveTrades().filter(t=>t.trader===activeTraderFilter);
+  let trades = liveTrades().filter(t=>accountMatchesScope(t.account));
+  if(activeTraderFilter!=='all') trades = trades.filter(t=>t.trader===activeTraderFilter);
+  return trades;
 }
 // Raw amount, in the trade's OWN account currency — exactly what the trader
 // typed in at the time (a $13 prop win stays 13, in $). Pair this with
@@ -7037,6 +7125,23 @@ function pnlOfRaw(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -
 // total. Falls back to the raw amount only when a live FX rate genuinely
 // isn't available yet (e.g. first load, offline) — a background fetch is
 // kicked off and the view re-renders automatically once the rate lands.
+// When the active scope is one specific prop firm account, every trade in
+// that scope shares that one account's own currency by definition — so the
+// equity curve and headline stats should show real, unconverted numbers in
+// THAT currency, not the personal-currency-converted total. 'personal' and
+// 'all' keep the existing pnlOf()/curSym() behavior (needed because 'all'
+// can span multiple currencies and must convert to add them together).
+function scopeCurSym(){
+  if(activeAccountScope!=='personal' && activeAccountScope!=='all'){
+    const pf = getPropFirm(activeAccountScope);
+    if(pf) return (CURRENCIES[pf.currency] || CURRENCIES[state.rules.currency] || CURRENCIES.USD).symbol;
+  }
+  return curSym();
+}
+function scopePnlOf(t){
+  if(activeAccountScope!=='personal' && activeAccountScope!=='all') return pnlOfRaw(t);
+  return pnlOf(t);
+}
 function pnlOf(t){
   const raw = pnlOfRaw(t);
   const fromCcy = tradeAcctCcy(t);
@@ -7130,6 +7235,7 @@ function renderAll(){
   renderDemoStatus();
   updateCurrencyLabels();
   renderTraderFilterOptions();
+  renderAccountScopeOptions();
   renderDashboard(); renderHeroStats(); renderMomentumBanner(); renderDailyChecklist(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
   renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
@@ -7137,6 +7243,8 @@ function renderAll(){
   renderOrders(); renderTradeLogOverview(); renderTraderIdentity(); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); renderStrategyNotes();
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
+  if(document.getElementById('view-propfirmrisk') && document.getElementById('view-propfirmrisk').classList.contains('active')) renderPropFirmRisk();
+  if(document.getElementById('view-propfirmpayout') && document.getElementById('view-propfirmpayout').classList.contains('active')) renderPropFirmPayouts();
 }
 /* ============ MOMENTUM BANNER (streak status + weekly trend, one sentence) ============ */
 function renderMomentumBanner(){
@@ -7518,6 +7626,9 @@ async function savePropFirm(){
   renderPfAccountSwitch();
   renderPropFirmCompliance();
   renderOrderAccountOptions();
+  renderAccountScopeOptions();
+  if(document.getElementById('view-propfirmrisk') && document.getElementById('view-propfirmrisk').classList.contains('active')) renderPropFirmRisk();
+  if(document.getElementById('view-propfirmpayout') && document.getElementById('view-propfirmpayout').classList.contains('active')) renderPropFirmPayouts();
   updateOrderRRPreview();
   showToast('Prop firm rules saved');
 }
@@ -7529,20 +7640,25 @@ async function savePropFirm(){
 // trade/order tags, daily-loss math) already keys off each trade's own
 // account id, so nothing needs to "know" which one is active except this UI.
 function renderPfAccountSwitch(){
-  const wrap = document.getElementById('pfAccountSwitch');
-  if(!wrap) return;
   ensureAtLeastOnePfAccount();
-  wrap.innerHTML = state.propFirms.map(pf=>`
+  const html = state.propFirms.map(pf=>`
     <div class="pf-account-chip ${pf.id===activePfId?'active':''}" onclick="selectPropFirmAccount('${pf.id}')">
       <span>🏛️ ${escapeHtml(pf.firmName || 'Unnamed account')}</span>
       ${state.propFirms.length>1 ? `<button onclick="event.stopPropagation(); removePropFirmAccount('${pf.id}')" title="Remove account">✕</button>` : ''}
     </div>`).join('') + `<button class="pf-account-add" onclick="addPropFirmAccount()">+ Add Account</button>`;
+  // Same account switcher is shown on Compliance AND the Risk Console — both
+  // stay in sync since they share the one activePfId.
+  ['pfAccountSwitch','pfRiskAccountSwitch'].forEach(id=>{
+    const wrap = document.getElementById(id);
+    if(wrap) wrap.innerHTML = html;
+  });
 }
 function selectPropFirmAccount(id){
   activePfId = id;
   renderPfAccountSwitch();
   renderPropFirmForm();
   renderPropFirmCompliance();
+  renderPropFirmRisk();
 }
 async function addPropFirmAccount(){
   const acc = blankPropFirmAccount();
@@ -7577,8 +7693,12 @@ function pfDailyPnlSeries(pf){
   // Account: <that firm's name>) count toward its challenge compliance —
   // personal trades, and trades logged against a different prop firm account,
   // shouldn't be able to trip (or pad) this account's daily loss / drawdown /
-  // profit target math.
-  filteredTrades().filter(t=>t.account===pf.id).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOfRaw(t); });
+  // profit target math. Deliberately reads liveTrades() rather than
+  // filteredTrades(): the account-scope selector (Personal/All/a specific
+  // account) is a separate, page-level view choice and must never hide this
+  // account's own trades from its own compliance math, even when the rest of
+  // the app is currently scoped to "Personal".
+  liveTrades().filter(t=>t.account===pf.id && (activeTraderFilter==='all' || t.trader===activeTraderFilter)).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOfRaw(t); });
   return Object.keys(byDay).sort().map(date=>({date, pnl: byDay[date]}));
 }
 
@@ -7795,6 +7915,233 @@ function renderPropFirmCompliance(){
         </div>
         ${m.consistencyRulePct ? pfBar(m.consistencyPct, m.consistencyBreach?'fail':'') : ''}
       </div>` : ''}
+    </div>
+  `;
+}
+
+// ============ PROP RISK CONSOLE (separate page: dedicated instrument panel
+// for ONE prop firm account — balance vs its actual breach floors, not the
+// bar-chart summary Compliance shows) ============
+function renderPropFirmRisk(){
+  renderPfAccountSwitch();
+  const body = document.getElementById('pfRiskBody');
+  if(!body) return;
+  const pf = activePropFirm();
+  const m = pf ? computePropFirmMetrics(pf) : null;
+  if(!pf || !m){
+    body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph">🎛️</span>Set up a challenge in Prop Firm Compliance first — starting balance and at least one risk limit — and its risk console will build itself here.</div></div>`;
+    return;
+  }
+  const sym = pfCurSym(pf);
+  const series = pfDailyPnlSeries(pf);
+  const ddFloor = m.maxOverallDrawdownDollar!=null ? (pf.drawdownType==='trailing' ? m.peak - m.maxOverallDrawdownDollar : m.start - m.maxOverallDrawdownDollar) : null;
+  const targetLevel = m.profitTargetDollar!=null ? m.start + m.profitTargetDollar : null;
+  const distanceToBreach = ddFloor!=null ? Math.max(0, m.currentBalance - ddFloor) : null;
+  const dailyRemaining = m.maxDailyLossDollar!=null ? Math.max(0, m.maxDailyLossDollar - m.todayLoss) : null;
+
+  const ddPct = m.maxOverallDrawdownDollar ? Math.min(1, m.maxDrawdownHit/m.maxOverallDrawdownDollar) : 0;
+  const dlPct = m.maxDailyLossDollar ? Math.min(1, m.todayLoss/m.maxDailyLossDollar) : 0;
+  const units = [
+    { id:'pfrDD', pct:ddPct, raw: m.maxOverallDrawdownDollar?ddPct*100:0,
+      cls: ddPct>=1?'bad':(ddPct>=0.7?'warn':'good'),
+      format:(v)=> m.maxOverallDrawdownDollar ? `${v.toFixed(0)}%` : '—', cap:'Overall drawdown used' },
+    { id:'pfrDL', pct:dlPct, raw: m.maxDailyLossDollar?dlPct*100:0,
+      cls: dlPct>=1?'bad':(dlPct>=0.7?'warn':'good'),
+      format:(v)=> m.maxDailyLossDollar ? `${v.toFixed(0)}%` : '—', cap:"Today's daily loss used" },
+  ];
+
+  body.innerHTML = `
+    <div class="pf-risk-hero grid" style="grid-template-columns:1.4fr 1fr;gap:16px;">
+      <div class="card tilt">
+        <h2>Balance vs <span class="accent">Breach Floors</span></h2>
+        <div class="hint" style="margin:-4px 0 12px;">${escapeHtml(pf.firmName||'This account')} · ${PF_PHASE_LABELS[m.phase]} · every trade tagged to this account only.</div>
+        <div id="pfRiskChart"></div>
+      </div>
+      <div class="card tilt">
+        <h2>Risk <span class="accent">Dials</span></h2>
+        <div class="gauge-row" id="pfRiskGaugeRow" style="justify-content:space-around;"></div>
+        <div class="pf-metric" style="margin-top:14px;">
+          <div class="pf-metric-head">
+            <div><div class="pf-metric-title">Room left before breach</div><div class="pf-metric-sub">Balance to the drawdown floor</div></div>
+            <div class="pf-badge ${distanceToBreach==null?'off':(ddPct>=0.7?'warn':'pass')}">${distanceToBreach!=null ? sym+shortMoney(distanceToBreach) : 'No limit set'}</div>
+          </div>
+        </div>
+        <div class="pf-metric" style="margin-bottom:0;">
+          <div class="pf-metric-head">
+            <div><div class="pf-metric-title">Daily loss room left, today</div><div class="pf-metric-sub">Resets at your next trading day</div></div>
+            <div class="pf-badge ${dailyRemaining==null?'off':(dlPct>=0.7?'warn':'pass')}">${dailyRemaining!=null ? sym+shortMoney(dailyRemaining) : 'No limit set'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tilt" style="margin-top:16px;">
+      <h2>Risk <span class="accent">Ledger</span></h2>
+      <div class="hint" style="margin:-4px 0 10px;">Every trading day on this account — balance and drawdown-from-peak at the close of each day.</div>
+      ${series.length===0 ? '<div class="empty-state"><span class="glyph">📒</span>No trades logged on this account yet.</div>' : `
+      <div class="lead-table-wrap"><table class="lead-table"><thead><tr><th>Date</th><th>Day P/L</th><th>Balance</th><th>Drawdown from peak</th></tr></thead><tbody>
+      ${(()=>{
+        let bal = m.start, peak = m.start, rows = '';
+        series.forEach(d=>{
+          bal += d.pnl; if(bal>peak) peak = bal;
+          const dd = peak - bal;
+          const dateLbl = new Date(d.date+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+          rows += `<tr><td>${dateLbl}</td><td style="color:${d.pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${d.pnl>=0?'+':'-'}${sym}${Math.abs(d.pnl).toFixed(2)}</td><td>${sym}${bal.toFixed(2)}</td><td>${dd>0.005 ? sym+dd.toFixed(2) : '—'}</td></tr>`;
+        });
+        return rows;
+      })()}
+      </tbody></table></div>`}
+    </div>
+  `;
+
+  renderPropFirmRiskChart(pf, m, series, ddFloor, targetLevel);
+  units.forEach(u=>{ lastGaugeUnits[u.id] = u; });
+  const gaugeRow = document.getElementById('pfRiskGaugeRow');
+  if(gaugeRow){
+    gaugeRow.innerHTML = units.map(u=>`
+      <div class="gauge-unit">
+        <div class="gauge-dial-wrap" onclick="kickGauge('${u.id}')" title="Tap the dial">
+          ${ringGauge(0, u.cls, u.id)}
+          <div class="gauge-val" id="val-${u.id}"><span></span></div>
+        </div>
+        <div class="gauge-cap">${u.cap}</div>
+      </div>`).join('');
+    units.forEach(u=>animateGaugeTo(u));
+  }
+}
+
+// The distinguishing visual of the Risk Console: balance plotted day-by-day
+// against its OWN breach floors (drawdown floor as a red zone, profit target
+// as a gold line) — not just a bare cumulative-P/L ribbon like the personal
+// equity curve, because on a prop account the floor matters as much as the total.
+function renderPropFirmRiskChart(pf, m, series, ddFloor, targetLevel){
+  const el = document.getElementById('pfRiskChart');
+  if(!el) return;
+  const sym = pfCurSym(pf);
+  if(series.length===0){
+    el.innerHTML = '<div class="empty-state" style="padding:30px 10px;"><span class="glyph">🎛️</span>No trades on this account yet — the panel lights up once you log the first one.</div>';
+    return;
+  }
+  let bal = m.start;
+  const pts = [{x:0, y:bal}];
+  series.forEach(d=>{ bal += d.pnl; pts.push({x:pts.length, y:bal}); });
+
+  const W=640, H=260, padL=54, padR=14, padT=16, padB=26;
+  const allY = pts.map(p=>p.y).concat(ddFloor!=null?[ddFloor]:[]).concat(targetLevel!=null?[targetLevel]:[]);
+  let yMin = Math.min(...allY), yMax = Math.max(...allY);
+  const span = (yMax-yMin) || Math.max(1, m.start*0.05);
+  yMin -= span*0.12; yMax += span*0.12;
+  const xToPx = i => padL + (i/(pts.length-1||1))*(W-padL-padR);
+  const yToPx = v => padT + (1-(v-yMin)/(yMax-yMin))*(H-padT-padB);
+
+  const linePath = pts.map((p,i)=>`${i===0?'M':'L'}${xToPx(i).toFixed(1)},${yToPx(p.y).toFixed(1)}`).join(' ');
+  const areaPath = linePath + ` L${xToPx(pts.length-1).toFixed(1)},${yToPx(yMin).toFixed(1)} L${xToPx(0).toFixed(1)},${yToPx(yMin).toFixed(1)} Z`;
+
+  const danger = ddFloor!=null ? `
+    <rect x="${padL}" y="${yToPx(ddFloor).toFixed(1)}" width="${W-padL-padR}" height="${(H-padB-yToPx(ddFloor)).toFixed(1)}" fill="var(--loss)" opacity="0.10"/>
+    <line x1="${padL}" y1="${yToPx(ddFloor).toFixed(1)}" x2="${W-padR}" y2="${yToPx(ddFloor).toFixed(1)}" stroke="var(--loss-bright)" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="${W-padR}" y="${(yToPx(ddFloor)-5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--loss-bright)">Breach floor · ${sym}${ddFloor.toFixed(0)}</text>` : '';
+  const target = targetLevel!=null ? `
+    <line x1="${padL}" y1="${yToPx(targetLevel).toFixed(1)}" x2="${W-padR}" y2="${yToPx(targetLevel).toFixed(1)}" stroke="var(--gold-bright)" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="${W-padR}" y="${(yToPx(targetLevel)-5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--gold-bright)">Target · ${sym}${targetLevel.toFixed(0)}</text>` : '';
+  const startLine = `<line x1="${padL}" y1="${yToPx(m.start).toFixed(1)}" x2="${W-padR}" y2="${yToPx(m.start).toFixed(1)}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="2,4"/>`;
+
+  el.innerHTML = `
+  <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
+    <defs>
+      <linearGradient id="pfrArea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${m.currentBalance>=m.start?'var(--win)':'var(--loss)'}" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="${m.currentBalance>=m.start?'var(--win)':'var(--loss)'}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${danger}${target}${startLine}
+    <path d="${areaPath}" fill="url(#pfrArea)"/>
+    <path d="${linePath}" fill="none" stroke="${m.currentBalance>=m.start?'var(--win-bright)':'var(--loss-bright)'}" stroke-width="2.2"/>
+    ${pts.map((p,i)=>i===pts.length-1?`<circle cx="${xToPx(i).toFixed(1)}" cy="${yToPx(p.y).toFixed(1)}" r="3.4" fill="${m.currentBalance>=m.start?'var(--win-bright)':'var(--loss-bright)'}"/>`:'').join('')}
+    <text x="${padL}" y="14" font-size="10" fill="var(--text-dim)">${sym}${yMax.toFixed(0)}</text>
+    <text x="${padL}" y="${H-padB+16}" font-size="10" fill="var(--text-dim)">${sym}${yMin.toFixed(0)}</text>
+  </svg>`;
+}
+
+// ============ PROP PAYOUTS & COMPARE (separate page: every challenge side
+// by side, plus a payout-date projection for funded accounts) ============
+function renderPropFirmPayouts(){
+  const body = document.getElementById('pfPayoutBody');
+  if(!body) return;
+  const accounts = (state.propFirms||[]).filter(pf=>pf.startingBalance);
+  if(accounts.length===0){
+    body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph">🧾</span>No configured challenges yet — set one up in Prop Firm Compliance and it'll appear here for comparison and payout projection.</div></div>`;
+    return;
+  }
+  const rows = accounts.map(pf=>{
+    const m = computePropFirmMetrics(pf);
+    if(!m) return null;
+    const sym = pfCurSym(pf);
+    const series = pfDailyPnlSeries(pf);
+    const activeDays = series.filter(d=>d.pnl!==0).length;
+    const avgDaily = activeDays ? (m.totalProfit/activeDays) : 0;
+    let projection = '—';
+    if(m.phase==='funded'){
+      if(m.payoutThresholdHit) projection = 'Payout threshold reached — request when ready';
+      else if(m.payoutThresholdDollar!=null && avgDaily>0){
+        const remaining = m.payoutThresholdDollar - m.totalProfit;
+        const days = Math.ceil(remaining/avgDaily);
+        projection = `~${days} trading day${days===1?'':'s'} to next payout at current pace`;
+      } else projection = m.payoutThresholdDollar!=null ? 'Needs a positive pace to project' : 'No payout threshold set';
+    } else {
+      if(m.profitTargetHit) projection = 'Target hit — awaiting next phase';
+      else if(m.profitTargetDollar!=null && avgDaily>0){
+        const remaining = m.profitTargetDollar - m.totalProfit;
+        const days = Math.ceil(remaining/avgDaily);
+        projection = `~${days} trading day${days===1?'':'s'} to target at current pace`;
+      } else projection = avgDaily<=0 ? 'Needs a positive pace to project' : 'No profit target set';
+    }
+    return { pf, m, sym, projection };
+  }).filter(Boolean);
+
+  const totalCombined = rows.reduce((s,r)=> s + (r.m.totalProfit * (getCachedFxRate(r.pf.currency, state.rules.currency) ?? 1)), 0);
+
+  body.innerHTML = `
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:16px;">
+      <div class="hero-stat"><div class="hero-label">Active challenges</div><div class="hero-value">${rows.length}</div></div>
+      <div class="hero-stat"><div class="hero-label">Funded accounts</div><div class="hero-value">${rows.filter(r=>r.m.phase==='funded').length}</div></div>
+      <div class="hero-stat"><div class="hero-label">Passing right now</div><div class="hero-value">${rows.filter(r=>r.m.overallStatus==='pass').length} / ${rows.length}</div></div>
+      <div class="hero-stat ${totalCombined>=0?'pos':'neg'}"><div class="hero-label">Combined prop P/L, in ${state.rules.currency||'USD'}</div><div class="hero-value">${totalCombined>=0?'+':'-'}${curSym()}${shortMoney(Math.abs(totalCombined))}</div></div>
+    </div>
+
+    <div class="card tilt">
+      <h2>Challenge <span class="accent">Comparison</span></h2>
+      <div class="lead-table-wrap"><table class="lead-table">
+        <thead><tr><th>Account</th><th>Phase</th><th>Balance</th><th>Profit</th><th>Drawdown used</th><th>Daily loss used (today)</th><th>Trading days</th><th>Status</th></tr></thead>
+        <tbody>
+        ${rows.map(r=>{
+          const ddPct = r.m.maxOverallDrawdownDollar ? Math.min(100, r.m.maxDrawdownHit/r.m.maxOverallDrawdownDollar*100) : null;
+          const dlPct = r.m.maxDailyLossDollar ? Math.min(100, r.m.todayLoss/r.m.maxDailyLossDollar*100) : null;
+          return `<tr style="cursor:pointer;${r.pf.id===activePfId?'background:rgba(255,255,255,0.03);':''}" onclick="selectPropFirmAccount('${r.pf.id}'); showToast('Switched to '+${JSON.stringify(r.pf.firmName||'that account')}); const b=document.querySelector('[data-view=\\'propfirmrisk\\']'); if(b) b.click();">
+            <td>🏛️ ${escapeHtml(r.pf.firmName||'Unnamed account')}</td>
+            <td>${PF_PHASE_LABELS[r.m.phase]}</td>
+            <td>${r.sym}${r.m.currentBalance.toFixed(2)}</td>
+            <td style="color:${r.m.totalProfit>=0?'var(--win-bright)':'var(--loss-bright)'}">${r.m.totalProfit>=0?'+':'-'}${r.sym}${Math.abs(r.m.totalProfit).toFixed(2)}</td>
+            <td>${ddPct!=null ? ddPct.toFixed(0)+'%' : '—'}</td>
+            <td>${dlPct!=null ? dlPct.toFixed(0)+'%' : '—'}</td>
+            <td>${r.m.tradingDays}${r.m.minTradingDays?'/'+r.m.minTradingDays:''}</td>
+            <td><span class="pf-badge ${r.m.overallStatus}">${r.m.overallStatus==='pass'?'On track':r.m.overallStatus==='warn'?'Watch':'Breached'}</span></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card tilt" style="margin-top:16px;">
+      <h2>Payout <span class="accent">Projection</span></h2>
+      <div class="hint" style="margin:-4px 0 12px;">Straight-line projection from each account's average P/L per active trading day — a rough runway, not a promise.</div>
+      ${rows.map(r=>`
+        <div class="pf-metric" style="margin-bottom:10px;">
+          <div class="pf-metric-head">
+            <div><div class="pf-metric-title">🏛️ ${escapeHtml(r.pf.firmName||'Unnamed account')}</div><div class="pf-metric-sub">${r.projection}</div></div>
+            ${r.m.phase==='funded' ? `<div class="pf-badge off">${r.m.profitSplitPct?r.m.profitSplitPct+'% split':'Split not set'}</div>` : ''}
+          </div>
+        </div>`).join('')}
     </div>
   `;
 }
@@ -9590,9 +9937,11 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const totalEl = document.getElementById(totalId);
   if(!container) return;
   const trades = filteredTrades();
+  const subElEmpty = subId ? document.getElementById(subId) : null;
+  if(subElEmpty) subElEmpty.textContent = 'cumulative P/L · ' + accountScopeLabel(activeAccountScope);
   if(trades.length===0){
-    container.innerHTML = '<div class="empty-state"><span class="glyph">📈</span>No trades yet — your equity curve will build as you log trades.</div>';
-    if(totalEl){ totalEl.textContent=curSym()+'0'; totalEl.className='equity-total'; }
+    container.innerHTML = `<div class="empty-state"><span class="glyph">📈</span>No trades yet on ${escapeHtml(accountScopeLabel(activeAccountScope))} — your equity curve will build as you log trades.</div>`;
+    if(totalEl){ totalEl.textContent=scopeCurSym()+'0'; totalEl.className='equity-total'; }
     setEquityStats([]);
     setEquityFooter([]);
     return;
@@ -9601,7 +9950,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const points = [{x:0,y:0,label:'Start'}];
   let peak = 0, maxDD = 0;
   trades.forEach((t,i)=>{
-    cum += pnlOf(t);
+    cum += scopePnlOf(t);
     peak = Math.max(peak, cum);
     maxDD = Math.max(maxDD, peak-cum);
     points.push({x:i+1,y:cum,label:t.date});
@@ -9668,7 +10017,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
     const val = maxY - niceStep*g;
     const gy = sy(val);
     floorLines += `<line x1="${padL}" y1="${gy}" x2="${padL+plotW}" y2="${gy}" stroke="var(--bronze-bright)" stroke-opacity="0.09" stroke-width="0.6" stroke-dasharray="1,5"/>`;
-    const lbl = (val>=0?'':'-') + curSym() + shortMoney(val);
+    const lbl = (val>=0?'':'-') + scopeCurSym() + shortMoney(val);
     axisLabels += `<text x="${padL-8}" y="${gy+3.5}" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="9.5" font-weight="600" letter-spacing="0.03em" fill="var(--bronze-bright)" fill-opacity="0.85">${lbl}</text>`;
   }
   for(let g=0; g<=6; g++){
@@ -9815,7 +10164,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       let nearest = 0, best = Infinity;
       topPts.forEach((p,i)=>{ const d = Math.abs(p[0]-loc.x); if(d<best){best=d; nearest=i;} });
       const val = points[nearest].y;
-      showTip(e.clientX, e.clientY, `<b>${points[nearest].label}</b><br>${val>=0?('+'+curSym()):('-'+curSym())}${shortMoney(val)}`);
+      showTip(e.clientX, e.clientY, `<b>${points[nearest].label}</b><br>${val>=0?('+'+scopeCurSym()):('-'+scopeCurSym())}${shortMoney(val)}`);
     });
     hitRect.addEventListener('mouseleave', hideTip);
   }
@@ -9826,7 +10175,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
     totalEl.className = 'equity-total ' + (totalPnl>=0?'pos':'neg');
   }
   const subEl = document.getElementById(subId);
-  if(subEl) subEl.textContent = `${trades.length} trade${trades.length!==1?'s':''} · ${activeTraderFilter==='all'?'all traders':traderName(activeTraderFilter)}`;
+  if(subEl) subEl.textContent = `${trades.length} trade${trades.length!==1?'s':''} · ${activeTraderFilter==='all'?'all traders':traderName(activeTraderFilter)} · ${accountScopeLabel(activeAccountScope)}`;
   setEquityStats(trades, maxDD);
   setEquityFooter(trades);
 }
@@ -11141,7 +11490,7 @@ function renderTraderIdentity(){
 function renderOrders(){
   const list = document.getElementById('ordersList');
   const countEl = document.getElementById('ordersCount');
-  const orders = (state.psychology.orders||[]).filter(o=>activeTraderFilter==='all' || o.trader===activeTraderFilter).slice().reverse();
+  const orders = (state.psychology.orders||[]).filter(o=>(activeTraderFilter==='all' || o.trader===activeTraderFilter) && accountMatchesScope(o.account)).slice().reverse();
   if(countEl) countEl.textContent = orders.length ? `${orders.length} pending` : '';
   if(list){
     list.innerHTML = orders.length
@@ -11154,7 +11503,7 @@ function renderOrdersOverview(orders){
   const list = document.getElementById('ordersListOverview');
   const moreEl = document.getElementById('ordersOverviewMore');
   if(!list) return;
-  if(!orders) orders = (state.psychology.orders||[]).filter(o=>activeTraderFilter==='all' || o.trader===activeTraderFilter).slice().reverse();
+  if(!orders) orders = (state.psychology.orders||[]).filter(o=>(activeTraderFilter==='all' || o.trader===activeTraderFilter) && accountMatchesScope(o.account)).slice().reverse();
   if(orders.length===0){
     list.innerHTML = '<div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div>';
     if(moreEl) moreEl.style.display = 'none';
