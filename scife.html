@@ -152,6 +152,7 @@ body{position:relative;}
 .hint{font-size:12px;color:var(--slate-dim);margin-top:6px;line-height:1.5;}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
 .switch{position:relative;width:42px;height:24px;border-radius:99px;background:var(--steel-hi);cursor:pointer;transition:.2s;flex:none;}
+.switch.locked{opacity:.45;cursor:not-allowed;}
 .switch.on{background:linear-gradient(90deg, var(--bronze), var(--gold));box-shadow:0 0 10px rgba(18,185,136,0.5);}
 .switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,0.4);}
 .switch.on::after{left:21px;}
@@ -1745,6 +1746,13 @@ setTimeout(function(){
         <select id="settingsModelSelect" onchange="onModelChange('settings')"></select>
         <div class="hint" id="settingsScannerNote"></div>
       </div>
+      <div class="toggle-row" id="webSearchToggleRow" style="display:none;">
+        <div>
+          <div style="font-weight:500;font-size:13.5px;">Live web search</div>
+          <div class="hint" style="margin-top:2px;" id="webSearchHint">Lets SciFe search the web for breaking news or macro context beyond the scheduled calendar. Anthropic (Claude) models only — uses your own API key, so each search is a normal billed request.</div>
+        </div>
+        <div class="switch" id="settingsWebSearchSwitch" onclick="this.classList.toggle('on')"></div>
+      </div>
     </div>
 
     <div class="settings-pane" id="paneVoice" role="tabpanel">
@@ -1772,7 +1780,7 @@ setTimeout(function(){
           <div style="font-weight:500;font-size:13.5px;">Memory</div>
           <div class="hint" style="margin-top:2px;" id="memoryCountHint">0 notes remembered</div>
         </div>
-        <button class="btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;border-radius:9px;" onclick="clearMemory()">Clear</button>
+        <button class="btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;border-radius:9px;" id="memoryClearBtn" onclick="clearMemory()">Clear</button>
       </div>
     </div>
 
@@ -1852,11 +1860,26 @@ const SHARED_PROVIDER = 'google';
 const SHARED_MODEL = 'gemini-3.5-flash-lite';
 const SHARED_KEY = 'AQ.Ab8RN6JeNHwWtI7ZIbzNp8i8uzYP4gJfMgPGst3S-9e5fReqAQ';
 const FREE_DAILY_CHAT_LIMIT = 15;   // Free tier: chats/day on the shared key
-let userTier = 'free';              // 'free' | 'pro' | 'elite' — set from trader_data.tier in loadTraderRow()
+let userTier = 'free';              // 'free' | 'pro' | 'elite' | 'premium' — set from trader_data.tier in loadTraderRow()
 function telegramUpgradeLink(pkg){
   const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
   return 'https://t.me/GhostTradersEmpire?text=' + encodeURIComponent(text);
 }
+/* ============ TIER GATES ============
+   Four tiers, lowest to highest. 'premium' sits above 'elite' and is meant
+   to unlock strictly everything elite has plus whatever is elite-only below
+   — so every gate checks "at least elite" rather than listing both tiers by
+   name, and adding a fifth tier later only means inserting it in this array.
+   Same honesty note as the scan-limit/admin-password system: this is a
+   client-side check with no server enforcement, so it stops the ordinary
+   upgrade path, not a trader editing `userTier` in devtools. */
+const TIER_ORDER = ['free','pro','elite','premium'];
+function tierAtLeast(t){ return TIER_ORDER.indexOf(userTier) >= TIER_ORDER.indexOf(t); }
+function hasEliteAccess(){ return tierAtLeast('elite'); }   // elite or premium
+function isPremiumTier(){ return userTier === 'premium'; }
+// Chat-image daily cap: unchanged (3/day) for free/pro/elite, unlimited on premium.
+function chatImageDailyLimitForTier(){ return isPremiumTier() ? Infinity : 3; }
+function chatImageDailyLimitLabel(){ const n = chatImageDailyLimitForTier(); return n === Infinity ? '∞' : String(n); }
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
 let recognition = null;
@@ -2403,6 +2426,24 @@ function onProviderChange(scope){
     }).join('');
     if(sel.value === scife.provider && scife.model) modelSelect.value = scife.model;
   }
+  if(scope==='settings'){
+    const row = document.getElementById('webSearchToggleRow');
+    const hint = document.getElementById('webSearchHint');
+    const sw = document.getElementById('settingsWebSearchSwitch');
+    if(row) row.style.display = (sel.value === 'anthropic') ? 'flex' : 'none';
+    if(sel.value === 'anthropic' && hint && sw){
+      if(hasEliteAccess()){
+        hint.textContent = 'Lets SciFe search the web for breaking news or macro context beyond the scheduled calendar. Uses your own API key, so each search is a normal billed request.';
+        sw.classList.remove('locked');
+        sw.onclick = function(){ this.classList.toggle('on'); };
+      } else {
+        hint.innerHTML = `Elite/Premium feature. <a href="${telegramUpgradeLink('Elite')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">Upgrade</a> to let SciFe search the web for breaking news beyond the scheduled calendar.`;
+        sw.classList.add('locked');
+        sw.classList.remove('on');
+        sw.onclick = function(){ showToast('Live web search is an Elite/Premium feature'); };
+      }
+    }
+  }
   updateScannerNote(scope);
 }
 
@@ -2592,7 +2633,7 @@ async function loadTraderRow(){
   const { data, error } = await sb.from('trader_data').select('*').eq('user_id', currentUser.id).maybeSingle();
   if(error){ showToast('Could not load your journal: ' + (error.message||error.code)); return; }
   traderRow = data || {};
-  userTier = ['free','pro','elite'].includes(traderRow.tier) ? traderRow.tier : 'free';
+  userTier = TIER_ORDER.includes(traderRow.tier) ? traderRow.tier : 'free';
   const s = traderRow.scife || {};
   const provider = s.provider || 'google';
   // apiKeys is the new per-provider map; fall back to migrating an old
@@ -2610,7 +2651,11 @@ async function loadTraderRow(){
     voiceURI: s.voiceURI || '',
     usage: { scanCount: u.scanCount || 0, weekKey: u.weekKey || '', isAdmin: !!u.isAdmin, chatCount: u.chatCount || 0, chatDayKey: u.chatDayKey || '', imgCount: u.imgCount || 0, imgDayKey: u.imgDayKey || '' },
     chartMemory: (s.chartMemory && typeof s.chartMemory === 'object') ? s.chartMemory : {},
-    sigSessions: Array.isArray(s.sigSessions) ? s.sigSessions.filter(k=>SIGNAL_SESSIONS[k]) : []
+    sigSessions: Array.isArray(s.sigSessions) ? s.sigSessions.filter(k=>SIGNAL_SESSIONS[k]) : [],
+    // Live web search — Anthropic-only real capability (see callAnthropic).
+    // Off by default: it's an extra tool call on the trader's own API key,
+    // so it should be an explicit opt-in from Settings, not a silent default.
+    webSearch: !!s.webSearch
   };
   rolloverUsageWeek();
   updateScanBanner();
@@ -2712,7 +2757,7 @@ function renderAdminSection(){
   rolloverImgDay();
   hint.innerHTML = scife.usage.isAdmin
     ? 'Admin access is active on this account — Signal scans and chat images are unlimited.'
-    : `${scansRemaining()}/${SCAN_LIMIT_PER_WEEK} Signal scans left this week, ${chatImagesRemainingToday()}/${CHAT_IMAGE_DAILY_LIMIT} chat images left today. Enter the admin password for unlimited access.`;
+    : `${scansRemaining()}/${SCAN_LIMIT_PER_WEEK} Signal scans left this week, ${chatImagesRemainingToday()}/${chatImageDailyLimitLabel()} chat images left today. Enter the admin password for unlimited access.`;
   locked.style.display = scife.usage.isAdmin ? 'none' : 'block';
   unlocked.style.display = scife.usage.isAdmin ? 'block' : 'none';
 }
@@ -2797,10 +2842,9 @@ function updateChatQuotaBanner(){
 /* ============ DAILY CHAT-IMAGE LIMIT (3/day, unlimited for admin) ============
    Separate again from both counters above: this gates attaching an image to
    an ORDINARY chat message (not the Signal page's own chart upload, which
-   has its own 5/week limit and isn't touched by this). Gated purely on
-   isAdmin, same as the Signal scan limit — tier/shared-key don't factor in,
-   because the ask here was specifically "3 images/day unless admin". */
-const CHAT_IMAGE_DAILY_LIMIT = 3;
+   has its own 5/week limit and isn't touched by this). Admin is always
+   unlimited; beyond that the cap is tier-based — 3/day on free/pro/elite,
+   unlimited on premium (see chatImageDailyLimitForTier() above). */
 function rolloverImgDay(){
   const tk = todayKey();
   if(scife.usage.imgDayKey !== tk){ scife.usage.imgDayKey = tk; scife.usage.imgCount = 0; }
@@ -2808,7 +2852,7 @@ function rolloverImgDay(){
 function chatImagesRemainingToday(){
   if(scife.usage.isAdmin) return Infinity;
   rolloverImgDay();
-  return Math.max(0, CHAT_IMAGE_DAILY_LIMIT - (scife.usage.imgCount||0));
+  return Math.max(0, chatImageDailyLimitForTier() - (scife.usage.imgCount||0));
 }
 // Re-pulls usage before spending it, same reasoning as claimDailyChat — two
 // tabs/devices shouldn't be able to both slip an image through on a stale
@@ -2826,7 +2870,7 @@ async function claimDailyImage(){
   }
   rolloverImgDay();
   if(scife.usage.isAdmin) return true;
-  if((scife.usage.imgCount||0) >= CHAT_IMAGE_DAILY_LIMIT) return false;
+  if((scife.usage.imgCount||0) >= chatImageDailyLimitForTier()) return false;
   scife.usage.imgCount = (scife.usage.imgCount||0) + 1;
   await saveScife();
   updateChatImageQuotaHint();
@@ -2837,11 +2881,11 @@ function updateChatImageQuotaHint(){
   const btn = document.getElementById('chatAttachBtn');
   if(!el) return;
   const remaining = chatImagesRemainingToday();
-  if(scife.usage.isAdmin){
+  if(scife.usage.isAdmin || isPremiumTier()){
     el.style.display = 'none';
   } else {
     el.style.display = 'inline';
-    el.textContent = `${remaining}/${CHAT_IMAGE_DAILY_LIMIT} chat images left today`;
+    el.textContent = `${remaining}/${chatImageDailyLimitLabel()} chat images left today`;
     el.classList.toggle('empty', remaining === 0);
   }
   if(btn) btn.classList.toggle('capped', !scife.usage.isAdmin && remaining === 0);
@@ -2891,9 +2935,18 @@ function openSettings(){
   document.getElementById('settingsModelSelect').value = scife.model;
   document.getElementById('settingsVoiceSwitch').classList.toggle('on', scife.voiceOn);
   document.getElementById('settingsHandsFreeSwitch').classList.toggle('on', scife.handsFree);
+  document.getElementById('settingsWebSearchSwitch').classList.toggle('on', scife.webSearch);
   initGdMotionScifeUI();
   populateVoiceSelect();
-  document.getElementById('memoryCountHint').textContent = scife.memory.length + ' notes remembered';
+  const memHint = document.getElementById('memoryCountHint');
+  const memClearBtn = document.getElementById('memoryClearBtn');
+  if(hasEliteAccess()){
+    memHint.innerHTML = scife.memory.length + ' notes remembered';
+    if(memClearBtn) memClearBtn.style.display = 'inline-block';
+  } else {
+    memHint.innerHTML = `Elite/Premium feature. <a href="${telegramUpgradeLink('Elite')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">Upgrade</a> to have SciFe carry notes between sessions.`;
+    if(memClearBtn) memClearBtn.style.display = 'none';
+  }
   renderAdminSection();
   const banner = document.getElementById('sharedKeyBanner');
   if(banner){
@@ -2922,6 +2975,7 @@ async function saveSettings(){
   scife.model = document.getElementById('settingsModelSelect').value;
   scife.voiceOn = document.getElementById('settingsVoiceSwitch').classList.contains('on');
   scife.handsFree = document.getElementById('settingsHandsFreeSwitch').classList.contains('on');
+  scife.webSearch = newProvider === 'anthropic' && hasEliteAccess() && document.getElementById('settingsWebSearchSwitch').classList.contains('on');
   const voiceSel = document.getElementById('settingsVoiceSelect');
   scife.voiceURI = voiceSel ? voiceSel.value : scife.voiceURI;
   await saveScife();
@@ -3555,7 +3609,7 @@ async function applyRuleAction(action){
 }
 
 function buildSystemPrompt(){
-  const memNotes = scife.memory.length ? scife.memory.map(m=>'- '+m).join('\n') : 'None yet.';
+  const memNotes = !hasEliteAccess() ? 'Chat memory is an Elite/Premium feature — not available on this account.' : (scife.memory.length ? scife.memory.map(m=>'- '+m).join('\n') : 'None yet.');
   const strategies = ((traderRow && traderRow.psychology && traderRow.psychology.strategies) || []).map(s=>s.name).join(', ') || 'none saved';
   // traderRow.prop_firm is an ARRAY of accounts (the app supports running
   // several challenges at once) — list every one by name/phase/id so an
@@ -3567,6 +3621,7 @@ function buildSystemPrompt(){
   const pendingOrders = ((traderRow && traderRow.psychology && traderRow.psychology.orders) || []).filter(o=>o.status==='pending');
   const mt5 = (traderRow && traderRow.scife && traderRow.scife.mt5) || {};
   const mt5Snap = mt5.lastSnapshot;
+  const scifeSess = sigCurrentSession();
   return `You are SciFe, a trading journal companion inside the Ghost Discipline app. You talk with the trader about their charts, their emotions while trading, and their journal — like a sharp, honest trading coach who knows them.
 
 Be concise (2-4 sentences unless asked for detail), warm but direct, and never just cheerlead — call out patterns like revenge trading, rule-breaking, or emotional overtrading when the data shows it. Use the journal data below to ground your answers; don't invent numbers that aren't there.
@@ -3587,8 +3642,10 @@ ${propFirmLines}
 
 PENDING ORDERS ON THE ORDER BOOK RIGHT NOW: ${pendingOrders.length ? pendingOrders.map(o=>`id:${o.id} ${o.pair||'-'} ${o.direction||'-'} entry:${o.entry??'-'} sl:${o.sl??'-'} tp:${o.tp??'-'} account:${o.account||'personal'}${o.aiSuggested?' (AI-suggested, awaiting review)':''}`).join('; ') : 'none'}
 
-MT5 LIVE BRIDGE: ${mt5.enabled ? `enabled${mt5Snap ? ` — last known account snapshot (${new Date(mt5Snap.updatedAt||0).toLocaleString()}): balance ${mt5Snap.balance ?? '?'} equity ${mt5Snap.equity ?? '?'} margin ${mt5Snap.margin ?? '?'} open positions ${Array.isArray(mt5Snap.positions)?mt5Snap.positions.length:0}` : ' — no snapshot received from the EA yet'}` : 'disabled — the trader has not turned this on, so mt5_order actions will be queued but never reach a real account until they enable it and approve each one in Settings'}
+MT5 LIVE BRIDGE: ${!hasEliteAccess() ? 'not available on this account — the MT5 live bridge is an Elite/Premium feature. If asked about it, say so plainly and suggest upgrading rather than treating any enabled flag as live.' : (mt5.enabled ? `enabled${mt5Snap ? ` — last known account snapshot (${new Date(mt5Snap.updatedAt||0).toLocaleString()}): balance ${mt5Snap.balance ?? '?'} equity ${mt5Snap.equity ?? '?'} margin ${mt5Snap.margin ?? '?'} open positions ${Array.isArray(mt5Snap.positions)?mt5Snap.positions.length:0}` : ' — no snapshot received from the EA yet'}` : 'disabled — the trader has not turned this on, so mt5_order actions will be queued but never reach a real account until they enable it and approve each one in Settings')}
 If asked "what's going on in my MT5 account", answer from the snapshot above — if there's none yet, say so plainly rather than guessing at balances or positions.
+
+LIVE CLOCK & SESSION (same real-time source as the session pill/clock on the main app — not an estimate): right now it is ${new Date().toISOString().slice(11,16)} UTC (${new Date().toLocaleTimeString()} local to the trader's device). Active global sessions this minute: ${sigGetActiveMarketSessions().join(', ') || 'none'}. The trader's own defined trading window is ${scifeSess.start}–${scifeSess.end}${scifeSess.restrict ? ' (restricted — trades outside it are blocked)' : ' (not enforced)'}, and they are currently ${sigIsInSession(scifeSess) ? 'INSIDE' : 'OUTSIDE'} it. Use this directly for any question about what session it is, how long until their window opens, or whether news/session timing lines up with now — never guess or say you lack access to the time.
 
 ECONOMIC CALENDAR:
 ${summarizeEconomicCalendar()}
@@ -3611,7 +3668,7 @@ For editing one already logged, use its id from the snapshot above and include O
 For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
 Valid "rule" keys (use exactly one of these, spelled exactly like this — see current values in the JOURNAL SNAPSHOT above): maxDailyLoss, maxTrades, riskPerTrade, minRR, maxConsecLosses, accountBalance, coolingOffMinutes, maxRiskPerTrade, currency, accountType. "value" is a plain number for all of these except currency/accountType, which take a short string.
 For placing a pending order on the Order Book: {"type":"place_order","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"rrPlanned":2,"account":"personal"|"<a prop firm id from the list above>","strategy":"name or omit","notes":"why — the actual structure/confluence backing entry/SL/TP"}. This lands on the Order Book tagged as AI-suggested and awaiting the trader's own review — it is never itself a live trade.
-For queuing an MT5 command (only meaningful if the trader has the MT5 bridge on — see MT5 LIVE BRIDGE above): {"type":"mt5_order","account":"<a prop firm id, or 'personal'>","action":"open"|"modify"|"close","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"lot":0.5,"notes":"why"}. This is queued and requires the trader's own explicit approval in Settings before it ever reaches their real account — say so plainly when you queue one, don't imply it already executed.
+For queuing an MT5 command (only meaningful if the trader has the MT5 bridge on — see MT5 LIVE BRIDGE above; never emit this block at all if the MT5 LIVE BRIDGE line above says the feature isn't available on this account): {"type":"mt5_order","account":"<a prop firm id, or 'personal'>","action":"open"|"modify"|"close","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"lot":0.5,"notes":"why"}. This is queued and requires the trader's own explicit approval in Settings before it ever reaches their real account — say so plainly when you queue one, don't imply it already executed.
 Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit a trade id that actually appears in the JOURNAL SNAPSHOT above, and only use a prop firm id that actually appears in PROP FIRM ACCOUNTS ON FILE above. The action block is invisible to the trader (it is stripped out before display), so still say in plain words what you just did before it — but never print the literal action block text itself as part of your visible answer, and never describe the JSON to the trader instead of emitting a real action block.
 
 TONE WHEN LOGGING A TRADE — do not overreact: whether a rule was actually broken is checked in code against the trader's real rules after you reply, not guessed by you, so never announce "rule broken" or reset a streak yourself in your narration — that line gets appended automatically, with the exact rule(s), only when one truly tripped. Your own reply to a plain win or a plain loss that broke nothing should be the same even, matter-of-fact tone either way ("Logged." / "Got it, logged that one.") — a clean loss inside the trader's own rules is not a bad outcome and doesn't call for concern, a pep talk, or "are you okay?" energy. Save any coaching for when the trader actually asks for it or the data shows an actual pattern (see DURING A LOSING STREAK above).
@@ -5668,7 +5725,7 @@ function onChatAttachClick(){
   }
   if(chatPendingImages.length >= 3){ showToast('3 images is the max per message.'); return; }
   if(!scife.usage.isAdmin && chatImagesRemainingToday() === 0){
-    showToast(`Chat image limit reached for today (${CHAT_IMAGE_DAILY_LIMIT}/day) — resets at midnight UTC.`);
+    showToast(`Chat image limit reached for today (${chatImageDailyLimitLabel()}/day) — resets at midnight UTC.`);
     return;
   }
   document.getElementById('chatImageInput').click();
@@ -5753,7 +5810,7 @@ async function sendMessage(text, images){
   if(images.length){
     const allowed = await claimDailyImage();
     if(!allowed){
-      addBubble('system', `Chat image limit reached for today (${CHAT_IMAGE_DAILY_LIMIT}/day) — resets at midnight UTC. Sending your message without the image${images.length>1?'s':''}.`);
+      addBubble('system', `Chat image limit reached for today (${chatImageDailyLimitLabel()}/day) — resets at midnight UTC. Sending your message without the image${images.length>1?'s':''}.`);
       images = [];
     }
   }
@@ -5885,30 +5942,53 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
     }
     return { role:t.role, content:t.content };
   });
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: model || scife.model,
-      max_tokens: maxTokens,
-      temperature,
-      system: systemPrompt,
-      messages
-    })
-  });
-  if(!res.ok){
-    const err = await res.json().catch(()=>({}));
-    let msg = err.error?.message || ('Anthropic request failed (' + res.status + ')');
-    if(!new RegExp(String(res.status)).test(msg)) msg += ` [HTTP ${res.status}]`;
-    throw new Error(msg);
+  // Live web search — real capability, Anthropic-only (documented server tool,
+  // no scraping/key of our own required). Gated behind scife.webSearch so a
+  // trader who hasn't opted in never has Claude quietly reaching the internet
+  // on their API bill. When the model actually uses it, Anthropic runs the
+  // search itself and returns results as tool_result content — we just need
+  // to keep sending the conversation back until it stops calling the tool.
+  // hasEliteAccess() re-checked here (not just at Settings save time) so a
+  // trader downgraded after enabling this doesn't keep it live on a stale
+  // saved flag.
+  const tools = (scife.webSearch && hasEliteAccess()) ? [{ type:'web_search_20250305', name:'web_search' }] : undefined;
+  let data, block;
+  for(let hop=0; hop<4; hop++){
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: model || scife.model,
+        max_tokens: maxTokens,
+        temperature,
+        system: systemPrompt,
+        messages,
+        ...(tools ? { tools } : {})
+      })
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      let msg = err.error?.message || ('Anthropic request failed (' + res.status + ')');
+      if(!new RegExp(String(res.status)).test(msg)) msg += ` [HTTP ${res.status}]`;
+      throw new Error(msg);
+    }
+    data = await res.json();
+    // Anthropic executes web_search server-side and hands back results as
+    // part of the same response (server_tool_use / web_search_tool_result
+    // blocks) — it does NOT pause for us to run anything. stop_reason is
+    // only 'tool_use' here for a client-side tool, which we don't define,
+    // so in practice this loop exits on the first hop; it's kept as a
+    // guard in case a future tool type does require a client round-trip.
+    block = (data.content||[]).find(c=>c.type==='text');
+    if(data.stop_reason !== 'tool_use') break;
+    messages.push({ role:'assistant', content: data.content });
+    messages.push({ role:'user', content: [{ type:'tool_result', tool_use_id:(data.content.find(c=>c.type==='tool_use')||{}).id, content:'unsupported client tool' }] });
   }
-  const data = await res.json();
-  const block = (data.content||[]).find(c=>c.type==='text');
   if(data.stop_reason === 'max_tokens' && (!block || !block.text)) throw new Error('Anthropic cut the response off before it finished (hit the token limit) — retrying.');
   return (block && block.text) || "I didn't catch that — try again?";
 }
@@ -5954,8 +6034,11 @@ async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperatu
   return text || "I didn't catch that — try again?";
 }
 
-/* Roughly every 6 exchanges, distill a one-line memory note so future sessions have context. */
+/* Roughly every 6 exchanges, distill a one-line memory note so future sessions have context.
+   Elite/Premium only — Pro and Free still get the full conversation in the
+   current session, they just don't carry a distilled note into future ones. */
 async function maybeUpdateMemory(){
+  if(!hasEliteAccess()) return;
   const exchanges = history.filter(h=>h.role==='user').length;
   if(exchanges === 0 || exchanges % 6 !== 0) return;
   try{

@@ -4304,29 +4304,35 @@ let currentUser = null;
 let isDemoMode = false;
 
 /* ============ SUBSCRIPTION TIERS ============
-   Three tiers on the real (invited, non-demo) account: 'free' | 'pro' | 'elite'.
-   Lives on trader_data.tier (plain text column, defaults to 'free' — see the
-   migration note above loadOrCreateTraderData()). There is no payment
-   processor wired up: upgrading is manual — a trader messages the Telegram
-   with the package they want, and the owner flips their `tier` column in the
-   Supabase table editor. onboarding_done / profile follow the same pattern.
+   Four tiers on the real (invited, non-demo) account: 'free' | 'pro' |
+   'elite' | 'premium'. Lives on trader_data.tier (plain text column,
+   defaults to 'free' — see the migration note above
+   loadOrCreateTraderData()). There is no payment processor wired up:
+   upgrading is manual — a trader messages the Telegram with the package
+   they want, and the owner flips their `tier` column in the Supabase table
+   editor. onboarding_done / profile follow the same pattern.
    Nothing here is enforced by RLS beyond the trader's own row being private —
    same honesty note as everywhere else in this file: a trader editing their
    own client-side `userTier` var in devtools can fake a higher tier for
    themselves for the current session, but it never touches the server copy,
    so it reverts on next load/save and doesn't help them steal from anyone
-   else's account. */
-let userTier = 'free';                 // 'free' | 'pro' | 'elite'
+   else's account.
+   'premium' sits above 'elite' and is meant to unlock strictly everything
+   elite has plus whatever is elite-only, so isElite() below treats premium
+   as elite too rather than every call site needing its own premium check. */
+let userTier = 'free';                 // 'free' | 'pro' | 'elite' | 'premium'
 let userProfile = {};                  // onboarding questionnaire answers
-const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite' };
+const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite', premium:'Premium' };
 // Rooms held back on the Free tier — same lock-badge/tease mechanism as the
 // Proving Ground demo lock, just a shorter, less restrictive list since these
 // are real invited accounts, not anonymous trials. Tune freely.
 const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm','propfirmrisk','propfirmpayout'];
-// Rooms held back until Elite specifically (blocks Free AND Pro).
+// Rooms held back until Elite specifically (blocks Free AND Pro). Premium
+// passes this too — see isElite() below.
 const ELITE_LOCKED_VIEWS = ['team'];
 function isFreeTier(){ return !isDemoMode && userTier === 'free'; }
-function isElite(){ return !isDemoMode && userTier === 'elite'; }
+function isPremiumTier(){ return !isDemoMode && userTier === 'premium'; }
+function isElite(){ return !isDemoMode && (userTier === 'elite' || userTier === 'premium'); }
 function telegramUpgradeLink(wantedTier){
   const pkg = TIER_LABELS[wantedTier] || 'Pro';
   const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;

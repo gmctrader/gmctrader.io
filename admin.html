@@ -16,6 +16,7 @@
   --teal:#2dd4a8; --teal-dim:#0b5c42; --teal-ink:#03110c;
   --amber:#f0a94e;
   --gold:#f2c877; --gold-dim:#8a6b28;
+  --violet:#b795f0; --violet-dim:#5a3f8a;
   --text:#eef6f2; --text-dim:#8fa6a0; --text-faint:#5e7772;
   --danger:#ff5d7a;
   --r-sm:8px; --r-md:13px; --r-lg:18px;
@@ -90,6 +91,7 @@ a{ color:inherit; }
 .stat.free .n{ color:var(--text); }
 .stat.pro .n{ color:var(--amber); }
 .stat.elite .n{ color:var(--gold); }
+.stat.premium .n{ color:var(--violet); }
 
 /* ---------- search ---------- */
 .searchRow{ display:flex; gap:10px; margin-bottom:4px; }
@@ -115,6 +117,7 @@ select.tierSel{
 }
 select.tierSel[data-tier="pro"]{ color:var(--amber); }
 select.tierSel[data-tier="elite"]{ color:var(--gold); }
+select.tierSel[data-tier="premium"]{ color:var(--violet); }
 .rowSaveBtn{ margin-left:8px; }
 .saveState{ font-size:11.5px; margin-left:8px; color:var(--text-dim); }
 .saveState.ok{ color:var(--teal); }
@@ -171,6 +174,7 @@ select.tierSel[data-tier="elite"]{ color:var(--gold); }
       <div class="stat free"><div class="n">—</div><div class="l">Free</div></div>
       <div class="stat pro"><div class="n">—</div><div class="l">Pro</div></div>
       <div class="stat elite"><div class="n">—</div><div class="l">Elite</div></div>
+      <div class="stat premium"><div class="n">—</div><div class="l">Premium</div></div>
     </div>
   </div>
 
@@ -251,13 +255,14 @@ async function checkAdminAndEnter(){
 async function loadStats(){
   const { data, error } = await sb.rpc('admin_tier_counts');
   if(error || !data) return;
-  const counts = { free:0, pro:0, elite:0 };
+  const counts = { free:0, pro:0, elite:0, premium:0 };
   data.forEach(row => { if(counts.hasOwnProperty(row.tier)) counts[row.tier] = row.count; });
   const row = document.getElementById('statsRow');
   row.innerHTML = `
     <div class="stat free"><div class="n">${counts.free}</div><div class="l">Free</div></div>
     <div class="stat pro"><div class="n">${counts.pro}</div><div class="l">Pro</div></div>
     <div class="stat elite"><div class="n">${counts.elite}</div><div class="l">Elite</div></div>
+    <div class="stat premium"><div class="n">${counts.premium}</div><div class="l">Premium</div></div>
   `;
 }
 
@@ -325,6 +330,7 @@ function renderResults(rows){
           <option value="free" ${r.tier==='free'?'selected':''}>Free</option>
           <option value="pro" ${r.tier==='pro'?'selected':''}>Pro</option>
           <option value="elite" ${r.tier==='elite'?'selected':''}>Elite</option>
+          <option value="premium" ${r.tier==='premium'?'selected':''}>Premium</option>
         </select>
       </td>
       <td>
