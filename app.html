@@ -5723,12 +5723,18 @@ async function renderEdgeTgCard(){
   el.innerHTML = `<div class="card" style="margin-top:18px"><h2>Telegram <span class="accent">alerts</span></h2>
     <div class="hint" style="margin-bottom:12px">Get a message when a prop account reaches 70% or 100% of its daily-loss or drawdown limit, or hits its profit target. Checked every 5 minutes on our servers, even when the app is closed, and instantly while it's open.</div>
     <div class="btn-row" style="align-items:center;gap:12px;flex-wrap:wrap">${gdTgLinked
-      ? `<span class="hint" style="margin:0">✅ Telegram linked</span><button class="btn btn-ghost" onclick="gdTelegramUnlink()">Disconnect</button>`
+      ? `<span class="hint" style="margin:0">✅ Telegram linked</span><button class="btn btn-primary" onclick="gdTelegramTest()">Send test alert</button><button class="btn btn-ghost" onclick="gdTelegramUnlink()">Disconnect</button>`
       : `<button class="btn btn-primary" onclick="gdTelegramConnect()">Connect Telegram</button><button class="btn btn-ghost" onclick="renderEdgeTgCard()">I've tapped Start — refresh</button>`}</div></div>`;
 }
 async function gdTelegramConnect(){
   try{ const j = await gdCallFn('telegram-link', {}); window.open(j.url, '_blank', 'noopener'); showToast('Tap Start in Telegram, then press refresh here.'); }
   catch(e){ showToast(e.message); }
+}
+async function gdTelegramTest(){
+  try{
+    const j = await gdCallFn('send-alert', { kind:'pf_daily_warn', key:'test:' + Date.now(), pf:'TEST ALERT', amount:70, limit:100, sym:'$' });
+    showToast(j.sent ? 'Test alert sent. Check Telegram.' : 'Not sent: ' + (j.reason || 'unknown'));
+  }catch(e){ showToast(e.message); }
 }
 async function gdTelegramUnlink(){
   try{ await gdCallFn('telegram-link', { action:'unlink' }); gdTgLinked = false; renderEdgeTgCard(); }
