@@ -2876,6 +2876,10 @@ setTimeout(function(){
         Team
         <span class="notif-dot" id="teamNotifDot" style="display:none;"></span>
       </button>
+      <button class="side-navbtn" data-view="edgelab">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 8-9"/><path d="M14 5h6v6"/></svg>
+        Edge Lab
+      </button>
       <div class="side-divider"></div>
       <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
@@ -3783,6 +3787,24 @@ setTimeout(function(){
     </div>
 
     <!-- TEAM (Elite) -->
+    <div class="view" id="view-edgelab">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Edge Lab</h2>
+          <div class="page-sub">Premium. Stress-test your real journal: expectancy, Kelly sizing and a 1,000-run Monte Carlo of your next 100 trades.</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <div class="btn-row" style="align-items:center;gap:12px;flex-wrap:wrap">
+          <label class="hint" for="edgeDdPct" style="margin:0">Drawdown limit (% of account)</label>
+          <input type="number" id="edgeDdPct" value="10" min="1" max="100" step="1" style="width:90px" onchange="renderEdgeLab()">
+          <button class="btn btn-ghost" onclick="renderEdgeLab()">Re-run simulation</button>
+        </div>
+      </div>
+      <div id="edgeTgCard"></div>
+      <div id="edgeLabBody" style="margin-top:18px"></div>
+    </div>
+
     <div class="view" id="view-team">
       <div class="topbar-row">
         <div>
@@ -4384,9 +4406,16 @@ const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propf
 // Rooms held back until Elite specifically (blocks Free AND Pro). Premium
 // passes this too — see isElite() below.
 const ELITE_LOCKED_VIEWS = ['team'];
+// Rooms held back until Premium specifically (blocks Free, Pro AND Elite).
+// Empty for now — add a view id here once a Premium-only room ships and the
+// lock badge, click intercept and tease modal all pick it up automatically.
+const PREMIUM_LOCKED_VIEWS = ['edgelab'];
+// Same ordered-tier helper scife.html uses, so both pages gate identically.
+const TIER_ORDER = ['free','pro','elite','premium'];
+function tierAtLeast(t){ return !isDemoMode && TIER_ORDER.indexOf(userTier) >= TIER_ORDER.indexOf(t); }
 function isFreeTier(){ return !isDemoMode && userTier === 'free'; }
 function isPremiumTier(){ return !isDemoMode && userTier === 'premium'; }
-function isElite(){ return !isDemoMode && (userTier === 'elite' || userTier === 'premium'); }
+function isElite(){ return tierAtLeast('elite'); }
 function telegramUpgradeLink(wantedTier){
   const pkg = TIER_LABELS[wantedTier] || 'Pro';
   const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
@@ -5142,7 +5171,7 @@ const DEMO_EMAIL_KEY = 'ghostDiscipline_demoEmail';
 const DEMO_STATE_KEY = 'ghostDiscipline_demoState';
 const DEMO_FP_KEY = 'ghostDiscipline_deviceFp';
 // Rooms that stay locked during the trial — full arsenal is reserved for real access.
-const DEMO_LOCKED_VIEWS = ['analytics','playbook','propfirm','propfirmrisk','propfirmpayout','journal','about','brief','stratnotes','backtest'];
+const DEMO_LOCKED_VIEWS = ['edgelab','analytics','playbook','propfirm','propfirmrisk','propfirmpayout','journal','about','brief','stratnotes','backtest'];
 
 // Lightweight, dependency-free device fingerprint (canvas + WebGL + hardware
 // signals hashed together). This raises the bar against casual repeat-trial
@@ -5399,8 +5428,9 @@ function applyTierLocks(){
   if(isDemoMode) return; // demo locks already cover this case
   document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     const view = btn.dataset.view;
+    const premiumLocked = PREMIUM_LOCKED_VIEWS.includes(view) && !isPremiumTier();
     const eliteLocked = ELITE_LOCKED_VIEWS.includes(view) && !isElite();
-    const locked = eliteLocked || (isFreeTier() && FREE_LOCKED_VIEWS.includes(view));
+    const locked = premiumLocked || eliteLocked || (isFreeTier() && FREE_LOCKED_VIEWS.includes(view));
     btn.classList.toggle('demo-locked', locked);
     let badge = btn.querySelector('.lock-badge');
     if(locked){
@@ -5409,7 +5439,7 @@ function applyTierLocks(){
         badge.className = 'lock-badge';
         btn.appendChild(badge);
       }
-      badge.textContent = eliteLocked ? '🔒 ELITE' : '🔒 PRO';
+      badge.textContent = premiumLocked ? '🔒 PREMIUM' : (eliteLocked ? '🔒 ELITE' : '🔒 PRO');
     } else if(badge){
       badge.remove();
     }
@@ -5504,17 +5534,239 @@ async function checkSubscriptionExpiry(){
 setInterval(checkSubscriptionExpiry, 3600000); // re-check hourly for sessions left open
 
 function showTierLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team' };
+  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team', edgelab:'Edge Lab' };
   const label = labels[view] || 'This room';
+  const premiumOnly = PREMIUM_LOCKED_VIEWS.includes(view);
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
-  document.getElementById('demoLockedFeatureTitle').textContent = eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`;
-  document.getElementById('demoLockedFeatureCopy').textContent = eliteOnly
-    ? `${label} is part of the Elite package only. Message the Telegram below and we'll get you upgraded.`
-    : `${label} is part of the Pro and Elite packages. Message the Telegram below and we'll get you upgraded.`;
+  document.getElementById('demoLockedFeatureTitle').textContent = premiumOnly ? `${label} is a Premium feature` : (eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`);
+  document.getElementById('demoLockedFeatureCopy').textContent = premiumOnly
+    ? `${label} is part of the Premium package only. Message the Telegram below and we'll get you upgraded.`
+    : eliteOnly
+      ? `${label} is part of the Elite and Premium packages. Message the Telegram below and we'll get you upgraded.`
+      : `${label} is part of the Pro, Elite and Premium packages. Message the Telegram below and we'll get you upgraded.`;
   const link = document.querySelector('#demoLockedFeatureOverlay .btn-telegram');
-  if(link) link.href = telegramUpgradeLink(eliteOnly ? 'elite' : 'pro');
+  if(link) link.href = telegramUpgradeLink(premiumOnly ? 'premium' : (eliteOnly ? 'elite' : 'pro'));
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
+
+/* ============ EDGE LAB (Premium room) ============
+   Reads the live journal only (filteredTrades/pnlOf, so backtest trades never
+   leak in), then bootstraps 1,000 random 100-trade futures from your own P/L
+   distribution. It's a stress test of your past, not a forecast. */
+function renderEdgeLab(){
+  const el = document.getElementById('edgeLabBody');
+  if(!el || !isPremiumTier()) return;
+  renderEdgeTgCard();
+  const pn = filteredTrades().map(pnlOf).filter(n=>isFinite(n));
+  if(pn.length < 20){
+    el.innerHTML = `<div class="card"><div class="hint">Edge Lab needs at least 20 closed trades to say anything honest. You have ${pn.length}.</div></div>`;
+    return;
+  }
+  const sym = curSym();
+  const fm = x => (x<0?'-':'') + sym + Math.abs(Math.round(x)).toLocaleString();
+  const pct = x => (x*100).toFixed(x>=0.995||x<=0.005?0:1) + '%';
+  const wins = pn.filter(x=>x>0), losses = pn.filter(x=>x<0);
+  const avgW = wins.length ? wins.reduce((s,x)=>s+x,0)/wins.length : 0;
+  const avgL = losses.length ? -losses.reduce((s,x)=>s+x,0)/losses.length : 0;
+  const wr = wins.length / pn.length;
+  const expectancy = pn.reduce((s,x)=>s+x,0) / pn.length;
+  const payoff = avgL ? avgW/avgL : null;
+  const kelly = payoff ? wr - (1-wr)/payoff : null;
+
+  const N = 100, S = 1000;
+  const bal = Number(state.rules.accountBalance) || 1000;
+  const ddPctVal = Math.min(100, Math.max(1, parseFloat((document.getElementById('edgeDdPct')||{}).value) || 10));
+  const ddLimit = bal * ddPctVal / 100;
+  const paths = [];
+  let profitable = 0, breach = 0, streak5 = 0;
+  for(let s=0; s<S; s++){
+    let eq = 0, peak = 0, maxDD = 0, run = 0, maxRun = 0;
+    const p = new Float32Array(N+1);
+    for(let i=1; i<=N; i++){
+      const x = pn[Math.floor(Math.random()*pn.length)];
+      eq += x; p[i] = eq;
+      if(eq > peak) peak = eq;
+      if(peak - eq > maxDD) maxDD = peak - eq;
+      run = x < 0 ? run+1 : 0;
+      if(run > maxRun) maxRun = run;
+    }
+    paths.push(p);
+    if(eq > 0) profitable++;
+    if(maxDD >= ddLimit) breach++;
+    if(maxRun >= 5) streak5++;
+  }
+  const band = q => { const out = []; for(let i=0; i<=N; i++){ const col = paths.map(p=>p[i]).sort((x,y)=>x-y); out.push(col[Math.min(S-1, Math.floor(q*S))]); } return out; };
+  const p10 = band(0.1), p50 = band(0.5), p90 = band(0.9);
+  const lo = Math.min(0, ...p10), hi = Math.max(0, ...p90);
+  const W = 640, H = 220, X = i => (i/N)*W, Y = v => H - ((v-lo)/((hi-lo)||1))*H;
+  const line = arr => arr.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area = line(p90) + ' ' + p10.map((v,i)=>`L${X(N-i).toFixed(1)},${Y(p10[N-i]).toFixed(1)}`).join(' ') + ' Z';
+  const tile = (label, val, sub) => `<div class="card" style="padding:14px"><div class="hint" style="margin:0">${label}</div><div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin:4px 0">${val}</div><div class="hint" style="margin:0">${sub}</div></div>`;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+      ${tile('Expectancy / trade', fm(expectancy), expectancy>0 ? 'positive edge in your sample' : 'no edge in your sample')}
+      ${tile('Win rate', pct(wr), `${pn.length} trades`)}
+      ${tile('Payoff ratio', payoff ? payoff.toFixed(2)+'R' : '—', `avg win ${fm(avgW)} · avg loss ${fm(-avgL)}`)}
+      ${tile('Kelly fraction', kelly===null ? '—' : (kelly>0 ? pct(kelly) : '0%'), kelly!==null && kelly>0 ? `size well below this (half-Kelly ≈ ${pct(kelly/2)})` : 'Kelly says do not size up')}
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>Next ${N} trades <span class="accent">Monte Carlo</span></h2>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:420px;height:auto" role="img" aria-label="Simulated equity range">
+        <path d="${area}" fill="var(--bronze)" opacity="0.18"/>
+        <path d="${line(p50)}" fill="none" stroke="var(--bronze-bright)" stroke-width="2"/>
+        <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--steel-hi)" stroke-dasharray="4 4"/>
+      </svg></div>
+      <div class="hint">Shaded band = 10th–90th percentile of ${S} simulated runs, line = median. Median result ${fm(p50[N])} (range ${fm(p10[N])} to ${fm(p90[N])}).</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:14px">
+      ${tile('Chance of profit', pct(profitable/S), `after ${N} trades`)}
+      ${tile(`Chance of ${ddPctVal}% drawdown`, pct(breach/S), `${fm(ddLimit)} peak-to-trough`)}
+      ${tile('Chance of 5+ loss streak', pct(streak5/S), `at some point in ${N} trades`)}
+    </div>
+    <div class="hint" style="margin-top:12px">Resampled from your own past P/L, assuming future trades look like past ones and are independent. Treat it as a stress test, not a forecast.</div>`
+    + edgePropPanelHtml();
+}
+
+/* ---- Edge Lab: prop challenge pass probability ----
+   Simulates the selected prop account from its CURRENT balance/peak against
+   its own rules (profit target or payout threshold, daily loss, max drawdown
+   static/trailing, min trading days). Consistency rules are not modelled. */
+let edgePfId = null;
+function edgePfPick(i){ const p = (state.propFirms||[])[i]; if(p){ edgePfId = p.id; renderEdgeLab(); } }
+function edgePfSim(pn, m, pf, tpd, scale, S, maxTrades){
+  const start = m.start, target = m.profitTargetDollar != null ? m.profitTargetDollar : m.payoutThresholdDollar;
+  const ddMax = m.maxOverallDrawdownDollar, dlMax = m.maxDailyLossDollar;
+  const trailing = pf.drawdownType === 'trailing', minDays = m.minTradingDays || 0;
+  let pass = 0, ddF = 0, dlF = 0, passN = [];
+  for(let s=0; s<S; s++){
+    let eq = m.currentBalance, peak = Math.max(m.peak, eq), days = m.tradingDays, n = 0, out = 0;
+    while(n < maxTrades && !out){
+      let day = 0;
+      for(let k=0; k<tpd && n<maxTrades; k++){
+        const x = pn[Math.floor(Math.random()*pn.length)] * scale;
+        eq += x; day += x; n++;
+        if(eq > peak) peak = eq;
+        if(ddMax != null && (trailing ? peak : start) - eq >= ddMax){ out = 2; break; }
+        if(dlMax != null && -day >= dlMax){ out = 3; break; }
+      }
+      if(!out){ days++; if(target != null && eq - start >= target && days >= minDays) out = 1; }
+    }
+    if(out === 1){ pass++; passN.push(n); } else if(out === 2) ddF++; else if(out === 3) dlF++;
+  }
+  passN.sort((x,y)=>x-y);
+  return { pass: pass/S, dd: ddF/S, dl: dlF/S, open: (S-pass-ddF-dlF)/S, medN: passN.length ? passN[Math.floor(passN.length/2)] : null };
+}
+function edgePropPanelHtml(){
+  const pfs = state.propFirms || [];
+  const head = `<div class="card" style="margin-top:14px"><h2>Prop challenge <span class="accent">pass probability</span></h2>`;
+  if(!pfs.length) return head + `<div class="hint">Set up an account in Prop Firm Compliance and this will simulate your challenge against its real rules.</div></div>`;
+  const pf = getPropFirm(edgePfId) || activePropFirm(); edgePfId = pf.id;
+  const m = computePropFirmMetrics(pf);
+  const opts = pfs.map((p,i)=>`<option value="${i}" ${p.id===pf.id?'selected':''}>${escapeHtml(p.firmName||'Unnamed account')} · ${escapeHtml(PF_PHASE_LABELS[p.phase||'challenge']||String(p.phase))}</option>`).join('');
+  const picker = `<div class="btn-row" style="margin:0 0 12px"><select onchange="edgePfPick(this.selectedIndex)" aria-label="Prop account">${opts}</select></div>`;
+  if(!m) return head + picker + `<div class="hint">This account needs a starting balance first (Prop Firm room).</div></div>`;
+  const live = liveTrades();
+  let pn = live.filter(t=>t.account===pf.id).map(pnlOfRaw).filter(isFinite), src = live.filter(t=>t.account===pf.id), note = '';
+  if(pn.length < 20){
+    const balOf = t => t.account==='personal' ? Number(state.rules.accountBalance) : ((getPropFirm(t.account)||{}).startingBalance);
+    src = live.filter(t=>balOf(t) > 0);
+    pn = src.map(t=>pnlOfRaw(t)/balOf(t)*m.start).filter(isFinite);
+    note = `This account has too few trades of its own, so your whole journal was used, scaled to this account's size (currencies not converted).`;
+  }
+  if(pn.length < 20) return head + picker + `<div class="hint">Needs at least 20 closed trades to simulate honestly. You have ${pn.length}.</div></div>`;
+  const dayCount = new Set(src.map(t=>t.date)).size || 1;
+  const tpd = Math.min(10, Math.max(1, Math.round(src.length / dayCount)));
+  const sym = pfCurSym(pf), MAXT = 200, S = 1000;
+  const pc = x => (x*100).toFixed(x>=0.995||x<=0.005?0:1) + '%';
+  const hasTarget = (m.profitTargetDollar != null) || (m.payoutThresholdDollar != null);
+  const rows = [0.5, 1, 1.5].map(sc => ({ sc, r: edgePfSim(pn, m, pf, tpd, sc, S, MAXT) }));
+  const best = rows.reduce((b,x)=> (hasTarget ? x.r.pass > b.r.pass : (x.r.dd+x.r.dl) < (b.r.dd+b.r.dl)) ? x : b, rows[0]);
+  const base = rows[1].r;
+  const tr = rows.map(x=>`<tr style="${x===best?'font-weight:700':''}"><td style="padding:6px 10px">${x.sc}× size${x.sc===1?' (now)':''}</td><td style="padding:6px 10px">${hasTarget ? pc(x.r.pass) : '—'}</td><td style="padding:6px 10px">${pc(x.r.dd)}</td><td style="padding:6px 10px">${pc(x.r.dl)}</td></tr>`).join('');
+  const headline = hasTarget
+    ? `<div style="font-size:30px;font-weight:700;font-family:'IBM Plex Mono',monospace">${pc(base.pass)}</div><div class="hint" style="margin:0 0 12px">chance of hitting the ${escapeHtml(PF_PHASE_LABELS[pf.phase||'challenge']||'')} target within ${MAXT} trades${base.medN?` (typically ~${base.medN} trades)`:''} before a rule breach</div>`
+    : `<div style="font-size:30px;font-weight:700;font-family:'IBM Plex Mono',monospace">${pc(1-base.dd-base.dl)}</div><div class="hint" style="margin:0 0 12px">chance this account survives ${MAXT} trades without breaching a loss rule</div>`;
+  return head + picker + headline + `
+    <div style="overflow-x:auto"><table style="border-collapse:collapse;min-width:360px"><thead><tr class="hint"><th style="padding:6px 10px;text-align:left">Position size</th><th style="padding:6px 10px;text-align:left">Pass</th><th style="padding:6px 10px;text-align:left">Drawdown breach</th><th style="padding:6px 10px;text-align:left">Daily-loss breach</th></tr></thead><tbody>${tr}</tbody></table></div>
+    <div class="hint" style="margin-top:12px">${best.sc===1 ? 'Your current sizing is the best of the three tested.' : `In this simulation ${best.sc}× your usual size scores best.`} Uses ${tpd} trade${tpd>1?'s':''}/day (your average), starts from the account's live balance and peak, and ignores consistency rules. ${note} A stress test of your past results, not a forecast.</div></div>`;
+}
+
+/* ============ TELEGRAM ALERTS (Premium) ============
+   The app checks each prop account's live metrics every minute while open and
+   asks the send-alert Edge Function to notify Telegram. The server re-checks
+   Premium, dedupes and builds the message itself; nothing here can be spoofed
+   into arbitrary text. Instant path only; the check-alerts cron job covers
+   the app-closed case and shares the same dedupe keys, so nothing double-sends. */
+let gdTgLinked = null;
+const gdSentAlerts = (function(){ try{ return JSON.parse(localStorage.getItem('gd_sentAlerts') || '{}'); }catch(e){ return {}; } })();
+async function gdCallFn(name, body){
+  const r = await sb.auth.getSession();
+  const tok = r.data && r.data.session && r.data.session.access_token;
+  if(!tok) throw new Error('Sign in first');
+  const res = await fetch(SUPABASE_URL + '/functions/v1/' + name, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok, 'apikey': SUPABASE_KEY },
+    body: JSON.stringify(body || {})
+  });
+  const j = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error((j.error && j.error.message) || ('Request failed (' + res.status + ')'));
+  return j;
+}
+async function gdTgRefresh(){
+  const { data } = await sb.from('telegram_links').select('user_id').eq('user_id', currentUser.id).maybeSingle();
+  gdTgLinked = !!data;
+}
+async function renderEdgeTgCard(){
+  const el = document.getElementById('edgeTgCard');
+  if(!el || !isPremiumTier() || !currentUser) return;
+  try{ await gdTgRefresh(); }catch(e){}
+  el.innerHTML = `<div class="card" style="margin-top:18px"><h2>Telegram <span class="accent">alerts</span></h2>
+    <div class="hint" style="margin-bottom:12px">Get a message when a prop account reaches 70% or 100% of its daily-loss or drawdown limit, or hits its profit target. Checked every 5 minutes on our servers, even when the app is closed, and instantly while it's open.</div>
+    <div class="btn-row" style="align-items:center;gap:12px;flex-wrap:wrap">${gdTgLinked
+      ? `<span class="hint" style="margin:0">✅ Telegram linked</span><button class="btn btn-ghost" onclick="gdTelegramUnlink()">Disconnect</button>`
+      : `<button class="btn btn-primary" onclick="gdTelegramConnect()">Connect Telegram</button><button class="btn btn-ghost" onclick="renderEdgeTgCard()">I've tapped Start — refresh</button>`}</div></div>`;
+}
+async function gdTelegramConnect(){
+  try{ const j = await gdCallFn('telegram-link', {}); window.open(j.url, '_blank', 'noopener'); showToast('Tap Start in Telegram, then press refresh here.'); }
+  catch(e){ showToast(e.message); }
+}
+async function gdTelegramUnlink(){
+  try{ await gdCallFn('telegram-link', { action:'unlink' }); gdTgLinked = false; renderEdgeTgCard(); }
+  catch(e){ showToast(e.message); }
+}
+async function gdEvaluateAlerts(){
+  if(!isPremiumTier() || !currentUser) return;
+  try{ if(gdTgLinked === null) await gdTgRefresh(); }catch(e){ return; }
+  if(!gdTgLinked) return;
+  const today = todayStr();
+  const queue = [];
+  (state.propFirms || []).forEach(pf=>{
+    const m = computePropFirmMetrics(pf); if(!m) return;
+    const sym = pfCurSym(pf), name = pf.firmName || 'Prop account', id = String(pf.id).replace(/[^\w]/g, '');
+    const add = (kind, amount, limit, daily) => queue.push({ kind, key: id + ':' + kind + (daily ? ':' + today : ''), pf: name, amount, limit, sym });
+    if(m.maxDailyLossDollar){
+      const r = m.todayLoss / m.maxDailyLossDollar;
+      if(r >= 1) add('pf_daily_breach', m.todayLoss, m.maxDailyLossDollar, true);
+      else if(r >= 0.7) add('pf_daily_warn', m.todayLoss, m.maxDailyLossDollar, true);
+    }
+    if(m.maxOverallDrawdownDollar){
+      const r = m.maxDrawdownHit / m.maxOverallDrawdownDollar;
+      if(r >= 1) add('pf_dd_breach', m.maxDrawdownHit, m.maxOverallDrawdownDollar, false);
+      else if(r >= 0.7) add('pf_dd_warn', m.maxDrawdownHit, m.maxOverallDrawdownDollar, false);
+    }
+    if(m.profitTargetHit) add('pf_target_hit', m.totalProfit, m.profitTargetDollar, false);
+  });
+  for(const q of queue){
+    if(gdSentAlerts[q.key]) continue;
+    try{
+      await gdCallFn('send-alert', q);
+      gdSentAlerts[q.key] = today;   // sent or already-sent (duplicate): don't retry
+      try{ localStorage.setItem('gd_sentAlerts', JSON.stringify(gdSentAlerts)); }catch(e){}
+    }catch(e){ /* try again next tick */ }
+  }
+}
+setInterval(gdEvaluateAlerts, 60000);
+setTimeout(gdEvaluateAlerts, 8000);
 /* ============ ONBOARDING QUESTIONNAIRE ============
    queueOnboardingQuestions() is called from loadOrCreateTraderData() for any
    trader whose row has onboarding_done !== true. It waits for the boot
@@ -5563,7 +5815,7 @@ function openDemoTease(title, copy){
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 function showLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
+  const labels = { edgelab:'Edge Lab', analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
   const label = labels[view] || 'This room';
   openDemoTease(`${label} is for real accounts`, `The Proving Ground tests discipline, not the full arsenal — ${label} unlocks the moment you're in for real.`);
 }
@@ -7208,6 +7460,11 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
       toggleSidebar(false);
       return;
     }
+    if(PREMIUM_LOCKED_VIEWS.includes(btn.dataset.view) && !isPremiumTier()){
+      showTierLockedFeatureTease(btn.dataset.view);
+      toggleSidebar(false);
+      return;
+    }
     if(ELITE_LOCKED_VIEWS.includes(btn.dataset.view) && !isElite()){
       showTierLockedFeatureTease(btn.dataset.view);
       toggleSidebar(false);
@@ -7226,6 +7483,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='calendar') renderCalendar();
     if(btn.dataset.view==='brief') renderBrief();
     if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
+    if(btn.dataset.view==='edgelab') renderEdgeLab();
     if(btn.dataset.view==='journal') renderJournal();
     if(btn.dataset.view==='orders') renderOrders();
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
@@ -12464,7 +12722,9 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   // ride the shared key with no cap. Never surfaced in any input field.
   var SHARED_PROVIDER = 'google';
   var SHARED_MODEL = 'gemini-3.5-flash-lite';
-  var SHARED_KEY = 'AQ.Ab8RN6JeNHwWtI7ZIbzNp8i8uzYP4gJfMgPGst3S-9e5fReqAQ';
+  var SHARED_MODEL_PREMIUM = 'gemini-3.1-pro'; // Premium gets the stronger house model
+  function sharedModelForTier(){ return (typeof isPremiumTier === 'function' && isPremiumTier()) ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
+  var SHARED_KEY = '__shared__'; // real key lives server-side (ai-proxy Edge Function)
   var FREE_DAILY_CHAT_LIMIT = 15;
   function todayKeyLocal(){ var d=new Date(); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
   // Re-checks + increments the shared daily counter straight against the
@@ -12602,16 +12862,27 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
       return (block && block.text) || '';
     });
   }
+  function gdProxyFetch(payload){
+    return sb.auth.getSession().then(function(r){
+      var tok = r.data && r.data.session && r.data.session.access_token;
+      if(!tok) throw new Error('Sign in to use the shared AI');
+      return fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok, 'apikey': SUPABASE_KEY },
+        body: JSON.stringify(payload)
+      });
+    });
+  }
   function callGeminiSimple(apiKey, systemPrompt, userText, maxTokens){
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + window.__gdScifeModel + ':generateContent?key=' + apiKey;
-    return fetch(url, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents:[{ role:'user', parts:[{text:userText}] }],
-        systemInstruction:{ role:'user', parts:[{text:systemPrompt}] },
-        generationConfig:{ temperature:0.7, maxOutputTokens:maxTokens }
-      })
-    }).then(function(res){
+    var body = {
+      contents:[{ role:'user', parts:[{text:userText}] }],
+      systemInstruction:{ role:'user', parts:[{text:systemPrompt}] },
+      generationConfig:{ temperature:0.7, maxOutputTokens:maxTokens }
+    };
+    var req = apiKey === '__shared__' ? gdProxyFetch(body)
+      : fetch('https://generativelanguage.googleapis.com/v1beta/models/' + window.__gdScifeModel + ':generateContent?key=' + apiKey,
+          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    return req.then(function(res){
       if(!res.ok) return res.json().catch(function(){return{};}).then(function(err){
         throw new Error((err.error && err.error.message) || ('Gemini request failed (' + res.status + ')'));
       });
@@ -12667,7 +12938,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
         var doCall = function(){
           if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = '✨ Thinking…'; }
 
-          window.__gdScifeModel = usingShared ? SHARED_MODEL : scifeCfg.model;
+          window.__gdScifeModel = usingShared ? sharedModelForTier() : scifeCfg.model;
           var system = AI_SYSTEM_PROMPTS[kind];
           var userText = 'Here is the trader\'s current data as JSON:\n\n' + JSON.stringify(buildContext(kind), null, 2) + '\n\nWrite the insight now.';
           var maxTokens = 300;

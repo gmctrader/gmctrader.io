@@ -1858,7 +1858,7 @@ let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:t
    (running out the free daily cap, then just... not being capped). */
 const SHARED_PROVIDER = 'google';
 const SHARED_MODEL = 'gemini-3.5-flash-lite';
-const SHARED_KEY = 'AQ.Ab8RN6JeNHwWtI7ZIbzNp8i8uzYP4gJfMgPGst3S-9e5fReqAQ';
+const SHARED_KEY = '__shared__';   // real key lives server-side (ai-proxy Edge Function)
 const FREE_DAILY_CHAT_LIMIT = 15;   // Free tier: chats/day on the shared key
 let userTier = 'free';              // 'free' | 'pro' | 'elite' | 'premium' — set from trader_data.tier in loadTraderRow()
 function telegramUpgradeLink(pkg){
@@ -1879,6 +1879,11 @@ function hasEliteAccess(){ return tierAtLeast('elite'); }   // elite or premium
 function isPremiumTier(){ return userTier === 'premium'; }
 // Chat-image daily cap: unchanged (3/day) for free/pro/elite, unlimited on premium.
 function chatImageDailyLimitForTier(){ return isPremiumTier() ? Infinity : 3; }
+const SHARED_MODEL_PREMIUM = 'gemini-3.1-pro';   // Premium gets the stronger house model
+function sharedModelForTier(){ return isPremiumTier() ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
+function scanLimitForTier(){ return isPremiumTier() ? Infinity : SCAN_LIMIT_PER_WEEK; }
+function scanLimitLabel(){ return isPremiumTier() ? '∞' : String(SCAN_LIMIT_PER_WEEK); }
+function memoryCapForTier(){ return isPremiumTier() ? 30 : 10; }
 function chatImageDailyLimitLabel(){ const n = chatImageDailyLimitForTier(); return n === Infinity ? '∞' : String(n); }
 let history = [];                   // in-memory chat turns for this session: {role,content}
 let recognizing = false;
@@ -2696,7 +2701,7 @@ function rolloverUsageWeek(){
 }
 function scansRemaining(){
   if(scife.usage.isAdmin) return Infinity;
-  return Math.max(0, SCAN_LIMIT_PER_WEEK - scife.usage.scanCount);
+  return Math.max(0, scanLimitForTier() - scife.usage.scanCount);
 }
 function updateScanBanner(){
   const el = document.getElementById('sig_scanBannerText');
@@ -2705,14 +2710,14 @@ function updateScanBanner(){
   const remaining = scansRemaining();
   el.textContent = scife.usage.isAdmin
     ? 'Unlimited scans — Admin'
-    : `Scans remaining this week: ${remaining}/${SCAN_LIMIT_PER_WEEK}`;
+    : (isPremiumTier() ? 'Unlimited scans — Premium' : `Scans remaining this week: ${remaining}/${SCAN_LIMIT_PER_WEEK}`);
   if(banner){
     banner.classList.toggle('empty', !scife.usage.isAdmin && remaining === 0);
     banner.classList.toggle('low', !scife.usage.isAdmin && remaining > 0 && remaining <= 1);
   }
   const fill = document.getElementById('sig_scanMeterFill');
   if(fill){
-    const pct = scife.usage.isAdmin ? 100 : Math.round((remaining / SCAN_LIMIT_PER_WEEK) * 100);
+    const pct = (scife.usage.isAdmin || isPremiumTier()) ? 100 : Math.round((remaining / SCAN_LIMIT_PER_WEEK) * 100);
     fill.style.width = pct + '%';
   }
 }
@@ -2757,7 +2762,7 @@ function renderAdminSection(){
   rolloverImgDay();
   hint.innerHTML = scife.usage.isAdmin
     ? 'Admin access is active on this account — Signal scans and chat images are unlimited.'
-    : `${scansRemaining()}/${SCAN_LIMIT_PER_WEEK} Signal scans left this week, ${chatImagesRemainingToday()}/${chatImageDailyLimitLabel()} chat images left today. Enter the admin password for unlimited access.`;
+    : `${scansRemaining() === Infinity ? '∞' : scansRemaining()}/${scanLimitLabel()} Signal scans left this week, ${chatImagesRemainingToday()}/${chatImageDailyLimitLabel()} chat images left today. Enter the admin password for unlimited access.`;
   locked.style.display = scife.usage.isAdmin ? 'none' : 'block';
   unlocked.style.display = scife.usage.isAdmin ? 'block' : 'none';
 }
@@ -2905,7 +2910,7 @@ function activeProviderCfg(){
 }
 function activeModel(){
   const own = scife.apiKeys && scife.apiKeys[scife.provider];
-  return own ? scife.model : SHARED_MODEL;
+  return own ? scife.model : sharedModelForTier();
 }
 
 async function saveScife(){
@@ -6003,15 +6008,23 @@ async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperatu
     parts.push({ text:t.content });
     return { role: t.role === 'assistant' ? 'model' : 'user', parts };
   });
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({
-      contents,
-      systemInstruction: { role:'user', parts:[{ text:systemPrompt }] },
-      generationConfig: { temperature, maxOutputTokens:maxTokens }
-    })
-  });
+  const bodyObj = {
+    contents,
+    systemInstruction: { role:'user', parts:[{ text:systemPrompt }] },
+    generationConfig: { temperature, maxOutputTokens:maxTokens }
+  };
+  let res;
+  if(apiKey === SHARED_KEY){
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session) throw new Error('Sign in to use SciFe on the shared plan');
+    res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + session.access_token, 'apikey': SUPABASE_KEY },
+      body: JSON.stringify(bodyObj)
+    });
+  } else {
+    res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(bodyObj) });
+  }
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
     let msg = err.error?.message || ('Gemini request failed (' + res.status + ')');
@@ -6049,7 +6062,7 @@ async function maybeUpdateMemory(){
     ))?.trim();
     if(note){
       scife.memory.push(note);
-      if(scife.memory.length > 10) scife.memory = scife.memory.slice(-10);
+      if(scife.memory.length > memoryCapForTier()) scife.memory = scife.memory.slice(-memoryCapForTier());
       saveScife();
     }
   }catch(e){ /* memory is best-effort, never block chat on it */ }
