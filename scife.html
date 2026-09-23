@@ -1879,7 +1879,7 @@ function hasEliteAccess(){ return tierAtLeast('elite'); }   // elite or premium
 function isPremiumTier(){ return userTier === 'premium'; }
 // Chat-image daily cap: unchanged (3/day) for free/pro/elite, unlimited on premium.
 function chatImageDailyLimitForTier(){ return isPremiumTier() ? Infinity : 3; }
-const SHARED_MODEL_PREMIUM = 'gemini-3.1-pro';   // Premium gets the stronger house model
+const SHARED_MODEL_PREMIUM = 'gemini-3.1-pro-preview';   // Premium gets the stronger house model
 function sharedModelForTier(){ return isPremiumTier() ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
 function scanLimitForTier(){ return isPremiumTier() ? Infinity : SCAN_LIMIT_PER_WEEK; }
 function scanLimitLabel(){ return isPremiumTier() ? '∞' : String(SCAN_LIMIT_PER_WEEK); }
@@ -1964,7 +1964,7 @@ const PROVIDERS = {
     models: [
       { value:'gemini-3.5-flash', label:'Gemini 3.5 Flash — fast & free-tier', vision:true },
       { value:'gemini-3.5-flash-lite', label:'Gemini 3.5 Flash-Lite — cheapest', vision:true },
-      { value:'gemini-3.1-pro', label:'Gemini 3.1 Pro — most capable', vision:true }
+      { value:'gemini-3.1-pro-preview', label:'Gemini 3.1 Pro — most capable', vision:true }
     ]
   },
   openrouter: {
