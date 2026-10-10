@@ -6779,5 +6779,105 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+<style id="gd-ui-v3">
+/* ================================================================
+   UI REFRESH V3 (SciFe) — mirrors the main app's refinements:
+   slightly more luminous mint, warmer champagne gold, deeper base,
+   a consistent spacing rhythm, and calmer (non-tilting) surfaces.
+   Declared last; restyles only — no ids, classes or logic changed.
+   ================================================================ */
+:root{ --accent-2:var(--gold); --ease-out:cubic-bezier(.16,1,.3,1); }
+html[data-theme="dark"]{
+  --void:#04070b; --void-2:#09111a; --graphite:#0d1822; --graphite-hi:#14222e;
+  --panel:rgba(12,20,27,0.78); --panel-solid:#09121a;
+  --steel:rgba(226,240,235,0.075); --steel-hi:rgba(226,240,235,0.15);
+  --bronze-bright:#3ee6b8; --bronze:#14c493;
+  --gold:#e8c581; --gold-bright:#f6dfaa; --gold-dim:#8f7433;
+  --slate:#93aaa4; --slate-dim:#678580; --neon-green:#3ee6b8; --bg:#04070b;
+}
+html[data-theme="dark"] body{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(62,230,184,0.09), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(232,197,129,0.055), transparent 55%),
+    #04070b;
+}
+.composer{ background:linear-gradient(transparent, var(--bg) 40%); }
+
+/* ---------- sign-in gate + setup ---------- */
+.center-screen{ padding:40px 20px; }
+.center-orb{ opacity:.28; filter:blur(70px); }
+.gate-card{
+  max-width:460px; padding:40px 40px 34px; border-radius:26px; border-color:transparent;
+  transform:none !important; will-change:auto;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.07), 0 40px 80px -34px rgba(0,0,0,0.55), 0 60px 140px -56px color-mix(in srgb, var(--bronze-bright) 26%, transparent);
+}
+.gate-card::before{
+  inset:0; padding:1px; opacity:.75;
+  background:linear-gradient(155deg, color-mix(in srgb, var(--bronze-bright) 80%, transparent) 0%, transparent 34%, transparent 66%, color-mix(in srgb, var(--accent-2) 70%, transparent) 100%);
+}
+.gate-card::after{ display:none; }
+.gate-mark{ margin-bottom:22px; }
+.gate-card h1{ font-size:30px; margin-bottom:12px; letter-spacing:-0.015em; animation:none; background-size:100% 100%;
+  background:linear-gradient(120deg, var(--platinum) 40%, var(--accent-2) 130%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.gate-card p{ font-size:14.5px; line-height:1.7; margin-bottom:26px; }
+.gate-foot{ margin-top:26px; }
+.field{ margin-bottom:20px; }
+.field label{ font-size:10.5px; letter-spacing:0.12em; margin-bottom:9px; }
+.field input,.field select{ padding:14px 16px; border-radius:13px; background:color-mix(in srgb, var(--void) 55%, transparent); }
+.hint{ line-height:1.65; margin-top:8px; }
+/* keep room for the search icon / result count that the field padding above would otherwise cover */
+.field .provider-search input{ padding:12px 54px 12px 38px; border-radius:12px; }
+.provider-search::before{ left:14px; }
+.provider-search .p-count{ right:14px; }
+.toggle-row{ padding:14px 0; gap:16px; }
+.btn{
+  padding:15px 22px; border-radius:13px; letter-spacing:0.015em;
+  background:linear-gradient(135deg, var(--bronze-bright), var(--bronze));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.35), 0 14px 30px -12px color-mix(in srgb, var(--bronze-bright) 65%, transparent);
+}
+.btn:not(:hover)::after{ animation:none; }
+.btn:hover{ transform:translateY(-1px); filter:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 18px 34px -12px color-mix(in srgb, var(--bronze-bright) 70%, transparent); }
+.btn:active{ transform:translateY(1px); box-shadow:inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 18px -10px color-mix(in srgb, var(--bronze-bright) 55%, transparent); }
+.btn-ghost{ box-shadow:none; background:transparent; }
+.btn-ghost:hover{ box-shadow:none; transform:none; }
+
+/* ---------- main screen ---------- */
+#app{ padding:0 20px 20px; }
+.topbar{ padding:calc(20px + env(safe-area-inset-top)) 4px 18px; }
+.topbar .title{ animation:none; background-size:100% 100%;
+  background:linear-gradient(120deg, var(--platinum) 45%, var(--accent-2) 130%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.topbar-icons{ gap:10px; }
+.icon-btn{ width:40px; height:40px; border-radius:12px; }
+.stage-3d-wrap{ margin-bottom:22px; }
+.quick-row-wrap{ margin-bottom:20px; }
+.quick-row{ gap:10px; padding-bottom:6px; }
+.quick-chip{ padding:10px 16px; border-color:color-mix(in srgb, var(--bronze-bright) 30%, transparent); }
+.quick-chip:hover{ transform:translateY(-1px); border-color:color-mix(in srgb, var(--accent-2) 55%, transparent); }
+.chat{ gap:14px; padding:6px 2px 16px; }
+.bubble{ padding:14px 17px; border-radius:18px; line-height:1.62; }
+.bubble.user{ background:linear-gradient(135deg, #181208 0%, #281f0f 50%, #352910 100%); border-color:color-mix(in srgb, var(--accent-2) 38%, transparent); }
+.bubble.system{ padding:16px 20px; }
+.composer{ padding-top:12px; padding-bottom:calc(8px + env(safe-area-inset-bottom)); }
+.composer-row{ padding:9px 9px 9px 18px; border-radius:18px; gap:10px; border-color:var(--steel-hi); }
+.send-btn{ background:linear-gradient(135deg, var(--bronze-bright), var(--bronze)); box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 18px -8px color-mix(in srgb, var(--bronze-bright) 60%, transparent); }
+.send-btn:active{ box-shadow:none; transform:translateY(1px); }
+/* the text input can't shrink below its default width, which pushed the send button off-screen on phones */
+.composer-row input{ min-width:0; }
+
+/* ---------- settings / modals ---------- */
+.overlay{ background:rgba(3,8,12,0.6); backdrop-filter:blur(8px); }
+.modal{ padding:32px 30px 28px; border-radius:24px; max-width:440px; border-color:transparent; }
+.modal::before{ inset:0; padding:1px; opacity:.7;
+  background:linear-gradient(155deg, color-mix(in srgb, var(--bronze-bright) 75%, transparent), transparent 35%, transparent 65%, color-mix(in srgb, var(--accent-2) 65%, transparent)); }
+.modal h3{ font-size:22px; margin-bottom:8px; background:linear-gradient(120deg, var(--platinum) 45%, var(--accent-2) 130%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.modal .sub{ line-height:1.6; margin-bottom:24px; }
+
+@media(max-width:600px){
+  .gate-card{ padding:38px 24px 32px; border-radius:22px; }
+  #app{ padding:0 16px 16px; }
+  .modal{ padding:28px 22px 24px; }
+}
+</style>
+
 </body>
 </html>
