@@ -6,14 +6,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SciFe">
-<meta name="theme-color" content="#04070a">
+<meta name="theme-color" content="#05070a">
 <title>SciFe — Ghost Discipline</title>
 <script>(function(){
-  var GD_THEMES=['light','dark','red','blue','purple','gold','slate'];
+  var GD_THEMES=['light','dark','black','red','blue','purple','gold','slate'];
   try{
+    if(!localStorage.getItem('gd_slate_default_v1')){
+      if(localStorage.getItem('gd_theme')==='black') localStorage.setItem('gd_theme','slate');
+      localStorage.setItem('gd_slate_default_v1','1');
+    }
     var t = localStorage.getItem('gd_theme');
-    document.documentElement.setAttribute('data-theme', GD_THEMES.indexOf(t)!==-1 ? t : 'dark');
-  }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
+    document.documentElement.setAttribute('data-theme', GD_THEMES.indexOf(t)!==-1 ? t : 'slate');
+  }catch(e){ document.documentElement.setAttribute('data-theme','slate'); }
 })();</script>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="logo.png">
@@ -1494,7 +1498,7 @@ setTimeout(function(){
 <!-- ============ MAIN APP ============ -->
 <div id="app">
   <div class="topbar">
-    <a class="back" href="app.html" aria-label="Back to Ghost Discipline">← Ghost Discipline</a>
+    <a class="back" href="app.html" aria-label="Back to Ghost Discipline" onclick="if(window.parent!==window){event.preventDefault();window.parent.postMessage({type:'gd-close-quick-scife'},'*');}">← Ghost Discipline</a>
     <div class="title serif">SciFe</div>
     <div class="topbar-icons">
       <div class="icon-btn" role="button" tabindex="0" onclick="openSignalPage()" onkeydown="if(event.key==='Enter')openSignalPage()" title="Analyze a setup" aria-label="Open Signal analysis">🎯</div>
@@ -2774,13 +2778,13 @@ function renderAdminSection(){
    All 7 backgrounds from Ghost Discipline (light/dark + the 5 colour
    themes) are understood here — see the COLOUR THEMES CSS block above —
    so whatever the trader picks in either app carries straight over. */
-const GD_THEMES = ['light','dark','red','blue','purple','gold','slate'];
+const GD_THEMES = ['light','dark','black','red','blue','purple','gold','slate'];
 const GD_THEME_COLOR = {
-  light:'#ffffff', dark:'#03050a', red:'#0a0304', blue:'#03060d',
+  light:'#ffffff', dark:'#03050a', black:'#000000', red:'#0a0304', blue:'#03060d',
   purple:'#08040d', gold:'#0a0704', slate:'#05070a'
 };
 function applyGdTheme(t){
-  const theme = GD_THEMES.includes(t) ? t : 'light';
+  const theme = GD_THEMES.includes(t) ? t : 'slate';
   document.documentElement.setAttribute('data-theme', theme);
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.setAttribute('content', GD_THEME_COLOR[theme]);
@@ -2997,17 +3001,47 @@ async function clearMemory(){
 /* ============ APP START ============ */
 function startApp(){
   document.getElementById('setupScreen').style.display='none';
-  document.getElementById('app').style.display='flex';
-  addBubble('system', memoryOpeningLine());
+  document.getElementById('app').style.display='grid';
+  addBubble('system', scifeOpeningLine());
   setupSpeechRecognition();
   initChatScrollWatch();
   updateChatQuotaBanner();
 }
-function memoryOpeningLine(){
-  if(scife.memory.length){
-    return "Picking up where we left off — I remember our last few sessions.";
+function scifeOpeningLine(){
+  const profile = traderRow && traderRow.profile && typeof traderRow.profile==='object' ? traderRow.profile : {};
+  const meta = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+  const rawName = profile.name || profile.preferredName || profile.preferred_name || meta.full_name || meta.name || '';
+  const firstName = String(rawName).trim().split(/\s+/)[0].replace(/[^\p{L}'’-]/gu,'');
+  const name = firstName ? `, ${firstName}` : '';
+  let hour = new Date().getHours();
+  const timezone = String(profile.timezone || '').trim();
+  if(timezone){
+    try{ hour = Number(new Intl.DateTimeFormat('en', {hour:'numeric',hourCycle:'h23',timeZone:timezone}).format(new Date())); }catch(e){}
   }
-  return "Hey, I'm SciFe. Ask about your day, your journal, or just talk through how you're feeling.";
+  const salutation = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 22 ? 'Good evening' : 'Still up';
+  const dayKey = (()=>{ try{return new Intl.DateTimeFormat('en-CA',{timeZone:timezone||undefined,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}catch(e){return new Date().toISOString().slice(0,10);} })();
+  const seed = [...`${dayKey}:${firstName.toLowerCase()}`].reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
+  const humor = [
+    'The market can bring the drama; we’ll bring a plan.',
+    'I’ve prepared no hot takes, only useful questions. A rare achievement online.',
+    'Let’s keep the decisions deliberate and the chart-induced theatrics to a minimum.',
+    'The candles are free to be dramatic. We don’t have to join them.'
+  ][seed % 4];
+  const memoryCount = Array.isArray(scife && scife.memory) ? scife.memory.length : 0;
+  const today = typeof todayStr==='function' ? todayStr() : new Date().toISOString().slice(0,10);
+  const day = traderRow && traderRow.day;
+  const tradeCount = day && day.date===today ? Number(day.tradesCount)||0 : 0;
+  const style = String(profile.style || '').toLowerCase();
+  const styleNote = style ? ` Your ${style} approach is welcome here.` : '';
+  let opening;
+  if(memoryCount){
+    opening = `${salutation}${name}. Good to have you back. We can pick up from our last conversation or start with what’s on your mind today.`;
+  }else if(tradeCount > 0){
+    opening = `${salutation}${name}. You’ve logged ${tradeCount} ${tradeCount===1?'trade':'trades'} today; we can look at the decisions behind them, not just the score.`;
+  }else{
+    opening = `${salutation}${name}. I’m SciFe. We can talk through your day, review your journal, or work through a setup together.`;
+  }
+  return `${opening}${styleNote} ${humor}`;
 }
 
 /* ============ JOURNAL SUMMARY (client-side stats fed to the model) ============ */
@@ -3457,6 +3491,16 @@ function resolveActionAccount(rawAccount){
 }
 async function applyTradeAction(action){
   if(!action || !action.type) return null;
+  if(action.type === 'set_theme'){
+    const theme=String(action.theme||'').toLowerCase();
+    if(!GD_THEMES.includes(theme)){
+      logAction('set_theme',{theme:action.theme||null,reason:'unsupported theme'},false);
+      return {ok:false,message:'I can set the portal to light, dark, red, blue, purple, gold, or slate. Which would you like?'};
+    }
+    applyGdTheme(theme);
+    logAction('set_theme',{theme},true);
+    return {ok:true,message:`Portal color changed to ${theme}.`};
+  }
   traderRow.trades = traderRow.trades || [];
   if(action.type === 'log_trade'){
     sigRolloverDayIfNeeded();
@@ -3642,6 +3686,8 @@ DURING A LOSING STREAK: When "Consecutive losses right now" is 2 or more, resist
 JOURNAL SNAPSHOT (Personal and each Prop Firm account are kept separate on purpose — never answer "how am I doing" by blending a challenge's numbers into personal, or vice versa; if the trader doesn't specify which account, ask or answer for Personal by default and mention the prop account(s) separately):
 ${summarizeJournal()}
 
+PORTAL APPEARANCE: When the trader explicitly asks you to change the portal's colors or theme, apply that preference immediately with a set_theme action. Supported themes are light, dark, red, blue, purple, gold, and slate. Match a plain color request to the closest theme (for example, green/forest → dark, navy → blue, violet → purple, silver → slate). Never change the theme unprompted.
+
 PROP FIRM ACCOUNTS ON FILE:
 ${propFirmLines}
 
@@ -3671,6 +3717,7 @@ To do this, end your reply with a single action block on its own line, and NOTHI
 For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"<a prop firm id from the list above>","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
 For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
 For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
+For changing portal colors when explicitly requested: {"type":"set_theme","theme":"dark"}
 Valid "rule" keys (use exactly one of these, spelled exactly like this — see current values in the JOURNAL SNAPSHOT above): maxDailyLoss, maxTrades, riskPerTrade, minRR, maxConsecLosses, accountBalance, coolingOffMinutes, maxRiskPerTrade, currency, accountType. "value" is a plain number for all of these except currency/accountType, which take a short string.
 For placing a pending order on the Order Book: {"type":"place_order","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"rrPlanned":2,"account":"personal"|"<a prop firm id from the list above>","strategy":"name or omit","notes":"why — the actual structure/confluence backing entry/SL/TP"}. This lands on the Order Book tagged as AI-suggested and awaiting the trader's own review — it is never itself a live trade.
 For queuing an MT5 command (only meaningful if the trader has the MT5 bridge on — see MT5 LIVE BRIDGE above; never emit this block at all if the MT5 LIVE BRIDGE line above says the feature isn't available on this account): {"type":"mt5_order","account":"<a prop firm id, or 'personal'>","action":"open"|"modify"|"close","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"lot":0.5,"notes":"why"}. This is queued and requires the trader's own explicit approval in Settings before it ever reaches their real account — say so plainly when you queue one, don't imply it already executed.
@@ -3964,7 +4011,7 @@ function openSignalPage(){
 }
 function closeSignalPage(){
   document.getElementById('signalPage').style.display='none';
-  document.getElementById('app').style.display='flex';
+  document.getElementById('app').style.display='grid';
 }
 // Pulls the trader's saved session selection (scife.sigSessions, synced via
 // trader_data same as everything else in `scife`) into the in-memory
@@ -6877,6 +6924,179 @@ html[data-theme="dark"] body{
   #app{ padding:0 16px 16px; }
   .modal{ padding:28px 22px 24px; }
 }
+
+/* SciFe becomes a roomy conversation workspace. The live core stays present
+   as a compact companion panel while the conversation gets the main canvas. */
+#app{display:none;grid-template-columns:minmax(235px,280px) minmax(0,1fr);grid-template-rows:auto auto minmax(210px,250px) minmax(0,1fr) auto;gap:0 28px;width:min(100%,1440px);max-width:1440px;min-height:100vh;min-height:100dvh;margin:0 auto;padding:0 clamp(20px,4vw,58px) 22px}
+#app>.topbar{grid-column:1/-1;grid-row:1;padding:20px 0 16px;border-bottom:1px solid var(--steel);background:color-mix(in srgb,var(--void) 92%,transparent);backdrop-filter:blur(18px)}
+#chatQuotaBanner{grid-column:1/-1;grid-row:2;margin:0 -1px 16px!important;border:1px solid var(--steel)!important;border-radius:0 0 12px 12px!important;background:color-mix(in srgb,var(--panel-solid) 80%,transparent)!important;padding:9px 14px!important}
+#stage3dWrap{grid-column:1;grid-row:3;margin:0;align-self:stretch;perspective:none}
+#stage{height:100%;min-height:210px;max-height:250px;border:1px solid var(--steel);border-radius:18px;background:radial-gradient(ellipse at 50% 40%,color-mix(in srgb,var(--bronze-bright) 13%,var(--panel-solid)),var(--panel-solid) 75%);box-shadow:inset 0 1px rgba(255,255,255,.04),0 24px 60px -48px #000;transform:none!important}
+#stage::before{display:none}.stage-glare{display:none}.stage-fallback{opacity:.28!important;animation:none!important;background:radial-gradient(ellipse at 50% 50%,color-mix(in srgb,var(--bronze-bright) 20%,transparent),transparent 70%)}
+.neural-core-wrap{width:68%;height:78%;max-width:195px;transform:translate(-50%,-50%);opacity:.88}.neural-core-etch{opacity:.45}.stage-hud,.stage-readout,.stage-metrics{opacity:.65}.stage-status{bottom:11px;left:14px}.stage-emoji{display:none}
+.quick-row-wrap{grid-column:1;grid-row:4;align-self:start;margin:16px 0 0;min-width:0}
+.quick-row{display:grid;grid-template-columns:1fr;gap:7px;overflow:visible;padding:0}
+.quick-chip{min-height:39px;justify-content:flex-start;padding:9px 12px;border-radius:10px;text-align:left;font-size:11px;background:color-mix(in srgb,var(--panel-solid) 88%,transparent);border-color:var(--steel);color:var(--slate)}
+.quick-chip:hover{transform:translateX(2px);background:color-mix(in srgb,var(--bronze-bright) 7%,var(--panel-solid));color:var(--platinum)}
+.quick-row-wrap::after{display:none}
+.chat-wrap{grid-column:2;grid-row:3/5;min-height:0;height:100%;overflow:hidden;border:1px solid var(--steel);border-radius:18px;background:linear-gradient(145deg,color-mix(in srgb,var(--panel-solid) 74%,transparent),color-mix(in srgb,var(--void-2) 88%,transparent));box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.chat{min-height:0;height:100%;padding:22px clamp(16px,3vw,34px);gap:16px;overflow-y:auto;perspective:none}
+.composer{grid-column:2;grid-row:5;position:relative;bottom:auto;z-index:3;padding:12px 0 0;background:linear-gradient(transparent,var(--void) 28%)}
+.composer-row{border-radius:14px;background:color-mix(in srgb,var(--panel-solid) 94%,transparent);box-shadow:0 16px 40px -28px #000,inset 0 1px rgba(255,255,255,.04)}#textInput{font-size:14px}
+#bootLoader{background:radial-gradient(ellipse 620px 440px at 50% 40%,rgba(166,201,158,.07),transparent 70%),var(--void);perspective:none;transition:opacity .3s ease,visibility .3s}
+#bootLoader .center-orb{display:none}.boot-splash-inner{gap:14px;animation:bootInnerRise .4s ease both}
+#bootLoader .boot-emblem{width:68px;height:68px}.boot-emblem-ring,.boot-emblem-plate::after{display:none}
+#bootLoader .boot-emblem-plate{width:58px;height:58px;animation:none;border-radius:15px;box-shadow:0 10px 30px -16px #000;border-color:var(--steel)}
+#bootLoader .boot-word{font:500 28px/1.1 'Fraunces',Georgia,serif;letter-spacing:-.03em;color:var(--platinum);background:none;-webkit-text-fill-color:var(--platinum);animation:none;filter:none}
+#bootLoader .boot-sub{font-size:10px;color:var(--slate)}#bootLoader .boot-bar{width:142px;gap:3px}.boot-bar span{width:auto;flex:1;height:2px;animation-duration:2s}
+@media(max-width:760px){#app{display:none;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(280px,1fr) auto;gap:0;padding:0 16px calc(16px + env(safe-area-inset-bottom));min-height:100dvh}#app>.topbar{grid-column:1;grid-row:1}#chatQuotaBanner{grid-column:1;grid-row:2}#stage3dWrap{grid-column:1;grid-row:3;height:145px;margin:0 0 14px}#stage{min-height:145px;height:145px}.neural-core-wrap{width:40%;height:90%;max-width:140px}.stage-hud,.stage-readout,.stage-metrics{display:none}.quick-row-wrap{grid-column:1;grid-row:4;margin:0 0 12px}.quick-row{display:flex;overflow-x:auto;gap:7px}.quick-chip{flex:none;min-height:34px;border-radius:999px;white-space:nowrap;padding:7px 11px}.chat-wrap{grid-column:1;grid-row:5;min-height:280px;border-radius:15px}.chat{padding:16px 13px}.composer{grid-column:1;grid-row:6;padding-top:10px}}
+@media(max-width:440px){#app{padding-inline:12px}.stage-3d-wrap{height:116px}#stage{min-height:116px;height:116px}.neural-core-wrap{width:32%;height:95%}.chat-wrap{min-height:260px}.topbar .back{font-size:11px}.quick-chip{font-size:10px}}
+/* Matching premium controls with short, inexpensive interactions. */
+html[data-theme]{--void:#050505;--void-2:#090909;--graphite:#111;--graphite-hi:#171717;--panel:rgba(17,17,17,.97);--panel-solid:#101010;--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#747b72;--bronze-bright:#b8cda9;--bronze:#91ad80;--gold:#d2bd91}
+html[data-theme] body{background:#050505;color:var(--platinum);font-size:14px;line-height:1.62;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
+#app,#signalPage{color:var(--platinum)}
+.topbar,.chatQuotaBanner{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.topbar .title{font-weight:520;letter-spacing:-.025em}
+.btn,.btn-ghost,.icon-btn,.quick-chip,.settings-tab,.switch{touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:color .14s ease,background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease}
+.btn{min-height:42px;padding:10px 17px;border-radius:10px;font-size:12px;font-weight:600;box-shadow:none}
+.btn::after,.btn:not(:hover)::after{display:none!important;animation:none!important}
+.btn:not(.btn-ghost):not(.btn-secondary):not(.btn-danger):not(.btn-win):not(.btn-loss){background:linear-gradient(145deg,#c4d4b2,#a5bd92);color:#10120d;border:1px solid rgba(215,231,200,.28);box-shadow:0 5px 14px -11px rgba(184,205,169,.8),inset 0 1px rgba(255,255,255,.32)}
+.btn:not(.btn-ghost):not(.btn-secondary):not(.btn-danger):not(.btn-win):not(.btn-loss):hover{filter:none;transform:translateY(-1px);box-shadow:0 7px 16px -12px rgba(184,205,169,.75)}
+.btn:active,.icon-btn:active,.quick-chip:active{transform:translateY(1px) scale(.99)}
+.btn-ghost,.icon-btn{background:#111;color:var(--platinum);border-color:var(--steel-hi);box-shadow:none}
+.btn-ghost:hover,.icon-btn:hover{background:#191919;border-color:rgba(184,205,169,.38);color:var(--platinum)}
+.field input,.field select,.composer-row,.sig-card,.sig-console-card,.modal{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.field input,.field select,.sig-textarea,#textInput{background:#0e0e0e!important;color:var(--platinum)!important;border-color:var(--steel-hi)!important;border-radius:10px}
+.field input:focus,.field select:focus,.sig-textarea:focus,#textInput:focus{border-color:var(--bronze-bright)!important;box-shadow:0 0 0 3px rgba(184,205,169,.12)!important}
+.chat-wrap,.sig-card,.sig-console-card,.modal{background:#101010;border-color:var(--steel)}
+.composer-row{background:#111;border-color:var(--steel-hi);box-shadow:0 10px 24px -20px #000,inset 0 1px rgba(255,255,255,.03)}
+.bubble{box-shadow:none}.bubble.user{background:#1b1a16;border-color:rgba(210,189,145,.22)}
+.quick-chip{box-shadow:none}.quick-chip:hover{box-shadow:none}
+.stage-glare,.stage::before{display:none}.stage-fallback{animation:none!important}.stage{box-shadow:inset 0 1px rgba(255,255,255,.035),0 18px 36px -30px #000}
+.center-orb,.grain-overlay{display:none!important}.gate-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#101010;border-color:var(--steel-hi);box-shadow:0 24px 54px -36px #000,inset 0 1px rgba(255,255,255,.035)}
+.gate-card::before{opacity:.35}.gate-card::after{display:none}
+.topbar .title,.boot-word,.boot-emblem-plate,.boot-emblem-ring,.gate-card h1{animation:none!important}
+#neuralCore{filter:none}
+:focus-visible{outline:2px solid var(--bronze-bright)!important;outline-offset:3px;box-shadow:0 0 0 3px rgba(184,205,169,.13)!important}
+@media(max-width:600px){.btn{min-height:40px;padding:9px 13px}.bubble{max-width:92%;font-size:14px}.chat-wrap{box-shadow:inset 0 1px rgba(255,255,255,.03)}}
+
+/* SciFe workspace refresh: calmer hierarchy, a composed empty state, and a
+   readable signal workflow. Decorative effects stay static and lightweight. */
+#app{width:min(100%,1540px);max-width:1540px;grid-template-columns:minmax(250px,310px) minmax(0,1fr);grid-template-rows:auto auto minmax(205px,230px) minmax(180px,1fr) auto;column-gap:30px;padding-inline:clamp(22px,4.3vw,68px)}
+#app>.topbar{padding:22px 0 18px;border-bottom-color:rgba(238,240,233,.1)}
+#app>.topbar .title{font-size:21px}
+#chatQuotaBanner{margin-bottom:22px!important;border-radius:0 0 13px 13px!important;padding:10px 15px!important;color:#9fa69c!important}
+#stage3dWrap{grid-row:3;align-self:stretch}
+#stage{min-height:205px;max-height:230px;border-color:rgba(184,205,169,.14);background:radial-gradient(ellipse at 50% 45%,rgba(151,186,135,.11),#101210 70%);box-shadow:inset 0 1px rgba(255,255,255,.035),0 20px 42px -36px #000}
+.neural-core-wrap{width:64%;height:78%;max-width:180px;opacity:.68}
+.stage-hud,.stage-readout,.stage-metrics{display:none!important}
+.stage-status{left:15px;bottom:13px}
+.quick-row-wrap{grid-row:4;margin-top:17px}
+.quick-row{gap:8px}
+.quick-chip{min-height:42px;padding:10px 13px;font-size:11.5px;color:#c1c6bd;background:#111310;border-color:rgba(238,240,233,.09)}
+.quick-chip:hover{transform:translateX(2px);border-color:rgba(184,205,169,.28);background:#171a16;color:#e8ece3}
+.chat-wrap{grid-row:3/5;border-radius:19px;background:linear-gradient(155deg,#111211,#0b0c0b);border-color:rgba(238,240,233,.1);box-shadow:inset 0 1px rgba(255,255,255,.035),0 22px 54px -42px #000}
+.chat{align-content:start;padding:clamp(22px,4vw,48px);gap:18px}
+.chat:has(.bubble:only-child){justify-content:center;align-items:center}
+.chat:has(.bubble:only-child) .bubble{max-width:min(82%,650px);align-self:center;padding:25px 30px;border-radius:17px;background:linear-gradient(145deg,#171915,#111210);border:1px solid rgba(184,205,169,.14);color:#e5e8df;text-align:center;font:500 clamp(16px,1.8vw,21px)/1.55 'Fraunces',Georgia,serif;box-shadow:0 18px 45px -36px #000,inset 0 1px rgba(255,255,255,.04)}
+.chat:has(.bubble:only-child) .bubble::before{content:'SCIFE · YOUR TRADING COMPANION';display:block;margin-bottom:11px;color:#9ead91;font:600 9px/1.4 'IBM Plex Mono',monospace;letter-spacing:.14em}
+.chat:empty::before{content:'A clearer read starts with a better question.';display:block;align-self:center;margin:auto auto 0;color:#e9ece4;font:500 clamp(23px,3vw,34px)/1.2 'Fraunces',Georgia,serif;letter-spacing:-.035em;text-align:center;max-width:18ch}
+.chat:empty::after{content:'Talk through your trading day, review a journal pattern, or scan a setup when you’re ready.';display:block;align-self:center;margin:0 auto auto;color:#90978d;font-size:13px;line-height:1.7;text-align:center;max-width:42ch}
+.bubble{max-width:min(78%,720px);padding:15px 18px;border-radius:15px;font-size:13.5px}
+.bubble.system{background:#141614;border-color:rgba(238,240,233,.08);color:#d0d4cb}
+.bubble.user{align-self:flex-end;background:#1c1e19;border-color:rgba(184,205,169,.16);color:#f1f1e9}
+.composer{grid-row:5;padding-top:14px}
+.composer-row{min-height:58px;border-radius:15px;padding-left:18px}
+#textInput{font-size:13px}
+.send-btn{width:39px;height:39px;border-radius:11px}
+/* Signal scanner: wider content, visible progress, and clear section rhythm. */
+#signalPage{width:min(100%,1020px)!important;max-width:1020px!important;padding:0 clamp(18px,4vw,42px) 42px!important}
+#signalPage>.topbar{position:sticky;top:0;z-index:8;padding:calc(14px + env(safe-area-inset-top)) 0 14px;background:rgba(5,5,5,.94);border-bottom:1px solid rgba(238,240,233,.09)}
+#signalPage .sig-hero{padding:30px clamp(22px,4vw,38px);margin:24px 0 16px;border-radius:19px;border:1px solid rgba(184,205,169,.14);background:radial-gradient(ellipse at 100% 0%,rgba(184,205,169,.08),transparent 52%),linear-gradient(145deg,#141613,#0e0f0d);box-shadow:inset 0 1px rgba(255,255,255,.04)}
+#signalPage .sig-hero::before{opacity:.18}
+#signalPage .sig-hero::after{display:none}
+#signalPage .sig-hero-title{font-size:clamp(28px,4vw,38px);letter-spacing:-.035em;color:#f0f0e8}
+#signalPage .sig-hero-sub{max-width:66ch;font-size:13px;color:#9da398;line-height:1.7}
+#signalPage .sig-hero-badge{padding:11px 14px;border:1px solid rgba(238,240,233,.1);border-radius:12px;background:#10110f}
+#signalPage .sig-console-card{margin:0 0 26px;padding:15px 18px 13px;border-radius:15px;border:1px solid rgba(238,240,233,.1);background:#10110f;box-shadow:inset 0 1px rgba(255,255,255,.03)}
+#signalPage .sig-meter-track{height:3px;background:rgba(255,255,255,.08)}
+#signalPage .sig-meter-fill{background:linear-gradient(90deg,#819875,#c5d5ae)}
+#signalPage .sig-step{margin:26px 0 12px}
+#signalPage .sig-step .num{width:25px;height:25px;border-radius:8px;background:#1a1d17;border:1px solid rgba(184,205,169,.18);color:#c4d4b2}
+#signalPage .sig-step .lbl{font-size:10px;letter-spacing:.13em;color:#d0d4ca}
+#signalPage .sig-step::after{background:linear-gradient(90deg,rgba(238,240,233,.13),transparent)}
+#signalPage .sig-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px;padding:24px 26px 7px;margin-bottom:8px;border-radius:17px;border:1px solid rgba(238,240,233,.09);background:#10110f;box-shadow:inset 0 1px rgba(255,255,255,.025)}
+#signalPage .sig-card .field{min-width:0;margin-bottom:19px}
+#signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1/-1}
+#signalPage .field label{color:#c3c8bd;font-size:10px;letter-spacing:.09em}
+#signalPage .field input,#signalPage .field select,#signalPage .sig-textarea{min-height:46px;padding:12px 14px;border-radius:11px;background:#0b0c0b!important}
+#signalPage .sig-textarea{min-height:130px;resize:vertical}
+#signalPage .sig-upload-zone{min-height:148px;border-radius:14px;border:1px dashed rgba(184,205,169,.26);background:linear-gradient(145deg,rgba(184,205,169,.035),rgba(255,255,255,.012));gap:8px}
+#signalPage .sig-upload-zone .icon{background:#181b16;color:#c1d0ad;border:1px solid rgba(184,205,169,.15)}
+#signalPage .sig-upload-zone .sub{color:#8e958a}
+#signalPage .sig-bias-toggle{gap:8px}
+#signalPage .sig-bias-opt{min-height:42px;border-radius:10px;background:#0b0c0b;border-color:rgba(238,240,233,.1)}
+#signalPage #sig_analyzeBtn{max-width:100%;min-height:54px;margin-top:10px;border-radius:12px;background:linear-gradient(145deg,#c4d4b2,#a5bd92);color:#10120d;box-shadow:0 8px 22px -17px rgba(184,205,169,.8),inset 0 1px rgba(255,255,255,.32)}
+#signalPage #sig_analyzeBtn:hover{box-shadow:0 10px 24px -17px rgba(184,205,169,.85)}
+#signalPage #sig_analyzeBtn .sig-cta-sub{color:rgba(16,18,13,.68)}
+/* Settings gets its own scroll area, larger tabs and a readable desktop width. */
+#settingsOverlay{padding:20px;overflow-y:auto;align-items:center}
+#settingsOverlay .modal{width:min(100%,790px);max-width:790px;max-height:min(88dvh,900px);overflow:auto;padding:30px clamp(20px,4vw,38px);border:1px solid rgba(238,240,233,.12);border-radius:18px;background:#10110f;box-shadow:0 30px 90px -48px #000}
+#settingsOverlay .modal::before{display:none}
+#settingsOverlay .modal h3{font-size:25px;margin:0 42px 5px 0}
+#settingsOverlay .modal .sub{max-width:60ch;margin-bottom:21px;color:#969d92;font-size:12px}
+#settingsOverlay .settings-tabs{display:flex;gap:5px;margin:0 0 20px;padding:5px;overflow-x:auto;border-radius:12px;background:#090a09;border:1px solid rgba(238,240,233,.08)}
+#settingsOverlay .settings-tab{flex:1;min-width:78px;min-height:38px;display:grid;place-items:center;border-radius:9px;color:#8f968c;font-size:11px}
+#settingsOverlay .settings-tab.active{background:#1a1d17;color:#e9ece4;box-shadow:inset 0 0 0 1px rgba(184,205,169,.14)}
+#settingsOverlay .settings-pane{padding:4px 2px 2px}
+#settingsOverlay .field{margin-bottom:17px}
+#settingsOverlay .field label{color:#c2c7bd}
+#settingsOverlay .toggle-row{padding:15px 0;border-bottom:1px solid rgba(238,240,233,.07)}
+#settingsOverlay .hint{color:#858d82;font-size:11px;line-height:1.65}
+html[data-theme="light"] #app>.topbar,html[data-theme="light"] #signalPage>.topbar{background:rgba(247,248,245,.94)}
+html[data-theme="light"] #stage{background:radial-gradient(ellipse at 50% 45%,rgba(116,150,98,.14),#f5f6f2 72%)}
+html[data-theme="light"] .chat-wrap,html[data-theme="light"] .sig-card,html[data-theme="light"] .sig-console-card,html[data-theme="light"] #settingsOverlay .modal{background:#fff}
+html[data-theme="light"] .chat:empty::before{color:#20251f}
+html[data-theme="light"] .chat:empty::after{color:#6d756a}
+@media(max-width:760px){#app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(280px,1fr) auto;column-gap:0;padding-inline:16px}.chat{align-content:start}.chat:has(.bubble:only-child){justify-content:center;align-items:center}.chat:has(.bubble:only-child) .bubble{max-width:94%;padding:19px 18px;font-size:16px}.chat:empty::before{margin:28px auto 0}.chat:empty::after{margin:12px auto auto}.chat-wrap{grid-row:5}.composer{grid-row:6}#signalPage{padding-inline:16px!important}#signalPage .sig-card{grid-template-columns:1fr;padding:19px 17px 4px}#signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1}#signalPage .sig-hero{padding:23px 19px;margin-top:16px}#settingsOverlay{padding:12px;align-items:flex-end}#settingsOverlay .modal{max-height:90dvh;padding:25px 19px calc(20px + env(safe-area-inset-bottom));border-radius:18px 18px 12px 12px}}
+@media(max-width:440px){#app{padding-inline:12px}.chat:empty::before{font-size:24px}.chat:empty::after{font-size:12px}.bubble{max-width:94%}#signalPage .sig-hero-badge{display:none}#signalPage .sig-hero-sub{font-size:12px}#settingsOverlay .settings-tabs{gap:3px}#settingsOverlay .settings-tab{min-width:66px;font-size:10px}}
+
+/* Shared true-black preference: pure black surfaces with original status and accent colors. */
+html[data-theme="black"]{--void:#000;--void-2:#09111a;--graphite:#0d1822;--graphite-hi:#14222e;--panel:rgba(12,20,27,.92);--panel-solid:#09121a;--steel:rgba(226,240,235,.075);--steel-hi:rgba(226,240,235,.15);--bronze-bright:#3ee6b8;--bronze:#14c493;--bronze-dim:#063b2c;--bronze-ink:#03110c;--gold:#e8c581;--gold-bright:#f6dfaa;--gold-dim:#8f7433;--platinum:#eef6f2;--slate:#93aaa4;--slate-dim:#678580;--neon-green:#3ee6b8;--neon-red:#ff5d7a;--neon-cyan:#3ee6b8;--neon-purple:#8b5cf6;--neon-magenta:#0d9488;--amber:#f0a94e;--bg:#000}
+html[data-theme="black"] body{background:#000}
+html[data-theme="black"] body::before{background:radial-gradient(ellipse at 50% 45%,rgba(62,230,184,.035),#000 72%)}
+html[data-theme="black"] body::after{background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.82))}
+html[data-theme="black"] .stage{background:none!important}
+html[data-theme="black"] .center-orb.o1{background:radial-gradient(circle,rgba(62,230,184,.18),transparent 70%)}
+html[data-theme="black"] .center-orb.o2{background:radial-gradient(circle,rgba(232,197,129,.12),transparent 70%)}
+html[data-theme="black"] .center-orb.o3{background:radial-gradient(circle,rgba(20,196,147,.12),transparent 70%)}
+html[data-theme="black"] #settingsOverlay .modal{background:#080808}
+
+/* Clear, consistent theme surfaces and contrast. */
+html[data-theme="light"]{--void:#f3f2ed;--void-2:#faf9f5;--graphite:#ecebe4;--graphite-hi:#e3e3da;--panel:rgba(255,255,252,.98);--panel-solid:#fffefa;--steel:rgba(28,39,31,.11);--steel-hi:rgba(28,39,31,.18);--bronze-bright:#537a59;--bronze:#3e6645;--bronze-dim:#d8e5d7;--bronze-ink:#172319;--gold:#927342;--gold-bright:#a8874e;--gold-dim:#e8ddc3;--platinum:#202a22;--slate:#5e6b61;--slate-dim:#7b877e;--bg:#f3f2ed}
+html[data-theme="light"] body{background:#f3f2ed!important;color:#202a22}
+html[data-theme="light"] #app>.topbar,html[data-theme="light"] #signalPage>.topbar{background:#0b0d0b!important;border-bottom-color:rgba(255,255,255,.1)!important;color:#f1f2ec}
+html[data-theme="light"] .topbar .back,html[data-theme="light"] .topbar .title,html[data-theme="light"] .topbar .icon-btn{color:#f1f2ec}
+html[data-theme="light"] .topbar .icon-btn{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}
+html[data-theme="light"] .topbar .back:hover{background:rgba(255,255,255,.08)}
+html[data-theme="light"] .page-title,html[data-theme="light"] .page-sub,html[data-theme="light"] .chat,html[data-theme="light"] .bubble{color:#202a22}
+html[data-theme="light"] .chat-wrap,html[data-theme="light"] .sig-card,html[data-theme="light"] .sig-console-card,html[data-theme="light"] #settingsOverlay .modal,html[data-theme="light"] .composer-row{background:#fffefa!important;color:#202a22;border-color:rgba(28,39,31,.13)}
+html[data-theme="light"] .composer{background:linear-gradient(transparent,#f3f2ed 45%)}
+html[data-theme="light"] .field input,html[data-theme="light"] .field select,html[data-theme="light"] .sig-textarea,html[data-theme="light"] .sig-risk-field input{background:#fffefa!important;color:#202a22;border-color:rgba(28,39,31,.2)}
+html[data-theme="light"] .hint,html[data-theme="light"] .sig-disclaimer{color:#5e6b61}
+html[data-theme="light"] #signalPage .sig-hero{background:#f8f9f5!important}
+html[data-theme="light"] #signalPage #sig_analyzeBtn{color:#172319}
+/* Black mode makes every working canvas black and leaves accents/status text intact. */
+html[data-theme="black"]{--void:#000;--void-2:#000;--graphite:#050505;--graphite-hi:#090909;--panel:rgba(5,5,5,.98);--panel-solid:#050505;--bg:#000}
+html[data-theme="black"] body,html[data-theme="black"] #app,html[data-theme="black"] #signalPage,html[data-theme="black"] #stage,html[data-theme="black"] .stage-3d-wrap,html[data-theme="black"] .chat-wrap,html[data-theme="black"] #app>.topbar,html[data-theme="black"] #signalPage>.topbar{background:#000!important}
+html[data-theme="black"] .sig-card,html[data-theme="black"] .sig-console-card,html[data-theme="black"] #settingsOverlay .modal,html[data-theme="black"] .composer-row,html[data-theme="black"] .bubble.assistant{background:#050505!important}
+html[data-theme="black"] .composer{background:linear-gradient(transparent,#000 45%)}
+html[data-theme="black"] .field input,html[data-theme="black"] .field select,html[data-theme="black"] .sig-textarea,html[data-theme="black"] .sig-risk-field input{background:#080808!important}
+/* Saturated preset fills are removed; each theme remains identifiable through its accent and text colors. */
+html[data-theme="red"],html[data-theme="blue"],html[data-theme="purple"],html[data-theme="gold"],html[data-theme="slate"]{--void:#080808;--void-2:#0d0d0d;--graphite:#141414;--graphite-hi:#1b1b1b;--panel:rgba(16,16,16,.95);--panel-solid:#101010}
+html[data-theme="red"] body,html[data-theme="blue"] body,html[data-theme="purple"] body,html[data-theme="gold"] body,html[data-theme="slate"] body{background:#080808!important}
+
+html[data-theme="slate"]{--bronze-bright:#c0ccd4;--bronze:#91a1ad;--bronze-dim:#3d4a52;--bronze-ink:#101619}
 </style>
 
 </body>

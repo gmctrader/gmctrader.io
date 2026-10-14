@@ -472,5 +472,16 @@ async function renewTier(btn){
   if(data?.session){ await checkAdminAndEnter(); }
 })();
 </script>
+<style id="gd-admin-finish">
+/* Keep account administration inside the same quiet, premium visual system. */
+:root{--void:#0a100d;--void-2:#101813;--graphite:#151e18;--graphite-hi:#1c2920;--panel:rgba(18,27,21,.96);--border:rgba(230,238,227,.10);--border-hi:rgba(230,238,227,.17);--teal:#a6c99e;--teal-dim:#486246;--teal-ink:#10180f;--gold:#cbb98d;--text:#f0f1e9;--text-dim:#a8b1a4;--text-faint:#778275;--r-sm:9px;--r-md:14px;--r-lg:21px}
+body{font-family:'Instrument Sans',system-ui,sans-serif;background:radial-gradient(ellipse 950px 600px at 18% -10%,rgba(166,201,158,.09),transparent 68%),var(--void);color:var(--text);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;padding:40px 28px 90px}.topbar{padding-bottom:17px;border-bottom:1px solid var(--border);margin-bottom:24px}.brand-badge{border-radius:11px;background:rgba(166,201,158,.09);color:var(--teal);border-color:var(--border-hi)}.brand h1{font-weight:560;letter-spacing:-.025em}.brand .sub{color:var(--text-faint)}
+.card{padding:26px 28px;margin-bottom:16px;border-radius:18px;border-color:var(--border);background:linear-gradient(145deg,rgba(18,27,21,.97),rgba(15,22,17,.96));box-shadow:inset 0 1px rgba(255,255,255,.035),0 20px 48px -40px #000}.card h2{font-size:17px;font-weight:550;letter-spacing:-.02em}.card .hint{font-size:12px;line-height:1.7;color:var(--text-dim)}
+#gate{max-width:430px;margin:clamp(55px,12vh,120px) auto 0}#gate input,.searchRow input,select.tierSel,select.cycleSel{border-radius:10px;border-color:var(--border-hi);background:#0d1510;color:var(--text)}#gate input:focus,.searchRow input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(166,201,158,.12)}
+.btn{border-radius:10px;transition:transform .18s,background .18s,border-color .18s}.btn-teal{background:linear-gradient(135deg,#b6d2ac,#91b487);border-color:transparent;color:#10180f;box-shadow:0 10px 24px -17px rgba(166,201,158,.8)}.btn-teal:hover{filter:brightness(1.04);transform:translateY(-1px)}.btn-ghost{background:transparent}.stats{gap:10px}.stat{padding:17px;border-radius:13px;background:rgba(255,255,255,.018);border-color:var(--border)}.stat .n{font-size:22px;font-weight:500}.stat .l{font-size:9px;letter-spacing:.12em;color:var(--text-faint)}
+table{margin-top:20px}th{font-size:9px;letter-spacing:.11em;color:var(--text-faint);padding-bottom:12px;border-bottom:1px solid var(--border-hi)}td{border-top:0;border-bottom:1px solid var(--border);padding:14px 10px}tr:hover td{background:rgba(166,201,158,.025)}.badge{border-radius:999px;padding:4px 9px}.badge.yes{color:var(--teal);border-color:rgba(166,201,158,.28);background:rgba(166,201,158,.08)}
+@media(max-width:700px){.wrap{padding:24px 15px 60px}.card{padding:21px 18px}.searchRow{flex-wrap:wrap}.searchRow input{min-width:100%}#gate{margin:46px auto 0}}
+</style>
 </body>
 </html>

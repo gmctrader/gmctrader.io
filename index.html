@@ -1,996 +1,130 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>
-// If this page was opened from a home-screen icon (installed PWA / iOS
-// "Add to Home Screen"), skip the marketing page entirely and jump
-// straight into the actual terminal — installed users get an app, not a
-// website. A normal browser tab (someone just visiting the URL) still
-// sees this landing page as usual.
-(function(){
-  try{
-    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
-    if(isStandalone){ window.location.replace('app.html'); }
-  }catch(e){}
-})();
-</script>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ghost Discipline">
-<title>Ghost Discipline — Invitation Only</title>
-<meta name="description" content="A private trading terminal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan. Invitation only.">
-
-<!-- ============================================================
-     SOCIAL PREVIEW — this is what shows up when the link lands in
-     a Telegram chat, DM, or group. Replace YOUR-DOMAIN below with
-     the real production domain before launch — og:image and og:url
-     must be absolute URLs or most chat apps (Telegram included)
-     will silently fail to unfurl them.
-     ============================================================ -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Ghost Discipline">
-<meta property="og:url" content="https://YOUR-DOMAIN/">
-<meta property="og:title" content="Ghost Discipline — Invitation Only">
-<meta property="og:description" content="Lock your rules before the open. Log the trade as you take it. Get scored, not soothed. Invitation only — always has been.">
-<meta property="og:image" content="https://YOUR-DOMAIN/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Ghost Discipline — Keep your word. Then take the trade.">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Ghost Discipline — Invitation Only">
-<meta name="twitter:description" content="A private terminal that locks your risk rules before emotion gets a vote.">
-<meta name="twitter:image" content="https://YOUR-DOMAIN/og-image.png">
-
-<meta name="theme-color" content="#03050a">
-<link rel="icon" type="image/png" href="icon.png">
-<link rel="shortcut icon" type="image/png" href="icon.png">
-<link rel="apple-touch-icon" href="logo.png">
-<link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,380;0,9..144,560;0,9..144,650;0,9..144,750;0,9..144,850;1,9..144,500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --void:#03050a; --void-2:#0a1119; --graphite:#0e1720; --graphite-hi:#152029;
-  --steel:rgba(240,244,242,0.09); --steel-hi:rgba(240,244,242,0.16);
-  --panel:rgba(14,22,28,0.78); --panel-solid:#0b131a;
-  --bronze-bright:#2dd4a8; --bronze:#12b988; --bronze-dim:#063b2c; --bronze-ink:#03110c;
-  --gold-bright:#ffdf9e; --gold:#f2c877; --gold-dim:#8a6b28;
-  --platinum:#eef6f2; --slate:#8fa6a0; --slate-dim:#5e7772;
-  --win:#2be08a; --loss:#ff5d7a; --r-sm:8px; --r-md:13px; --r-lg:20px;
-  --violet:#b795f0; --violet-dim:#5a3f8a;
-}
-*{box-sizing:border-box;}
-html,body{margin:0;padding:0;min-height:100%;overflow-x:hidden;background:var(--void);}
-body{
-  color:var(--platinum);font-family:'Instrument Sans',sans-serif;line-height:1.6;
-  background:
-    radial-gradient(ellipse 900px 560px at 15% -10%, rgba(45,212,168,0.12), transparent 60%),
-    radial-gradient(ellipse 800px 620px at 105% 10%, rgba(242,200,119,0.06), transparent 55%),
-    radial-gradient(ellipse 700px 560px at 50% 105%, rgba(18,185,136,0.08), transparent 55%),
-    var(--void);
-  min-height:100vh;
-}
-.serif{font-family:'Fraunces',serif;}
-.mono{font-family:'IBM Plex Mono',monospace;}
-a{color:inherit;}
-::selection{background:rgba(45,212,168,0.28);}
-
-/* ---------- nav ---------- */
-.nav{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;
-  padding:22px 24px;}
-.nav-brand{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;font-weight:650;font-size:18px;letter-spacing:-0.01em;}
-.nav-brand img{width:30px;height:30px;border-radius:8px;}
-.nav-cta{display:flex;gap:10px;align-items:center;}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:100px;
-  font-size:13px;font-weight:600;letter-spacing:0.01em;cursor:pointer;border:1px solid var(--steel-hi);
-  background:var(--panel-solid);color:var(--platinum);text-decoration:none;transition:transform .15s ease, background .15s ease;}
-.btn:hover{transform:translateY(-1px);}
-.btn-gold{background:linear-gradient(120deg, var(--bronze-bright), var(--bronze));color:var(--bronze-ink);border:none;}
-.btn-violet{background:linear-gradient(120deg, var(--violet), var(--violet-dim));color:#160c28;border:none;}
-.btn-ghost{background:transparent;}
-
-/* ---------- invite badge ---------- */
-.invite-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:100px;
-  background:rgba(45,212,168,0.09);border:1px solid rgba(45,212,168,0.3);color:var(--bronze-bright);
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
-  margin:0 auto 26px auto;}
-.invite-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--bronze-bright);
-  box-shadow:0 0 10px var(--bronze-bright);animation:pulse 1.8s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
-
-/* ---------- hero ---------- */
-.hero{max-width:900px;margin:6vh auto 0 auto;padding:0 24px;text-align:center;}
-.hero h1{font-family:'Fraunces',serif;font-weight:650;font-size:clamp(34px,6vw,64px);line-height:1.05;
-  letter-spacing:-0.02em;margin:0 0 18px 0;}
-.hero h1 .accent{background:linear-gradient(120deg, var(--bronze-bright), var(--gold-bright));
-  -webkit-background-clip:text;background-clip:text;color:transparent;}
-.hero h1 .accent .ch{background:inherit;-webkit-background-clip:text;background-clip:text;color:transparent;}
-.typewriter-wrap{height:34px;display:flex;align-items:center;justify-content:center;margin-bottom:22px;}
-#typewriter{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--slate);letter-spacing:0.01em;}
-#typewriter .cursor{display:inline-block;width:2px;height:16px;background:var(--bronze-bright);
-  margin-left:3px;vertical-align:middle;animation:blink .9s steps(1) infinite;}
-@keyframes blink{50%{opacity:0;}}
-.hero-sub{font-size:16px;color:var(--slate);max-width:600px;margin:0 auto 34px auto;}
-.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
-.hero-note{font-size:11.5px;color:var(--slate-dim);margin-top:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;}
-
-/* ---------- confluence / budget demo ---------- */
-.demo-wrap{max-width:900px;margin:64px auto 0 auto;padding:0 24px;}
-.demo-card{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-lg);
-  padding:26px 26px 18px 26px;backdrop-filter:blur(14px);position:relative;overflow:hidden;}
-.demo-card::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;z-index:0;
-  background:conic-gradient(from 0deg, var(--bronze-bright), transparent 30%, transparent 70%, var(--gold-bright));
-  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;opacity:0.5;}
-.demo-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;position:relative;z-index:1;}
-.demo-title{font-family:'Fraunces',serif;font-weight:650;font-size:19px;}
-.demo-sub{font-size:12.5px;color:var(--slate);margin-top:4px;}
-.demo-hint{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--bronze-bright);
-  background:rgba(45,212,168,0.08);border:1px solid rgba(45,212,168,0.25);border-radius:100px;
-  padding:5px 12px;white-space:nowrap;}
-#budgetSvg{width:100%;height:auto;display:block;touch-action:none;position:relative;z-index:1;}
-.budget-readout{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
-  font-size:11.5px;color:var(--slate-dim);margin-top:4px;position:relative;z-index:1;}
-.budget-readout b{color:var(--bronze-bright);}
-.budget-bar{position:relative;height:8px;border-radius:100px;background:var(--steel);margin-top:20px;overflow:hidden;}
-.budget-bar-fill{height:100%;border-radius:100px;width:0%;
-  background:linear-gradient(90deg, var(--bronze-bright), var(--gold-bright));transition:width .18s ease, background .2s ease;}
-.budget-bar-fill.over{background:linear-gradient(90deg, var(--loss), #ff8fa3);}
-.budget-bar-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
-  font-size:11px;color:var(--slate-dim);margin-top:8px;}
-.budget-bar-labels b{color:var(--bronze-bright);}
-.budget-verdict-row{margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
-  color:var(--slate-dim);text-align:center;}
-.budget-verdict-row b{font-weight:600;}
-
-/* ---------- playground grid (mini interactive demos) ---------- */
-.playground-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px;}
-.demo-mini{padding:24px 22px 22px 22px;}
-.demo-mini .demo-title{font-size:16px;margin-bottom:4px;}
-.demo-mini .demo-sub{font-size:12px;line-height:1.55;margin-bottom:18px;}
-
-/* rule-lock toggles */
-.rule-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;
-  padding:11px 0;border-bottom:1px solid var(--steel-hi);font-size:12.5px;}
-.rule-toggle:last-of-type{border-bottom:none;}
-.switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0;}
-.switch input{opacity:0;width:0;height:0;position:absolute;}
-.switch .track{position:absolute;inset:0;background:var(--steel);border-radius:100px;cursor:pointer;transition:background .2s ease;}
-.switch .track .thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
-  background:var(--slate);transition:transform .2s ease, background .2s ease;}
-.switch input:checked ~ .track{background:rgba(45,212,168,0.28);}
-.switch input:checked ~ .track .thumb{transform:translateX(16px);background:var(--bronze-bright);}
-.seal-status{margin-top:16px;padding:13px;border-radius:var(--r-sm);text-align:center;
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.02em;border:1px solid var(--steel-hi);
-  transition:background .25s ease, color .25s ease, border-color .25s ease;}
-.seal-status.sealed{color:var(--win);border-color:rgba(43,224,138,0.35);background:rgba(43,224,138,0.08);}
-.seal-status.cracked{color:var(--loss);border-color:rgba(255,93,122,0.35);background:rgba(255,93,122,0.08);}
-
-/* expectancy calculator */
-.slider-row{margin-bottom:18px;}
-.slider-row label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--slate);
-  margin-bottom:9px;font-family:'IBM Plex Mono',monospace;}
-.slider-row label b{color:var(--platinum);font-weight:600;}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:100px;
-  background:var(--steel);outline:none;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
-  background:var(--bronze-bright);cursor:pointer;box-shadow:0 0 0 4px rgba(45,212,168,0.15);}
-input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--bronze-bright);
-  border:none;cursor:pointer;box-shadow:0 0 0 4px rgba(45,212,168,0.15);}
-.expectancy-readout{margin-top:20px;text-align:center;}
-.expectancy-value{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;transition:color .2s ease;}
-.expectancy-value.pos{color:var(--win);}
-.expectancy-value.neg{color:var(--loss);}
-.expectancy-label{font-size:10.5px;color:var(--slate-dim);margin-top:3px;text-transform:none;}
-.expectancy-verdict{font-size:12px;color:var(--slate);margin-top:12px;line-height:1.55;min-height:36px;}
-
-/* streak tracker */
-.streak-pips{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 16px 0;}
-.pip{width:19px;height:19px;border-radius:6px;background:var(--steel);border:1px solid var(--steel-hi);
-  cursor:pointer;transition:background .15s ease, border-color .15s ease, transform .1s ease;}
-.pip:active{transform:scale(0.88);}
-.pip.kept{background:rgba(43,224,138,0.28);border-color:var(--win);}
-.pip.broken{background:rgba(255,93,122,0.24);border-color:var(--loss);}
-.streak-readout{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--slate-dim);}
-.streak-readout b{color:var(--bronze-bright);}
-.streak-hint{font-size:11px;color:var(--slate-dim);margin-top:10px;line-height:1.5;}
-
-/* ---------- pricing ---------- */
-.pricing{max-width:1100px;margin:90px auto 0 auto;padding:0 24px;}
-.pricing-head{text-align:center;margin-bottom:44px;}
-.pricing-head h2{font-family:'Fraunces',serif;font-size:clamp(26px,4vw,38px);font-weight:650;margin:0 0 10px 0;}
-.pricing-head p{color:var(--slate);font-size:14.5px;}
-.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
-@media(max-width:1080px){.tiers{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:640px){.tiers{grid-template-columns:1fr;}}
-.tier{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-lg);padding:28px 26px;
-  position:relative;transition:transform .18s ease, border-color .18s ease;}
-.tier:hover{transform:translateY(-4px);border-color:rgba(45,212,168,0.35);}
-.tier.featured{border-color:var(--bronze-bright);box-shadow:0 20px 50px -20px rgba(45,212,168,0.35);}
-.tier.premium{border-color:var(--violet);box-shadow:0 20px 50px -20px rgba(183,149,240,0.35);}
-.tier-badge{position:absolute;top:-12px;left:26px;background:linear-gradient(120deg, var(--bronze-bright), var(--bronze));
-  color:var(--bronze-ink);font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-  padding:5px 12px;border-radius:100px;}
-.tier-badge.violet{background:linear-gradient(120deg, var(--violet), var(--violet-dim));color:#160c28;}
-.tier-name{font-family:'Fraunces',serif;font-size:21px;font-weight:650;margin-bottom:4px;}
-.tier-price{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;margin-bottom:2px;}
-.tier-price span{font-size:12px;color:var(--slate-dim);font-weight:400;}
-.tier-desc{font-size:12.5px;color:var(--slate);margin-bottom:20px;min-height:34px;}
-.tier-features{list-style:none;padding:0;margin:0 0 24px 0;display:flex;flex-direction:column;gap:10px;}
-.tier-features li{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--platinum);}
-.tier-features li.dim{color:var(--slate-dim);}
-.tier-features li .ic{flex-shrink:0;width:16px;height:16px;margin-top:1px;}
-.tier-cta{display:block;text-align:center;width:100%;}
-
-/* ---------- context sections (steps + feature grid) ---------- */
-.section-head{text-align:center;margin-bottom:36px;}
-.section-head h2{font-family:'Fraunces',serif;font-size:clamp(24px,3.6vw,34px);font-weight:650;margin:0 0 10px 0;}
-.section-head p{color:var(--slate);font-size:14.5px;max-width:520px;margin:0 auto;}
-
-.steps-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.step{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-lg);padding:26px;}
-.step-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--bronze-bright);
-  border:1px solid rgba(45,212,168,0.35);border-radius:100px;width:26px;height:26px;
-  display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
-.step h3{font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin:0 0 8px 0;}
-.step p{font-size:13px;color:var(--slate);margin:0;line-height:1.55;}
-
-.philosophy-wrap{max-width:760px;margin:96px auto 0 auto;padding:0 24px;}
-.philosophy-card{position:relative;padding:8px 0 8px 26px;border-left:2px solid rgba(45,212,168,0.35);}
-.philosophy-card h2{font-family:'Fraunces',serif;font-style:italic;font-weight:560;font-size:clamp(22px,3.2vw,29px);
-  margin:0 0 18px 0;line-height:1.3;color:var(--platinum);}
-.philosophy-card p{font-size:14.5px;color:var(--slate);line-height:1.75;margin:0 0 16px 0;max-width:64ch;}
-.philosophy-card p:last-child{margin-bottom:0;}
-
-.proof-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
-.proof-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px;}
-.proof-card{padding:2px 0 2px 22px;border-left:2px solid rgba(45,212,168,0.3);}
-.proof-quote{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:16.5px;
-  line-height:1.55;color:var(--platinum);margin:0 0 12px 0;}
-.proof-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;
-  text-transform:uppercase;color:var(--bronze-bright);}
-.proof-meta span{color:var(--slate-dim);text-transform:none;letter-spacing:0.01em;}
-
-.features-wrap{max-width:1100px;margin:88px auto 0 auto;padding:0 24px;}
-.features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-.feature{background:var(--panel);border:1px solid var(--steel-hi);border-radius:var(--r-md);padding:22px;}
-.feature h3{font-family:'Fraunces',serif;font-size:16px;font-weight:650;margin:0 0 8px 0;
-  display:flex;align-items:center;gap:9px;}
-.feature h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--bronze-bright);flex-shrink:0;}
-.feature p{font-size:12.5px;color:var(--slate);margin:0;line-height:1.6;}
-
-.faq-wrap{max-width:760px;margin:88px auto 0 auto;padding:0 24px;}
-.faq{border-top:1px solid var(--steel-hi);}
-.faq-item{border-bottom:1px solid var(--steel-hi);}
-.faq-item summary{list-style:none;cursor:pointer;padding:18px 4px;display:flex;justify-content:space-between;
-  align-items:center;gap:16px;font-family:'Fraunces',serif;font-size:16px;font-weight:600;}
-.faq-item summary::-webkit-details-marker{display:none;}
-.faq-item summary::after{content:'+';font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--bronze-bright);
-  flex-shrink:0;transition:transform .2s ease;}
-.faq-item[open] summary::after{transform:rotate(45deg);}
-.faq-item p{font-size:13.5px;color:var(--slate);margin:0 0 20px 0;padding:0 4px;line-height:1.65;max-width:64ch;}
-
-/* ---------- footer ---------- */
-.foot{max-width:900px;margin:90px auto 40px auto;padding:0 24px;text-align:center;color:var(--slate-dim);
-  font-size:12px;}
-.foot a{color:var(--bronze-bright);text-decoration:none;font-weight:600;}
-.foot p{margin:0 0 10px 0;}
-.foot .legal{font-size:11px;color:var(--slate-dim);opacity:0.7;max-width:520px;margin:18px auto 0 auto;line-height:1.6;}
-
-/* =========================================================
-   MOBILE — tablet and below
-   ========================================================= */
-@media(max-width:760px){
-  .nav{padding:16px 18px;}
-  .nav-brand{font-size:16px;}
-  .nav-brand img{width:26px;height:26px;}
-  .btn{padding:9px 14px;font-size:12.5px;}
-
-  .hero{margin-top:5vh;padding:0 20px;}
-  .invite-badge{font-size:10px;padding:6px 13px;text-align:left;white-space:normal;}
-  .hero h1{font-size:clamp(30px,8vw,42px);}
-  .hero-sub{font-size:14.5px;padding:0 4px;}
-  .hero-ctas{flex-direction:column;align-items:stretch;}
-  .hero-ctas .btn{width:100%;padding:14px 18px;}
-  .typewriter-wrap{height:auto;min-height:40px;padding:0 8px;}
-  #typewriter{font-size:13px;text-align:center;}
-
-  .demo-wrap{margin-top:48px;padding:0 16px;}
-  .demo-card{padding:20px 18px 16px 18px;}
-  .demo-head{flex-direction:column;align-items:flex-start;gap:10px;}
-  .demo-hint{white-space:normal;}
-  .budget-readout{font-size:10.5px;}
-  .playground-grid{grid-template-columns:1fr;gap:14px;margin-top:16px;}
-  .demo-mini{padding:20px 18px 18px 18px;}
-
-  .steps-wrap,.features-wrap,.faq-wrap,.philosophy-wrap,.proof-wrap{margin-top:64px;padding:0 18px;}
-  .proof-grid{grid-template-columns:1fr;gap:22px;}
-  .philosophy-card{padding-left:18px;}
-  .philosophy-card p{font-size:13.5px;}
-  .steps{grid-template-columns:1fr;gap:14px;}
-  .features{grid-template-columns:1fr;gap:12px;}
-  .section-head{margin-bottom:26px;}
-  .section-head p{padding:0 8px;}
-
-  .pricing{margin-top:64px;padding:0 16px;}
-  .pricing-head{margin-bottom:30px;}
-  .tiers{gap:16px;}
-  .tier{padding:24px 20px;}
-  .tier.featured{transform:none;}
-  .tier-price{font-size:24px;}
-
-  .foot{padding:0 20px;margin-top:64px;}
-}
-
-@media(max-width:420px){
-  .nav-brand{font-size:14px;}
-  .nav-brand img{width:22px;height:22px;}
-  .nav-cta{gap:6px;}
-  .btn{padding:8px 12px;font-size:11.5px;}
-  .hero h1{font-size:clamp(28px,9vw,36px);}
-  .tier{padding:20px 16px;}
-}
-
-/* =========================================================
-   SCROLL REVEAL — typed-in headlines, tilted-in cards
-   ========================================================= */
-[data-reveal="type"] .ch{opacity:0;transition:opacity 0s step-end;}
-[data-reveal="type"].revealed .ch{opacity:1;}
-[data-reveal="type"] .type-cursor{display:inline-block;width:2px;height:0.85em;background:var(--bronze-bright);
-  margin-left:2px;vertical-align:-0.1em;opacity:0;animation:blink .9s steps(1) infinite;}
-[data-reveal="type"].revealed .type-cursor{opacity:1;transition:opacity 0s step-end;}
-[data-reveal="type"].revealed.type-done .type-cursor{animation:none;opacity:0;transition:opacity .5s ease;}
-
-[data-reveal="card"]{opacity:0;transform:perspective(1000px) rotateX(22deg) translateY(30px) scale(0.97);
-  transition:opacity .65s cubic-bezier(.22,.7,.24,1), transform .75s cubic-bezier(.22,.7,.24,1);
-  will-change:transform, opacity;}
-[data-reveal="card"].revealed{opacity:1;transform:perspective(1000px) rotateX(0deg) translateY(0) scale(1);}
-
-@media(max-width:760px){
-  [data-reveal="card"]{transform:perspective(700px) rotateX(14deg) translateY(20px) scale(0.98);}
-}
-
-[data-reveal="fade"]{opacity:0;transform:translateY(16px);
-  transition:opacity .6s ease, transform .6s cubic-bezier(.22,.7,.24,1);}
-[data-reveal="fade"].revealed{opacity:1;transform:translateY(0);}
-
-@media(prefers-reduced-motion: reduce){
-  [data-reveal="type"] .ch{opacity:1 !important;transition:none !important;}
-  [data-reveal="type"] .type-cursor{display:none !important;}
-  [data-reveal="card"]{opacity:1 !important;transform:none !important;transition:none !important;}
-  [data-reveal="fade"]{opacity:1 !important;transform:none !important;transition:none !important;}
-}
-
-/* =========================================================
-   KEYBOARD FOCUS — a terminal-cursor ring, not a browser default.
-   Mint glow that breathes gently, like a cursor waiting for input.
-   Every interactive element loses the default outline and gets
-   this instead, ONLY on keyboard/programmatic focus (:focus-visible)
-   so mouse clicks stay silent and clean.
-   ========================================================= */
-a,button,.btn,input,summary,[tabindex]{outline:none;}
-
-:focus-visible{
-  outline:2px solid var(--bronze-bright);
-  outline-offset:3px;
-  border-radius:4px;
-  box-shadow:0 0 0 4px rgba(45,212,168,0.16), 0 0 20px -2px rgba(45,212,168,0.55);
-  animation:focus-breathe 1.7s ease-in-out infinite;
-}
-@keyframes focus-breathe{
-  0%,100%{box-shadow:0 0 0 4px rgba(45,212,168,0.14), 0 0 14px -2px rgba(45,212,168,0.4);}
-  50%{box-shadow:0 0 0 4px rgba(45,212,168,0.24), 0 0 26px -2px rgba(45,212,168,0.85);}
-}
-.btn:focus-visible,.invite-badge:focus-visible,.tier-cta:focus-visible{border-radius:100px;}
-
-/* range sliders: glow the thumb itself, not an outline around the track */
-input[type=range]:focus-visible{outline:none;box-shadow:none;animation:none;}
-input[type=range]:focus-visible::-webkit-slider-thumb{
-  box-shadow:0 0 0 4px rgba(45,212,168,0.18), 0 0 0 7px rgba(45,212,168,0.14), 0 0 18px rgba(45,212,168,0.7);
-  animation:focus-breathe 1.7s ease-in-out infinite;}
-input[type=range]:focus-visible::-moz-range-thumb{
-  box-shadow:0 0 0 4px rgba(45,212,168,0.18), 0 0 0 7px rgba(45,212,168,0.14), 0 0 18px rgba(45,212,168,0.7);}
-
-/* rule-lock switches: glow the pill track instead of the hidden checkbox */
-.switch input:focus-visible ~ .track{
-  outline:none;box-shadow:0 0 0 4px rgba(45,212,168,0.16), 0 0 18px -2px rgba(45,212,168,0.6);
-  animation:focus-breathe 1.7s ease-in-out infinite;}
-
-/* faq summary: a left-edge cursor bar instead of a ring around text */
-.faq-item summary:focus-visible{
-  outline:none;animation:none;box-shadow:none;border-radius:2px;
-  background:rgba(45,212,168,0.05);
-  box-shadow:inset 3px 0 0 0 var(--bronze-bright);
-}
-
-@media(prefers-reduced-motion: reduce){
-  :focus-visible,input[type=range]:focus-visible::-webkit-slider-thumb,.switch input:focus-visible ~ .track{
-    animation:none !important;
-    box-shadow:0 0 0 4px rgba(45,212,168,0.2), 0 0 18px -2px rgba(45,212,168,0.6) !important;
-  }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a100d">
+  <meta name="description" content="Ghost Discipline is a private trading journal and risk terminal for traders who want an honest record of their process.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Ghost Discipline">
+  <meta property="og:title" content="Ghost Discipline — Trade with intention">
+  <meta property="og:description" content="A private trading terminal to plan risk, keep an honest journal, and review the process behind every trade.">
+  <meta property="og:image" content="https://YOUR-DOMAIN/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Ghost Discipline — Trade with intention</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,400&display=swap" rel="stylesheet">
+  <script>
+    (function(){try{var standalone=(matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;if(standalone)location.replace('app.html');}catch(e){}})();
+  </script>
+  <style>
+    :root{color-scheme:dark;--bg:#0a100d;--bg-soft:#101814;--panel:#121b16;--panel-2:#17221b;--line:rgba(232,239,229,.1);--line-hi:rgba(232,239,229,.17);--text:#f0f2e9;--muted:#a1ac9e;--quiet:#788477;--mint:#a6c99e;--mint-deep:#587b59;--gold:#d3bd8b;--danger:#d89491;--serif:'Newsreader',Georgia,serif;--sans:'DM Sans',Arial,sans-serif;--mono:'DM Mono',monospace;--radius:20px;}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:86px}body{margin:0;background:radial-gradient(ellipse 70% 48% at 79% 8%,rgba(81,111,79,.16),transparent 75%),var(--bg);color:var(--text);font:15px/1.65 var(--sans);-webkit-font-smoothing:antialiased}body::before{position:fixed;inset:0;content:'';pointer-events:none;z-index:-1;background:radial-gradient(ellipse 70% 75% at 50% 100%,rgba(31,48,34,.12),transparent 75%)}a{color:inherit;text-decoration:none}button{font:inherit}::selection{background:rgba(166,201,158,.25);color:#fff}.wrap{width:min(1200px,calc(100% - 56px));margin-inline:auto}.eyebrow{display:flex;align-items:center;gap:10px;color:var(--mint);font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase}.eyebrow::before{content:'';width:22px;height:1px;background:currentColor;opacity:.72}.section{padding:112px 0}.section-head{max-width:650px;margin:0 auto 50px;text-align:center}.section-head .eyebrow{justify-content:center}.section-head h2{font:500 clamp(34px,4vw,51px)/1.06 var(--serif);letter-spacing:-.035em;margin:18px 0 14px}.section-head p{color:var(--muted);max-width:54ch;margin:0 auto;font-size:15px;line-height:1.8}
+    .nav{position:sticky;top:0;z-index:20;background:rgba(10,16,13,.84);backdrop-filter:blur(18px);border-bottom:1px solid rgba(232,239,229,.08)}.nav-inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:600;letter-spacing:.01em}.brand img{width:31px;height:31px;border-radius:9px}.nav-links{display:flex;align-items:center;gap:32px;color:#bdc5b8;font-size:12px}.nav-links a{transition:color .2s}.nav-links a:hover{color:var(--text)}.nav-actions{display:flex;align-items:center;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:0 18px;border:1px solid var(--line-hi);border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.01em;transition:transform .2s,background .2s,border-color .2s,color .2s}.btn:hover{transform:translateY(-1px)}.btn-primary{background:var(--mint);border-color:var(--mint);color:#10180f}.btn-primary:hover{background:#b9d4b2;border-color:#b9d4b2}.btn-quiet{background:rgba(255,255,255,.025);color:var(--text)}.btn-quiet:hover{background:rgba(255,255,255,.065)}.mobile-menu{display:none;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:none;color:var(--text);cursor:pointer}.mobile-menu svg{width:18px}
+    .visual-stage{position:relative;min-width:0;perspective:1400px;transform-style:preserve-3d;isolation:isolate}.visual-stage::before{content:'';position:absolute;inset:8% 5%;z-index:-1;border-radius:40%;background:radial-gradient(ellipse,rgba(143,181,130,.18),transparent 68%);filter:blur(24px);pointer-events:none}.visual{width:100%;transform:rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg));transform-style:preserve-3d;transition:transform .24s cubic-bezier(.2,.7,.25,1);will-change:transform}.visual-float{position:absolute;z-index:4;display:grid;grid-template-columns:22px auto;align-items:center;column-gap:9px;min-width:142px;padding:10px 12px;border:1px solid rgba(226,238,222,.18);border-radius:13px;background:linear-gradient(145deg,rgba(23,34,26,.96),rgba(12,19,15,.96));box-shadow:0 20px 42px -26px rgba(0,0,0,.95),inset 0 1px rgba(255,255,255,.06);transform:translate3d(var(--float-x,0px),var(--float-y,0px),42px);transition:transform .2s ease,border-color .2s ease;pointer-events:none}.visual-float-a{top:15%;right:-24px}.visual-float-b{left:-26px;bottom:13%;transform:translate3d(calc(var(--float-x,0px)*-.65),calc(var(--float-y,0px)*-.65),58px)}.visual-float>span:not(.float-mark):not(.float-dot){grid-column:2;color:var(--quiet);font:7px var(--mono);letter-spacing:.11em}.visual-float b{grid-column:2;color:#e9eee5;font:500 11px var(--sans);margin-top:2px}.float-mark{grid-row:1/span 2;display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:rgba(166,201,158,.12);color:var(--mint);font:14px var(--mono)}.float-dot{grid-row:1/span 2;width:8px;height:8px;margin:auto;border-radius:50%;background:var(--mint);box-shadow:0 0 12px rgba(166,201,158,.7)}.visual-orbit{position:absolute;inset:-12px 4%;z-index:-1;border:1px solid rgba(166,201,158,.08);border-radius:30px;transform:translateZ(-28px) rotate(-2deg);pointer-events:none}
+    .hero{padding:78px 0 90px;min-height:650px;display:grid;grid-template-columns:minmax(0,.95fr) minmax(420px,1.05fr);align-items:center;gap:64px}.hero-copy{max-width:570px}.hero h1{font:500 clamp(52px,6vw,78px)/.99 var(--serif);letter-spacing:-.055em;margin:22px 0 24px}.hero h1 em{font-weight:400;color:var(--mint);font-style:italic}.hero-copy>p{max-width:52ch;margin:0;color:var(--muted);font-size:15px;line-height:1.9}.hero-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:30px}.hero-note{display:flex;align-items:center;gap:9px;margin-top:20px;color:var(--quiet);font:10px var(--mono);letter-spacing:.025em}.hero-note svg{width:14px;color:var(--mint)}
+    .visual{position:relative;padding:22px;border:1px solid rgba(226,238,222,.14);border-radius:25px;background:linear-gradient(155deg,rgba(24,36,28,.98),rgba(13,20,16,.98));box-shadow:0 40px 100px -50px #000,0 0 0 7px rgba(255,255,255,.012);overflow:hidden}.visual::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 83% 0%,rgba(149,186,137,.12),transparent 74%);pointer-events:none}.visual-top,.visual-main,.visual-foot{position:relative;z-index:1}.visual-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--line)}.visual-brand{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600}.brand-dot{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(166,201,158,.14);color:var(--mint);font:11px var(--mono)}.session{display:flex;align-items:center;gap:7px;font:9px var(--mono);letter-spacing:.08em;color:#b4c0b0}.session::before{content:'';width:6px;height:6px;border-radius:50%;background:#8fb48b;box-shadow:0 0 10px rgba(143,180,139,.6)}.visual-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:22px 0 19px}.visual-heading small{color:var(--quiet);font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase}.visual-heading h2{font:500 25px/1.15 var(--serif);margin:6px 0 0}.visual-day{font:10px var(--mono);color:var(--muted)}.visual-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.visual-stat{padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.022)}.visual-stat label{display:block;color:var(--quiet);font:8px var(--mono);text-transform:uppercase;letter-spacing:.08em}.visual-stat strong{display:block;margin-top:7px;font:500 19px var(--mono);font-variant-numeric:tabular-nums}.visual-stat span{display:block;margin-top:3px;color:var(--mint);font-size:9px}.visual-chart{margin-top:10px;padding:14px 14px 11px;border:1px solid var(--line);border-radius:14px;background:rgba(6,11,8,.35)}.chart-title{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#dce2d7}.chart-title span:last-child{font:8px var(--mono);color:var(--quiet)}.visual-chart svg{display:block;width:100%;margin-top:10px}.visual-foot{display:flex;justify-content:space-between;align-items:center;margin-top:13px;color:var(--quiet);font:8px var(--mono);letter-spacing:.07em}.seal{color:var(--mint);display:flex;align-items:center;gap:7px}.seal::before{content:'✓';display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:rgba(166,201,158,.13);font:10px var(--sans)}
+    .trust{padding:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.trust-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.trust-item{display:flex;align-items:center;justify-content:center;gap:10px;text-align:left;color:#c1c9bb;font-size:11px}.trust-item svg{width:17px;height:17px;flex:none;color:var(--mint);stroke-width:1.5}.trust-item span{display:block;color:var(--quiet);font:9px var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+    .method{background:linear-gradient(180deg,transparent,rgba(20,30,23,.43) 22%,rgba(20,30,23,.43) 78%,transparent);}.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.method-card{padding:26px 26px 29px;border:1px solid var(--line);border-radius:17px;background:rgba(16,24,19,.72)}.method-number{font:10px var(--mono);color:var(--mint);letter-spacing:.08em}.method-card h3{font:500 24px/1.15 var(--serif);margin:24px 0 10px}.method-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.8}.method-rule{width:30px;height:1px;background:var(--mint);opacity:.55;margin-top:22px}
+    .statement{display:grid;grid-template-columns:.8fr 1.2fr;gap:80px;align-items:start;padding:36px 0}.statement-title{font:500 clamp(32px,4vw,48px)/1.08 var(--serif);letter-spacing:-.03em;margin:0}.statement-copy{border-left:1px solid var(--line-hi);padding:2px 0 2px 26px;color:var(--muted);font-size:14px;line-height:1.9}.statement-copy p{margin:0 0 14px}.statement-copy p:last-child{margin:0}.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.feature{min-height:168px;padding:23px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,rgba(21,31,24,.72),rgba(13,19,15,.7));transition:border-color .2s,transform .2s}.feature:hover{transform:translateY(-2px);border-color:var(--line-hi)}.feature-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;border:1px solid rgba(166,201,158,.17);color:var(--mint);background:rgba(166,201,158,.06)}.feature-icon svg{width:15px;height:15px;stroke-width:1.55}.feature h3{font-size:13px;margin:18px 0 6px;font-weight:600}.feature p{margin:0;color:var(--muted);font-size:11.5px;line-height:1.7}
+    .membership{border-top:1px solid var(--line)}.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch}.plan{display:flex;flex-direction:column;padding:24px 22px 21px;border:1px solid var(--line);border-radius:17px;background:rgba(16,24,19,.72)}.plan.featured{border-color:rgba(166,201,158,.42);background:linear-gradient(155deg,rgba(31,47,34,.82),rgba(16,24,19,.85));box-shadow:0 22px 60px -40px rgba(130,174,120,.35)}.plan-label{min-height:20px;color:var(--mint);font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase}.plan h3{font:500 25px var(--serif);margin:12px 0 3px}.price{font:500 25px var(--mono);letter-spacing:-.04em}.price small{font:10px var(--sans);color:var(--quiet);letter-spacing:0}.plan>p{min-height:54px;color:var(--muted);font-size:11.5px;line-height:1.7;margin:10px 0 17px}.plan ul{list-style:none;padding:15px 0 0;margin:0 0 22px;border-top:1px solid var(--line);display:grid;gap:10px;flex:1}.plan li{display:flex;gap:8px;color:#c8d0c3;font-size:10.5px;line-height:1.55}.plan li::before{content:'✓';color:var(--mint);font-size:10px}.plan .btn{width:100%;min-height:40px;font-size:11px}.membership-note{text-align:center;color:var(--quiet);font:10px var(--mono);margin:22px 0 0}
+    .faq{max-width:760px;margin-inline:auto;border-top:1px solid var(--line)}.faq details{border-bottom:1px solid var(--line)}.faq summary{position:relative;list-style:none;cursor:pointer;padding:19px 34px 19px 2px;font-size:13px;font-weight:500}.faq summary::-webkit-details-marker{display:none}.faq summary::after{content:'+';position:absolute;right:5px;top:17px;color:var(--mint);font:18px var(--mono);transition:transform .2s}.faq details[open] summary::after{transform:rotate(45deg)}.faq details p{max-width:66ch;margin:0;padding:0 36px 20px 2px;color:var(--muted);font-size:12px;line-height:1.8}.invite-cta{padding:38px;border:1px solid rgba(166,201,158,.2);border-radius:22px;background:radial-gradient(ellipse 70% 120% at 0% 100%,rgba(118,156,109,.13),transparent 80%),linear-gradient(140deg,#17231a,#111813);display:flex;align-items:center;justify-content:space-between;gap:32px}.invite-cta h2{font:500 clamp(30px,4vw,43px)/1.05 var(--serif);margin:12px 0 8px}.invite-cta p{margin:0;color:var(--muted);font-size:12px}.invite-cta .btn{flex:none}
+    .footer{padding:34px 0 40px;border-top:1px solid var(--line);color:var(--quiet);font-size:10px}.footer-main{display:flex;justify-content:space-between;gap:24px;align-items:center}.footer-links{display:flex;gap:18px}.footer a{color:#c3ccbe}.footer a:hover{color:var(--mint)}.legal{max-width:800px;margin:22px 0 0;line-height:1.7;font-size:9px}
+    @media(max-width:1000px){.hero{grid-template-columns:1fr;gap:42px;padding-top:60px;min-height:auto}.hero-copy{max-width:700px}.visual-stage{width:min(100%,720px);margin:0 auto}.visual{width:100%;margin:0}.plans{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:720px){.wrap{width:min(100% - 36px,560px)}.section{padding:78px 0}.nav-inner{height:66px}.nav-links{display:none;position:absolute;top:66px;left:0;right:0;padding:18px 20px 22px;background:#0d1410;border-bottom:1px solid var(--line);flex-direction:column;align-items:flex-start;gap:15px}.nav.nav-open .nav-links{display:flex}.mobile-menu{display:grid;place-items:center}.nav-actions .btn-quiet{display:none}.nav-actions{gap:8px}.nav-actions .btn-primary{min-height:40px;padding:0 14px;font-size:10px}.brand{font-size:12px}.brand img{width:28px;height:28px}.hero{padding:54px 0 62px;gap:32px}.hero h1{font-size:clamp(46px,12vw,68px);margin:18px 0}.hero-copy>p{font-size:13px}.hero-actions{margin-top:24px}.hero-actions .btn{flex:1}.hero-note{font-size:8px;line-height:1.6}.visual{padding:15px;border-radius:19px}.visual-float,.visual-orbit{display:none}.visual-stage{perspective:none}.visual{transform:none!important;transition:none;will-change:auto}.visual-heading{padding:17px 0 14px}.visual-heading h2{font-size:22px}.visual-stat{padding:10px 9px}.visual-stat strong{font-size:15px}.visual-stat label{font-size:7px}.visual-foot{font-size:7px}.trust-row{grid-template-columns:repeat(2,1fr);gap:18px 8px}.trust-item{justify-content:flex-start;font-size:10px}.trust-item svg{width:15px}.section-head{margin-bottom:32px}.section-head h2{font-size:37px}.method-grid,.features-grid{grid-template-columns:1fr}.method-card{padding:22px}.method-card h3{margin-top:16px}.statement{grid-template-columns:1fr;gap:23px}.statement-copy{font-size:12px;padding-left:19px}.features-grid{gap:9px}.feature{min-height:auto;padding:19px}.feature h3{margin:13px 0 4px}.feature p{font-size:11px}.plans{grid-template-columns:1fr;gap:10px}.plan{padding:21px}.plan>p{min-height:auto}.plan ul{padding-top:12px}.invite-cta{padding:26px 22px;align-items:flex-start;flex-direction:column;gap:22px}.invite-cta .btn{width:100%}.footer-main{flex-direction:column;align-items:flex-start}.footer-links{flex-wrap:wrap}}
+    @media(max-width:390px){.hero-actions{flex-direction:column}.hero-actions .btn{width:100%}.visual-stats{gap:6px}.visual-stat strong{font-size:13px}.visual-stat span{font-size:8px}.visual-chart{padding:11px}.trust-item{gap:7px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  </style>
 </head>
 <body>
+  <header class="nav" id="top">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top"><img src="logo.png" alt=""><span>Ghost Discipline</span></a>
+      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#membership">Membership</a><a href="#faq">FAQ</a></nav>
+      <div class="nav-actions"><a class="btn btn-quiet" href="app.html">Member sign in</a><a class="btn btn-primary" href="https://t.me/GhostTradersEmpire?text=Hi%20%E2%80%94%20I%27d%20like%20an%20invitation%20to%20Ghost%20Discipline." target="_blank" rel="noopener">Request access <span aria-hidden="true">↗</span></a><button class="mobile-menu" type="button" id="menuToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+    </div>
+  </header>
 
-<div class="nav">
-  <div class="nav-brand"><img src="logo.png" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">Ghost Discipline</div>
-  <div class="nav-cta">
-    <a class="btn btn-ghost" href="app.html">Sign in</a>
-    <a class="btn btn-gold" href="app.html">Enter the terminal</a>
-  </div>
-</div>
-
-<div class="hero">
-  <div class="invite-badge"><span class="dot"></span> Invitation only — access is not open to the public</div>
-  <h1 data-reveal="type">Keep your word.<br>Then take the <span class="accent">trade.</span></h1>
-  <div class="typewriter-wrap"><span id="typewriter"></span></div>
-  <p class="hero-sub">A private trading terminal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan. Every trader inside was invited by someone who already trades here. No leaderboard to perform for, no chat to hype you into a bad entry — just the plan you set, and whether you kept it.</p>
-  <div class="hero-ctas">
-    <a class="btn btn-gold" href="app.html">Enter the terminal →</a>
-    <a class="btn btn-ghost" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20an%20invitation%20to%20Ghost%20Discipline." target="_blank" rel="noopener">Request an invitation</a>
-  </div>
-  <div class="hero-note">No public sign-up. No app store listing. If you're reading this, someone already vouched for you — or you're about to ask someone to.</div>
-</div>
-
-<div class="demo-wrap">
-  <div class="section-head" style="margin-bottom:28px;">
-    <h2 data-reveal="type">Try the terminal, right here</h2>
-    <p>Four simplified pieces of the real logic. Drag, toggle, click — see how it thinks before you ask for an invite.</p>
-  </div>
-
-  <div class="demo-card" data-reveal="card">
-    <div class="demo-head">
-      <div>
-        <div class="demo-title">Drag your risk budget</div>
-        <div class="demo-sub">Each dot is the % of your account you're willing to risk that day. The bar tracks your running total against a 6% weekly cap — the same cap the terminal locks in before Monday's open.</div>
+  <main>
+    <section class="wrap hero" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <div class="eyebrow">A private terminal for GMC Traders</div>
+        <h1 id="heroTitle">Make the plan.<br>Keep the <em>standard.</em></h1>
+        <p>Ghost Discipline gives serious traders one place to define risk before the session, record decisions as they happen, and review the quality of their process without rewriting the story afterward.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="app.html">Enter the terminal <span aria-hidden="true">→</span></a><a class="btn btn-quiet" href="#approach">Explore the approach</a></div>
+        <div class="hero-note"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 2.5 16 5v4.7c0 3.3-2.4 6.2-6 7.8-3.6-1.6-6-4.5-6-7.8V5z"/><path d="m7.3 9.8 1.7 1.7 3.7-4"/></svg> Invitation only · private by design · built around your own rules</div>
       </div>
-      <div class="demo-hint">try it — drag a dot</div>
-    </div>
-    <svg id="budgetSvg" viewBox="0 0 860 220" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#2dd4a8" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="#2dd4a8" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <g id="gridLines"></g>
-      <path id="budgetFill" fill="url(#fillGrad)" stroke="none"></path>
-      <path id="budgetLine" fill="none" stroke="#2dd4a8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-      <g id="budgetPoints"></g>
-    </svg>
-    <div class="budget-readout">
-      <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
-    </div>
-    <div class="budget-bar"><div class="budget-bar-fill" id="budgetBarFill"></div></div>
-    <div class="budget-bar-labels">
-      <span>Weekly risk used: <b id="budgetTotal">—</b></span>
-      <span>Weekly cap: 6.0%</span>
-    </div>
-    <div class="budget-verdict-row">Discipline says: <b id="budgetVerdict">—</b></div>
-  </div>
-
-  <div class="playground-grid">
-    <div class="demo-card demo-mini" data-reveal="card">
-      <div class="demo-title">Lock your rules</div>
-      <div class="demo-sub">All three on, the seal holds. Flip one off and see exactly what "breaking a rule" looks like in the terminal.</div>
-      <div class="rule-toggle">
-        <span>No trades against the higher-timeframe trend</span>
-        <label class="switch"><input type="checkbox" class="rule-check" checked><span class="track"><span class="thumb"></span></span></label>
+      <div class="visual-stage" data-tilt-stage>
+      <div class="visual" role="img" aria-label="Illustrated preview of the Ghost Discipline trading terminal">
+        <div class="visual-top"><div class="visual-brand"><span class="brand-dot">GD</span> Daily desk</div><span class="session">SESSION READY</span></div>
+        <div class="visual-main">
+          <div class="visual-heading"><div><small>London session · Tuesday</small><h2>Process before outcome.</h2></div><span class="visual-day">YOUR DESK</span></div>
+          <div class="visual-stats"><div class="visual-stat"><label>Risk used</label><strong>2.4%</strong><span>of 6.0% weekly cap</span></div><div class="visual-stat"><label>Plan score</label><strong>92</strong><span>rules holding</span></div><div class="visual-stat"><label>Sessions kept</label><strong>08</strong><span>current streak</span></div></div>
+          <div class="visual-chart"><div class="chart-title"><span>Equity curve</span><span>LAST 12 SESSIONS</span></div>
+            <svg viewBox="0 0 620 185" role="presentation" aria-hidden="true"><defs><linearGradient id="heroArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6c99e" stop-opacity=".24"/><stop offset="1" stop-color="#a6c99e" stop-opacity="0"/></linearGradient></defs><path d="M0 40H620M0 90H620M0 140H620" stroke="rgba(230,238,224,.08)"/><path d="M4 147C35 144 48 123 76 132S112 126 135 118 169 131 195 106 235 109 258 92 291 104 319 81 356 91 378 68 416 82 443 55 477 71 498 47 537 54 565 29 616 24V178H4Z" fill="url(#heroArea)"/><path d="M4 147C35 144 48 123 76 132S112 126 135 118 169 131 195 106 235 109 258 92 291 104 319 81 356 91 378 68 416 82 443 55 477 71 498 47 537 54 565 29 616 24" fill="none" stroke="#a6c99e" stroke-width="2.3" stroke-linecap="round"/><circle cx="616" cy="24" r="4" fill="#eff2e9" stroke="#a6c99e" stroke-width="2"/><text x="4" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">01</text><text x="300" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">06</text><text x="597" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">12</text></svg>
+            <div class="visual-foot"><span>RULE STATUS</span><span class="seal">SEALED</span><span>DISCIPLINE OVER OUTCOME</span></div>
+          </div>
+        </div>
       </div>
-      <div class="rule-toggle">
-        <span>Stop trading after 2 losses in a row</span>
-        <label class="switch"><input type="checkbox" class="rule-check" checked><span class="track"><span class="thumb"></span></span></label>
+      <div class="visual-float visual-float-a" aria-hidden="true"><span class="float-mark">↗</span><span>PLAN HELD</span><b>Rules intact</b></div>
+      <div class="visual-float visual-float-b" aria-hidden="true"><span class="float-dot"></span><span>SESSION</span><b>Risk defined</b></div>
+      <div class="visual-orbit" aria-hidden="true"></div>
       </div>
-      <div class="rule-toggle">
-        <span>No size increase right after a win</span>
-        <label class="switch"><input type="checkbox" class="rule-check" checked><span class="track"><span class="thumb"></span></span></label>
-      </div>
-      <div class="seal-status sealed" id="sealStatus">Sealed — all 3 rules holding</div>
-    </div>
+    </section>
 
-    <div class="demo-card demo-mini" data-reveal="card">
-      <div class="demo-title">Is your edge even real?</div>
-      <div class="demo-sub">Move your actual win rate and reward:risk. This is the maths Analytics runs on every setup in your journal.</div>
-      <div class="slider-row">
-        <label>Win rate <b id="winRateVal">45%</b></label>
-        <input type="range" id="winRateSlider" min="20" max="80" value="45">
-      </div>
-      <div class="slider-row">
-        <label>Reward : risk <b id="rrVal">1.5R</b></label>
-        <input type="range" id="rrSlider" min="5" max="40" value="15">
-      </div>
-      <div class="expectancy-readout">
-        <div class="expectancy-value" id="expectancyValue">—</div>
-        <div class="expectancy-label">expected return per trade</div>
-        <div class="expectancy-verdict" id="expectancyVerdict"></div>
-      </div>
-    </div>
+    <section class="trust"><div class="wrap trust-row"><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 19 6v5c0 4.3-2.8 7.7-7 10-4.2-2.3-7-5.7-7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><div>Risk rules first<span>Plan before execution</span></div></div><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><div>One honest ledger<span>Journal and review together</span></div></div><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 18V6m0 12h16M7 14l4-4 3 2 5-6"/></svg><div>Evidence over instinct<span>Measure your own process</span></div></div><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg><div>Built for the full session<span>Before, during, after</span></div></div></div></section>
 
-    <div class="demo-card demo-mini" data-reveal="card">
-      <div class="demo-title">The seal, day by day</div>
-      <div class="demo-sub">Fourteen sessions. Click a square to mark it kept or broken — same streak logic as your real journal.</div>
-      <div class="streak-pips" id="streakPips"></div>
-      <div class="streak-readout">Current streak: <b id="streakCount">—</b></div>
-      <div class="streak-hint">Green = kept the plan. Red = broke it. Click again to clear.</div>
-    </div>
-  </div>
-</div>
+    <section class="section method" id="approach"><div class="wrap"><div class="section-head"><div class="eyebrow">A better trading routine</div><h2>Work the process.<br>Let the result speak.</h2><p>Structure gives the session a beginning, a record, and a useful close. Ghost Discipline keeps those pieces in one private workspace.</p></div><div class="method-grid"><article class="method-card"><div class="method-number">01 / PREPARE</div><h3>Set the boundaries</h3><p>Write down balance, risk limits, setups, session windows, and cooling-off rules before the market gets loud.</p><div class="method-rule"></div></article><article class="method-card"><div class="method-number">02 / EXECUTE</div><h3>Record the decisions</h3><p>Log entries, exits, context, and state of mind close to the moment. Keep the facts beside the plan they came from.</p><div class="method-rule"></div></article><article class="method-card"><div class="method-number">03 / REVIEW</div><h3>Learn from the record</h3><p>Review performance and discipline together. Find which habits support your edge and which ones quietly tax it.</p><div class="method-rule"></div></article></div></div></section>
 
-<div class="steps-wrap">
-  <div class="section-head">
-    <h2 data-reveal="type">How the terminal actually works</h2>
-    <p>Three steps, every trading day. None of them involve willpower alone.</p>
-  </div>
-  <div class="steps">
-    <div class="step" data-reveal="fade">
-      <div class="step-num">1</div>
-      <h3>Lock the rules before the open</h3>
-      <p>Set your max risk, your setups, your no-trade windows — before price moves your judgement. Once the session starts, the rules are the rules.</p>
-    </div>
-    <div class="step" data-reveal="fade">
-      <div class="step-num">2</div>
-      <h3>Log the trade as you take it</h3>
-      <p>Every entry, exit and reason gets written down in real time, in the same journal — not reconstructed from memory that night, flattering yourself along the way.</p>
-    </div>
-    <div class="step" data-reveal="fade">
-      <div class="step-num">3</div>
-      <h3>Get scored, not soothed</h3>
-      <p>SciFe reviews the session against the rules you set and tells you plainly whether you kept your word. No spreadsheet you can quietly edit after the fact.</p>
-    </div>
-  </div>
-</div>
+    <section class="section" id="platform"><div class="wrap"><div class="statement"><h2 class="statement-title">A serious journal<br>should tell the truth.</h2><div class="statement-copy"><p>A trading journal is only useful when it records the decisions that shaped the outcome. Ghost Discipline brings risk settings, orders, notes, psychology, and review into the same workflow.</p><p>It does not give signals or promise returns. It helps you see your own behavior more clearly—and make the next decision with the full record in view.</p></div></div><div class="features-grid" style="margin-top:54px">
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16M4 10h16M4 15h9M4 20h9"/><path d="m16 17 2 2 4-5"/></svg></span><h3>Journal &amp; calendar</h3><p>Tag trades by setup and session, then read your activity across a daily and monthly view.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M5 7l-3 6a4 4 0 0 0 6 0zM19 7l-3 6a4 4 0 0 0 6 0zM5 7h14"/></svg></span><h3>Risk rules engine</h3><p>Set daily and weekly limits, trade caps, session windows, and cooling-off rules.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3a7 7 0 0 0-4 12.7V19h8v-3.3A7 7 0 0 0 12 3zM9 22h6M9 10h.01M15 10h.01"/></svg></span><h3>SciFe, your AI coach</h3><p>Ask questions about patterns in your own journal and get context from the data you recorded.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5m0 14h17M7 15l4-4 3 2 5-7"/></svg></span><h3>Analytics &amp; playbook</h3><p>Compare win rate, expectancy, drawdown, and setups to understand what is working.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h14v16H5zM8 8h8M8 12h5M8 16h8"/><path d="m15 12 2 2 3-4"/></svg></span><h3>Backtest &amp; strategy notes</h3><p>Review ideas against recorded trade history and keep the reasoning beside each change.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 20 6v5c0 4.8-3.1 8.1-8 10-4.9-1.9-8-5.2-8-10V6z"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><h3>Prop firm compliance</h3><p>Track funded account limits and progress against the rules that matter to your evaluation.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0M14 16a4.5 4.5 0 0 1 7.5 3.5"/></svg></span><h3>Team desk review</h3><p>Elite members can link trading partners and review weekly summaries together.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M17 7c0-2-2-3-5-3S7 5 7 7s2 3 5 3 5 1 5 3-2 4-5 4-5-2-5-4"/></svg></span><h3>Risk-first workflow</h3><p>Bring your plan and live risk context into view before placing the next trade.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg></span><h3>Personal preferences</h3><p>Choose from light, dark, and accent themes to make the workspace comfortable to use.</p></article>
+    </div></div></section>
 
-<div class="philosophy-wrap">
-  <div class="philosophy-card" data-reveal="fade">
-    <h2 data-reveal="type">The rule was never the hard part</h2>
-    <p>Anyone can write down "risk 1% per trade" at 6am, coffee in hand, market closed. The rule breaks at 11:47am, three losses deep, when the setup that just cost you money shows up again and every instinct says this time it's different. Ghost Discipline doesn't stop you from taking that trade. It just makes sure you can't quietly forget you took it — or convince yourself later that the rule didn't really apply that day.</p>
-    <p>That's the whole design. Not a smarter strategy, not a signal to follow — a mirror that doesn't flatter you. The seal is either sealed or it's cracked. SciFe reads your actual journal, not a story you tell it. And every trader who joins was vouched for by someone who's already sat with that mirror and kept coming back anyway.</p>
-  </div>
-</div>
+    <section class="section membership" id="membership"><div class="wrap"><div class="section-head"><div class="eyebrow">Membership</div><h2>Start with the journal.<br>Grow into the full desk.</h2><p>Ghost Discipline is invitation-only. Access and upgrades are arranged with the GMC Traders team.</p></div><div class="plans">
+      <article class="plan"><div class="plan-label">A considered start</div><h3>Free</h3><div class="price">$0 <small>/ forever</small></div><p>The core journal with SciFe on a shared, rate-limited plan.</p><ul><li>Journal, calendar, orders, rules, psychology</li><li>SciFe chat — 15 messages per day</li><li>Personalized onboarding</li></ul><a class="btn btn-quiet" href="app.html">Enter the terminal</a></article>
+      <article class="plan featured"><div class="plan-label">Most popular</div><h3>Pro</h3><div class="price">$39 <small>/ month</small></div><p>The complete individual workspace for an active trading practice.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest, strategy notes</li><li>Prop firm compliance tools</li><li>Unlimited SciFe chat on shared plan key</li></ul><a class="btn btn-primary" href="https://t.me/GhostTradersEmpire?text=Hi%20%E2%80%94%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Pro%20package." target="_blank" rel="noopener">Request Pro</a></article>
+      <article class="plan"><div class="plan-label">For a trading desk</div><h3>Elite</h3><div class="price">$89 <small>/ month</small></div><p>Everything in Pro, with collaboration and a closer line to the team.</p><ul><li>Everything in Pro</li><li>Team desk review with linked partners</li><li>Priority Telegram support</li><li>Monthly journal review</li></ul><a class="btn btn-quiet" href="https://t.me/GhostTradersEmpire?text=Hi%20%E2%80%94%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Elite%20package." target="_blank" rel="noopener">Request Elite</a></article>
+      <article class="plan"><div class="plan-label">Highest-touch access</div><h3>Premium</h3><div class="price">$149 <small>/ month</small></div><p>Everything in Elite, with the most direct access and review priority.</p><ul><li>Everything in Elite</li><li>Direct Telegram line to the team</li><li>First access to new rooms</li><li>Priority monthly journal review</li></ul><a class="btn btn-quiet" href="https://t.me/GhostTradersEmpire?text=Hi%20%E2%80%94%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Premium%20package." target="_blank" rel="noopener">Request Premium</a></article>
+    </div><p class="membership-note">Monthly pricing in USD · no self-serve checkout · upgrades arranged with the team</p></div></section>
 
-<div class="features-wrap">
-  <div class="section-head">
-    <h2 data-reveal="type">What's inside the terminal</h2>
-    <p>One workspace for the whole trading day — not six tabs and a spreadsheet.</p>
-  </div>
-  <div class="features">
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>Journal &amp; calendar</h3>
-      <p>Every trade, tagged by setup and session, laid out on a calendar so patterns in your own behaviour are impossible to miss.</p>
-    </div>
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>Risk rules engine</h3>
-      <p>The confluence panel above — drag your weekly risk budget and watch the verdict change from "room to work" to "pushing it," live.</p>
-    </div>
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>SciFe, your AI coach</h3>
-      <p>Trained on your own journal, SciFe answers questions about your patterns and calls out rule breaks — it doesn't just cheerlead.</p>
-    </div>
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>Analytics &amp; playbook</h3>
-      <p>Win rate, expectancy and drawdown broken down by setup, so you know which parts of your plan are actually working.</p>
-    </div>
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>Backtest &amp; strategy notes</h3>
-      <p>Test a rule change against your own trade history before you risk live money finding out it doesn't hold up.</p>
-    </div>
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>Prop firm compliance</h3>
-      <p>A dedicated room that tracks your account against your prop firm's drawdown and consistency rules, so a breach doesn't blindside you.</p>
-    </div>
-    <div class="feature" data-reveal="fade">
-      <h3><span class="dot"></span>Team <span style="font-size:10px;letter-spacing:.04em;color:var(--bronze-bright);border:1px solid rgba(212,175,55,.35);border-radius:20px;padding:2px 7px;margin-left:6px;vertical-align:middle;">ELITE</span></h3>
-      <p>Link up with your trading partners by @handle. Your Weekly Desk Review auto-calculates from each of your real journals and syncs live — no spreadsheets, no copy-pasting screenshots.</p>
-    </div>
-  </div>
-</div>
+    <section class="section" id="faq"><div class="wrap"><div class="section-head"><div class="eyebrow">A few useful details</div><h2>Before you request access.</h2></div><div class="faq">
+      <details><summary>Why is access invitation-only?</summary><p>Ghost Discipline began inside GMC Traders and remains a private workspace. Ask a current member or contact the team to request an invitation.</p></details>
+      <details><summary>Does Ghost Discipline tell me what to trade?</summary><p>No. It is a journaling, risk-management, and review tool. It does not provide trading signals or investment advice.</p></details>
+      <details><summary>Can I start on the Free plan?</summary><p>Yes. The Free plan includes the core journal, calendar, orders, rules, psychology tools, and a limited amount of SciFe chat.</p></details>
+      <details><summary>How do paid upgrades work?</summary><p>There is no card form in the terminal. Contact the team on Telegram to discuss a plan and arrange payment directly.</p></details>
+      <details><summary>Can teammates see every trade?</summary><p>Team desk review shares a selected weekly summary. It is not a standing view into every trade in your journal.</p></details>
+    </div></div></section>
 
-<div class="proof-wrap">
-  <div class="section-head">
-    <h2 data-reveal="type">Nobody in here is selling you anything</h2>
-    <p>Anonymized lines from actual sessions — handles changed, nothing else. This is what "sealed" and "cracked" sound like from the inside.</p>
-  </div>
-  <div class="proof-grid">
-    <div class="proof-card" data-reveal="fade">
-      <p class="proof-quote">"I used to lie to my own journal. Turns out I was the only one who believed it."</p>
-      <div class="proof-meta">@duskscalper — <span>Pro, 8 months</span></div>
-    </div>
-    <div class="proof-card" data-reveal="fade">
-      <p class="proof-quote">"The seal doesn't yell at you. It just sits there cracked, in mono font, forever. Somehow that's worse."</p>
-      <div class="proof-meta">R.K. — <span>prop-funded, Elite</span></div>
-    </div>
-    <div class="proof-card" data-reveal="fade">
-      <p class="proof-quote">"Broke rule two three days running before I admitted the rule was fine and I wasn't."</p>
-      <div class="proof-meta">@nightfvg — <span>Pro, 3 months</span></div>
-    </div>
-    <div class="proof-card" data-reveal="fade">
-      <p class="proof-quote">"I don't need an app to tell me I revenge-traded. I need one that writes it down before I forget I did."</p>
-      <div class="proof-meta">M — <span>Free plan, six weeks in</span></div>
-    </div>
-  </div>
-</div>
+    <section class="wrap" style="padding-bottom:94px"><div class="invite-cta"><div><div class="eyebrow">A private workspace for your process</div><h2>Make the next session count.</h2><p>Already invited? Sign in. New to Ghost Discipline? Ask the GMC Traders team for access.</p></div><a class="btn btn-primary" href="https://t.me/GhostTradersEmpire?text=Hi%20%E2%80%94%20I%27d%20like%20an%20invitation%20to%20Ghost%20Discipline." target="_blank" rel="noopener">Request an invitation <span aria-hidden="true">↗</span></a></div></section>
+  </main>
 
-<div class="pricing">
-  <div class="pricing-head">
-    <h2 data-reveal="type">Four ways in, once you're invited</h2>
-    <p>No self-serve checkout — message the Telegram below with the package you want and you'll be upgraded by hand. Prices are monthly, in USD, cancel any time with a message.</p>
-  </div>
-  <div class="tiers">
-    <div class="tier" data-reveal="fade">
-      <div class="tier-name">Free</div>
-      <div class="tier-price">$0 <span>/ forever</span></div>
-      <div class="tier-desc">The core journal, with SciFe included on a shared, rate-limited plan.</div>
-      <ul class="tier-features">
-        <li><span class="ic">✓</span> Journal, calendar, orders, rules &amp; psychology rooms</li>
-        <li><span class="ic">✓</span> SciFe chat — 15 messages/day on the shared plan key</li>
-        <li><span class="ic">✓</span> Onboarding questions personalise SciFe for you</li>
-        <li class="dim"><span class="ic">✕</span> Analytics, Playbook, Backtest, Strategy Notes</li>
-        <li class="dim"><span class="ic">✕</span> Prop Firm Compliance room</li>
-      </ul>
-      <a class="btn btn-ghost tier-cta" href="app.html">Enter free</a>
-    </div>
-    <div class="tier featured" data-reveal="fade">
-      <div class="tier-badge">Most traders pick this</div>
-      <div class="tier-name">Pro</div>
-      <div class="tier-price">$39 <span>/ month</span></div>
-      <div class="tier-desc">The full arsenal — every room unlocked, SciFe uncapped. What most invited traders settle into.</div>
-      <ul class="tier-features">
-        <li><span class="ic">✓</span> Everything in Free</li>
-        <li><span class="ic">✓</span> Analytics, Playbook, Backtest, Strategy Notes, Prop Firm</li>
-        <li><span class="ic">✓</span> SciFe chat — unlimited on the shared plan key</li>
-        <li><span class="ic">✓</span> Onboarding questions can be skipped</li>
-      </ul>
-      <a class="btn btn-gold tier-cta" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Pro%20package." target="_blank" rel="noopener">Request Pro →</a>
-    </div>
-    <div class="tier" data-reveal="fade">
-      <div class="tier-name">Elite</div>
-      <div class="tier-price">$89 <span>/ month</span></div>
-      <div class="tier-desc">Everything in Pro, plus a closer line to the people building it.</div>
-      <ul class="tier-features">
-        <li><span class="ic">✓</span> Everything in Pro</li>
-        <li><span class="ic">✓</span> <b>Team</b> — link trading partners by @handle, auto-synced Weekly Desk Review</li>
-        <li><span class="ic">✓</span> Priority Telegram support — same-day replies</li>
-        <li><span class="ic">✓</span> First access to new terminal features</li>
-        <li><span class="ic">✓</span> Direct input on the roadmap</li>
-        <li><span class="ic">✓</span> A monthly 1:1 review of your journal with the team</li>
-      </ul>
-      <a class="btn btn-ghost tier-cta" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Elite%20package." target="_blank" rel="noopener">Request Elite →</a>
-    </div>
-    <div class="tier premium" data-reveal="fade">
-      <div class="tier-badge violet">Top tier</div>
-      <div class="tier-name">Premium</div>
-      <div class="tier-price">$149 <span>/ month</span></div>
-      <div class="tier-desc">Everything Elite has, held to a higher standard of attention.</div>
-      <ul class="tier-features">
-        <li><span class="ic">✓</span> Everything in Elite</li>
-        <li><span class="ic">✓</span> Direct Telegram line to the team — fastest response tier</li>
-        <li><span class="ic">✓</span> First access to every new room, before Pro/Elite</li>
-        <li><span class="ic">✓</span> Priority queue on the monthly 1:1 journal review</li>
-      </ul>
-      <a class="btn btn-violet tier-cta" href="https://t.me/GhostTradersEmpire?text=Hi%20—%20I%27d%20like%20to%20upgrade%20my%20Ghost%20Discipline%20account%20to%20the%20Premium%20package." target="_blank" rel="noopener">Request Premium →</a>
-    </div>
-  </div>
-</div>
-
-<div class="faq-wrap">
-  <div class="section-head">
-    <h2 data-reveal="type">Before you message us</h2>
-    <p>The questions almost everyone asks before their first session.</p>
-  </div>
-  <div class="faq">
-    <details class="faq-item" data-reveal="fade">
-      <summary>Why invitation only?</summary>
-      <p>Ghost Discipline started as a private tool inside GMC Traders. It stayed invite-only on purpose — every member is vouched for by someone already inside, which keeps the rooms full of people who actually take their rules seriously.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>What is SciFe?</summary>
-      <p>SciFe is the AI coach built into every plan. It reads your journal, not a generic script, and answers questions about your own trading patterns — including the ones you'd rather it not notice.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>Can I start free and upgrade later?</summary>
-      <p>Yes. The Free plan is a genuine starting point, not a trial — the journal, calendar and rate-limited SciFe access don't expire. Message the Telegram whenever you want Pro, Elite, or Premium unlocked.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>How does billing actually work?</summary>
-      <p>There's no card form. You message the Telegram with the plan you want, and the team upgrades your account by hand and arranges payment directly with you. You can downgrade or cancel the same way, any time.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>What happens when my plan runs out?</summary>
-      <p>You'll see a reminder in the terminal starting 3 days before your renewal date. If it lapses without being renewed, the account simply drops back to Free — nothing is deleted, your journal and history stay exactly as they are, and you keep the core rooms. Message the Telegram whenever you're ready to pick the paid tier back up.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>Is this financial advice?</summary>
-      <p>No. Ghost Discipline is a risk-management and journaling tool — it helps you follow rules you set for yourself. It doesn't tell you what to trade, and nothing in the terminal should be treated as investment advice.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>What actually happens when I break a rule?</summary>
-      <p>Nothing punitive — no lockout, no lecture popup. The seal on your Rules room flips from sealed to cracked, and that break sits in your journal exactly as it happened, tagged and dated. SciFe will bring it up when it's relevant, and your Weekly Desk Review (if you're on a team) shows it to your teammates too. The discomfort of a visible, permanent record is the entire mechanism — nobody's watching over your shoulder except the version of you that has to read it back later.</p>
-    </details>
-    <details class="faq-item" data-reveal="fade">
-      <summary>Can teammates see my full journal, or just the weekly summary?</summary>
-      <p>Just the weekly summary. Your desk partners see the Weekly Desk Review — win rate, R, rule breaks, routine scores — for the week you've selected. They don't get a standing window into every trade you've ever logged. You control what's shared by choosing what week to open for review, and nothing syncs until you accept a team invite in the first place.</p>
-    </details>
-  </div>
-</div>
-
-<div class="foot">
-  <p>Ghost Discipline is an invitation-only terminal for GMC Traders. Already invited? <a href="app.html">Sign in →</a></p>
-  <p>Questions or upgrades — <a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">t.me/GhostTradersEmpire</a></p>
-  <p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past discipline doesn't guarantee future results.</p>
-</div>
-
-<script>
-/* ---------- scroll reveal: typed headlines + tilted-in cards ---------- */
-(function(){
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function wrapChars(node, counter, stepMs){
-    Array.from(node.childNodes).forEach(child=>{
-      if(child.nodeType === Node.TEXT_NODE){
-        const frag = document.createDocumentFragment();
-        for(const ch of child.textContent){
-          const span = document.createElement('span');
-          span.className = 'ch';
-          span.textContent = ch;
-          span.style.transitionDelay = (counter.i * stepMs) + 'ms';
-          counter.i++;
-          frag.appendChild(span);
-        }
-        node.replaceChild(frag, child);
-      } else if(child.nodeType === Node.ELEMENT_NODE){
-        wrapChars(child, counter, stepMs);
-      }
-    });
-  }
-
-  const typeEls = document.querySelectorAll('[data-reveal="type"]');
-  typeEls.forEach(el=>{
-    if(reduceMotion) return;
-    const stepMs = el.tagName === 'H1' ? 26 : 16;
-    const counter = { i: 0 };
-    wrapChars(el, counter, stepMs);
-    const cursor = document.createElement('span');
-    cursor.className = 'type-cursor';
-    el.appendChild(cursor);
-    const totalMs = counter.i * stepMs + 500;
-    el.dataset.typeDuration = totalMs;
-  });
-
-  const cardEls = document.querySelectorAll('[data-reveal="card"], [data-reveal="fade"]');
-  // stagger cards/fades within their shared parent so a row cascades in together
-  const seenParents = new Set();
-  cardEls.forEach(el=>{
-    const parent = el.parentElement;
-    if(!seenParents.has(parent)){
-      seenParents.add(parent);
-      Array.from(parent.children).filter(c=>c.matches && c.matches('[data-reveal="card"], [data-reveal="fade"]'))
-        .forEach((c,i)=>{ c.style.transitionDelay = Math.min(i,5) * 90 + 'ms'; });
+  <footer class="footer"><div class="wrap"><div class="footer-main"><a class="brand" href="#top"><img src="logo.png" alt=""><span>Ghost Discipline</span></a><div class="footer-links"><a href="app.html">Member sign in</a><a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Contact the team</a></div></div><p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past performance and process discipline do not guarantee future results.</p></div></footer>
+  <script>
+    const menuButton=document.getElementById('menuToggle');
+    const nav=document.querySelector('.nav');
+    menuButton?.addEventListener('click',()=>{const open=nav.classList.toggle('nav-open');menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');});
+    document.querySelectorAll('.nav-links a').forEach(link=>link.addEventListener('click',()=>{nav.classList.remove('nav-open');menuButton?.setAttribute('aria-expanded','false');}));
+    const tiltStage=document.querySelector('[data-tilt-stage]');
+    const finePointer=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+    const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(tiltStage&&finePointer&&!reduceMotion){
+      let raf=0,x=0,y=0;
+      const paint=()=>{raf=0;tiltStage.style.setProperty('--tilt-x',(y*5.5).toFixed(2)+'deg');tiltStage.style.setProperty('--tilt-y',(x*-7).toFixed(2)+'deg');tiltStage.style.setProperty('--float-x',(x*11).toFixed(1)+'px');tiltStage.style.setProperty('--float-y',(y*8).toFixed(1)+'px');};
+      tiltStage.addEventListener('pointermove',event=>{const r=tiltStage.getBoundingClientRect();x=((event.clientX-r.left)/r.width-.5)*2;y=((event.clientY-r.top)/r.height-.5)*2;if(!raf)raf=requestAnimationFrame(paint);},{passive:true});
+      tiltStage.addEventListener('pointerleave',()=>{x=0;y=0;if(!raf)raf=requestAnimationFrame(paint);},{passive:true});
     }
-  });
-
-  if(!('IntersectionObserver' in window) || reduceMotion){
-    document.querySelectorAll('[data-reveal]').forEach(el=> el.classList.add('revealed','type-done'));
-  } else {
-    const obs = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const el = entry.target;
-          el.classList.add('revealed');
-          if(el.dataset.typeDuration){
-            setTimeout(()=> el.classList.add('type-done'), parseInt(el.dataset.typeDuration,10));
-          }
-          obs.unobserve(el);
-        }
-      });
-    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
-    document.querySelectorAll('[data-reveal]').forEach(el=> obs.observe(el));
-  }
-})();
-
-/* ---------- typewriter ---------- */
-const PHRASES = [
-  'Rules before setups.',
-  'An honest ledger, not a spreadsheet you can quietly edit.',
-  'One broken rule cracks the seal.',
-  'SciFe, included — even on the free plan.',
-  'Invitation only. Always has been.'
-];
-let twIndex = 0, twChar = 0, twDeleting = false;
-const twEl = document.getElementById('typewriter');
-function tick(){
-  const full = PHRASES[twIndex];
-  if(!twDeleting){
-    twChar++;
-    if(twChar > full.length){ twDeleting = true; setTimeout(tick, 1400); return; }
-  } else {
-    twChar--;
-    if(twChar < 0){ twDeleting = false; twIndex = (twIndex+1) % PHRASES.length; twChar = 0; }
-  }
-  twEl.innerHTML = full.slice(0, twChar) + '<span class="cursor"></span>';
-  setTimeout(tick, twDeleting ? 28 : 46);
-}
-tick();
-
-/* ---------- draggable budget/confluence demo ---------- */
-const svg = document.getElementById('budgetSvg');
-const svgNS = 'http://www.w3.org/2000/svg';
-const W = 860, H = 220, PAD = 30;
-const N = 5; // Mon..Fri
-const DAY_MAX = 4;     // sensible ceiling for how much of an account to risk in one day, in %
-const WEEKLY_CAP = 6;  // total weekly risk cap, in %
-let values = [1.0, 1.5, 0.5, 1.8, 1.2]; // % of account risked each day — starts right at the cap
-function xFor(i){ return PAD + i * (W - PAD*2) / (N-1); }
-function yFor(v){ return H - PAD - (v/DAY_MAX) * (H - PAD*2); }
-
-const gridG = document.getElementById('gridLines');
-for(let i=0;i<=4;i++){
-  const y = PAD + i*(H-PAD*2)/4;
-  const line = document.createElementNS(svgNS,'line');
-  line.setAttribute('x1', PAD); line.setAttribute('x2', W-PAD);
-  line.setAttribute('y1', y); line.setAttribute('y2', y);
-  line.setAttribute('stroke', 'rgba(240,244,242,0.07)'); line.setAttribute('stroke-width','1');
-  gridG.appendChild(line);
-  const label = document.createElementNS(svgNS,'text');
-  label.setAttribute('x', 2); label.setAttribute('y', y+3.5);
-  label.setAttribute('font-size','9'); label.setAttribute('font-family','IBM Plex Mono, monospace');
-  label.setAttribute('fill','rgba(240,244,242,0.32)');
-  label.textContent = (DAY_MAX - i).toFixed(0) + '%';
-  gridG.appendChild(label);
-}
-
-const lineEl = document.getElementById('budgetLine');
-const fillEl = document.getElementById('budgetFill');
-const ptsG = document.getElementById('budgetPoints');
-const circles = [];
-
-function pathD(){
-  return values.map((v,i)=> (i===0?'M':'L') + xFor(i) + ',' + yFor(v)).join(' ');
-}
-function fillD(){
-  return pathD() + ` L ${xFor(N-1)},${H-PAD} L ${xFor(0)},${H-PAD} Z`;
-}
-function redraw(){
-  lineEl.setAttribute('d', pathD());
-  fillEl.setAttribute('d', fillD());
-  circles.forEach((c,i)=>{ c.setAttribute('cx', xFor(i)); c.setAttribute('cy', yFor(values[i])); });
-
-  const sum = values.reduce((a,b)=>a+b,0);
-  const ratio = sum / WEEKLY_CAP;
-  document.getElementById('budgetTotal').textContent = sum.toFixed(1) + '%';
-
-  const barFill = document.getElementById('budgetBarFill');
-  barFill.style.width = Math.min(ratio,1)*100 + '%';
-  barFill.classList.toggle('over', ratio > 1);
-
-  const verdictEl = document.getElementById('budgetVerdict');
-  if(ratio > 1){
-    verdictEl.textContent = `Over budget by ${(sum-WEEKLY_CAP).toFixed(1)}%`;
-    verdictEl.style.color = 'var(--loss)';
-  } else if(ratio >= 0.7){
-    verdictEl.textContent = 'On plan';
-    verdictEl.style.color = 'var(--bronze-bright)';
-  } else {
-    verdictEl.textContent = 'Room to work';
-    verdictEl.style.color = 'var(--win)';
-  }
-}
-
-values.forEach((v,i)=>{
-  const c = document.createElementNS(svgNS,'circle');
-  c.setAttribute('r', 8);
-  c.setAttribute('fill', '#0b131a');
-  c.setAttribute('stroke', '#2dd4a8');
-  c.setAttribute('stroke-width', 3);
-  c.style.cursor = 'grab';
-  c.dataset.index = i;
-  ptsG.appendChild(c);
-  circles.push(c);
-});
-redraw();
-
-let dragIndex = null;
-function svgPoint(evt){
-  const rect = svg.getBoundingClientRect();
-  const px = (evt.clientX - rect.left) / rect.width * W;
-  const py = (evt.clientY - rect.top) / rect.height * H;
-  return { px, py };
-}
-function startDrag(i, evt){
-  dragIndex = i;
-  circles[i].style.cursor = 'grabbing';
-  evt.preventDefault();
-}
-circles.forEach((c,i)=>{
-  c.addEventListener('pointerdown', (e)=>{ startDrag(i, e); c.setPointerCapture(e.pointerId); });
-});
-svg.addEventListener('pointermove', (e)=>{
-  if(dragIndex === null) return;
-  const { py } = svgPoint(e);
-  let v = DAY_MAX - ((py - PAD) / (H - PAD*2)) * DAY_MAX;
-  v = Math.max(0, Math.min(DAY_MAX, Math.round(v*10)/10));
-  values[dragIndex] = v;
-  redraw();
-});
-function endDrag(){
-  if(dragIndex === null) return;
-  circles[dragIndex].style.cursor = 'grab';
-  dragIndex = null;
-}
-svg.addEventListener('pointerup', endDrag);
-svg.addEventListener('pointerleave', endDrag);
-
-/* ---------- rule lock / seal ---------- */
-const ruleChecks = document.querySelectorAll('.rule-check');
-const sealStatus = document.getElementById('sealStatus');
-function updateSeal(){
-  const checkedArr = Array.from(ruleChecks);
-  const brokenCount = checkedArr.filter(c=>!c.checked).length;
-  if(brokenCount === 0){
-    sealStatus.textContent = 'Sealed — all 3 rules holding';
-    sealStatus.className = 'seal-status sealed';
-  } else {
-    sealStatus.textContent = `Cracked — ${brokenCount} rule${brokenCount>1?'s':''} broken`;
-    sealStatus.className = 'seal-status cracked';
-  }
-}
-ruleChecks.forEach(c => c.addEventListener('change', updateSeal));
-updateSeal();
-
-/* ---------- expectancy calculator ---------- */
-const winRateSlider = document.getElementById('winRateSlider');
-const rrSlider = document.getElementById('rrSlider');
-const winRateVal = document.getElementById('winRateVal');
-const rrVal = document.getElementById('rrVal');
-const expectancyValue = document.getElementById('expectancyValue');
-const expectancyVerdict = document.getElementById('expectancyVerdict');
-function updateExpectancy(){
-  const wr = parseInt(winRateSlider.value, 10) / 100;
-  const rr = parseInt(rrSlider.value, 10) / 10;
-  winRateVal.textContent = Math.round(wr*100) + '%';
-  rrVal.textContent = rr.toFixed(1) + 'R';
-  const exp = (wr * rr) - (1 - wr);
-  const sign = exp >= 0 ? '+' : '';
-  expectancyValue.textContent = sign + exp.toFixed(2) + 'R';
-  expectancyValue.className = 'expectancy-value ' + (exp >= 0 ? 'pos' : 'neg');
-  if(exp > 0.15){
-    expectancyVerdict.textContent = 'Solid — this edge pays you over enough trades.';
-  } else if(exp > 0){
-    expectancyVerdict.textContent = 'Positive, but thin — a rough stretch of variance will test it.';
-  } else {
-    expectancyVerdict.textContent = 'Negative — this loses money long-run, no matter how good individual trades feel.';
-  }
-}
-[winRateSlider, rrSlider].forEach(s => s.addEventListener('input', updateExpectancy));
-updateExpectancy();
-
-/* ---------- streak tracker ---------- */
-const streakPipsEl = document.getElementById('streakPips');
-const streakCountEl = document.getElementById('streakCount');
-let pipStates = ['kept','kept','broken','kept','kept','kept','kept','broken','kept','kept','kept','neutral','neutral','neutral'];
-function renderPips(){
-  streakPipsEl.innerHTML = '';
-  pipStates.forEach((state, i) => {
-    const el = document.createElement('div');
-    el.className = 'pip' + (state !== 'neutral' ? ' ' + state : '');
-    el.addEventListener('click', () => {
-      pipStates[i] = state === 'neutral' ? 'kept' : state === 'kept' ? 'broken' : 'neutral';
-      renderPips();
-    });
-    streakPipsEl.appendChild(el);
-  });
-  let streak = 0;
-  for(let i = pipStates.length - 1; i >= 0; i--){
-    if(pipStates[i] === 'kept') streak++;
-    else break;
-  }
-  streakCountEl.textContent = streak + (streak === 1 ? ' day' : ' days');
-}
-renderPips();
-</script>
+  </script>
 </body>
 </html>
