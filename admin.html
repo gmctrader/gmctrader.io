@@ -482,6 +482,82 @@ body{font-family:'Instrument Sans',system-ui,sans-serif;background:radial-gradie
 .btn{border-radius:10px;transition:transform .18s,background .18s,border-color .18s}.btn-teal{background:linear-gradient(135deg,#b6d2ac,#91b487);border-color:transparent;color:#10180f;box-shadow:0 10px 24px -17px rgba(166,201,158,.8)}.btn-teal:hover{filter:brightness(1.04);transform:translateY(-1px)}.btn-ghost{background:transparent}.stats{gap:10px}.stat{padding:17px;border-radius:13px;background:rgba(255,255,255,.018);border-color:var(--border)}.stat .n{font-size:22px;font-weight:500}.stat .l{font-size:9px;letter-spacing:.12em;color:var(--text-faint)}
 table{margin-top:20px}th{font-size:9px;letter-spacing:.11em;color:var(--text-faint);padding-bottom:12px;border-bottom:1px solid var(--border-hi)}td{border-top:0;border-bottom:1px solid var(--border);padding:14px 10px}tr:hover td{background:rgba(166,201,158,.025)}.badge{border-radius:999px;padding:4px 9px}.badge.yes{color:var(--teal);border-color:rgba(166,201,158,.28);background:rgba(166,201,158,.08)}
 @media(max-width:700px){.wrap{padding:24px 15px 60px}.card{padding:21px 18px}.searchRow{flex-wrap:wrap}.searchRow input{min-width:100%}#gate{margin:46px auto 0}}
+
+/* Admin workspace polish and small-screen trader cards. */
+html{color-scheme:dark;scrollbar-color:#3b4b40 #080c09}
+body{background:radial-gradient(ellipse 760px 420px at 50% -18%,rgba(166,201,158,.085),transparent 70%),#080b09}
+.wrap{max-width:1320px;padding-top:34px}
+.topbar{padding:0 2px 20px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.brand-badge{box-shadow:inset 0 1px rgba(255,255,255,.08),0 8px 24px -18px var(--teal)}
+.brand h1{font-size:21px;letter-spacing:-.035em}
+.brand .sub{font-size:11px;letter-spacing:.02em}
+.card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(17,24,19,.97),rgba(12,17,14,.97));box-shadow:inset 0 1px rgba(255,255,255,.035),0 20px 55px -48px #000}
+.card h2{font-size:18px;letter-spacing:-.025em}
+.card .hint{max-width:900px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stat{position:relative;overflow:hidden;min-width:0;padding:18px 19px;background:rgba(255,255,255,.018);transition:border-color .18s,transform .18s}
+.stat:before{content:"";position:absolute;left:0;top:15px;bottom:15px;width:2px;border-radius:2px;background:var(--text-faint);opacity:.7}
+.stat.free:before{background:#a6c99e}.stat.pro:before{background:#c7a76b}.stat.elite:before{background:#d7c994}.stat.premium:before{background:#b8a0d5}
+.stat:hover{transform:translateY(-1px);border-color:var(--border-hi)}
+.stat .n{font-size:25px;letter-spacing:-.04em}
+.stat .l{font-size:10px;letter-spacing:.13em}
+.searchRow{align-items:center;margin-top:18px}
+.searchRow input{min-height:44px}
+.btn{min-height:40px}.btn-sm{min-height:32px}
+.btn:focus-visible, input:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+#resultsWrap{overflow-x:auto;border:1px solid var(--border);border-radius:13px;background:rgba(0,0,0,.11)}
+table{min-width:850px;margin:0;border-collapse:separate;border-spacing:0}
+thead{background:rgba(255,255,255,.025)}
+th{padding:13px 14px;white-space:nowrap}
+td{padding:15px 14px;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:rgba(166,201,158,.035)}
+.email{overflow-wrap:anywhere}
+.userTag{font-size:10px;overflow-wrap:anywhere}
+.profileCell .row{line-height:1.5;margin:2px 0}
+select.tierSel,select.cycleSel{max-width:100%}
+.paidUntil{line-height:1.45}
+.saveState{display:inline-block;max-width:150px;vertical-align:middle;line-height:1.4}
+#gate .card{padding:30px}
+#gate .card:before{content:"ADMIN ACCESS";display:block;margin-bottom:14px;color:var(--teal);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.17em}
+#gate .card h2{font-size:24px!important;letter-spacing:-.035em}
+@media(max-width:800px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .wrap{padding:20px 12px 44px}
+  .topbar{align-items:flex-start;margin-bottom:14px}
+  .card{padding:19px 15px;margin-bottom:13px;border-radius:16px}
+  .card .hint{font-size:12px}
+  .stats{gap:9px}
+  .stat{padding:14px 13px}
+  .stat .n{font-size:22px}
+  .searchRow{gap:8px}
+  .searchRow input{min-width:0;flex-basis:100%}
+  .searchRow .btn{width:100%}
+  #resultsWrap{overflow:visible;border:0;background:none}
+  table{display:block;min-width:0;margin-top:14px}
+  thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  tbody{display:grid;gap:11px}
+  tbody tr{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:14px;background:linear-gradient(145deg,rgba(19,27,21,.98),rgba(13,18,15,.98));overflow:hidden}
+  tbody td{display:block;min-width:0;padding:12px;border:0;border-bottom:1px solid var(--border);font-size:12px;overflow-wrap:anywhere}
+  tbody td:before{display:block;margin-bottom:7px;color:var(--text-faint);font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.11em;text-transform:uppercase}
+  tbody td:nth-child(1){grid-column:1/-1}
+  tbody td:nth-child(1):before{content:'Trader'}
+  tbody td:nth-child(2):before{content:'Profile'}
+  tbody td:nth-child(3):before{content:'Onboarded'}
+  tbody td:nth-child(4){grid-column:1/-1}
+  tbody td:nth-child(4):before{content:'Tier and billing'}
+  tbody td:nth-child(5){grid-column:1/-1;border-bottom:0;display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+  tbody td:nth-child(5):before{content:'Actions';width:100%;margin:0}
+  .profileCell{max-width:none}
+  select.tierSel,select.cycleSel{width:100%;min-height:38px}
+  .renewBtn,.rowSaveBtn{margin:0}
+  .saveState{margin:0;max-width:100%}
+  #gate{margin:40px 12px 0}
+  #gate .card{padding:24px 20px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
 </body>
 </html>
