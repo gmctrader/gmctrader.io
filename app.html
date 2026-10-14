@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>(function(){try{var q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,''));var authFlow=['invite','recovery'].includes(h.get('type'));if(!q.has('signin')&&!authFlow)location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
 <script>
 // Set the real theme (from a prior visit) before first paint, so there's
 // no flash of the light "portal" look while the rest of the page loads.
@@ -2934,7 +2935,7 @@ setTimeout(function(){
         Edge Lab
       </button>
       <div class="side-divider"></div>
-      <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()">
+      <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()" aria-label="Open full SciFe workspace">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
         SciFe
         <span style="margin-left:auto;font-size:9px;letter-spacing:.04em;padding:2px 6px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--bronze-bright);font-weight:600;">VOICE</span>
@@ -12938,13 +12939,28 @@ function showCalDay(iso){
 }
 
 /* ============ SCIFE (optional voice AI companion, its own page) ============ */
+function scifeAccountGuard(){
+  if(!isDemoMode) return false;
+  openDemoTease('SciFe needs a real account', 'SciFe stores your personal API key securely on your synced profile, so it needs a real account rather than the Proving Ground trial.');
+  toggleSidebar(false);
+  return true;
+}
+// The page navigation is reserved for the full SciFe workspace.
 function handleSciFe(){
-  if(isDemoMode){
-    openDemoTease('SciFe needs a real account', 'SciFe stores your personal API key securely on your synced profile, so it needs a real account rather than the Proving Ground trial.');
-    toggleSidebar(false);
-    return;
-  }
-  openQuickSciFe();
+  if(scifeAccountGuard()) return;
+  window.location.assign('scife.html?full=1');
+}
+// The floating star stays on the current journal page and opens a compact chat dock.
+function handleQuickSciFe(){
+  if(scifeAccountGuard()) return;
+  const overlay=document.getElementById('quickSciFeOverlay');
+  const frame=document.getElementById('quickSciFeFrame');
+  const fab=document.getElementById('scifeFab');
+  if(!overlay||!frame) return;
+  if(!frame.getAttribute('src')) frame.setAttribute('src','scife.html?quick=1');
+  const open=!overlay.classList.contains('show');
+  overlay.classList.toggle('show',open);
+  if(fab) fab.setAttribute('aria-expanded',String(open));
 }
 function openQuickSciFe(){
   const overlay=document.getElementById('quickSciFeOverlay');
@@ -12952,14 +12968,12 @@ function openQuickSciFe(){
   if(!overlay||!frame) return;
   if(!frame.getAttribute('src')) frame.setAttribute('src','scife.html?quick=1');
   overlay.classList.add('show');
-  document.body.classList.add('modal-open');
+  document.getElementById('scifeFab')?.setAttribute('aria-expanded','true');
 }
 function closeQuickSciFe(){
   const overlay=document.getElementById('quickSciFeOverlay');
-  const frame=document.getElementById('quickSciFeFrame');
   if(overlay) overlay.classList.remove('show');
-  document.body.classList.remove('modal-open');
-  if(frame) frame.removeAttribute('src');
+  document.getElementById('scifeFab')?.setAttribute('aria-expanded','false');
 }
 window.addEventListener('message',function(event){
   const frame=document.getElementById('quickSciFeFrame');
@@ -12968,6 +12982,11 @@ window.addEventListener('message',function(event){
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&document.getElementById('quickSciFeOverlay')?.classList.contains('show')) closeQuickSciFe();
 });
+document.addEventListener('pointerdown',function(event){
+  const dock=document.getElementById('quickSciFeOverlay');
+  const fab=document.getElementById('scifeFab');
+  if(dock?.classList.contains('show')&&!dock.contains(event.target)&&!fab?.contains(event.target)) closeQuickSciFe();
+},{passive:true});
 
 /* ============ GET APP (platform-aware) ============ */
 function handleGetApp(){
@@ -13828,14 +13847,14 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   <span>Jump to…</span><span class="kbd">⌘K</span>
 </div>
 
-<div class="overlay quick-scife-overlay" id="quickSciFeOverlay" onclick="if(event.target===this)closeQuickSciFe()" aria-label="Quick SciFe chat">
-  <div class="quick-scife-modal" role="dialog" aria-modal="true" aria-labelledby="quickSciFeTitle">
+<div class="quick-scife-overlay" id="quickSciFeOverlay" aria-label="Quick SciFe chat">
+  <div class="quick-scife-modal" role="dialog" aria-modal="false" aria-labelledby="quickSciFeTitle">
     <div class="quick-scife-head"><div><span class="quick-scife-kicker">QUICK CONVERSATION</span><h2 id="quickSciFeTitle">Ask SciFe</h2></div><button type="button" class="quick-scife-close" onclick="closeQuickSciFe()" aria-label="Close SciFe chat">×</button></div>
     <iframe id="quickSciFeFrame" title="SciFe quick conversation" loading="lazy" allow="microphone; clipboard-read; clipboard-write"></iframe>
   </div>
 </div>
 
-<button class="scife-fab" id="scifeFab" onclick="handleSciFe()" aria-label="Ask SciFe">
+<button class="scife-fab" id="scifeFab" onclick="handleQuickSciFe()" aria-label="Ask SciFe a quick question" aria-expanded="false" aria-controls="quickSciFeOverlay">
   <span class="fab-tip">Ask SciFe — help &amp; analysis</span>✦
 </button>
 
@@ -15092,6 +15111,45 @@ html[data-theme] .equity-inner svg text{paint-order:stroke fill;text-rendering:g
 html[data-theme="slate"] .equity-inner svg text,html[data-theme="black"] .equity-inner svg text{fill:#aeb9b0}
 html[data-theme="light"] .equity-wrap{background:radial-gradient(ellipse 90% 90% at 50% 0%,color-mix(in srgb,var(--equity-accent,var(--bronze-bright)) 13%,transparent),transparent 70%),#f9faf6!important}
 @media(max-width:700px){html[data-theme] .equity-total{font-size:36px}html[data-theme] .equity-sub{font-size:9px}}
+
+/* Mobile journal layout: preserve readable type and give each workspace a full, calm column. */
+@media(max-width:760px){
+  #appShell.show>.main{width:100%;max-width:760px;margin:60px auto 0;padding:22px 16px calc(108px + env(safe-area-inset-bottom))!important;min-height:calc(100dvh - 60px)}
+  .view.active{display:flex;flex-direction:column;gap:15px;align-items:stretch}
+  .view.active>*{width:100%;max-width:none;min-width:0;margin-inline:0!important}
+  .view.active>.topbar-row{margin-bottom:3px!important;padding-bottom:15px}
+  .view.active .grid,.view.active .grid3,.view.active .grid2b{display:grid;grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+  #view-dashboard.active{display:flex;gap:14px}
+  #view-dashboard>#heroStatsRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #view-dashboard>#heroStatsRow .hero-stat{min-width:0;padding:15px 13px}
+  #view-dashboard>#heroStatsRow .hero-label{font-size:8px;letter-spacing:.08em}
+  #view-dashboard>#heroStatsRow .hero-value{font-size:clamp(18px,6vw,23px);overflow-wrap:anywhere}
+  #view-dashboard>#heroStatsRow .hero-sub{font-size:9px;line-height:1.45}
+  #view-dashboard>#dashboardEquityCard{padding:20px 16px!important}
+  #view-dashboard>#dashboardEquityCard .equity-wrap{min-height:0}
+  .card{padding:19px 16px;border-radius:16px}
+  .portal-greeting{font-size:12px;line-height:1.55}
+  .trade-row{min-width:0;max-width:100%}
+  .field input,.field select,.field textarea,input,select,textarea{font-size:16px}
+  .modal{width:min(100% - 24px,560px);max-height:calc(100dvh - 28px);overflow:auto}
+  .scife-fab{right:16px;bottom:calc(80px + env(safe-area-inset-bottom));width:48px;height:48px}
+}
+@media(max-width:390px){
+  #appShell.show>.main{padding-inline:12px!important}
+  #view-dashboard>#heroStatsRow{gap:8px}
+  #view-dashboard>#heroStatsRow .hero-stat{padding:13px 10px}
+  #view-dashboard>#dashboardEquityCard{padding:17px 12px!important}
+  .card{padding:17px 13px}
+}
+/* SciFe quick chat is an in-page dock; it never replaces or navigates the journal. */
+.quick-scife-overlay{position:fixed;z-index:3000;right:20px;bottom:84px;width:min(430px,calc(100vw - 24px));height:min(620px,calc(100dvh - 108px));display:none;padding:0;background:transparent;pointer-events:none}
+.quick-scife-overlay.show{display:block;pointer-events:auto}
+.quick-scife-modal{width:100%;height:100%;max-height:none;border-radius:18px;border-color:var(--steel-hi);box-shadow:0 24px 72px -32px #000}
+.quick-scife-head{min-height:56px}
+.quick-scife-modal iframe{background:#050505}
+@media(max-width:760px){.quick-scife-overlay{right:12px;bottom:calc(138px + env(safe-area-inset-bottom));width:min(430px,calc(100vw - 24px));height:min(590px,calc(100dvh - 168px - env(safe-area-inset-bottom)))} }
+@media(max-width:390px){.quick-scife-overlay{right:9px;width:calc(100vw - 18px);height:min(540px,calc(100dvh - 160px - env(safe-area-inset-bottom)))} }
+
 </style>
 
 </body>

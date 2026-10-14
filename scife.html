@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="SciFe">
 <meta name="theme-color" content="#05070a">
 <title>SciFe — Ghost Discipline</title>
+<script>(function(){try{var q=new URLSearchParams(location.search);if(q.get('quick')==='1')document.documentElement.classList.add('quick-mode');else if(q.get('full')!=='1')location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
 <script>(function(){
   var GD_THEMES=['light','dark','black','red','blue','purple','gold','slate'];
   try{
@@ -1411,6 +1412,26 @@ body{
 .send-btn:focus-visible, .mic-btn:focus-visible, .quick-chip:focus-visible{outline:2px solid var(--bronze-bright);outline-offset:2px;}
 .quick-chip{transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;}
 </style>
+<style id="gd-quick-mode">
+html.quick-mode,html.quick-mode body{width:100%;height:100%;min-height:0;overflow:hidden;background:#050505!important}
+html.quick-mode body::before,html.quick-mode body::after,html.quick-mode .grain-overlay,html.quick-mode #stage3dWrap,html.quick-mode .quick-row-wrap,html.quick-mode #chatQuotaBanner,html.quick-mode .topbar-icons{display:none!important}
+html.quick-mode #app{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr) auto!important;gap:0!important;width:100%!important;height:100dvh;min-height:0!important;max-width:none!important;margin:0!important;padding:0 12px max(10px,env(safe-area-inset-bottom))!important}
+html.quick-mode #app>.topbar{grid-column:1;grid-row:1;min-height:54px;padding:7px 2px!important;border-bottom:1px solid rgba(238,240,233,.1);background:#050505}
+html.quick-mode #app>.topbar .title{font-size:16px}
+html.quick-mode .chat-wrap{grid-column:1;grid-row:2;display:flex;min-height:0;height:100%;border:0;border-radius:0;background:transparent;box-shadow:none}
+html.quick-mode .chat{min-height:0;height:100%;padding:14px 3px 12px;gap:10px;overflow-y:auto}
+html.quick-mode .chat:has(.bubble:only-child){justify-content:flex-start;align-items:stretch}
+html.quick-mode .chat:has(.bubble:only-child) .bubble{max-width:100%;align-self:flex-start;padding:12px 14px;text-align:left;font:13px/1.55 'Instrument Sans',sans-serif}
+html.quick-mode .chat:empty::before{font-size:23px}
+html.quick-mode .chat:empty::after{font-size:12px}
+html.quick-mode .bubble{max-width:92%;padding:10px 13px;font-size:12px;line-height:1.55}
+html.quick-mode .composer{grid-column:1;grid-row:3;position:relative;bottom:auto;padding:8px 0 0;background:#050505}
+html.quick-mode .composer-row{min-height:48px;padding:5px 7px 5px 11px;border-radius:13px}
+html.quick-mode .composer-row input{font-size:13px}
+html.quick-mode .mic-btn{width:32px;height:32px}
+html.quick-mode .send-btn{width:34px;height:34px}
+html.quick-mode .chat-wrap .scroll-latest{bottom:7px}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#app">Skip to main content</a>
@@ -1447,7 +1468,7 @@ setTimeout(function(){
     <div class="gate-mark" aria-hidden="true"></div>
     <h1 class="serif">Sign in first</h1>
     <p>SciFe follows your Ghost Discipline account. Sign in there, then come back to this page.</p>
-    <a class="btn" href="app.html" style="text-decoration:none;">Go to Ghost Discipline</a>
+    <a class="btn" href="app.html?signin=1" style="text-decoration:none;">Go to Ghost Discipline</a>
     <div class="gate-foot"><span class="gd"></span>Ghost Discipline · SciFe</div>
   </div>
 </div>
@@ -1490,7 +1511,7 @@ setTimeout(function(){
       <div class="switch on" id="setupVoiceSwitch" onclick="this.classList.toggle('on')"></div>
     </div>
     <button class="btn" style="margin-top:8px;" onclick="saveSetup()">Save &amp; start talking</button>
-    <a href="app.html" style="display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--slate);">Back to Ghost Discipline</a>
+    <a href="app.html?signin=1" style="display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--slate);">Back to Ghost Discipline</a>
     <div class="gate-foot"><span class="gd"></span>Your key stays in your browser calls only</div>
   </div>
 </div>
@@ -1498,7 +1519,7 @@ setTimeout(function(){
 <!-- ============ MAIN APP ============ -->
 <div id="app">
   <div class="topbar">
-    <a class="back" href="app.html" aria-label="Back to Ghost Discipline" onclick="if(window.parent!==window){event.preventDefault();window.parent.postMessage({type:'gd-close-quick-scife'},'*');}">← Ghost Discipline</a>
+    <a class="back" href="app.html?signin=1" aria-label="Back to Ghost Discipline" onclick="if(window.parent!==window){event.preventDefault();window.parent.postMessage({type:'gd-close-quick-scife'},'*');}">← Ghost Discipline</a>
     <div class="title serif">SciFe</div>
     <div class="topbar-icons">
       <div class="icon-btn" role="button" tabindex="0" onclick="openSignalPage()" onkeydown="if(event.key==='Enter')openSignalPage()" title="Analyze a setup" aria-label="Open Signal analysis">🎯</div>
@@ -6705,9 +6726,7 @@ function stopSpeaking(){
 /* ============ SPEECH-TO-TEXT (free, browser-native, optional) ============ */
 function setupSpeechRecognition(){
   buildWaveRing();
-  setupStageParallax();
-  initNeuralCore();
-  startCoreMetricsTicker();
+  if(!document.documentElement.classList.contains('quick-mode')){setupStageParallax();initNeuralCore();startCoreMetricsTicker();}
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){
     document.getElementById('micBtn').style.display = 'none';
