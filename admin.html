@@ -192,6 +192,27 @@ select.cycleSel{
     </div>
   </div>
 
+  <div class="card" id="inviteCard">
+    <h2>Invite traders</h2>
+    <p class="hint">Paste emails, one per line or comma-separated. Each person gets an email with a link to set a password and enter the app. Pick a tier to grant when they join, or leave Free.</p>
+    <textarea id="inviteEmails" rows="4" placeholder="trader1@email.com&#10;trader2@email.com"></textarea>
+    <div class="inviteRow">
+      <select class="tierSel" id="inviteTier" data-tier="free" onchange="this.dataset.tier=this.value">
+        <option value="free">Free</option>
+        <option value="pro">Pro</option>
+        <option value="elite">Elite</option>
+        <option value="premium">Premium</option>
+      </select>
+      <select class="cycleSel" id="inviteCycle" style="margin-top:0;">
+        <option value="">No expiry</option>
+        <option value="monthly">Monthly · 30 days</option>
+        <option value="yearly">Yearly · 1 year</option>
+      </select>
+      <button class="btn btn-teal" id="inviteBtn" onclick="sendInvites()">Send invites</button>
+    </div>
+    <div id="inviteResults"></div>
+  </div>
+
   <div class="card">
     <h2>Traders</h2>
     <p class="hint">Search by email. Change a trader's tier, pick a billing cycle, and hit Save. Monthly = 30 days, Yearly = 1 year from today. The trader gets an in-app reminder 3 days before it runs out, and is dropped to Free automatically the moment it lapses — no cron job needed, it's checked the next time they open the app. Leave billing set to "No expiry" for a manual/lifetime grant.</p>
@@ -466,6 +487,49 @@ async function renewTier(btn){
   }
 }
 
+// ---------- invites ----------
+// Sends through the invite-user Edge Function, which re-checks admin access
+// server-side and holds the service key. Batches of 25 per call.
+async function sendInvites(){
+  const ta = document.getElementById('inviteEmails');
+  const btn = document.getElementById('inviteBtn');
+  const out = document.getElementById('inviteResults');
+  const tier = document.getElementById('inviteTier').value;
+  const cycle = document.getElementById('inviteCycle').value || null;
+  const emails = [...new Set(ta.value.split(/[\s,;]+/).map(e => e.trim().toLowerCase()).filter(Boolean))];
+  if(!emails.length){ out.innerHTML = '<div class="inviteRes err">Enter at least one email.</div>'; return; }
+  if(tier !== 'free' && !cycle && !confirm(`No billing cycle selected — invitees get ${tier.toUpperCase()} with no expiry (manual grant). Continue?`)) return;
+  btn.disabled = true; btn.textContent = 'Sending…';
+  out.innerHTML = '<div class="empty" style="padding:18px 0;"><span class="spinner"></span>&nbsp; Sending invites…</div>';
+  const all = [];
+  try{
+    for(let i = 0; i < emails.length; i += 25){
+      const chunk = emails.slice(i, i + 25);
+      const { data, error } = await sb.functions.invoke('invite-user', { body: { emails: chunk, tier, cycle } });
+      if(error){
+        let m = error.message || 'Request failed.';
+        try{ const j = await error.context.json(); if(j && j.error) m = j.error; }catch(_){}
+        chunk.forEach(e => all.push({ email: e, status: 'error', message: m }));
+        continue;
+      }
+      (data && data.results || []).forEach(r => all.push(r));
+    }
+  }catch(e){
+    emails.forEach(x => { if(!all.find(r => r.email === x)) all.push({ email: x, status: 'error', message: 'Something went wrong.' }); });
+  }finally{
+    btn.disabled = false; btn.textContent = 'Send invites';
+  }
+  const label = { invited: 'Invited', exists: 'Already registered', error: 'Failed' };
+  out.innerHTML = all.map(r => `
+    <div class="inviteRes ${r.status === 'invited' ? 'ok' : r.status === 'exists' ? 'warn' : 'err'}">
+      <span class="mono">${escapeHtml(r.email)}</span>
+      <b>${label[r.status] || r.status}</b>
+      ${r.message ? `<span class="why">${escapeHtml(r.message)}</span>` : ''}
+    </div>`).join('');
+  ta.value = all.filter(r => r.status === 'error').map(r => r.email).join('\n');
+  if(all.some(r => r.status === 'invited')){ loadStats(); runSearch(); }
+}
+
 // Resume an existing session on reload instead of forcing a fresh login.
 (async function boot(){
   const { data } = await sb.auth.getSession();
@@ -558,6 +622,19 @@ select.tierSel,select.cycleSel{max-width:100%}
   #gate .card{padding:24px 20px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+<style id="gd-invite">
+#inviteEmails{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border-hi);background:#0d1510;color:var(--text);font:13px/1.6 'IBM Plex Mono',monospace;resize:vertical;min-height:96px}
+#inviteEmails:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(166,201,158,.12)}
+.inviteRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.inviteRow select{min-height:40px}
+.inviteRes{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:9px 2px;border-bottom:1px solid var(--border);font-size:12.5px}
+.inviteRes:first-child{margin-top:14px;border-top:1px solid var(--border)}
+.inviteRes .mono{overflow-wrap:anywhere}
+.inviteRes b{font:600 11px 'IBM Plex Mono',monospace}
+.inviteRes.ok b{color:var(--teal)}.inviteRes.warn b{color:var(--amber)}.inviteRes.err b,.inviteRes.err{color:var(--danger)}
+.inviteRes .why{color:var(--text-dim);font-size:11.5px}
+@media(max-width:640px){.inviteRow .btn,.inviteRow select{width:100%}}
 </style>
 </body>
 </html>

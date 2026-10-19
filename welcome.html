@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghost Discipline — Welcome</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{--void:#080b09;--graphite:#151e18;--border:rgba(230,238,227,.10);--border-hi:rgba(230,238,227,.17);--teal:#a6c99e;--teal-ink:#10180f;--text:#f0f1e9;--text-dim:#a8b1a4;--text-faint:#778275;--danger:#ff5d7a}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;color:var(--text);font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:radial-gradient(ellipse 760px 420px at 50% -18%,rgba(166,201,158,.09),transparent 70%),var(--void)}
+.card{width:100%;max-width:420px;padding:32px 28px;border:1px solid var(--border);border-radius:20px;background:linear-gradient(145deg,rgba(17,24,19,.97),rgba(12,17,14,.97));box-shadow:inset 0 1px rgba(255,255,255,.035),0 20px 55px -40px #000}
+.tag{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.17em;color:var(--teal);margin-bottom:14px}
+h1{font:560 26px/1.15 'Fraunces',serif;letter-spacing:-.03em;margin:0 0 8px}
+p{font-size:13px;line-height:1.6;color:var(--text-dim);margin:0 0 20px}
+.who{font:500 12px 'IBM Plex Mono',monospace;color:var(--text);overflow-wrap:anywhere}
+label{display:block;font-size:12.5px;color:var(--text-dim);margin:0 0 6px}
+.field{margin-bottom:14px}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border-hi);background:#0d1510;color:var(--text);font:inherit;font-size:14px}
+input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(166,201,158,.12)}
+button{width:100%;min-height:44px;margin-top:6px;border:0;border-radius:10px;cursor:pointer;font:600 14px 'Instrument Sans',sans-serif;color:var(--teal-ink);background:linear-gradient(135deg,#b6d2ac,#91b487)}
+button:disabled{opacity:.5;cursor:default}
+.msg{display:none;font-size:13px;padding:10px 12px;border-radius:8px;margin:0 0 14px}
+.msg.show{display:block}
+.msg.error{background:rgba(255,93,122,.12);color:var(--danger);border:1px solid rgba(255,93,122,.3)}
+.msg.ok{background:rgba(166,201,158,.1);color:var(--teal);border:1px solid rgba(166,201,158,.3)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="tag">INVITATION</div>
+
+  <div id="loading"><p>Checking your invite…</p></div>
+
+  <div id="bad" class="hidden">
+    <h1>Invite not valid</h1>
+    <p id="badText">This invite link is invalid or has expired. Ask for a new invite.</p>
+  </div>
+
+  <form id="form" class="hidden" onsubmit="return false;">
+    <h1>Welcome in.</h1>
+    <p>Set a password for <span class="who" id="who"></span> to enter Ghost Discipline.</p>
+    <div class="field"><label for="pw">Password</label><input type="password" id="pw" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"></div>
+    <div class="field"><label for="pw2">Confirm password</label><input type="password" id="pw2" autocomplete="new-password" placeholder="Repeat password"></div>
+    <div class="msg" id="msg"></div>
+    <button id="btn" onclick="setPassword()">Set password &amp; enter</button>
+  </form>
+</div>
+
+<script>
+const SUPABASE_URL = "https://euvfoyxntkqxoydgpqjq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1dmZveXhudGtxeG95ZGdwcWpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzg3MjQsImV4cCI6MjEwMDc1NDcyNH0.7P9bpz4i4ekENWBsnsI-Bs-pPqL8r2E1S-GkeXI5v-8";
+const APP_URL = "app.html"; // where invitees land after setting a password
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+function show(id){ ['loading','bad','form'].forEach(x => $(x).classList.toggle('hidden', x !== id)); }
+
+// Read the link's hash before supabase-js consumes and clears it.
+const hash = new URLSearchParams(location.hash.slice(1));
+const hashError = hash.get('error_description') || hash.get('error');
+const hasToken = hash.has('access_token');
+
+(async function boot(){
+  if(hashError){
+    $('badText').textContent = 'This invite link has expired or was already used. Ask for a new invite.';
+    show('bad'); return;
+  }
+  const { data } = await sb.auth.getSession();
+  const session = data && data.session;
+  if(!session){
+    $('badText').textContent = 'Open the link from your invite email to set up your account.';
+    show('bad'); return;
+  }
+  if(!hasToken){ location.replace(APP_URL); return; } // already signed in, not an invite visit
+  $('who').textContent = session.user.email;
+  show('form');
+})();
+
+async function setPassword(){
+  const pw = $('pw').value, pw2 = $('pw2').value, msg = $('msg'), btn = $('btn');
+  const say = (t, c) => { msg.textContent = t; msg.className = 'msg show ' + c; };
+  if(pw.length < 8){ say('Password must be at least 8 characters.', 'error'); return; }
+  if(pw !== pw2){ say('Passwords do not match.', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const { error } = await sb.auth.updateUser({ password: pw });
+  if(error){ say(error.message || 'Could not set password.', 'error'); btn.disabled = false; btn.textContent = 'Set password & enter'; return; }
+  say('Password set. Entering…', 'ok');
+  setTimeout(() => location.replace(APP_URL), 700);
+}
+$('pw2').addEventListener('keydown', e => { if(e.key === 'Enter') setPassword(); });
+</script>
+</body>
+</html>
