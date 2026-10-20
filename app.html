@@ -2579,7 +2579,7 @@ setTimeout(function(){
     </div>
     <form class="auth-card" onsubmit="event.preventDefault();handleAuthSubmit();" autocomplete="on">
       <h2 class="auth-title">Sign in</h2>
-      <div class="auth-sub">Members enter here. Access is by invitation — your journal stays private to your account.</div>
+      <div class="auth-sub">Sign in to your account, or create a free account to get started.</div>
       <div class="auth-msg" id="authMsg" role="alert"></div>
       <div class="auth-field">
         <label for="authEmail">Email</label>
@@ -5311,8 +5311,10 @@ async function handleAuthSubmit(){
   btn.disabled = true; btn.classList.add('is-loading');
   const prevLabel = label.textContent; label.textContent = authMode === 'signup' ? 'Creating account…' : 'Signing in…';
   try{
+    const signupRedirect = new URL(window.location.href);
+    signupRedirect.searchParams.set('signin', '1');
     const result = authMode === 'signup'
-      ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname + '?signin=1' } })
+      ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: signupRedirect.toString() } })
       : await sb.auth.signInWithPassword({ email, password });
     const { data, error } = result;
     if(error) throw error;
@@ -5330,11 +5332,16 @@ async function handleAuthSubmit(){
 }
 
 let authMode = 'signin';
-function toggleAuthMode(){
-  authMode = authMode === 'signin' ? 'signup' : 'signin';
+function setAuthMode(mode){
+  authMode = mode === 'signup' ? 'signup' : 'signin';
   const signup = authMode === 'signup';
+  const query = new URLSearchParams(window.location.search);
+  const requestedTier = query.get('plan');
+  const tierLabel = requestedTier ? (TIER_LABELS[requestedTier] || requestedTier) : '';
   document.querySelector('#authScreen .auth-title').textContent = signup ? 'Create your account' : 'Sign in';
-  document.querySelector('#authScreen .auth-sub').textContent = signup ? 'Start with a free account. Upgrade whenever you are ready.' : 'Members enter here. Your journal stays private to your account.';
+  document.querySelector('#authScreen .auth-sub').textContent = signup
+    ? (tierLabel ? `Create a free account to continue to ${tierLabel} checkout.` : 'Create a free account to get started.')
+    : 'Sign in to your account, or create a free account to get started.';
   document.getElementById('authSubmitLabel').textContent = signup ? 'Create free account' : 'Enter the terminal';
   document.getElementById('authPassword').autocomplete = signup ? 'new-password' : 'current-password';
   document.querySelector('.auth-options-row').style.display = signup ? 'none' : '';
@@ -5343,6 +5350,10 @@ function toggleAuthMode(){
     : 'New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your data stays private to your account.';
   document.getElementById('authMsg').classList.remove('show');
 }
+function toggleAuthMode(){ setAuthMode(authMode === 'signin' ? 'signup' : 'signin'); }
+document.addEventListener('DOMContentLoaded',()=>{
+  if(new URLSearchParams(window.location.search).get('signup') === '1') setAuthMode('signup');
+});
 
 function toggleAuthPasswordVisibility(btn, inputId){
   const input = document.getElementById(inputId);
@@ -5522,6 +5533,14 @@ async function onAuthed(user){
     paymentQuery.delete('payment'); paymentQuery.delete('reference');
     const cleanUrl = new URL(window.location.href); cleanUrl.search = paymentQuery.toString();
     history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+  }
+  const planIntent = new URLSearchParams(window.location.search).get('plan');
+  if(['pro','elite','premium'].includes(planIntent)){
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('plan');
+    cleanUrl.searchParams.delete('signup');
+    history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+    setTimeout(()=>openPackageRequest(planIntent), 0);
   }
   rolloverDayIfNeeded();
   if(!state.rulesCompleted){
