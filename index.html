@@ -37,6 +37,25 @@
     @media(max-width:390px){.hero-actions{flex-direction:column}.hero-actions .btn{width:100%}.visual-stats{gap:6px}.visual-stat strong{font-size:13px}.visual-stat span{font-size:8px}.visual-chart{padding:11px}.trust-item{gap:7px}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
   </style>
+  <style>
+    /* A quiet, cinematic arrival: ambient light, a fine field grid, and a chart line that draws once. */
+    .hero{position:relative;isolation:isolate}
+    .hero::before{content:"";position:absolute;z-index:-2;pointer-events:none;left:26%;top:-12%;width:80%;height:125%;background:radial-gradient(ellipse at 64% 42%,rgba(150,190,138,.2),transparent 34%),radial-gradient(ellipse at 76% 66%,rgba(211,189,139,.08),transparent 38%);filter:blur(22px);animation:hero-aura 13s ease-in-out infinite alternate}
+    .hero::after{content:"";position:absolute;z-index:-1;inset:-2% -4%;pointer-events:none;opacity:.14;background-image:linear-gradient(rgba(199,221,192,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(199,221,192,.1) 1px,transparent 1px);background-size:58px 58px;mask-image:radial-gradient(ellipse at 72% 46%,#000,transparent 69%)}
+    .hero-copy{animation:hero-rise .8s cubic-bezier(.2,.75,.25,1) both}
+    .visual-stage{animation:hero-rise .95s .12s cubic-bezier(.2,.75,.25,1) both}
+    .visual-orbit{animation:orbit-drift 12s ease-in-out infinite alternate}
+    .visual-float-a{animation:float-a 6s ease-in-out infinite}
+    .visual-float-b{animation:float-b 7s ease-in-out infinite}
+    .equity-draw{stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw-equity 2.1s .45s cubic-bezier(.22,.7,.24,1) forwards}
+    @keyframes hero-aura{from{transform:translate3d(-1.5%,0,0) scale(.96);opacity:.7}to{transform:translate3d(1.5%,1%,0) scale(1.05);opacity:1}}
+    @keyframes hero-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes orbit-drift{from{transform:translateZ(-28px) rotate(-3deg)}to{transform:translateZ(-28px) rotate(2deg)}}
+    @keyframes float-a{0%,100%{translate:0 0}50%{translate:0 -7px}}
+    @keyframes float-b{0%,100%{translate:0 0}50%{translate:0 6px}}
+    @keyframes draw-equity{to{stroke-dashoffset:0}}
+    @media(prefers-reduced-motion:reduce){.hero::before,.hero-copy,.visual-stage,.visual-orbit,.visual-float-a,.visual-float-b,.equity-draw{animation:none!important}.equity-draw{stroke-dasharray:none;stroke-dashoffset:0}}
+  </style>
 </head>
 <body>
   <header class="nav" id="top">
@@ -63,7 +82,7 @@
           <div class="visual-heading"><div><small>London session · Tuesday</small><h2>Process before outcome.</h2></div><span class="visual-day">YOUR DESK</span></div>
           <div class="visual-stats"><div class="visual-stat"><label>Risk used</label><strong>2.4%</strong><span>of 6.0% weekly cap</span></div><div class="visual-stat"><label>Plan score</label><strong>92</strong><span>rules holding</span></div><div class="visual-stat"><label>Sessions kept</label><strong>08</strong><span>current streak</span></div></div>
           <div class="visual-chart"><div class="chart-title"><span>Equity curve</span><span>LAST 12 SESSIONS</span></div>
-            <svg viewBox="0 0 620 185" role="presentation" aria-hidden="true"><defs><linearGradient id="heroArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6c99e" stop-opacity=".24"/><stop offset="1" stop-color="#a6c99e" stop-opacity="0"/></linearGradient></defs><path d="M0 40H620M0 90H620M0 140H620" stroke="rgba(230,238,224,.08)"/><path d="M4 147C35 144 48 123 76 132S112 126 135 118 169 131 195 106 235 109 258 92 291 104 319 81 356 91 378 68 416 82 443 55 477 71 498 47 537 54 565 29 616 24V178H4Z" fill="url(#heroArea)"/><path d="M4 147C35 144 48 123 76 132S112 126 135 118 169 131 195 106 235 109 258 92 291 104 319 81 356 91 378 68 416 82 443 55 477 71 498 47 537 54 565 29 616 24" fill="none" stroke="#a6c99e" stroke-width="2.3" stroke-linecap="round"/><circle cx="616" cy="24" r="4" fill="#eff2e9" stroke="#a6c99e" stroke-width="2"/><text x="4" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">01</text><text x="300" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">06</text><text x="597" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">12</text></svg>
+            <svg viewBox="0 0 620 185" role="presentation" aria-hidden="true"><defs><linearGradient id="heroArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6c99e" stop-opacity=".24"/><stop offset="1" stop-color="#a6c99e" stop-opacity="0"/></linearGradient></defs><path d="M0 40H620M0 90H620M0 140H620" stroke="rgba(230,238,224,.08)"/><path d="M4 147C35 144 48 123 76 132S112 126 135 118 169 131 195 106 235 109 258 92 291 104 319 81 356 91 378 68 416 82 443 55 477 71 498 47 537 54 565 29 616 24V178H4Z" fill="url(#heroArea)"/><path class="equity-draw" d="M4 147C35 144 48 123 76 132S112 126 135 118 169 131 195 106 235 109 258 92 291 104 319 81 356 91 378 68 416 82 443 55 477 71 498 47 537 54 565 29 616 24" fill="none" stroke="#a6c99e" stroke-width="2.3" stroke-linecap="round"/><circle cx="616" cy="24" r="4" fill="#eff2e9" stroke="#a6c99e" stroke-width="2"/><text x="4" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">01</text><text x="300" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">06</text><text x="597" y="181" fill="#788477" font-size="9" font-family="DM Mono,monospace">12</text></svg>
             <div class="visual-foot"><span>RULE STATUS</span><span class="seal">SEALED</span><span>DISCIPLINE OVER OUTCOME</span></div>
           </div>
         </div>
@@ -88,6 +107,9 @@
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0M14 16a4.5 4.5 0 0 1 7.5 3.5"/></svg></span><h3>Team desk review</h3><p>Elite members can link trading partners and review weekly summaries together.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M17 7c0-2-2-3-5-3S7 5 7 7s2 3 5 3 5 1 5 3-2 4-5 4-5-2-5-4"/></svg></span><h3>Risk-first workflow</h3><p>Bring your plan and live risk context into view before placing the next trade.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg></span><h3>Personal preferences</h3><p>Choose from light, dark, and accent themes to make the workspace comfortable to use.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h3M8 17h8"/></svg></span><h3>Daily Trade Plan</h3><p>Save a session thesis, levels to watch, invalidation, risk cap, and a short readiness checklist.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v13H8l-4 4z"/><path d="M8 9h8M8 13h5"/></svg></span><h3>Review Room</h3><p>Review closed trades one at a time and keep your next adjustment beside the original journal entry.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/><circle cx="12" cy="12" r="4"/></svg></span><h3>SciFe Scan POV</h3><p>See an independent chart read and review suggested strategy-note refinements before saving.</p></article>
     </div></div></section>
 
     <section class="section membership" id="membership"><div class="wrap"><div class="section-head"><div class="eyebrow">Membership</div><h2>Start with the journal.<br>Grow into the full desk.</h2><p>Create a free account to begin. Upgrade to a paid package when you are ready.</p></div><div class="plans">

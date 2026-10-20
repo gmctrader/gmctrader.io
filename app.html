@@ -2873,6 +2873,14 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3z"/><path d="M8 9h9M8 13h9"/></svg>
         Journal
       </button>
+      <button class="side-navbtn" data-view="tradeplan">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h3M8 17h8"/></svg>
+        Daily Trade Plan
+      </button>
+      <button class="side-navbtn" data-view="reviewroom">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13H8l-4 4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Review Room
+      </button>
       <button class="side-navbtn" data-view="orders">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
         Order Book
@@ -3532,6 +3540,50 @@ setTimeout(function(){
           <div id="tradeList"><div class="empty-state"><span class="glyph">📓</span>No trades logged yet.</div></div>
         </div>
       </div>
+    </div>
+
+    <!-- DAILY TRADE PLAN -->
+    <div class="view" id="view-tradeplan">
+      <div class="topbar-row"><div><h2 class="page-title">Daily Trade Plan</h2><div class="page-sub">Write the plan before the session. Keep it focused on what would make a setup valid or invalid.</div></div><div class="topbar-actions"><span class="profile-plan-chip" id="tradePlanDate"></span><button class="btn btn-ghost btn-sm" onclick="document.querySelector('.side-navbtn[data-view=reviewroom]').click()">Review Room →</button></div></div>
+      <div class="grid">
+        <div class="card tilt">
+          <h2>Today's <span class="accent">Thesis</span></h2>
+          <div class="row2">
+            <div class="field"><label>Pair / instrument</label><input id="tp_pair" type="text" placeholder="e.g. EUR/USD or XAUUSD"></div>
+            <div class="field"><label>Directional lean</label><select id="tp_bias"><option value="neutral">Neutral / wait for confirmation</option><option value="long">Bullish</option><option value="short">Bearish</option></select></div>
+          </div>
+          <div class="field"><label>What would make a setup valid?</label><textarea id="tp_thesis" rows="3" placeholder="Structure, level, confirmation, and the condition that would keep you out"></textarea></div>
+          <div class="row2">
+            <div class="field"><label>Entry area to watch</label><input id="tp_entry" type="text" placeholder="Price or area; optional"></div>
+            <div class="field"><label>Invalidation</label><input id="tp_invalidation" type="text" placeholder="What proves this idea wrong?"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Risk cap for this session ($)</label><input id="tp_risk" type="number" min="0" step="0.01" placeholder="Optional; use your account rules"></div>
+            <div class="field"><label>News / timing to respect</label><input id="tp_news" type="text" placeholder="Optional event or session note"></div>
+          </div>
+          <div class="field"><label>Process checks before entry</label>
+            <div class="logic-check-grid">
+              <label class="check-card"><input type="checkbox" id="tp_check_rules" onchange="updateDailyPlanChecks()"> My setup matches my written strategy</label>
+              <label class="check-card"><input type="checkbox" id="tp_check_risk" onchange="updateDailyPlanChecks()"> Risk and stop are defined first</label>
+              <label class="check-card"><input type="checkbox" id="tp_check_news" onchange="updateDailyPlanChecks()"> I checked session and scheduled news</label>
+              <label class="check-card"><input type="checkbox" id="tp_check_emotion" onchange="updateDailyPlanChecks()"> I am calm enough to follow the plan</label>
+            </div>
+          </div>
+          <div class="sig-action-row"><button class="btn btn-primary" type="button" onclick="saveDailyTradePlan()">Save today's plan</button><button class="btn-ghost" type="button" onclick="clearDailyTradePlan()">Clear plan</button></div>
+          <div class="hint" id="tradePlanSavedHint" style="margin-top:10px;">Your plan is private and syncs with your journal.</div>
+        </div>
+        <div class="card tilt"><h2>Plan <span class="accent">Reminder</span></h2><p class="page-sub">A directional lean is not an entry signal. Wait for the condition you wrote down, define the invalidation first, and let your Rule Builder limits govern risk.</p><div class="stat-row"><div class="stat"><b id="tp_savedState">Not saved</b><span>Today's plan</span></div><div class="stat"><b id="tp_checkedCount">0 / 4</b><span>Process checks</span></div></div><button class="btn btn-ghost btn-block" style="margin-top:18px" onclick="document.querySelector('.side-navbtn[data-view=rules]').click()">Review my risk rules →</button></div>
+      </div>
+    </div>
+
+    <!-- REVIEW ROOM -->
+    <div class="view" id="view-reviewroom">
+      <div class="topbar-row"><div><h2 class="page-title">Review Room</h2><div class="page-sub">Close the learning loop: review execution and process, regardless of whether the trade won or lost.</div></div><div class="topbar-actions"><button class="btn btn-ghost btn-sm" onclick="document.querySelector('.side-navbtn[data-view=tradeplan]').click()">Today's plan →</button><button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a trade</button></div></div>
+      <div class="grid">
+        <div class="card tilt"><h2>Trade <span class="accent">Queue</span><span class="eyebrow" id="reviewRoomCount">0 trades to review</span></h2><div class="field"><label>Choose a closed trade</label><select id="rr_tradeSelect" onchange="renderReviewTrade()"></select></div><div id="rr_tradeSummary" class="hint">Log a closed trade to start a review.</div></div>
+        <div class="card tilt"><h2>Execution <span class="accent">Review</span></h2><div class="field"><label>Did you follow your plan?</label><select id="rr_followed"><option value="">Choose one</option><option value="yes">Yes — I followed it</option><option value="partly">Partly — I drifted</option><option value="no">No — I broke from it</option></select></div><div class="field"><label>What did you do well?</label><textarea id="rr_well" rows="2" placeholder="Name one specific decision or behavior"></textarea></div><div class="field"><label>What is one adjustment for next time?</label><textarea id="rr_adjustment" rows="2" placeholder="One concrete change you can act on"></textarea></div><button class="btn btn-primary" type="button" id="rr_saveBtn" onclick="saveTradeReview()">Save review</button><div class="hint" id="rr_savedHint" style="margin-top:10px;"></div></div>
+      </div>
+      <div class="card tilt" style="margin-top:18px"><h2>Recent <span class="accent">Reviews</span></h2><div id="rr_recent"></div></div>
     </div>
 
     <!-- ORDER BOOK: pre-executed trade journal -->
@@ -4586,7 +4638,7 @@ const DEFAULT_STATE = {
   // blankPropFirmAccount() for the shape of each entry.
   propFirms:[],
   session:{ start:"09:00", end:"11:00", restrict:false },
-  psychology:{ why:"", monk:"", strategies:[], traders:[], orders:[], disciplineHistory:[], lastLossAt:null, preTradeCheckins:[], reviewsSeen:{ weekly:null, monthly:null }, strategyNotes:{ customStrategies:[], checkIns:[], journal:"" } },
+  psychology:{ why:"", monk:"", strategies:[], traders:[], orders:[], disciplineHistory:[], lastLossAt:null, preTradeCheckins:[], reviewsSeen:{ weekly:null, monthly:null }, strategyNotes:{ customStrategies:[], checkIns:[], journal:"" }, dailyTradePlan:null, tradeReviews:[] },
   trades:[],
   streak:{ count:0, lastGoodDate:null },
   day:{ date:null, tradesCount:0, lossUsed:0, ruleBrokenToday:false },
@@ -6440,6 +6492,7 @@ function normalizePsychology(psych){
   if(!Array.isArray(psych.orders)) psych.orders = [];
   if(!Array.isArray(psych.disciplineHistory)) psych.disciplineHistory = [];
   if(!Array.isArray(psych.preTradeCheckins)) psych.preTradeCheckins = [];
+  if(!Array.isArray(psych.tradeReviews)) psych.tradeReviews = [];
   psych.reviewsSeen = Object.assign({ weekly:null, monthly:null }, psych.reviewsSeen || {});
   if(!psych.strategyNotes || typeof psych.strategyNotes !== 'object') psych.strategyNotes = { customStrategies:[], checkIns:[], journal:"" };
   if(!Array.isArray(psych.strategyNotes.customStrategies)) psych.strategyNotes.customStrategies = [];
@@ -7983,6 +8036,8 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
     if(btn.dataset.view==='edgelab') renderEdgeLab();
     if(btn.dataset.view==='journal') renderJournal();
+    if(btn.dataset.view==='tradeplan') renderDailyTradePlan();
+    if(btn.dataset.view==='reviewroom') renderReviewRoom();
     if(btn.dataset.view==='profile') renderProfileDetails();
     if(btn.dataset.view==='orders') renderOrders();
     if(btn.dataset.view==='proporders') { populatePropOrderSelectors(); renderPropOrders(); }
@@ -8161,6 +8216,8 @@ function renderAll(){
   renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
   renderEquityChart('equityChart','equityTotal','equitySub');
+  if(document.getElementById('view-tradeplan')?.classList.contains('active')) renderDailyTradePlan();
+  if(document.getElementById('view-reviewroom')?.classList.contains('active')) renderReviewRoom();
   renderOrders(); renderTradeLogOverview(); renderTraderIdentity(); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); renderStrategyNotes();
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
@@ -10202,6 +10259,115 @@ function journalTradeRowHtml(t){
     <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
   </div>`;
 }
+/* ============ DAILY PLAN + TRADE REVIEW WORKSPACES ============ */
+function renderDailyTradePlan(){
+  const date = todayStr();
+  const dateEl = document.getElementById('tradePlanDate');
+  if(dateEl) dateEl.textContent = new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  const plan = state.psychology.dailyTradePlan;
+  const todayPlan = plan && plan.date===date ? plan : null;
+  const values = todayPlan || {};
+  ['pair','bias','thesis','entry','invalidation','risk','news'].forEach(key=>{
+    const el=document.getElementById('tp_'+key);
+    if(el) el.value=values[key] ?? (key==='bias'?'neutral':'');
+  });
+  const checks = values.checks || {};
+  ['rules','risk','news','emotion'].forEach(key=>{ const el=document.getElementById('tp_check_'+key); if(el) el.checked=!!checks[key]; });
+  const saved=document.getElementById('tp_savedState'); if(saved) saved.textContent=todayPlan?'Saved':'Not saved';
+  const hint=document.getElementById('tradePlanSavedHint'); if(hint) hint.textContent=todayPlan?'Plan saved for today. Update it any time as your read changes.':'Set your focus for today, then save it. Plans from earlier dates stay out of today’s form.';
+  updateDailyPlanChecks();
+}
+function updateDailyPlanChecks(){
+  const count=['rules','risk','news','emotion'].filter(k=>document.getElementById('tp_check_'+k)?.checked).length;
+  const el=document.getElementById('tp_checkedCount'); if(el) el.textContent=count+' / 4';
+}
+async function saveDailyTradePlan(){
+  const get=id=>document.getElementById(id)?.value.trim()||'';
+  state.psychology.dailyTradePlan={
+    date:todayStr(), pair:get('tp_pair'), bias:get('tp_bias')||'neutral', thesis:get('tp_thesis'),
+    entry:get('tp_entry'), invalidation:get('tp_invalidation'), risk:get('tp_risk'), news:get('tp_news'),
+    checks:Object.fromEntries(['rules','risk','news','emotion'].map(k=>[k,!!document.getElementById('tp_check_'+k)?.checked]))
+  };
+  await saveState();
+  const saved=document.getElementById('tp_savedState'); if(saved) saved.textContent='Saved';
+  const hint=document.getElementById('tradePlanSavedHint'); if(hint) hint.textContent='Saved just now. You can revise this plan throughout the day.';
+  showToast('Today’s trade plan saved');
+}
+async function clearDailyTradePlan(){
+  state.psychology.dailyTradePlan=null;
+  await saveState();
+  renderDailyTradePlan();
+  showToast('Today’s plan cleared');
+}
+let activeReviewTradeId=null;
+function reviewKey(trade){ return String(trade && trade.id != null ? trade.id : ''); }
+function renderReviewRoom(){
+  const select=document.getElementById('rr_tradeSelect');
+  const trades=liveTrades().slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || Number(b.id||0)-Number(a.id||0));
+  const reviews=state.psychology.tradeReviews||[];
+  const reviewedIds=new Set(reviews.map(r=>String(r.tradeId)));
+  const pending=trades.filter(t=>!reviewedIds.has(reviewKey(t)));
+  const count=document.getElementById('reviewRoomCount'); if(count) count.textContent=`${pending.length} trade${pending.length===1?'':'s'} to review`;
+  if(!select) return;
+  if(!trades.length){ select.innerHTML='<option value="">No closed trades yet</option>'; activeReviewTradeId=null; renderReviewTrade(); }
+  else{
+    const chosen=trades.some(t=>reviewKey(t)===String(activeReviewTradeId)) ? String(activeReviewTradeId) : reviewKey(pending[0]||trades[0]);
+    activeReviewTradeId=chosen;
+    select.innerHTML=trades.map(t=>{
+      const key=reviewKey(t), status=reviewedIds.has(key)?'Reviewed':'Needs review';
+      return `<option value="${escapeHtml(key)}">${escapeHtml(t.date||'Undated')} · ${escapeHtml(t.pair||'Trade')} · ${(t.result||'').toUpperCase()} · ${status}</option>`;
+    }).join('');
+    select.value=chosen;
+    renderReviewTrade();
+  }
+  renderRecentTradeReviews();
+}
+function renderReviewTrade(){
+  const select=document.getElementById('rr_tradeSelect');
+  const key=select?.value || '';
+  activeReviewTradeId=key||null;
+  const trade=liveTrades().find(t=>reviewKey(t)===key);
+  const review=(state.psychology.tradeReviews||[]).find(r=>String(r.tradeId)===key);
+  const summary=document.getElementById('rr_tradeSummary');
+  const fields=['rr_followed','rr_well','rr_adjustment'];
+  fields.forEach(id=>{const el=document.getElementById(id); if(el){el.disabled=!trade; if(id==='rr_followed') el.value=review?.followed||''; else el.value=review?.[id==='rr_well'?'whatWentWell':'adjustment']||'';}});
+  const button=document.getElementById('rr_saveBtn'); if(button) button.disabled=!trade;
+  if(!trade){ if(summary) summary.textContent='Log a closed trade to start a review.'; return; }
+  const pnl=pnlOf(trade), sym=tradeCurSym(trade);
+  if(summary) summary.innerHTML=`<strong>${escapeHtml(trade.pair||'Trade')}</strong> · ${escapeHtml(trade.date||'Undated')} · ${escapeHtml((trade.result||'').toUpperCase())} · ${pnl>=0?'+':'−'}${escapeHtml(sym)}${Math.abs(pnl).toFixed(2)} · ${escapeHtml(String(trade.rr??'—'))}R${trade.strategy?`<br>Strategy: ${escapeHtml(strategyName(trade.strategy)||'Saved strategy')}`:''}${trade.notes?`<br>Journal note: ${escapeHtml(trade.notes)}`:''}`;
+  const hint=document.getElementById('rr_savedHint'); if(hint) hint.textContent=review?`Last saved ${review.updatedAt?new Date(review.updatedAt).toLocaleString():'review'}. You can update it.`:'No review saved for this trade yet.';
+}
+async function saveTradeReview(){
+  const trade=liveTrades().find(t=>reviewKey(t)===String(activeReviewTradeId));
+  const followed=document.getElementById('rr_followed')?.value||'';
+  const adjustment=document.getElementById('rr_adjustment')?.value.trim()||'';
+  if(!trade){showToast('Choose a trade to review');return;}
+  if(!followed||!adjustment){showToast('Choose plan adherence and write one next-time adjustment');return;}
+  if(!Array.isArray(state.psychology.tradeReviews)) state.psychology.tradeReviews=[];
+  const id=reviewKey(trade), now=new Date().toISOString();
+  const existing=state.psychology.tradeReviews.find(r=>String(r.tradeId)===id);
+  const entry={tradeId:id,followed,whatWentWell:document.getElementById('rr_well').value.trim(),adjustment,updatedAt:now};
+  if(existing) Object.assign(existing,entry); else state.psychology.tradeReviews.push(entry);
+  await saveState();
+  activeReviewTradeId=null;
+  renderReviewRoom();
+  showToast('Trade review saved');
+}
+function renderRecentTradeReviews(){
+  const el=document.getElementById('rr_recent'); if(!el) return;
+  const reviews=(state.psychology.tradeReviews||[]).slice().sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))).slice(0,6);
+  if(!reviews.length){el.innerHTML='<div class="empty-state">Your saved reviews will appear here.</div>';return;}
+  el.innerHTML=reviews.map(r=>{
+    const t=liveTrades().find(x=>reviewKey(x)===String(r.tradeId));
+    return `<div class="trade-row"><div><b>${escapeHtml(t?.pair||'Trade')}</b><span class="hint">${escapeHtml(t?.date||'Trade removed')} · Plan followed: ${escapeHtml(r.followed)}</span><div class="hint">Next time: ${escapeHtml(r.adjustment)}</div></div><button class="btn btn-sm btn-ghost" type="button" onclick="selectTradeReview('${escapeHtml(String(r.tradeId))}')">Open</button></div>`;
+  }).join('');
+}
+function selectTradeReview(id){
+  activeReviewTradeId=String(id);
+  const select=document.getElementById('rr_tradeSelect');
+  if(select){select.value=String(id);renderReviewTrade();}
+}
+
 function renderJournal(){
   const list = document.getElementById('tradeList');
   const searchEl = document.getElementById('j_search');
