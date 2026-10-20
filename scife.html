@@ -1872,7 +1872,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'', imgCount:0, imgDayKey:'' }, chartMemory:{}, sigSessions:[] };
+let scife = { provider:'google', apiKeys:{}, model:'gemini-3.8-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'', imgCount:0, imgDayKey:'' }, chartMemory:{}, sigSessions:[] };
 /* ============ SHARED PLAN KEY ============
    The trader running this deployment supplies one Gemini key that everyone
    uses by default (nobody needs to go get their own to start chatting).
@@ -1882,7 +1882,7 @@ let scife = { provider:'google', apiKeys:{}, model:'gemini-3.5-flash', voiceOn:t
    client-side secret — what this protects against is the ordinary path
    (running out the free daily cap, then just... not being capped). */
 const SHARED_PROVIDER = 'google';
-const SHARED_MODEL = 'gemini-3.5-flash-lite';
+const SHARED_MODEL = 'gemini-3.8-flash';
 const SHARED_KEY = '__shared__';   // real key lives server-side (ai-proxy Edge Function)
 const FREE_DAILY_CHAT_LIMIT = 15;   // Free tier: chats/day on the shared key
 let userTier = 'free';              // 'free' | 'pro' | 'elite' | 'premium' — set from trader_data.tier in loadTraderRow()
@@ -1988,7 +1988,7 @@ const PROVIDERS = {
     keyLink: 'https://aistudio.google.com/apikey',
     compat: 'gemini',
     models: [
-      { value:'gemini-3.5-flash', label:'Gemini 3.5 Flash — fast & free-tier', vision:true },
+      { value:'gemini-3.8-flash', label:'Gemini 3.8 Flash — latest stable & free-tier', vision:true },
       { value:'gemini-3.5-flash-lite', label:'Gemini 3.5 Flash-Lite — cheapest', vision:true },
       { value:'gemini-3.1-pro-preview', label:'Gemini 3.1 Pro — most capable', vision:true }
     ]
@@ -4185,7 +4185,8 @@ Never add a chart_markers entry for an id that isn't in one of those six groups,
 CRITICAL COMPLETENESS RULE: for the checklist ids covered by the six groups above, "present" and "has a chart_markers entry" must always go together. If you cannot confidently place a marker for one of those ids, mark that checklist item "unclear" instead of "present" — never leave a "present" item undrawn. Conversely, every id you DO mark "present" from those groups must have exactly one matching chart_markers entry with real, non-null coordinates. A trader relying on this overlay needs every present confluence actually drawn — an item marked present with no marker is treated as a bug, not an acceptable gap.` : ''}
 
 Return exactly this JSON shape:
-{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''}${hasImage && !hasHigher && !hasLower ? `,"chart_request":{"needed":false,"timeframe":null,"reason":""}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+{"bias":"long"|"short"|"no_trade","confidence":0,"trader_alignment":{"trader_said":"long"|"short"|"unsure","agrees":true|false|null,"note":""},"scife_pov":{"lean":"long"|"short"|"neutral","view":"Independent 1-2 sentence opinion with the strongest evidence and the main uncertainty."},"strategy_update":{"suggested":false,"revised_notes":"","reason":""},"checklist":[{"id":"","label":"","status":"present"|"absent"|"unclear","note":""}],"entry":{"level":"","numeric":false},"order_type":"market"|"buy_limit"|"sell_limit"|"buy_stop"|"sell_stop","stop_loss":{"level":"","numeric":false},"take_profits":[{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false},{"level":"","rr":"","numeric":false}],"rr_reachable":true,"rr_note":"","fib_zone":{"zone":"","note":"","numeric":false}${hasImage ? `,"chart_positions":{"entry_y_pct":null,"stop_loss_y_pct":null,"tp1_y_pct":null,"tp2_y_pct":null,"tp3_y_pct":null,"fib_top_y_pct":null,"fib_bottom_y_pct":null,"setup_x1_pct":null,"setup_x2_pct":null},"chart_markers":[{"id":"","y_pct":null,"y2_pct":null,"x1_pct":null,"y1_pct":null,"x2_pct":null}]` : ''}${hasImage && !hasHigher && !hasLower ? `,"chart_request":{"needed":false,"timeframe":null,"reason":""}` : ''},"entry_idea":"","invalidation":"","risk_note":"","verdict":""}
+scife_pov must be SciFe's own concise view based on the chart/text and checklist, not an echo of the trader's bias; state lean neutral when evidence is balanced or insufficient. strategy_update is optional and never required just to fill JSON: only set suggested=true when the current strategy notes have a specific, evidence-based ambiguity or gap exposed by this scan; revised_notes must be a complete replacement of the current notes plus a narrow, practical clarification, preserve existing valid rules, never raise risk or promise profitability. With too little evidence, use suggested=false and empty revised_notes/reason. It is a draft only; the trader must review and apply it explicitly. Do not infer a strategy performance improvement from a single chart.
 trader_alignment.trader_said must exactly echo what the trader stated (or "unsure" if they didn't commit). trader_alignment.agrees is true only if your independent bias matches theirs, false if it genuinely differs, null if they were unsure. trader_alignment.note is 1 sentence: if they agree, briefly confirm why; if they disagree, state plainly and specifically what you see differently — never hedge this into vague both-sides language. checklist must have exactly one entry per line listed above, same order, exact "id" values given, and each verdict must be genuinely earned from what's visible — don't mark something "present" just to unlock a trade idea. confidence (0-100) should track how many core confluences are genuinely present — a setup failing most of its own checklist should score low. Do NOT default to "no_trade" just because most checklist items are absent: if even one or two genuine confluences are present (e.g. a fresh BOS with no order block behind it yet, or a clean order block reaction with nothing else confirmed), give a real bias and entry idea built on those, with confidence scored low to match and risk_note stating plainly that it's a thin, lower-confluence setup. A fibonacci/OTE read is NEVER sufficient on its own to justify a bias or entry — it's a refinement layer on top of real structure/order-flow/liquidity confluence, not a substitute for it; if fib or OTE is the only thing present with nothing structural behind it, that's grounds for "no_trade" or a very low-confidence read, not a standalone setup. Reserve "no_trade" for when literally nothing on the checklist is present or the chart/description gives nothing usable at all. verdict is 1-2 blunt, honest sentences — no hedging filler, no "as an AI" disclaimers.
 CONVICTION AND PATIENCE: when a setup is genuinely well-confirmed (strong HTF alignment, control on your side, inducement already resolved, a real magnet area behind TP3), say so plainly in risk_note or verdict and frame TP3 as the real target to hold for — the invalidation level in "invalidation" is what should get the trader out, not a shallow pullback or TP1/TP2 wobble along the way. Don't hedge a genuinely strong setup into false caution just to sound balanced, and don't manufacture confidence in a weak one just to sound decisive — the honesty of the read matters more than either extreme. If the setup is weak or the checklist barely supports it, say that plainly instead so the trader isn't tempted to hold with conviction it hasn't earned.${hasImage ? ' chart_positions must be present in the JSON (it can be all nulls if you genuinely can\'t place anything, but never omit the key). chart_markers must be present too — an empty array [] is ONLY acceptable if no checklist item you marked "present" belongs to one of the five marker groups above.' : ''}${hasImage && !hasHigher && !hasLower ? ' chart_request must be present in the JSON — see the ADDITIONAL TIMEFRAME REQUEST note above for exactly when "needed" should be true; leave it false for the ordinary case where one chart is enough.' : ''}`;
 }
@@ -5363,6 +5364,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       </div>
       ${invalidBanner}
       ${execBanner}
+      ${r.scife_pov && r.scife_pov.view ? `<div class="sig-block" style="animation-delay:.02s;"><div class="sig-block-label">SciFe’s independent POV · ${sigEsc(r.scife_pov.lean||'neutral')}</div><div class="sig-block-text">${sigEsc(r.scife_pov.view)}</div></div>` : ''}
       <div class="sig-block" style="animation-delay:.05s;">
         <div class="sig-block-label">Confidence</div>
         <div class="sig-confbar"><div class="sig-confbar-fill" style="width:0%;" data-target="${conf}"></div></div>
@@ -5391,6 +5393,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       </div>
       ${r.fib_zone && (r.fib_zone.zone || r.fib_zone.note) ? `<div class="sig-block" style="animation-delay:.35s;"><div class="sig-block-label">Fibonacci zone (OTE)</div><div class="sig-block-text">${sigEsc(r.fib_zone.zone||'—')}${r.fib_zone.numeric===false?' <span style="font-style:italic;color:var(--slate);">(structural)</span>':''}</div>${r.fib_zone.note?`<div class="sig-check-note">${sigEsc(r.fib_zone.note)}</div>`:''}</div>` : ''}
       ${r.entry_idea ? `<div class="sig-block" style="animation-delay:.4s;"><div class="sig-block-label">Entry idea</div><div class="sig-block-text">${sigEsc(r.entry_idea)}</div></div>` : ''}
+      ${r.strategy_update && r.strategy_update.suggested && r.strategy_update.revised_notes ? `<div class="sig-block" style="animation-delay:.42s;"><div class="sig-block-label">SciFe strategy refinement · review before saving</div><div class="sig-check-note">${sigEsc(r.strategy_update.reason||'Based on this scan only; not a performance guarantee. Edit or reject as you see fit.')}</div><textarea id="sig_strategy_update" class="field-input" rows="5" style="width:100%;margin-top:8px;">${sigEsc(r.strategy_update.revised_notes)}</textarea><button type="button" class="btn-ghost" style="margin-top:8px;" onclick="applySignalStrategyUpdate('${sigEsc(strategy.id)}')">Save revised strategy notes</button></div>` : ''}
       <div class="sig-block" style="animation-delay:.45s;"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
       <div class="sig-block" style="animation-delay:.5s;"><div class="sig-block-label">Risk note</div><div class="sig-block-text">${sigEsc(r.risk_note||'—')}</div></div>
       <div class="sig-block" style="animation-delay:.55s;margin-bottom:14px;"><div class="sig-block-label">Verdict</div><div class="sig-block-text" style="font-weight:600;font-size:15px;">${sigEsc(r.verdict||'—')}</div></div>
@@ -5443,6 +5446,19 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
     }
   }
   el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+async function applySignalStrategyUpdate(strategyId){
+  const textarea = document.getElementById('sig_strategy_update');
+  const strategies = (traderRow && traderRow.psychology && traderRow.psychology.strategies) || [];
+  const strategy = strategies.find(s=>s.id===strategyId);
+  const notes = textarea && textarea.value.trim();
+  if(!strategy || !notes){ showToast('Review the revised strategy notes before saving'); return; }
+  if(!traderRow.psychology) traderRow.psychology = {};
+  strategy.notes = notes;
+  const { error } = await sb.from('trader_data').update({ psychology:traderRow.psychology, updated_at:new Date().toISOString() }).eq('user_id',currentUser.id);
+  if(error){ showToast('Could not save strategy notes: '+(error.message||error.code)); return; }
+  showToast('Reviewed strategy notes saved');
+  onSignalStrategyChange();
 }
 function copySignalSummary(btn){
   if(!lastSignal || !lastSignal.result) return;
@@ -6082,6 +6098,9 @@ async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperatu
     systemInstruction: { role:'user', parts:[{ text:systemPrompt }] },
     generationConfig: { temperature, maxOutputTokens:maxTokens }
   };
+  // The server proxy chooses the house model from this field. Direct Gemini
+  // calls choose their model in the URL below and must not receive this field.
+  if(apiKey === SHARED_KEY) bodyObj.model = model || sharedModelForTier();
   let res;
   if(apiKey === SHARED_KEY){
     const { data:{ session } } = await sb.auth.getSession();

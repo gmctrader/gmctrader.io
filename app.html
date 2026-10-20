@@ -4226,7 +4226,7 @@ setTimeout(function(){
     <div class="view" id="view-packages">
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
       <div class="package-grid">
-        <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>A useful private workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>SciFe: 15 chats/day, 5 signal scans/week, 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
+        <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>A useful private workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
         <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">$29 <small>/ month</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro</button></article>
         <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">$69 <small>/ month</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
         <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">$119 <small>/ month</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
@@ -13638,8 +13638,8 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   // (scife.html) via the same trader_data.scife.usage counter; Pro/Elite
   // ride the shared key with no cap. Never surfaced in any input field.
   var SHARED_PROVIDER = 'google';
-  var SHARED_MODEL = 'gemini-3.5-flash-lite';
-  var SHARED_MODEL_PREMIUM = 'gemini-3.1-pro'; // Premium gets the stronger house model
+  var SHARED_MODEL = 'gemini-3.8-flash';
+  var SHARED_MODEL_PREMIUM = 'gemini-3.1-pro-preview'; // Premium gets the stronger house model
   function sharedModelForTier(){ return (typeof isPremiumTier === 'function' && isPremiumTier()) ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
   var SHARED_KEY = '__shared__'; // real key lives server-side (ai-proxy Edge Function)
   var FREE_DAILY_CHAT_LIMIT = 15;
@@ -13796,6 +13796,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
       systemInstruction:{ role:'user', parts:[{text:systemPrompt}] },
       generationConfig:{ temperature:0.7, maxOutputTokens:maxTokens }
     };
+    if(apiKey === '__shared__') body.model = window.__gdScifeModel;
     var req = apiKey === '__shared__' ? gdProxyFetch(body)
       : fetch('https://generativelanguage.googleapis.com/v1beta/models/' + window.__gdScifeModel + ':generateContent?key=' + apiKey,
           { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
