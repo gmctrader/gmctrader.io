@@ -2561,7 +2561,7 @@ setTimeout(function(){
         </div>
       </div>
       <h1 class="auth-headline">Keep your word.<br>Then take the trade.</h1>
-      <p class="auth-lede">Ghost Discipline is an invitation-only journal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan.</p>
+      <p class="auth-lede">Ghost Discipline is a private trading journal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan.</p>
       <ul class="auth-pillars">
         <li>
           <span class="auth-pillar-index">01</span>
@@ -2600,7 +2600,7 @@ setTimeout(function(){
         <button type="button" class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</button>
       </div>
       <button type="submit" class="btn-gold" id="authSubmitBtn"><span class="btn-spinner"></span><span class="btn-label" id="authSubmitLabel">Enter the terminal</span></button>
-      <div class="auth-foot">Invitation only. Data is isolated per account with row-level access control.</div>
+      <div class="auth-foot" id="authFoot">New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your data stays private to your account.</div>
       <button type="button" class="btn-demo" id="startDemoBtn" onclick="openSneakPeek()">Sneak peek <span aria-hidden="true">↗</span></button>
       <div class="auth-demo-hint">Sample trading numbers · read-only preview</div>
     </form>
@@ -4227,11 +4227,11 @@ setTimeout(function(){
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
       <div class="package-grid">
         <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>The core journal with SciFe on a shared, rate-limited plan.</p><ul><li>Journal, calendar, orders and rules</li><li>SciFe chat · 15 messages per day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
-        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">$39 <small>/ month</small></div><p>The complete individual workspace for an active trading practice.</p><ul><li>Everything in Free</li><li>Analytics, playbook and backtesting</li><li>Prop firm compliance tools</li><li>Unlimited SciFe chat on shared plan key</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Ask about Pro <span aria-hidden="true">↗</span></button></article>
-        <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">$89 <small>/ month</small></div><p>More collaboration and a closer line to the team.</p><ul><li>Everything in Pro</li><li>Team desk review with linked partners</li><li>Priority Telegram support</li><li>Monthly journal review</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Ask about Elite <span aria-hidden="true">↗</span></button></article>
-        <article class="package-card"><span class="package-kicker">Highest-touch access</span><h3>Premium</h3><div class="package-price">$149 <small>/ month</small></div><p>Direct access and the highest review priority.</p><ul><li>Everything in Elite</li><li>Direct Telegram line to the team</li><li>First access to new rooms</li><li>Priority monthly journal review</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Ask about Premium <span aria-hidden="true">↗</span></button></article>
+        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">$29 <small>/ month</small></div><p>The complete individual workspace for an active trading practice.</p><ul><li>Everything in Free</li><li>Analytics, playbook and backtesting</li><li>Prop firm compliance tools</li><li>Unlimited SciFe chat on shared plan key</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Ask about Pro <span aria-hidden="true">↗</span></button></article>
+        <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">$69 <small>/ month</small></div><p>More collaboration and a closer line to the team.</p><ul><li>Everything in Pro</li><li>Team desk review with linked partners</li><li>Priority Telegram support</li><li>Monthly journal review</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Ask about Elite <span aria-hidden="true">↗</span></button></article>
+        <article class="package-card"><span class="package-kicker">Highest-touch access</span><h3>Premium</h3><div class="package-price">$119 <small>/ month</small></div><p>Direct access and the highest review priority.</p><ul><li>Everything in Elite</li><li>Direct Telegram line to the team</li><li>First access to new rooms</li><li>Priority monthly journal review</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Ask about Premium <span aria-hidden="true">↗</span></button></article>
       </div>
-      <p class="package-footnote">Monthly pricing in USD. Upgrades are arranged with the GMC Traders team; there is no in-app checkout.</p>
+      <p class="package-footnote">Monthly pricing in USD. Online checkout will be enabled after Paystack live approval.</p>
     </div>
 
     <!-- ABOUT & RESET -->
@@ -5309,16 +5309,39 @@ async function handleAuthSubmit(){
     showAuthMsg('Enter both an email and password.', 'error'); return;
   }
   btn.disabled = true; btn.classList.add('is-loading');
-  const prevLabel = label.textContent; label.textContent = 'Signing in…';
+  const prevLabel = label.textContent; label.textContent = authMode === 'signup' ? 'Creating account…' : 'Signing in…';
   try{
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const result = authMode === 'signup'
+      ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname + '?signin=1' } })
+      : await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = result;
     if(error) throw error;
-    saveAuthPersistenceChoice();
-    await onAuthed(data.user);
+    if(authMode === 'signup' && !data.session){
+      showAuthMsg('Account created. Check your email to confirm your address, then sign in.', 'info');
+    } else {
+      if(!data.user) throw new Error('Could not create or sign in to this account. Please try again.');
+      saveAuthPersistenceChoice();
+      await onAuthed(data.user);
+    }
   }catch(e){
     showAuthMsg(e.message || 'Something went wrong. Try again.', 'error');
   }
   btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = prevLabel;
+}
+
+let authMode = 'signin';
+function toggleAuthMode(){
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  const signup = authMode === 'signup';
+  document.querySelector('#authScreen .auth-title').textContent = signup ? 'Create your account' : 'Sign in';
+  document.querySelector('#authScreen .auth-sub').textContent = signup ? 'Start with a free account. Upgrade whenever you are ready.' : 'Members enter here. Your journal stays private to your account.';
+  document.getElementById('authSubmitLabel').textContent = signup ? 'Create free account' : 'Enter the terminal';
+  document.getElementById('authPassword').autocomplete = signup ? 'new-password' : 'current-password';
+  document.querySelector('.auth-options-row').style.display = signup ? 'none' : '';
+  document.getElementById('authFoot').innerHTML = signup
+    ? 'Already have an account? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Sign in</button>'
+    : 'New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your data stays private to your account.';
+  document.getElementById('authMsg').classList.remove('show');
 }
 
 function toggleAuthPasswordVisibility(btn, inputId){
@@ -5483,6 +5506,23 @@ async function onAuthed(user){
   document.getElementById('authScreen').style.display = 'none';
   await flushPendingSave(); // push any offline-queued changes from a prior session first
   await loadOrCreateTraderData();
+  const paymentQuery = new URLSearchParams(window.location.search);
+  if(paymentQuery.get('payment') === 'success' && paymentQuery.get('reference')){
+    try{
+      const { data, error } = await sb.functions.invoke('paystack-checkout', { body:{ action:'verify', reference:paymentQuery.get('reference') } });
+      if(error) throw error;
+      if(data?.success){
+        userTier = data.tier;
+        userPaidUntil = data.paid_until;
+        userBillingCycle = 'monthly';
+        applyTierLocks(); updatePlanBadge();
+        showToast(`${TIER_LABELS[data.tier]||'Paid'} access is active. Thank you!`);
+      } else showToast(data?.message || 'Payment was not confirmed. Your account was not upgraded.');
+    }catch(e){ showToast(e.message || 'Could not verify payment. Please contact support before trying again.'); }
+    paymentQuery.delete('payment'); paymentQuery.delete('reference');
+    const cleanUrl = new URL(window.location.href); cleanUrl.search = paymentQuery.toString();
+    history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+  }
   rolloverDayIfNeeded();
   if(!state.rulesCompleted){
     document.getElementById('gateScreen').classList.add('show');
@@ -6183,10 +6223,19 @@ function renderPackagesView(){
   if(current) current.textContent=isDemoMode?'Proving Ground demo':(TIER_LABELS[userTier]||'Free')+' package';
 }
 function openPackageRequest(tier){
-  if(isDemoMode){ openDemoTease('Packages need a real account','Sign in to request a package for your Ghost Discipline account.'); return; }
-  const label=TIER_LABELS[tier]||'Pro';
-  window.open(telegramUpgradeLink(tier),'_blank','noopener,noreferrer');
-  showToast(`Opening the ${label} package request.`);
+  if(isDemoMode || !currentUser){ showAuthMsg('Sign in or create an account before choosing a paid package.','error'); document.getElementById('authScreen').style.display='flex'; return; }
+  if(!['pro','elite','premium'].includes(tier)){ showToast('Choose a valid package.'); return; }
+  (async()=>{
+    const btn = document.querySelector(`[onclick="openPackageRequest('${tier}')"]`);
+    if(btn) btn.disabled = true;
+    try{
+      const { data, error } = await sb.functions.invoke('paystack-checkout', { body: { action:'initialize', tier } });
+      if(error) throw error;
+      if(!data?.authorization_url) throw new Error(data?.error || 'Checkout is not configured yet.');
+      window.location.assign(data.authorization_url);
+    }catch(e){ showToast(e.message || 'Could not start checkout. Please try again.'); }
+    finally{ if(btn) btn.disabled = false; }
+  })();
 }
 async function submitOnboarding(){
   const markets = document.getElementById('ob_markets').value.trim();

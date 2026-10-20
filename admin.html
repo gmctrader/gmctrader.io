@@ -334,7 +334,7 @@ async function runSearch(){
 // what the admin sees here always matches what the portal will do.
 function paidUntilInfo(r){
   if(r.tier === 'free') return { cls:'none', html:'Free — no billing' };
-  if(!r.paid_until) return { cls:'none', html:'No expiry (manual grant)' };
+  if(!r.paid_until) return { cls:'none', html:'Complimentary access · no expiry' };
   const until = new Date(r.paid_until);
   const msLeft = until - new Date();
   const daysLeft = Math.ceil(msLeft / 86400000);
@@ -384,7 +384,7 @@ function renderResults(rows){
           <option value="premium" ${r.tier==='premium'?'selected':''}>Premium</option>
         </select>
         <select class="cycleSel" data-user="${r.user_id}" onchange="onTierOrCycleChange(this)">
-          <option value="" ${!r.billing_cycle?'selected':''}>No expiry</option>
+          <option value="" ${!r.billing_cycle?'selected':''}>Complimentary · no payment</option>
           <option value="monthly" ${r.billing_cycle==='monthly'?'selected':''}>Monthly · 30 days</option>
           <option value="yearly" ${r.billing_cycle==='yearly'?'selected':''}>Yearly · 1 year</option>
         </select>
@@ -420,7 +420,7 @@ async function saveTier(btn){
   const cycle = cycleSel.value || null;
   const label = tier.charAt(0).toUpperCase() + tier.slice(1);
   if(tier === 'free' && !confirm(`Downgrade this trader to Free? This removes their Pro/Elite/Premium access immediately.`)) return;
-  if(tier !== 'free' && !cycle && !confirm(`No billing cycle selected — this grants ${label} with no expiry (a manual/lifetime grant, no reminder or auto-downgrade). Continue?`)) return;
+  if(tier !== 'free' && !cycle && !confirm(`Grant ${label} access at no charge with no expiry? This complimentary access will not auto-renew or downgrade.`)) return;
   btn.disabled = true;
   stateEl.textContent = 'Saving…';
   stateEl.className = 'saveState';
