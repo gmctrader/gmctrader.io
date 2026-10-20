@@ -1886,9 +1886,10 @@ const SHARED_MODEL = 'gemini-3.5-flash-lite';
 const SHARED_KEY = '__shared__';   // real key lives server-side (ai-proxy Edge Function)
 const FREE_DAILY_CHAT_LIMIT = 15;   // Free tier: chats/day on the shared key
 let userTier = 'free';              // 'free' | 'pro' | 'elite' | 'premium' — set from trader_data.tier in loadTraderRow()
-function telegramUpgradeLink(pkg){
-  const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
-  return 'https://t.me/GhostTradersEmpire?text=' + encodeURIComponent(text);
+function packageUpgradeUrl(pkg){
+  const tier = String(pkg || 'pro').toLowerCase();
+  const safeTier = ['pro','elite','premium'].includes(tier) ? tier : 'pro';
+  return `app.html?signin=1&signup=1&plan=${safeTier}`;
 }
 /* ============ TIER GATES ============
    Four tiers, lowest to highest. 'premium' sits above 'elite' and is meant
@@ -2467,7 +2468,7 @@ function onProviderChange(scope){
         sw.classList.remove('locked');
         sw.onclick = function(){ this.classList.toggle('on'); };
       } else {
-        hint.innerHTML = `Elite/Premium feature. <a href="${telegramUpgradeLink('Elite')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">Upgrade</a> to let SciFe search the web for breaking news beyond the scheduled calendar.`;
+        hint.innerHTML = `Elite/Premium feature. <a href="${packageUpgradeUrl('Elite')}" style="color:var(--bronze-bright);font-weight:600;">Upgrade</a> to let SciFe search the web for breaking news beyond the scheduled calendar.`;
         sw.classList.add('locked');
         sw.classList.remove('on');
         sw.onclick = function(){ showToast('Live web search is an Elite/Premium feature'); };
@@ -2864,7 +2865,7 @@ function updateChatQuotaBanner(){
   if(userTier !== 'free'){ el.style.display = 'none'; return; }
   const remaining = chatsRemainingToday();
   el.style.display = 'flex';
-  el.innerHTML = `<span>Free plan — ${remaining}/${FREE_DAILY_CHAT_LIMIT} SciFe chats left today</span><a href="${telegramUpgradeLink('Pro')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;text-decoration:none;">Upgrade →</a>`;
+  el.innerHTML = `<span>Free plan — ${remaining}/${FREE_DAILY_CHAT_LIMIT} SciFe chats left today</span><a href="${packageUpgradeUrl('Pro')}" style="color:var(--bronze-bright);font-weight:600;text-decoration:none;">Upgrade →</a>`;
   el.style.color = remaining === 0 ? 'var(--loss)' : 'var(--slate)';
   el.classList.toggle('empty', remaining === 0);
 }
@@ -2974,7 +2975,7 @@ function openSettings(){
     memHint.innerHTML = scife.memory.length + ' notes remembered';
     if(memClearBtn) memClearBtn.style.display = 'inline-block';
   } else {
-    memHint.innerHTML = `Elite/Premium feature. <a href="${telegramUpgradeLink('Elite')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">Upgrade</a> to have SciFe carry notes between sessions.`;
+    memHint.innerHTML = `Elite/Premium feature. <a href="${packageUpgradeUrl('Elite')}" style="color:var(--bronze-bright);font-weight:600;">Upgrade</a> to have SciFe carry notes between sessions.`;
     if(memClearBtn) memClearBtn.style.display = 'none';
   }
   renderAdminSection();
@@ -2983,7 +2984,7 @@ function openSettings(){
     if(usingSharedKey()){
       banner.style.display = 'block';
       banner.innerHTML = userTier === 'free'
-        ? `You're chatting for free on the shared plan key — no setup needed. That's capped at ${FREE_DAILY_CHAT_LIMIT} chats/day; paste your own key below any time to remove the cap, or <a href="${telegramUpgradeLink('Pro')}" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">upgrade</a>.`
+        ? `You're chatting for free on the shared plan key — no setup needed. That's capped at ${FREE_DAILY_CHAT_LIMIT} chats/day; paste your own key below any time to remove the cap, or <a href="${packageUpgradeUrl('Pro')}" style="color:var(--bronze-bright);font-weight:600;">upgrade</a>.`
         : `You're on the shared plan key with no daily cap on your paid plan. Paste your own key below any time if you'd rather use a different provider.`;
     } else {
       banner.style.display = 'none';

@@ -2685,16 +2685,16 @@ setTimeout(function(){
     <div class="demo-tease-icon">🔒</div>
     <div class="demo-tease-title" id="demoLockedFeatureTitle">This room is for real accounts</div>
     <div class="demo-tease-copy" id="demoLockedFeatureCopy">The Proving Ground tests discipline, not the full arsenal. This view unlocks the moment you're in for real.</div>
-    <a class="btn-telegram" href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Unlock Full Access — Telegram</a>
+    <a class="btn-telegram" id="tierUpgradeAction" href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Unlock Full Access — Telegram</a>
     <div class="btn-row" style="margin-top:10px;">
       <button class="side-logout" style="width:100%;" onclick="closeModal('demoLockedFeatureOverlay')">Stay in the Proving Ground</button>
     </div>
   </div>
 </div>
 
-<!-- ONBOARDING QUESTIONNAIRE (shown once, right after an invited trader's first
-     login) — helps SciFe personalise its coaching from turn one instead of
-     starting cold. Free tier must answer to continue; Pro/Elite can skip. -->
+<!-- ONBOARDING QUESTIONNAIRE (shown once, after a new account's first login)
+     — helps SciFe personalise its coaching from turn one instead of starting
+     cold. Free tier must answer to continue; Pro/Elite can skip. -->
 <div class="overlay" id="onboardingOverlay">
   <div class="modal" style="max-width:480px;" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
     <h3 class="serif" id="onboardingTitle">A few questions for SciFe</h3>
@@ -2727,7 +2727,7 @@ setTimeout(function(){
   </div>
 </div>
 
-<!-- ============ SET PASSWORD SCREEN (invited traders land here) ============ -->
+<!-- ============ SET PASSWORD SCREEN (email invite and recovery links) ============ -->
 <div id="setPasswordScreen" style="min-height:100vh;display:none;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
   <div class="auth-wrap">
     <div class="auth-emblem">
@@ -4226,10 +4226,10 @@ setTimeout(function(){
     <div class="view" id="view-packages">
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
       <div class="package-grid">
-        <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>The core journal with SciFe on a shared, rate-limited plan.</p><ul><li>Journal, calendar, orders and rules</li><li>SciFe chat · 15 messages per day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
-        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">$29 <small>/ month</small></div><p>The complete individual workspace for an active trading practice.</p><ul><li>Everything in Free</li><li>Analytics, playbook and backtesting</li><li>Prop firm compliance tools</li><li>Unlimited SciFe chat on shared plan key</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Ask about Pro <span aria-hidden="true">↗</span></button></article>
-        <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">$69 <small>/ month</small></div><p>More collaboration and a closer line to the team.</p><ul><li>Everything in Pro</li><li>Team desk review with linked partners</li><li>Priority Telegram support</li><li>Monthly journal review</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Ask about Elite <span aria-hidden="true">↗</span></button></article>
-        <article class="package-card"><span class="package-kicker">Highest-touch access</span><h3>Premium</h3><div class="package-price">$119 <small>/ month</small></div><p>Direct access and the highest review priority.</p><ul><li>Everything in Elite</li><li>Direct Telegram line to the team</li><li>First access to new rooms</li><li>Priority monthly journal review</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Ask about Premium <span aria-hidden="true">↗</span></button></article>
+        <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>A useful private workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>SciFe: 15 chats/day, 5 signal scans/week, 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
+        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">$29 <small>/ month</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro</button></article>
+        <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">$69 <small>/ month</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
+        <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">$119 <small>/ month</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
       </div>
       <p class="package-footnote">Monthly pricing in USD. Online checkout will be enabled after Paystack live approval.</p>
     </div>
@@ -4652,19 +4652,12 @@ let currentUser = null;
 let isDemoMode = false;
 
 /* ============ SUBSCRIPTION TIERS ============
-   Four tiers on the real (invited, non-demo) account: 'free' | 'pro' |
-   'elite' | 'premium'. Lives on trader_data.tier (plain text column,
-   defaults to 'free' — see the migration note above
-   loadOrCreateTraderData()). There is no payment processor wired up:
-   upgrading is manual — a trader messages the Telegram with the package
-   they want, and the owner flips their `tier` column in the Supabase table
-   editor. onboarding_done / profile follow the same pattern.
-   Nothing here is enforced by RLS beyond the trader's own row being private —
-   same honesty note as everywhere else in this file: a trader editing their
-   own client-side `userTier` var in devtools can fake a higher tier for
-   themselves for the current session, but it never touches the server copy,
-   so it reverts on next load/save and doesn't help them steal from anyone
-   else's account.
+   Four tiers on each signed-in account: 'free' | 'pro' | 'elite' | 'premium'.
+   The tier is stored on trader_data.tier and paid upgrades use the Paystack
+   checkout function. These page locks improve discovery and navigation, but
+   they are client-side presentation checks, not an authorization boundary.
+   Before accepting live payments, enforce tier entitlements on the server for
+   every paid/shared-resource action (including shared AI usage).
    'premium' sits above 'elite' and is meant to unlock strictly everything
    elite has plus whatever is elite-only, so isElite() below treats premium
    as elite too rather than every call site needing its own premium check. */
@@ -4681,16 +4674,13 @@ const TIER_LABELS = { free:'Free', pro:'Pro', elite:'Elite', premium:'Premium' }
    never decides on its own that someone is expired. */
 let userPaidUntil = null;
 let userBillingCycle = null;
-// Rooms held back on the Free tier — same lock-badge/tease mechanism as the
-// Proving Ground demo lock, just a shorter, less restrictive list since these
-// are real invited accounts, not anonymous trials. Tune freely.
+// Rooms held back on the Free tier. Keep these visible with tier badges and
+// an upgrade preview so people can discover what each package adds.
 const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm','proporders','propequity','propfirmrisk','propfirmpayout'];
 // Rooms held back until Elite specifically (blocks Free AND Pro). Premium
 // passes this too — see isElite() below.
 const ELITE_LOCKED_VIEWS = ['team'];
 // Rooms held back until Premium specifically (blocks Free, Pro AND Elite).
-// Empty for now — add a view id here once a Premium-only room ships and the
-// lock badge, click intercept and tease modal all pick it up automatically.
 const PREMIUM_LOCKED_VIEWS = ['edgelab'];
 // Same ordered-tier helper scife.html uses, so both pages gate identically.
 const TIER_ORDER = ['free','pro','elite','premium'];
@@ -4698,10 +4688,10 @@ function tierAtLeast(t){ return !isDemoMode && TIER_ORDER.indexOf(userTier) >= T
 function isFreeTier(){ return !isDemoMode && userTier === 'free'; }
 function isPremiumTier(){ return !isDemoMode && userTier === 'premium'; }
 function isElite(){ return tierAtLeast('elite'); }
-function telegramUpgradeLink(wantedTier){
-  const pkg = TIER_LABELS[wantedTier] || 'Pro';
-  const text = `Hi — I'd like to upgrade my Ghost Discipline account to the ${pkg} package.`;
-  return 'https://t.me/GhostTradersEmpire?text=' + encodeURIComponent(text);
+function packageUpgradeUrl(wantedTier){
+  const tier = String(wantedTier || 'pro').toLowerCase();
+  const safeTier = ['pro','elite','premium'].includes(tier) ? tier : 'pro';
+  return `app.html?signin=1&signup=1&plan=${safeTier}`;
 }
 let pendingViolation = false;
 let closingOrderId = null;
@@ -5821,11 +5811,10 @@ function applyDemoLocks(){
   const monkField = document.getElementById('psychMonkField');
   if(monkField) monkField.classList.toggle('field-locked', isDemoMode);
 }
-/* ============ FREE TIER LOCKS (real accounts) ============
+/* ============ TIER LOCKS (real accounts) ============
    Same lock-badge + tease-modal mechanism as the Proving Ground demo lock
-   above, just driven by userTier instead of isDemoMode, and pointed at the
-   Telegram upgrade link with the package name pre-filled. Demo mode's own
-   locks always win (a demo trader isn't on any real tier yet). */
+   above, driven by userTier instead of isDemoMode. A locked-page preview
+   routes the user to checkout for the lowest package that unlocks it. */
 function applyTierLocks(){
   if(isDemoMode) return; // demo locks already cover this case
   document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
@@ -5881,9 +5870,9 @@ function updatePlanBadge(){
 }
 function handlePlanBadgeClick(){
   if(isDemoMode || !currentUser) return;
-  if(userTier === 'free'){ window.open(telegramUpgradeLink('pro'), '_blank'); return; }
+  if(userTier === 'free'){ window.location.assign(packageUpgradeUrl('pro')); return; }
   const expired = userPaidUntil && daysUntilDate(userPaidUntil) <= 0;
-  if(expired){ window.open(telegramUpgradeLink(userTier), '_blank'); return; }
+  if(expired){ window.location.assign(packageUpgradeUrl(userTier)); return; }
   if(userPaidUntil){
     showToast(`${TIER_LABELS[userTier]} plan renews/expires ${new Date(userPaidUntil).toLocaleDateString()}.`);
   } else {
@@ -5898,7 +5887,7 @@ function showRenewalBanner(days){
   const cta = document.getElementById('renewalBannerCta');
   if(!banner) return;
   text.textContent = `Your ${TIER_LABELS[userTier]||'plan'} ${days<=1 ? 'expires today' : `expires in ${days} days`} — renew to keep your access.`;
-  if(cta) cta.href = telegramUpgradeLink(userTier);
+  if(cta) cta.href = packageUpgradeUrl(userTier);
   banner.classList.add('show');
 }
 function hideRenewalBanner(){
@@ -5940,14 +5929,22 @@ function showTierLockedFeatureTease(view){
   const label = labels[view] || 'This room';
   const premiumOnly = PREMIUM_LOCKED_VIEWS.includes(view);
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
+  const requiredTier = premiumOnly ? 'premium' : (eliteOnly ? 'elite' : 'pro');
+  const tierPrice = { pro:29, elite:69, premium:119 }[requiredTier];
   document.getElementById('demoLockedFeatureTitle').textContent = premiumOnly ? `${label} is a Premium feature` : (eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`);
   document.getElementById('demoLockedFeatureCopy').textContent = premiumOnly
-    ? `${label} is part of the Premium package only. Message the Telegram below and we'll get you upgraded.`
+    ? `${label} is included in Premium. Premium also includes Elite and Pro features, plus the advanced SciFe model.`
     : eliteOnly
-      ? `${label} is part of the Elite and Premium packages. Message the Telegram below and we'll get you upgraded.`
-      : `${label} is part of the Pro, Elite and Premium packages. Message the Telegram below and we'll get you upgraded.`;
-  const link = document.querySelector('#demoLockedFeatureOverlay .btn-telegram');
-  if(link) link.href = telegramUpgradeLink(premiumOnly ? 'premium' : (eliteOnly ? 'elite' : 'pro'));
+      ? `${label} is included in Elite and Premium, along with the Pro individual toolkit.`
+      : `${label} is included in Pro, Elite and Premium, along with the Free journal and risk tools.`;
+  const link = document.getElementById('tierUpgradeAction');
+  if(link){
+    link.textContent = `Continue to ${TIER_LABELS[requiredTier]} checkout · $${tierPrice}/month`;
+    link.href = '#';
+    link.removeAttribute('target');
+    link.removeAttribute('rel');
+    link.onclick = function(event){ event.preventDefault(); openPackageRequest(requiredTier); };
+  }
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 
@@ -6279,6 +6276,14 @@ async function skipOnboarding(){
 function openDemoTease(title, copy){
   document.getElementById('demoLockedFeatureTitle').textContent = title;
   document.getElementById('demoLockedFeatureCopy').textContent = copy;
+  const link = document.getElementById('tierUpgradeAction');
+  if(link){
+    link.textContent = 'Unlock Full Access — Telegram';
+    link.href = 'https://t.me/GhostTradersEmpire';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.onclick = null;
+  }
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 function showLockedFeatureTease(view){
@@ -6414,7 +6419,7 @@ async function loadOrCreateTraderData(){
     }).select().single();
     if(insertErr){ console.error('Ghost Discipline profile creation failed:', insertErr); showToast('Could not create your profile: ' + (insertErr.message||insertErr.code||'unknown error')); return; }
     hydrateState(created);
-    // Brand-new invited trader — ask the onboarding questions once, right
+    // Brand-new account — ask the onboarding questions once, right
     // after their journal shell exists but before they start using it.
     queueOnboardingQuestions();
   } else {
@@ -7524,7 +7529,7 @@ function renderTeamView(){
     lock.style.display = 'block';
     content.style.display = 'none';
     const link = document.getElementById('teamUpgradeLink');
-    if(link) link.href = telegramUpgradeLink('elite');
+    if(link) link.href = packageUpgradeUrl('elite');
     return;
   }
   lock.style.display = 'none';
@@ -13732,7 +13737,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
     var src = document.getElementById(m.sourceId);
     if(src && !src.__promptShown){
       src.__promptShown = true;
-      src.innerHTML = 'Free plan\'s daily SciFe limit is used up — <a href="' + telegramUpgradeLink('pro') + '" target="_blank" rel="noopener" style="color:var(--bronze-bright);font-weight:600;">upgrade for more →</a>';
+      src.innerHTML = 'Free plan\'s daily SciFe limit is used up — <a href="' + packageUpgradeUrl('pro') + '" style="color:var(--bronze-bright);font-weight:600;">upgrade for more →</a>';
     }
   }
 
