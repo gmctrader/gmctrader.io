@@ -50,6 +50,19 @@
     .visual-float-a{animation:float-a 6s ease-in-out infinite}
     .visual-float-b{animation:float-b 7s ease-in-out infinite}
     .equity-draw{stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw-equity 2.1s .45s cubic-bezier(.22,.7,.24,1) forwards}
+    .market-section{padding:76px 0 80px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(17,25,19,.52),rgba(9,14,11,.3))}
+    .market-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:25px}
+    .market-head h2{font:500 clamp(30px,3.4vw,42px)/1.08 var(--serif);letter-spacing:-.035em;margin:15px 0 8px}
+    .market-head p{max-width:58ch;margin:0;color:var(--muted);font-size:12px;line-height:1.75}
+    .market-status-pill{display:inline-flex;align-items:center;gap:9px;flex:none;padding:9px 12px;border:1px solid var(--line-hi);border-radius:999px;color:#c4cec0;font:9px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+    .market-live-dot{width:7px;height:7px;border-radius:50%;background:#80b98a;box-shadow:0 0 12px rgba(128,185,138,.52)}
+    .market-embed{min-height:94px;padding:11px 16px;border:1px solid var(--line-hi);border-radius:15px;background:rgba(13,19,15,.82);color-scheme:dark;--tv-widget-background-color:transparent;--tv-widget-text-color:#e8eee4;--tv-widget-font-family:'Instrument Sans',Arial,sans-serif;--tv-widget-positive-color:#a6c99e;--tv-widget-negative-color:#d89491;overflow:hidden}
+    .market-embed tv-ticker-tape{display:block;width:100%;min-height:68px}
+    .market-loading{margin:0;padding:28px 6px;color:var(--quiet);font:10px var(--mono);letter-spacing:.04em;text-align:center}
+    .market-foot{display:flex;justify-content:space-between;gap:14px;margin-top:13px;color:var(--quiet);font-size:9px;line-height:1.6}
+    .market-foot a{flex:none;color:#b8cda9;text-decoration:underline;text-decoration-color:rgba(184,205,169,.4);text-underline-offset:3px}
+    .market-foot a:hover{color:var(--text)}
+    @media(max-width:720px){.market-section{padding:58px 0 62px}.market-head{align-items:flex-start;flex-direction:column;gap:15px}.market-status-pill{font-size:8px}.market-embed{padding:8px 9px;min-height:82px}.market-foot{flex-direction:column;font-size:9px}.market-foot a{align-self:flex-start}}
     @keyframes hero-aura{from{transform:translate3d(-1.5%,0,0) scale(.96);opacity:.7}to{transform:translate3d(1.5%,1%,0) scale(1.05);opacity:1}}
     @keyframes hero-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
     @keyframes orbit-drift{from{transform:translateZ(-28px) rotate(-3deg)}to{transform:translateZ(-28px) rotate(2deg)}}
@@ -63,7 +76,7 @@
   <header class="nav" id="top">
     <div class="wrap nav-inner">
       <a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a>
-      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#membership">Membership</a><a href="#faq">FAQ</a></nav>
+      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#markets">Markets</a><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#membership">Membership</a><a href="#faq">FAQ</a></nav>
       <div class="nav-actions"><a class="btn btn-quiet" href="app.html?signin=1">Sign in</a><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1">Create account <span aria-hidden="true">→</span></a><button class="mobile-menu" type="button" id="menuToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
     </div>
   </header>
@@ -96,6 +109,19 @@
     </section>
 
     <section class="trust"><div class="wrap trust-row"><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 19 6v5c0 4.3-2.8 7.7-7 10-4.2-2.3-7-5.7-7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><div>Risk rules first<span>Plan before execution</span></div></div><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><div>One honest ledger<span>Journal and review together</span></div></div><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 18V6m0 12h16M7 14l4-4 3 2 5-6"/></svg><div>Evidence over instinct<span>Measure your own process</span></div></div><div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg><div>Built for the full session<span>Before, during, after</span></div></div></div></section>
+
+    <section class="market-section" id="markets" aria-labelledby="marketTitle">
+      <div class="wrap">
+        <div class="market-head">
+          <div><div class="eyebrow">Market snapshot</div><h2 id="marketTitle">A live read on the markets.</h2><p>Selected currency pairs, gold, and digital assets in one glance. Use your broker’s quote for trade decisions.</p></div>
+          <div class="market-status-pill"><span class="market-live-dot" aria-hidden="true"></span>External market feed</div>
+        </div>
+        <div class="market-embed" id="marketWidgetHost" aria-label="Live currency, gold and cryptocurrency quotes">
+          <p class="market-loading" id="marketLoading">Connecting to the market feed…</p>
+        </div>
+        <div class="market-foot"><span>Forex and crypto data are listed by TradingView as real-time; availability and timing can vary by instrument and source.</span><a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">Market data by TradingView ↗</a></div>
+      </div>
+    </section>
 
     <section class="section method" id="approach"><div class="wrap"><div class="section-head"><div class="eyebrow">A better trading routine</div><h2>Work the process.<br>Let the result speak.</h2><p>Structure gives the session a beginning, a record, and a useful close. Ghost Discipline keeps those pieces in one private workspace.</p></div><div class="method-grid"><article class="method-card"><div class="method-number">01 / PREPARE</div><h3>Set the boundaries</h3><p>Write down balance, risk limits, setups, session windows, and cooling-off rules before the market gets loud.</p><div class="method-rule"></div></article><article class="method-card"><div class="method-number">02 / EXECUTE</div><h3>Record the decisions</h3><p>Log entries, exits, context, and state of mind close to the moment. Keep the facts beside the plan they came from.</p><div class="method-rule"></div></article><article class="method-card"><div class="method-number">03 / REVIEW</div><h3>Learn from the record</h3><p>Review performance and discipline together. Find which habits support your edge and which ones quietly tax it.</p><div class="method-rule"></div></article></div></div></section>
 
@@ -138,6 +164,32 @@
     const nav=document.querySelector('.nav');
     menuButton?.addEventListener('click',()=>{const open=nav.classList.toggle('nav-open');menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');});
     document.querySelectorAll('.nav-links a').forEach(link=>link.addEventListener('click',()=>{nav.classList.remove('nav-open');menuButton?.setAttribute('aria-expanded','false');}));
+    const marketSection=document.getElementById('markets');
+    const marketHost=document.getElementById('marketWidgetHost');
+    const marketLoading=document.getElementById('marketLoading');
+    let marketFeedStarted=false;
+    function loadMarketFeed(){
+      if(marketFeedStarted||!marketHost)return;
+      marketFeedStarted=true;
+      const ticker=document.createElement('tv-ticker-tape');
+      ticker.setAttribute('symbols','FX:EURUSD,FX:GBPUSD,FX:USDJPY,FX:AUDUSD,CMCMARKETS:GOLD,BITSTAMP:BTCUSD,BITSTAMP:ETHUSD');
+      ticker.setAttribute('item-size','compact');
+      ticker.setAttribute('hide-chart','');
+      ticker.setAttribute('theme','dark');
+      ticker.setAttribute('transparent','');
+      ticker.setAttribute('aria-label','Forex, gold and cryptocurrency market prices');
+      marketHost.insertBefore(ticker,marketLoading);
+      const widgetScript=document.createElement('script');
+      widgetScript.type='module';
+      widgetScript.src='https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js';
+      widgetScript.onload=()=>{if(marketLoading)marketLoading.hidden=true;};
+      widgetScript.onerror=()=>{if(marketLoading)marketLoading.innerHTML='The market feed could not load. <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">Open TradingView ↗</a>';};
+      document.head.appendChild(widgetScript);
+    }
+    if(marketSection&&'IntersectionObserver' in window){
+      const marketObserver=new IntersectionObserver((entries)=>{if(entries.some(entry=>entry.isIntersecting)){loadMarketFeed();marketObserver.disconnect();}},{rootMargin:'240px 0px'});
+      marketObserver.observe(marketSection);
+    }else loadMarketFeed();
     const tiltStage=document.querySelector('[data-tilt-stage]');
     const finePointer=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
     const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
