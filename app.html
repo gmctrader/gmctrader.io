@@ -9,7 +9,8 @@
 // no flash of the light "portal" look while the rest of the page loads.
 try{
   var savedTheme = localStorage.getItem('gd_theme') || 'slate';
-  if(['light','dark','slate'].indexOf(savedTheme) < 0){ savedTheme='slate'; localStorage.setItem('gd_theme',savedTheme); }
+  if(savedTheme==='dark') savedTheme='black';
+  if(['light','black','slate'].indexOf(savedTheme) < 0){ savedTheme='slate'; localStorage.setItem('gd_theme',savedTheme); }
   document.documentElement.setAttribute('data-theme', savedTheme);
 }catch(e){}
 </script>
@@ -18,7 +19,7 @@ try{
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
 <meta name="theme-color" content="#0a100d">
 <title>Ghost Discipline — GMC Traders</title>
-<script>(function(){try{var t=localStorage.getItem('gd_theme');if(['light','dark','slate'].indexOf(t)>=0)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('gd_theme');if(t==='dark')t='black';if(['light','black','slate'].indexOf(t)>=0)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <script>
 /* Graceful fallback if ghost-discipline-logo-v2.png is missing/slow: swap the broken-image
    icon for a styled monogram badge instead of leaving a broken img box. */
@@ -2506,7 +2507,7 @@ setTimeout(function(){
   </button>
   <div class="theme-swatches" id="themeSwatches" role="group" aria-label="Background color themes">
     <button type="button" class="theme-swatch swatch-light" data-swatch="light" title="Light" aria-label="Light theme" onclick="event.stopPropagation();selectGdTheme('light')"></button>
-    <button type="button" class="theme-swatch swatch-dark" data-swatch="dark" title="Dark" aria-label="Dark theme" onclick="event.stopPropagation();selectGdTheme('dark')"></button>
+    <button type="button" class="theme-swatch swatch-black" data-swatch="black" title="Dark" aria-label="Dark theme" onclick="event.stopPropagation();selectGdTheme('black')"></button>
     <button type="button" class="theme-swatch swatch-slate" data-swatch="slate" title="Current color" aria-label="Current signature color theme" onclick="event.stopPropagation();selectGdTheme('slate')"></button>
   </div>
 </div>
@@ -13284,9 +13285,9 @@ if('serviceWorker' in navigator){
 /* ============ THEME (shared with scife.html via 'gd_theme') ============ */
 // Three appearance choices: light, dark, and the signature slate palette.
 // Keep the saved setting compatible with the theme key shared with SciFe.
-const GD_THEMES = ['light','dark','slate'];
+const GD_THEMES = ['light','black','slate'];
 const GD_THEME_COLOR = {
-  light:'#f5f6f2', dark:'#0a100d', black:'#050505', red:'#0a100d', blue:'#0a100d',
+  light:'#f5f6f2', dark:'#000000', black:'#000000', red:'#0a100d', blue:'#0a100d',
   purple:'#0a100d', gold:'#0a100d', slate:'#0a100d'
 };
 function applyGdTheme(t){
@@ -15481,6 +15482,7 @@ html[data-theme] .boot-bar span:first-child{display:block}
 @keyframes gdQuietProgress{0%{transform:translateX(-110%)}100%{transform:translateX(470%)}}
 html[data-theme] .boot-enter-btn{background:#d5dfd2;color:#172019;border:0;border-radius:10px;box-shadow:none;font:600 12px 'Instrument Sans',sans-serif;letter-spacing:.01em;text-transform:none}
 html[data-theme] .boot-enter-btn.show{animation:none}
+html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{background:#000}
 @media(prefers-reduced-motion:reduce){html[data-theme] .boot-splash-inner,html[data-theme] .boot-bar span{animation:none!important}}
 
 </style>
