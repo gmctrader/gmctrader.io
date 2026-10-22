@@ -15,7 +15,7 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v5';
+const CACHE_VERSION = 'gd-shell-v6';
 const APP_SHELL = [
   './index.html',
   './app.html',
@@ -23,8 +23,9 @@ const APP_SHELL = [
   './scife.html',
   './manifest.json',
   './scife-manifest.json',
-  './icon.png',
-  './logo.png'
+  './ghost-discipline-icon-v2.png',
+  './ghost-discipline-logo-v2.png',
+  './ghost-discipline-share-v2.png'
 ];
 
 self.addEventListener('install', (event) => {

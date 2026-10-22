@@ -9,9 +9,8 @@
   "background_color": "#03050a",
   "theme_color": "#03050a",
   "icons": [
-    { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+    { "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
@@ -19,35 +18,35 @@
       "short_name": "Journal",
       "description": "Jump straight to your trade journal",
       "url": "./app.html?view=journal",
-      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Order Book",
       "short_name": "Orders",
       "description": "Open the order book",
       "url": "./app.html?view=orders",
-      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Analytics",
       "short_name": "Analytics",
       "description": "Check your performance analytics",
       "url": "./app.html?view=analytics",
-      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Team",
       "short_name": "Team",
       "description": "Weekly Desk Review with your trading partners",
       "url": "./app.html?view=team",
-      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Voice Companion",
       "short_name": "SciFe",
       "description": "Talk through setups with SciFe",
       "url": "./scife.html",
-      "icons": [{ "src": "icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "ghost-discipline-icon-v2.png", "sizes": "512x512", "type": "image/png" }]
     }
   ]
 }
