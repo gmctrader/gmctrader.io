@@ -8,9 +8,8 @@
 // Set the real theme (from a prior visit) before first paint, so there's
 // no flash of the light "portal" look while the rest of the page loads.
 try{
-  var savedTheme = localStorage.getItem('gd_theme') || 'slate';
-  if(savedTheme==='dark') savedTheme='black';
-  if(['light','black','slate'].indexOf(savedTheme) < 0){ savedTheme='slate'; localStorage.setItem('gd_theme',savedTheme); }
+  var savedTheme = 'slate';
+  localStorage.setItem('gd_theme', savedTheme);
   document.documentElement.setAttribute('data-theme', savedTheme);
 }catch(e){}
 </script>
@@ -19,7 +18,7 @@ try{
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
 <meta name="theme-color" content="#0a100d">
 <title>Ghost Discipline — GMC Traders</title>
-<script>(function(){try{var t=localStorage.getItem('gd_theme');if(t==='dark')t='black';if(['light','black','slate'].indexOf(t)>=0)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>document.documentElement.setAttribute('data-theme','slate');</script>
 <script>
 /* Graceful fallback if ghost-discipline-logo-v2.png is missing/slow: swap the broken-image
    icon for a styled monogram badge instead of leaving a broken img box. */
@@ -2500,17 +2499,6 @@ setTimeout(function(){
   if(el && el.style.display !== 'none' && !window.__gdBootGateActive){ el.classList.add('boot-splash-hide'); setTimeout(function(){ el.style.display='none'; }, 650); }
 }, 8000);
 </script>
-<div class="theme-toggle-fab" id="themeToggleFab" title="Choose your background theme" role="group" aria-label="Choose color theme">
-  <button type="button" class="ico-wrap" onclick="toggleGdTheme()" aria-label="Choose color theme" aria-controls="themeSwatches" aria-expanded="false">
-    <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>
-    <svg class="ico-moon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.4 14.7A8.4 8.4 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
-  </button>
-  <div class="theme-swatches" id="themeSwatches" role="group" aria-label="Background color themes">
-    <button type="button" class="theme-swatch swatch-light" data-swatch="light" title="Light" aria-label="Light theme" onclick="event.stopPropagation();selectGdTheme('light')"></button>
-    <button type="button" class="theme-swatch swatch-black" data-swatch="black" title="Dark" aria-label="Dark theme" onclick="event.stopPropagation();selectGdTheme('black')"></button>
-    <button type="button" class="theme-swatch swatch-slate" data-swatch="slate" title="Current color" aria-label="Current signature color theme" onclick="event.stopPropagation();selectGdTheme('slate')"></button>
-  </div>
-</div>
 <div class="bg-video-layer">
 </div>
 <div class="bg-video-tint"></div>
@@ -13282,59 +13270,17 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 
-/* ============ THEME (shared with scife.html via 'gd_theme') ============ */
-// Three appearance choices: light, dark, and the signature slate palette.
-// Keep the saved setting compatible with the theme key shared with SciFe.
-const GD_THEMES = ['light','black','slate'];
-const GD_THEME_COLOR = {
-  light:'#f5f6f2', dark:'#000000', black:'#000000', red:'#0a100d', blue:'#0a100d',
-  purple:'#0a100d', gold:'#0a100d', slate:'#0a100d'
-};
-function applyGdTheme(t){
-  const theme = GD_THEMES.includes(t) ? t : 'slate';
-  document.documentElement.setAttribute('data-theme', theme);
+/* ============ FIXED BRAND PALETTE ============ */
+// Keep the signature palette consistent across the app and start page.
+const GD_THEMES = ['slate'];
+const GD_THEME_COLOR = { slate:'#0a100d' };
+function applyGdTheme(){
+  document.documentElement.setAttribute('data-theme', 'slate');
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', GD_THEME_COLOR[theme]);
-  try{ localStorage.setItem('gd_theme', theme); }catch(e){}
-  document.querySelectorAll('.theme-swatch').forEach(function(sw){
-    sw.classList.toggle('is-active', sw.getAttribute('data-swatch')===theme);
-  });
+  if(meta) meta.setAttribute('content', GD_THEME_COLOR.slate);
+  try{ localStorage.setItem('gd_theme', 'slate'); }catch(e){}
 }
-window.addEventListener('storage',function(event){
-  if(event.key==='gd_theme'&&GD_THEMES.includes(event.newValue)) applyGdTheme(event.newValue);
-});
-// Pressing the theme control opens the three available appearance choices.
-function toggleGdTheme(){
-  const fab = document.getElementById('themeToggleFab');
-  if(fab){
-    const open = fab.classList.toggle('is-open');
-    const trigger = fab.querySelector('.ico-wrap');
-    if(trigger) trigger.setAttribute('aria-expanded', String(open));
-  }
-}
-function selectGdTheme(t){
-  applyGdTheme(t);
-  const fab = document.getElementById('themeToggleFab');
-  if(fab){ fab.classList.remove('is-open'); const trigger=fab.querySelector('.ico-wrap'); if(trigger) trigger.setAttribute('aria-expanded','false'); }
-}
-document.addEventListener('click', function(e){
-  const fab = document.getElementById('themeToggleFab');
-  if(fab && fab.classList.contains('is-open') && !fab.contains(e.target)){ fab.classList.remove('is-open'); const trigger=fab.querySelector('.ico-wrap'); if(trigger) trigger.setAttribute('aria-expanded','false'); }
-});
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape'){
-    const fab = document.getElementById('themeToggleFab');
-    if(fab){ fab.classList.remove('is-open'); const trigger=fab.querySelector('.ico-wrap'); if(trigger) trigger.setAttribute('aria-expanded','false'); }
-  }
-});
-(function(){
-  // Dark is the brand's default read (obsidian/gold/platinum) — light stays
-  // available from the swatch popout, but a first-time visitor should land
-  // on the premium instrument-panel look, not a bright admin-portal one.
-  let stored = 'slate';
-  try{ stored = localStorage.getItem('gd_theme') || 'slate'; }catch(e){}
-  applyGdTheme(stored);
-})();
+applyGdTheme();
 
 /* ============ BOOT ============ */
 (async function boot(){
@@ -13467,7 +13413,6 @@ document.addEventListener('keydown', function(e){
       cmds.push({ icon:'→', label:'Go to ' + label, hint:'Nav', run:()=>btn.click() });
     });
     cmds.push({ icon:'+', label:'Log a Trade', hint:'Action', run:()=>{ if(typeof openPretrade==='function') openPretrade(); } });
-    cmds.push({ icon:'☾', label:'Change background theme', hint:'Action', run:()=>{ const b=document.querySelector('.theme-toggle-fab'); if(b) b.click(); } });
     const scifeBtn = document.getElementById('scifeNavBtn');
     if(scifeBtn) cmds.push({ icon:'✦', label:'Open SciFe', hint:'Voice', run:()=>scifeBtn.click() });
     cmds.push({ icon:'⎋', label:'Sign out', hint:'Action', run:()=>{ if(typeof handleLogout==='function') handleLogout(); } });

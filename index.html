@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0a100d">
-  <script>(function(){try{var t=localStorage.getItem('gd_theme');if(t==='dark')t='black';if(['light','black','slate'].indexOf(t)>=0)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <script>document.documentElement.setAttribute('data-theme','slate');</script>
   <meta name="description" content="Ghost Discipline is a private trading journal and risk terminal for traders who want an honest record of their process.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Ghost Discipline">
@@ -39,35 +39,7 @@
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
     @media(max-width:720px){.nav-actions .btn-quiet{display:inline-flex;min-height:39px;padding:0 11px;font-size:10px}.nav-actions .btn-primary{min-height:39px;padding:0 12px;font-size:10px}}
     @media(max-width:390px){.nav-inner{gap:8px}.nav-actions{gap:5px}.nav-actions .btn-quiet{padding:0 8px;font-size:9px}.nav-actions .btn-primary{padding:0 9px;font-size:9px}.brand{gap:7px;font-size:10px}.brand img{width:25px;height:25px}.mobile-menu{width:38px;height:38px}}
-    .start-theme{display:flex;align-items:center;gap:7px;color:var(--quiet);font:9px var(--mono);letter-spacing:.04em}
-    .start-theme button{min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font:10px var(--sans);cursor:pointer}
-    .start-theme button[aria-pressed="true"]{border-color:var(--mint);color:var(--text);background:color-mix(in srgb,var(--mint) 10%,transparent)}
-    html[data-theme="black"]{color-scheme:dark;--bg:#000;--bg-soft:#070707;--panel:#080808;--panel-2:#101010;--line:rgba(255,255,255,.1);--line-hi:rgba(255,255,255,.17);--text:#f1f1ef;--muted:#a5a5a2;--quiet:#777875;--mint:#a6c99e;--mint-deep:#587b59;--gold:#d3bd8b}
-    html[data-theme="black"] body,html[data-theme="black"] .nav{background:#000;color:var(--text)}
-    html[data-theme="black"] body::before{background:none}
-    html[data-theme="black"] .nav{background:rgba(0,0,0,.9);border-color:var(--line)}
-    html[data-theme="black"] .hero::before{background:radial-gradient(ellipse at 64% 42%,rgba(255,255,255,.055),transparent 36%),radial-gradient(ellipse at 76% 66%,rgba(211,189,139,.035),transparent 40%)}
-    html[data-theme="black"] .visual,html[data-theme="black"] .visual-float,html[data-theme="black"] .method-card,html[data-theme="black"] .feature,html[data-theme="black"] .plan{background:#080808;border-color:var(--line)}
-    html[data-theme="black"] .visual::before,html[data-theme="black"] .method,html[data-theme="black"] .market-section{background:linear-gradient(180deg,#000,#050505 50%,#000)}
-    html[data-theme="black"] .invite-cta{background:#080808;border-color:var(--line-hi)}
-    html[data-theme="black"] .plan.featured{background:#0d0d0d;border-color:rgba(166,201,158,.36)}
-    html[data-theme="black"] .nav-links{color:#c2c2bf}
-    html[data-theme="light"]{color-scheme:light;--bg:#f3f2ed;--bg-soft:#faf9f5;--panel:#fffefa;--panel-2:#f6f5ef;--line:rgba(28,39,31,.12);--line-hi:rgba(28,39,31,.2);--text:#202a22;--muted:#5e6b61;--quiet:#7b877e;--mint:#537a59;--mint-deep:#3e6645;--gold:#927342}
-    html[data-theme="light"] body{background:#f3f2ed;color:#202a22}
-    html[data-theme="light"] body::before{background:none}
-    html[data-theme="light"] .nav{background:rgba(250,249,245,.94);border-color:var(--line)}
-    html[data-theme="light"] .nav-links,html[data-theme="light"] .trust-item,html[data-theme="light"] .plan li,html[data-theme="light"] .footer a{color:#455147}
-    html[data-theme="light"] .visual,html[data-theme="light"] .visual-float,html[data-theme="light"] .method-card,html[data-theme="light"] .feature,html[data-theme="light"] .plan,html[data-theme="light"] .invite-cta{background:#fffefa;border-color:var(--line);color:#202a22}
-    html[data-theme="light"] .visual::before{background:radial-gradient(ellipse 70% 70% at 83% 0%,rgba(83,122,89,.07),transparent 74%)}
-    html[data-theme="light"] .method,html[data-theme="light"] .market-section{background:#eeede7}
-    html[data-theme="light"] .visual-chart,html[data-theme="light"] .visual-stat{background:#f7f7f2;border-color:var(--line);color:#202a22}
-    html[data-theme="light"] .visual-top,html[data-theme="light"] .visual-heading,html[data-theme="light"] .visual-foot,html[data-theme="light"] .chart-title,html[data-theme="light"] .visual-stat strong{color:#202a22}
-    html[data-theme="light"] .btn-quiet{background:rgba(255,255,255,.55);color:#202a22}
-    html[data-theme="light"] .plan.featured{background:#f2f5ef;border-color:rgba(83,122,89,.38)}
-    html[data-theme="light"] .market-embed{background:#fffefa;color-scheme:light}
-    html[data-theme="light"] .market-status-pill{color:#455147}
-    html[data-theme="light"] .start-theme button[aria-pressed="true"]{color:#202a22}
-    @media(max-width:720px){.start-theme{flex-wrap:wrap}.start-theme button{min-height:28px;padding:0 8px}}
+
   </style>
   <style>
     /* A quiet, cinematic arrival: ambient light, a fine field grid, and a chart line that draws once. */
@@ -164,7 +136,7 @@
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 20 6v5c0 4.8-3.1 8.1-8 10-4.9-1.9-8-5.2-8-10V6z"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><h3>Prop firm compliance</h3><p>Track funded account limits and progress against the rules that matter to your evaluation.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0M14 16a4.5 4.5 0 0 1 7.5 3.5"/></svg></span><h3>Team desk review</h3><p>Elite members can link trading partners and review weekly summaries together.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M17 7c0-2-2-3-5-3S7 5 7 7s2 3 5 3 5 1 5 3-2 4-5 4-5-2-5-4"/></svg></span><h3>Risk-first workflow</h3><p>Bring your plan and live risk context into view before placing the next trade.</p></article>
-      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg></span><h3>Personal preferences</h3><p>Choose a light, dark, or signature color theme for a comfortable workspace.</p></article>
+      <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg></span><h3>Personal preferences</h3><p>Keep your workspace focused with a consistent, distraction-free layout built around your trading routine.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h3M8 17h8"/></svg></span><h3>Daily Trade Plan</h3><p>Save a session thesis, levels to watch, invalidation, risk cap, and a short readiness checklist.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v13H8l-4 4z"/><path d="M8 9h8M8 13h5"/></svg></span><h3>Review Room</h3><p>Review closed trades one at a time and keep your next adjustment beside the original journal entry.</p></article>
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/><circle cx="12" cy="12" r="4"/></svg></span><h3>SciFe Scan POV</h3><p>See an independent chart read and review suggested strategy-note refinements before saving.</p></article>
@@ -188,22 +160,11 @@
     <section class="wrap" style="padding-bottom:94px"><div class="invite-cta"><div><div class="eyebrow">A private workspace for your process</div><h2>Make the next session count.</h2><p>Create your free account, or sign in to continue.</p></div><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1">Create your account <span aria-hidden="true">→</span></a></div></section>
   </main>
 
-  <footer class="footer"><div class="wrap"><div class="footer-main"><a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a><div class="start-theme" role="group" aria-label="Choose appearance">Appearance <button type="button" data-theme-choice="light" aria-pressed="false">Light</button><button type="button" data-theme-choice="black" aria-pressed="false">Dark</button><button type="button" data-theme-choice="slate" aria-pressed="false">Current color</button></div><div class="footer-links"><a href="app.html?signin=1">Member sign in</a><a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Contact the team</a></div></div><p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past performance and process discipline do not guarantee future results.</p></div></footer>
+  <footer class="footer"><div class="wrap"><div class="footer-main"><a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a><div class="footer-links"><a href="app.html?signin=1">Member sign in</a><a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Contact the team</a></div></div><p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past performance and process discipline do not guarantee future results.</p></div></footer>
   <script>
-    const startThemes=['light','black','slate'];
-    function applyStartTheme(theme){
-      if(theme==='dark')theme='black';
-      if(!startThemes.includes(theme))return;
-      document.documentElement.setAttribute('data-theme',theme);
-      const themeColor=document.querySelector('meta[name="theme-color"]');
-      if(themeColor)themeColor.setAttribute('content',theme==='black'?'#000000':theme==='light'?'#f3f2ed':'#0a100d');
-      try{localStorage.setItem('gd_theme',theme);}catch(error){}
-      document.querySelectorAll('[data-theme-choice]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.themeChoice===theme)));
-    }
-    document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>applyStartTheme(button.dataset.themeChoice)));
-    window.addEventListener('storage',event=>{if(event.key==='gd_theme')applyStartTheme(event.newValue);});
-    window.addEventListener('pageshow',()=>{try{applyStartTheme(localStorage.getItem('gd_theme')||'slate');}catch(error){}});
-    applyStartTheme(document.documentElement.getAttribute('data-theme')||'slate');
+    document.documentElement.setAttribute('data-theme','slate');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#0a100d');
+    try{localStorage.setItem('gd_theme','slate');}catch(error){}
     const menuButton=document.getElementById('menuToggle');
     const nav=document.querySelector('.nav');
     menuButton?.addEventListener('click',()=>{const open=nav.classList.toggle('nav-open');menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');});
