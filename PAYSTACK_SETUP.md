@@ -3,7 +3,7 @@
 ## What's included
 
 - New users can create free accounts from the terminal sign-in screen.
-- Paid prices are in USD: Pro $29/month, Elite $69/month, Premium $119/month.
+- Paid prices are in ZAR: Pro R499, Elite R1,199, Premium R1,999 per 30 days. Payments are one-time; users renew manually.
 - The admin panel can grant a selected account a paid tier with **Complimentary · no payment**. That grant has no expiry and does not auto-renew.
 - The `paystack-checkout` Supabase Edge Function initializes checkout on the server, validates the signed-in account and package, verifies successful Paystack transactions, and applies a 30-day entitlement to that account.
 
@@ -11,7 +11,7 @@
 
 1. Deploy the updated static files to Firebase Hosting.
 2. Deploy `supabase/functions/paystack-checkout` to the Supabase project already used by the app (`euvfoyxntkqxoydgpqjq`).
-3. In Supabase project settings, add the Edge Function secret `PAYSTACK_SECRET_KEY` with the **test secret key** from Paystack. Add `PAYSTACK_CURRENCY` with `USD` if the account is enabled to accept USD; otherwise set the merchant's enabled transaction currency and update the displayed/charged currency consistently before accepting payments.
+3. In Supabase project settings, set the Edge Function secret `PAYSTACK_SECRET_KEY` with the test or live secret key for the selected Paystack mode. Set `PAYSTACK_CURRENCY` to `ZAR`. The function defaults to ZAR, but an existing USD secret overrides that default and must be changed or removed.
 4. In Supabase Auth settings, allow public email/password sign-ups and set the site's redirect URL to the deployed `app.html` URL. Decide whether email confirmation should be required.
 5. Test a new free account, the complimentary admin grant, and each plan using Paystack test credentials before sharing checkout with users.
 
@@ -27,4 +27,4 @@ Each successful checkout currently grants 30 days from the time the payment is v
 
 The database must already have `trader_data` columns `tier`, `billing_cycle`, and `paid_until`, as used by this app's existing subscription and admin features. The verification function expects a trader row to exist before checkout. Sign-up creates the row when the user first enters the app.
 
-Paystack transaction currency availability depends on the merchant account. Confirm USD is enabled for this Paystack integration before using the USD checkout setting.
+For South African Paystack accounts, use ZAR for transaction currency. International customers can pay by card, with their bank converting the ZAR amount. The app displays ZAR prices and the checkout verifies the same ZAR amount and currency.

@@ -5,7 +5,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
-const plans = { pro: 29, elite: 69, premium: 119 } as const;
+const plans = { pro: 499, elite: 1199, premium: 1999 } as const;
 type Tier = keyof typeof plans;
 
 function reply(body: unknown, status = 200) {
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         email: user.email,
         amount: String(plans[tier] * 100),
-        currency: Deno.env.get('PAYSTACK_CURRENCY') || 'USD',
+        currency: Deno.env.get('PAYSTACK_CURRENCY') || 'ZAR',
         reference,
         callback_url: `${origin}/app.html?signin=1&payment=success`,
         metadata: { user_id: user.id, tier, product: 'Ghost Discipline' },
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     const payment = result?.data;
     const tier = payment?.metadata?.tier as Tier;
     const expectedAmount = plans[tier] * 100;
-    const expectedCurrency = Deno.env.get('PAYSTACK_CURRENCY') || 'USD';
+    const expectedCurrency = Deno.env.get('PAYSTACK_CURRENCY') || 'ZAR';
     if (!response.ok || !result?.status || payment?.status !== 'success') {
       return reply({ success: false, message: 'Payment is not confirmed yet.' });
     }

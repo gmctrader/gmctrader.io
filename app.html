@@ -38,9 +38,9 @@ function gdLogoFallback(img){
   img.insertAdjacentElement('afterend', badge);
 }
 </script>
-<link rel="icon" type="image/png" href="ghost-discipline-icon-v2.png">
-<link rel="shortcut icon" type="image/png" href="ghost-discipline-icon-v2.png">
-<link rel="apple-touch-icon" href="ghost-discipline-icon-v2.png">
+<link rel="icon" type="image/png" href="ghost-discipline-icon-v3.png">
+<link rel="shortcut icon" type="image/png" href="ghost-discipline-icon-v3.png">
+<link rel="apple-touch-icon" href="ghost-discipline-icon-v3.png">
 <link rel="manifest" href="manifest.json">
 <meta property="og:title" content="Ghost Discipline — GMC Traders">
 <meta property="og:description" content="A private terminal for traders who keep their word.">
@@ -4279,11 +4279,11 @@ setTimeout(function(){
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
       <div class="package-grid">
         <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>A useful private workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
-        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">$29 <small>/ month</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro</button></article>
-        <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">$69 <small>/ month</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
-        <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">$119 <small>/ month</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
+        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">R499 <small>/ 30 days</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro</button></article>
+        <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">R1,199 <small>/ 30 days</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
+        <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">R1,999 <small>/ 30 days</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
       </div>
-      <p class="package-footnote">Monthly pricing in USD. Online checkout will be enabled after Paystack live approval.</p>
+<p class="package-footnote">Prices are in ZAR. Each successful payment gives 30 days of access; renewal is manual.</p>
     </div>
 
     <!-- ABOUT & RESET -->
@@ -5983,7 +5983,7 @@ function showTierLockedFeatureTease(view){
   const premiumOnly = PREMIUM_LOCKED_VIEWS.includes(view);
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
   const requiredTier = premiumOnly ? 'premium' : (eliteOnly ? 'elite' : 'pro');
-  const tierPrice = { pro:29, elite:69, premium:119 }[requiredTier];
+  const tierPrice = { pro:499, elite:1199, premium:1999 }[requiredTier];
   document.getElementById('demoLockedFeatureTitle').textContent = premiumOnly ? `${label} is a Premium feature` : (eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`);
   document.getElementById('demoLockedFeatureCopy').textContent = premiumOnly
     ? `${label} is included in Premium. Premium also includes Elite and Pro features, plus the advanced SciFe model.`
@@ -5992,7 +5992,7 @@ function showTierLockedFeatureTease(view){
       : `${label} is included in Pro, Elite and Premium, along with the Free journal and risk tools.`;
   const link = document.getElementById('tierUpgradeAction');
   if(link){
-    link.textContent = `Continue to ${TIER_LABELS[requiredTier]} checkout · $${tierPrice}/month`;
+    link.textContent = `Continue to ${TIER_LABELS[requiredTier]} checkout · R${tierPrice} / 30 days`;
     link.href = '#';
     link.removeAttribute('target');
     link.removeAttribute('rel');
