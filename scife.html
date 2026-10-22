@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="SciFe">
-<meta name="theme-color" content="#05070a">
+<meta name="theme-color" content="#0a100d">
 <title>SciFe — Ghost Discipline</title>
 <script>(function(){try{var q=new URLSearchParams(location.search);if(q.get('quick')==='1')document.documentElement.classList.add('quick-mode');else if(q.get('full')!=='1')location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
 <script>(function(){
@@ -1522,7 +1522,7 @@ setTimeout(function(){
     <a class="back" href="app.html?signin=1" aria-label="Back to Ghost Discipline" onclick="if(window.parent!==window){event.preventDefault();window.parent.postMessage({type:'gd-close-quick-scife'},'*');}">← Ghost Discipline</a>
     <div class="title serif">SciFe</div>
     <div class="topbar-icons">
-      <div class="icon-btn" role="button" tabindex="0" onclick="openSignalPage()" onkeydown="if(event.key==='Enter')openSignalPage()" title="Analyze a setup" aria-label="Open Signal analysis">🎯</div>
+      <div class="icon-btn" role="button" tabindex="0" onclick="openSignalPage()" onkeydown="if(event.key==='Enter')openSignalPage()" title="Analyze a setup" aria-label="Open Signal analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 4.4 4.4M10.8 7.5v6.6M7.5 10.8h6.6"/></svg></div>
       <div class="icon-btn" role="button" tabindex="0" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()" title="Settings" aria-label="Open settings">⚙</div>
     </div>
   </div>
@@ -1548,7 +1548,7 @@ setTimeout(function(){
       <div class="wave-ring" id="waveRing"></div>
       <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
       <div class="usd-bias-chip" id="usdBiasChip" onclick="speakUsdBias()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')speakUsdBias()" title="Tap to hear the auto USD bias" style="display:none;"></div>
-      <div class="stage-emoji" id="stageEmoji">🙂</div>
+      <div class="stage-emoji" id="stageEmoji"></div>
     </div>
   </div>
 
@@ -1558,9 +1558,9 @@ setTimeout(function(){
       <div class="quick-chip" onclick="quickAsk('journal')">◈ Journal overview</div>
       <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
       <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
-      <div class="quick-chip" onclick="quickAsk('news')">⚡ News/events coming up</div>
-      <div class="quick-chip" onclick="quickAsk('usdbias')">📊 USD bias right now</div>
-      <div class="quick-chip" onclick="openSignalPage()">🎯 Analyze a setup</div>
+      <div class="quick-chip" onclick="quickAsk('news')">News and events coming up</div>
+      <div class="quick-chip" onclick="quickAsk('usdbias')">USD bias now</div>
+      <div class="quick-chip" onclick="openSignalPage()">Analyze a setup</div>
     </div>
   </div>
 
@@ -1572,8 +1572,8 @@ setTimeout(function(){
   <div class="composer">
     <div class="chat-img-preview-row" id="chatImgPreviewRow" style="display:none;"></div>
     <div class="composer-row">
-      <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input" aria-label="Toggle voice input">🎤</button>
-      <button class="mic-btn" id="chatAttachBtn" onclick="onChatAttachClick()" title="Attach a chart/screenshot" aria-label="Attach image">📎</button>
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input" aria-label="Toggle voice input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg></button>
+      <button class="mic-btn" id="chatAttachBtn" onclick="onChatAttachClick()" title="Attach a chart or screenshot" aria-label="Attach image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m8.5 12.5 6.6-6.6a3.5 3.5 0 0 1 5 5l-9.2 9.2a5 5 0 0 1-7.1-7.1l9.1-9.1"/></svg></button>
       <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="onChatImageFileChange(event)">
       <input id="textInput" type="text" placeholder="Talk to SciFe…" autocomplete="off" aria-label="Message SciFe"
         oninput="document.getElementById('sendBtn').disabled = !this.value.trim() && chatPendingImages.length===0;"
@@ -1661,7 +1661,7 @@ setTimeout(function(){
     </div>
   </div>
 
-  <div class="sig-step"><span class="num">2</span><span class="lbl">Give it eyes</span></div>
+  <div class="sig-step"><span class="num">2</span><span class="lbl">Chart input</span></div>
   <div class="sig-card">
     <div class="field">
       <label>Chart screenshot <span style="font-weight:400;color:var(--slate);text-transform:none;letter-spacing:0;">(optional)</span></label>
@@ -1672,11 +1672,11 @@ setTimeout(function(){
         ondragover="event.preventDefault();this.classList.add('drag-over');"
         ondragleave="this.classList.remove('drag-over');"
         ondrop="event.preventDefault();this.classList.remove('drag-over');if(event.dataTransfer.files&&event.dataTransfer.files[0]){document.getElementById('sig_chartInput').files=event.dataTransfer.files;onChartFileChange({target:document.getElementById('sig_chartInput')});}">
-        <div class="icon">🔍</div>
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></div>
         <div>Upload or drop chart image</div>
         <div class="sub">Scanned by your selected AI model</div>
       </div>
-      <div class="hint" id="sig_chartHint">Needs a model marked 🔍 Scanner in settings. Use a clean chart with no drawn indicators, fib tools, or annotations — SciFe reads raw price action and works out its own swing points, Fibonacci zone, and full confluence logic itself, rather than trusting whatever's already drawn on the image.</div>
+      <div class="hint" id="sig_chartHint">Choose a model with image analysis enabled in settings. Use a clean chart without drawn indicators or annotations; SciFe reads raw price action and forms its own view.</div>
       <div id="sig_chartPreview"></div>
       <input type="file" id="sig_chartInput2" accept="image/*" style="display:none;" onchange="onChartFileChange2(event)">
       <div id="sig_chart2Controls" style="display:none;margin-top:10px;">
@@ -1712,7 +1712,7 @@ setTimeout(function(){
     </div>
   </div>
 
-  <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()">🎯 Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span></button>
+  <button class="btn" id="sig_analyzeBtn" onclick="analyzeSignal()"> Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span></button>
   <div id="sig_error" style="display:none;"></div>
 
   <div id="sig_result" style="display:none;margin-top:24px;"></div>
@@ -1973,7 +1973,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.groq.com/openai/v1/chat/completions',
     models: [
-      { value:'meta-llama/llama-4-maverick-17b-128e-instruct', label:'Llama 4 Maverick — free & reads images 🔍', vision:true },
+      { value:'meta-llama/llama-4-maverick-17b-128e-instruct', label:'Llama 4 Maverick — free & reads images ', vision:true },
       { value:'openai/gpt-oss-120b', label:'GPT-OSS 120B — free, strong reasoning', vision:false },
       { value:'openai/gpt-oss-20b', label:'GPT-OSS 20B — free, fastest', vision:false }
     ]
@@ -2023,7 +2023,7 @@ const PROVIDERS = {
       { value:'open-mistral-nemo', label:'Mistral Nemo — free-tier friendly', vision:false },
       { value:'mistral-small-latest', label:'Mistral Small — cheap', vision:false },
       { value:'mistral-large-latest', label:'Mistral Large — most capable', vision:false },
-      { value:'pixtral-large-latest', label:'Pixtral Large — reads images 🔍', vision:true }
+      { value:'pixtral-large-latest', label:'Pixtral Large — reads images ', vision:true }
     ]
   },
   openai: {
@@ -2067,7 +2067,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.together.xyz/v1/chat/completions',
     models: [
-      { value:'meta-llama/Llama-Vision-Free', label:'Llama Vision — free & reads images 🔍', vision:true },
+      { value:'meta-llama/Llama-Vision-Free', label:'Llama Vision — free & reads images ', vision:true },
       { value:'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', label:'Llama 3.1 8B Turbo — cheap text', vision:false }
     ]
   },
@@ -2097,8 +2097,8 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://models.github.ai/inference/chat/completions',
     models: [
-      { value:'openai/gpt-4o-mini', label:'GPT-4o mini — free & reads images 🔍', vision:true },
-      { value:'openai/gpt-4o', label:'GPT-4o — free & reads images 🔍', vision:true }
+      { value:'openai/gpt-4o-mini', label:'GPT-4o mini — free & reads images ', vision:true },
+      { value:'openai/gpt-4o', label:'GPT-4o — free & reads images ', vision:true }
     ]
   },
   cerebras: {
@@ -2127,7 +2127,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://router.huggingface.co/v1/chat/completions',
     models: [
-      { value:'Qwen/Qwen2.5-VL-3B-Instruct', label:'Qwen2.5-VL 3B — free & reads images 🔍', vision:true },
+      { value:'Qwen/Qwen2.5-VL-3B-Instruct', label:'Qwen2.5-VL 3B — free & reads images ', vision:true },
       { value:'meta-llama/Llama-3.1-8B-Instruct', label:'Llama 3.1 8B — free text', vision:false }
     ]
   },
@@ -2157,7 +2157,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.fireworks.ai/inference/v1/chat/completions',
     models: [
-      { value:'accounts/fireworks/models/llama-v3p2-11b-vision-instruct', label:'Llama Vision 11B — reads images 🔍', vision:true },
+      { value:'accounts/fireworks/models/llama-v3p2-11b-vision-instruct', label:'Llama Vision 11B — reads images ', vision:true },
       { value:'accounts/fireworks/models/llama-v3p3-70b-instruct', label:'Llama 3.3 70B — text only', vision:false }
     ]
   },
@@ -2172,7 +2172,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
     models: [
-      { value:'qwen-vl-plus', label:'Qwen-VL Plus — reads images 🔍', vision:true },
+      { value:'qwen-vl-plus', label:'Qwen-VL Plus — reads images ', vision:true },
       { value:'qwen-plus', label:'Qwen Plus — text only', vision:false }
     ]
   },
@@ -2202,7 +2202,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.llm7.io/v1/chat/completions',
     models: [
-      { value:'gpt-4o-mini', label:'GPT-4o mini (routed) — free & reads images 🔍', vision:true },
+      { value:'gpt-4o-mini', label:'GPT-4o mini (routed) — free & reads images ', vision:true },
       { value:'default', label:'Default (auto-routed) — free, text', vision:false }
     ]
   },
@@ -2247,7 +2247,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.featherless.ai/v1/chat/completions',
     models: [
-      { value:'google/gemma-3-27b-it', label:'Gemma 3 27B — reads images 🔍', vision:true },
+      { value:'google/gemma-3-27b-it', label:'Gemma 3 27B — reads images ', vision:true },
       { value:'meta-llama/Meta-Llama-3.1-8B-Instruct', label:'Llama 3.1 8B — free-trial text', vision:false }
     ]
   },
@@ -2277,7 +2277,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.deepinfra.com/v1/openai/chat/completions',
     models: [
-      { value:'meta-llama/Llama-3.2-90B-Vision-Instruct', label:'Llama 3.2 90B Vision — reads images 🔍', vision:true },
+      { value:'meta-llama/Llama-3.2-90B-Vision-Instruct', label:'Llama 3.2 90B Vision — reads images ', vision:true },
       { value:'deepseek-ai/DeepSeek-V3', label:'DeepSeek V3 — cheap, capable text', vision:false }
     ]
   },
@@ -2292,7 +2292,7 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.hyperbolic.xyz/v1/chat/completions',
     models: [
-      { value:'Qwen/Qwen2-VL-72B-Instruct', label:'Qwen2-VL 72B — reads images 🔍', vision:true },
+      { value:'Qwen/Qwen2-VL-72B-Instruct', label:'Qwen2-VL 72B — reads images ', vision:true },
       { value:'deepseek-ai/DeepSeek-V3', label:'DeepSeek V3 — cheap, capable text', vision:false }
     ]
   },
@@ -2323,10 +2323,10 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://gen.pollinations.ai/v1/chat/completions',
     models: [
-      { value:'openai', label:'OpenAI (routed) — free & reads images 🔍', vision:true },
+      { value:'openai', label:'OpenAI (routed) — free & reads images ', vision:true },
       { value:'openai-large', label:'OpenAI Large (routed) — free, stronger', vision:true },
       { value:'openai-reasoning', label:'OpenAI Reasoning (routed) — free, deep thinking', vision:false },
-      { value:'gemini', label:'Gemini (routed) — free & reads images 🔍', vision:true },
+      { value:'gemini', label:'Gemini (routed) — free & reads images ', vision:true },
       { value:'mistral', label:'Mistral (routed) — free, text', vision:false },
       { value:'deepseek', label:'DeepSeek (routed) — free, text', vision:false },
       { value:'qwen-coder', label:'Qwen Coder (routed) — free, code-focused', vision:false },
@@ -2351,7 +2351,7 @@ const PROVIDERS = {
 };
 
 /* True if this provider has at least one model that can read images — drives
-   the 🔍 Scanner badge on provider cards. */
+   the image analysis badge on provider cards. */
 function providerHasVision(key){
   const cfg = PROVIDERS[key];
   return !!(cfg && cfg.models && cfg.models.some(m=>m.vision));
@@ -2411,7 +2411,7 @@ function buildProviderGrid(scope){
     return `<div class="provider-card${isActive?' active':''}" data-key="${key}" onclick="selectProvider('${scope}','${key}')">
       <div class="pc-top"><span class="pc-name">${cfg.label}</span><span class="pc-badge ${cfg.badgeClass}">${cfg.badge}${hasSavedKey?' ✓':''}</span></div>
       <div class="pc-cost">${cfg.cost}</div>
-      <div class="pc-scanner ${hasVision?'yes':'no'}">${hasVision?'🔍 Scanner support':'🔍 No scanner'}</div>
+      <div class="pc-scanner ${hasVision?'yes':'no'}">${hasVision?'Image analysis':'Text only'}</div>
       ${cfg.recommended ? '<div class="pc-recommended">★ Recommended</div>' : ''}
     </div>`;
   }).join('');
@@ -2451,8 +2451,8 @@ function onProviderChange(scope){
   if(keySaved) keySaved.style.display = savedKey ? 'inline' : 'none';
   if(modelSelect){
     modelSelect.innerHTML = cfg.models.map(m=>{
-      const alreadyMarked = m.label.includes('🔍');
-      const label = (m.vision && !alreadyMarked) ? m.label + ' 🔍' : m.label;
+      const alreadyMarked = m.label.includes('image analysis');
+      const label = (m.vision && !alreadyMarked) ? m.label + ' · image analysis' : m.label;
       return `<option value="${m.value}">${label}</option>`;
     }).join('');
     if(sel.value === scife.provider && scife.model) modelSelect.value = scife.model;
@@ -2492,8 +2492,8 @@ function updateScannerNote(scope){
   if(!note || !providerSel || !modelSel) return;
   const supported = modelSupportsVision(providerSel.value, modelSel.value);
   note.textContent = supported
-    ? '🔍 Scanner supported — this model can read an uploaded chart image.'
-    : '🔍 Scanner not supported — this model is text-only. Pick a model marked 🔍 above to upload chart images.';
+    ? 'Image analysis is available for this model.'
+    : 'This model accepts text only. Choose a model with image analysis to upload a chart.';
   note.style.color = supported ? 'var(--bronze-bright)' : 'var(--slate-dim)';
 }
 
@@ -2802,8 +2802,8 @@ function renderAdminSection(){
    so whatever the trader picks in either app carries straight over. */
 const GD_THEMES = ['light','dark','black','red','blue','purple','gold','slate'];
 const GD_THEME_COLOR = {
-  light:'#ffffff', dark:'#03050a', black:'#000000', red:'#0a0304', blue:'#03060d',
-  purple:'#08040d', gold:'#0a0704', slate:'#05070a'
+  light:'#f5f6f2', dark:'#0a100d', black:'#050505', red:'#0a100d', blue:'#0a100d',
+  purple:'#0a100d', gold:'#0a100d', slate:'#0a100d'
 };
 function applyGdTheme(t){
   const theme = GD_THEMES.includes(t) ? t : 'slate';
@@ -4256,11 +4256,11 @@ function onChartFileChange(e){
             </div>
             <div class="sig-ov-rail" id="sigOvRail"></div>
           </div>
-          <button type="button" class="btn-ghost sig-chart-expand" onclick="openChartLightbox()">🔍 View full size</button>
+          <button type="button" class="btn-ghost sig-chart-expand" onclick="openChartLightbox()"> View full size</button>
           <button type="button" class="btn-ghost sig-chart-remove" onclick="removeChartImage()">Remove chart</button>
         </div>`;
       if(!currentModelSupportsVision()){
-        showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
+        showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images. Choose a model with image analysis in settings.");
       }
       const chart2Controls = document.getElementById('sig_chart2Controls');
       if(chart2Controls) chart2Controls.style.display = 'block';
@@ -4443,7 +4443,7 @@ async function analyzeSignal(){
   const desc = document.getElementById('sig_desc').value.trim();
   if(!desc && !sigChartImage){ showToast("Add a chart image or describe what you're seeing"); return; }
   if(sigChartImage && !currentModelSupportsVision()){
-    showSigError(`${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Pick a model marked 🔍 Scanner in settings (${visionCapableSummary()}), or remove the chart and describe the setup in text instead.`, false);
+    showSigError(`${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Choose a model with image analysis in settings (${visionCapableSummary()}), or describe the setup in text instead.`, false);
     return;
   }
   // CONSISTENCY GUARD: if this is the exact same chart image (by content
@@ -4496,7 +4496,7 @@ async function analyzeSignal(){
   }
   updateScanBanner();
   const btn = document.getElementById('sig_analyzeBtn');
-  const btnDefaultHTML = '🎯 Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span>';
+  const btnDefaultHTML = ' Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span>';
   btn.disabled = true; btn.innerHTML = 'Analyzing…<span class="sig-cta-sub">Reading chart(s) and checklist</span>'; btn.classList.add('btn-analyzing');
   document.getElementById('sig_error').style.display = 'none';
   document.getElementById('sig_orderPlaced').style.display = 'none';
@@ -4643,7 +4643,7 @@ function renderChartRequestBanner(cr){
   const tfLabel = cr.timeframe === 'higher' ? 'Higher Timeframe' : 'Lower Timeframe';
   banner.innerHTML = `
     <div class="sig-exec-banner wait" style="margin-bottom:14px;">
-      <span class="glyph">📎</span>
+      <span class="glyph"></span>
       <div>
         <strong>SciFe could read this setup better with a ${sigEsc(tfLabel)} chart.</strong>
         ${cr.reason ? ' '+sigEsc(cr.reason) : ''}
@@ -5122,7 +5122,7 @@ function sigOvLegendHTML(categoriesUsed){
 // flags the R:R lens the levels were judged against.
 function sigOvStyleNoteHTML(styleKey){
   const st = SIGNAL_TRADE_STYLES[styleKey] || SIGNAL_TRADE_STYLES.intraday;
-  return `<div class="sig-ov-style-note">📐 Drawn for a <strong style="color:var(--bronze-bright);font-style:normal;">${sigEsc(st.label)}</strong> read — targets judged against a ${sigEsc(st.tpRange)}R lens.</div>`;
+  return `<div class="sig-ov-style-note"> Drawn for a <strong style="color:var(--bronze-bright);font-style:normal;">${sigEsc(st.label)}</strong> read — targets judged against a ${sigEsc(st.tpRange)}R lens.</div>`;
 }
 async function toggleChartOverlay(btn){
   const thumb = document.getElementById('sigChartThumb');
@@ -5133,7 +5133,7 @@ async function toggleChartOverlay(btn){
   const existing = thumb.querySelector('.sig-analysis-overlay');
   if(existing){
     const on = thumb.classList.toggle('overlay-on');
-    btn.textContent = on ? '🙈 Hide chart overlay' : '📐 Draw analysis on chart';
+    btn.textContent = on ? ' Hide chart overlay' : ' Draw analysis on chart';
     if(on) requestAnimationFrame(()=>resolveOverlayRail(stage, frame, rail));
     return;
   }
@@ -5269,7 +5269,7 @@ async function toggleChartOverlay(btn){
       (thumb.querySelector('.sig-ov-style-note') || stage).after(note);
     }
     thumb.classList.add('overlay-on');
-    btn.textContent = '🙈 Hide chart overlay';
+    btn.textContent = ' Hide chart overlay';
     requestAnimationFrame(()=>resolveOverlayRail(stage, frame, rail));
   }catch(e){
     showToast("Couldn't build the chart overlay");
@@ -5351,7 +5351,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
   const execInfo = biasClass!=='no_trade' ? computeSessionExecutability() : null;
   const execBanner = execInfo
     ? (execInfo.inSession
-        ? `<div class="sig-exec-banner live"><span class="glyph">✅</span><div><strong>Executable right now</strong> — you're inside your ${sigEsc(execInfo.activeLabel)} session.</div></div>`
+        ? `<div class="sig-exec-banner live"><span class="glyph">✓</span><div><strong>Executable right now</strong> — you're inside your ${sigEsc(execInfo.activeLabel)} session.</div></div>`
         : `<div class="sig-exec-banner wait"><span class="glyph">⏸</span><div><strong>Not in one of your selected sessions right now.</strong>${execInfo.nextLabel ? ' Next window: '+sigEsc(execInfo.nextLabel)+' opens in '+formatHoursMins(execInfo.hoursToNext)+'.' : ''} The setup can still be placed as a pending order for when your session opens.</div></div>`)
     : '';
   lastSignal = { result:r, strategy, styleKey, pair: pair || '' };
@@ -5403,7 +5403,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
         <select id="sig_orderAccount" onchange="renderSignalRiskCalc()"></select>
       </div>` : ''}
       <div class="sig-action-row">
-        ${biasClass!=='no_trade' ? `<button type="button" class="btn" onclick="placeSignalOnOrderBook(this)">🎫 Place on Order Book</button>` : ''}
+        ${biasClass!=='no_trade' ? `<button type="button" class="btn" onclick="placeSignalOnOrderBook(this)"> Place on Order Book</button>` : ''}
         <button type="button" class="btn-ghost sig-copy-btn" title="Copy summary" aria-label="Copy summary" onclick="copySignalSummary(this)">⧉</button>
       </div>
     </div>
@@ -5438,7 +5438,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
       toggleBtn.className = 'btn-ghost sig-overlay-toggle';
-      toggleBtn.textContent = '📐 Draw analysis on chart';
+      toggleBtn.textContent = ' Draw analysis on chart';
       toggleBtn.onclick = function(){ toggleChartOverlay(toggleBtn); };
       if(removeBtn) thumb.insertBefore(toggleBtn, removeBtn);
       else if(frame) frame.after(toggleBtn);
@@ -5705,7 +5705,7 @@ async function placeSignalOnOrderBook(btn){
     logAction('placed_pending_order', { pair: pair || null, direction: biasClass, strategy: strategy.name, account }, true);
   }catch(e){
     showToast('Could not place order: ' + (e.message||e.code||'unknown error'));
-    if(btn){ btn.disabled = false; btn.textContent = '🎫 Place on Order Book'; }
+    if(btn){ btn.disabled = false; btn.textContent = ' Place on Order Book'; }
   }
 }
 
@@ -5810,7 +5810,7 @@ let chatPendingImages = []; // [{mime, data}] — data is base64, no data-url pr
 
 function onChatAttachClick(){
   if(!currentModelSupportsVision()){
-    showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images — pick a model marked 🔍 Scanner in settings.");
+    showToast((PROVIDERS[scife.provider]?.label||scife.provider) + " / " + scife.model + " can't read images. Choose a model with image analysis in settings.");
     return;
   }
   if(chatPendingImages.length >= 3){ showToast('3 images is the max per message.'); return; }
@@ -6157,7 +6157,7 @@ async function maybeUpdateMemory(){
 }
 
 /* ============ STAGE (neural core render loop) ============ */
-const EMOJI_BY_EMOTION = { warm:'😄', soft:'😌', neutral:'🙂', focused:'🤔', laugh:'😂' };
+const EMOJI_BY_EMOTION = { warm:'', soft:'', neutral:'', focused:'', laugh:'' };
 /* Green core: the nodes/synapse lines use the brand teal-green, with a
    slightly deeper shade for the light theme so it still reads against a
    pale background. Mode still changes rotation speed, pulse amplitude and
@@ -6481,7 +6481,7 @@ function pulseSpeaking(){
 /* ============ EMOTION DETECTION (drives prosody + the stage glow/emoji) ============ */
 function detectEmotion(sentence){
   const s = sentence.toLowerCase();
-  if(/\b(haha+|lol+|lmao|hehe+)\b/.test(s) || /😂|🤣/.test(s)) return 'laugh';
+  if(/\b(haha+|lol+|lmao|hehe+)\b/.test(s)) return 'laugh';
   if(/!{1,3}(\s|$)|amazing|great job|love that|nice work|proud of you|crushing it/.test(s)) return 'warm';
   if(/\?$/.test(s.trim())) return 'focused';
   if(/sorry|tough|hard on yourself|i know that|it's okay|difficult|rough day|hang in there/.test(s)) return 'soft';
@@ -6639,7 +6639,7 @@ function populateVoiceSelect(){
   availableVoices = window.speechSynthesis.getVoices();
   if(!availableVoices.length) return;
   const ranked = rankVoices(availableVoices);
-  sel.innerHTML = ranked.map(v=>`<option value="${v.voiceURI}">${v.name}${isPremiumVoice(v)?' ✨':''}</option>`).join('');
+  sel.innerHTML = ranked.map(v=>`<option value="${v.voiceURI}">${v.name}${isPremiumVoice(v)?' · Premium':''}</option>`).join('');
   // Default selection (first run, no saved preference yet) lands on the
   // top-ranked voice — quality first, female-leaning as the tiebreaker.
   sel.value = scife.voiceURI && ranked.some(v=>v.voiceURI===scife.voiceURI) ? scife.voiceURI : (ranked[0]?.voiceURI || '');
@@ -6986,8 +6986,19 @@ html[data-theme="dark"] body{
 #bootLoader .center-orb{display:none}.boot-splash-inner{gap:14px;animation:bootInnerRise .4s ease both}
 #bootLoader .boot-emblem{width:68px;height:68px}.boot-emblem-ring,.boot-emblem-plate::after{display:none}
 #bootLoader .boot-emblem-plate{width:58px;height:58px;animation:none;border-radius:15px;box-shadow:0 10px 30px -16px #000;border-color:var(--steel)}
+#stageEmoji{display:none!important}
 #bootLoader .boot-word{font:500 28px/1.1 'Fraunces',Georgia,serif;letter-spacing:-.03em;color:var(--platinum);background:none;-webkit-text-fill-color:var(--platinum);animation:none;filter:none}
 #bootLoader .boot-sub{font-size:10px;color:var(--slate)}#bootLoader .boot-bar{width:142px;gap:3px}.boot-bar span{width:auto;flex:1;height:2px;animation-duration:2s}
+#bootLoader{isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,rgba(166,201,158,.11),transparent 38%),radial-gradient(ellipse at 50% 72%,rgba(211,189,139,.06),transparent 46%),var(--void)}
+#bootLoader::before,#bootLoader::after{content:'';position:absolute;z-index:0;pointer-events:none;border:1px solid rgba(184,205,169,.12);border-radius:50%;left:50%;top:46%;transform:translate(-50%,-50%);}
+#bootLoader::before{width:min(68vw,440px);aspect-ratio:1;box-shadow:0 0 80px -36px rgba(166,201,158,.35),inset 0 0 65px -46px rgba(211,189,139,.38);animation:scifeBootOrbit 18s linear infinite}
+#bootLoader::after{width:min(52vw,330px);aspect-ratio:1;border-color:rgba(211,189,139,.1);box-shadow:0 0 65px -32px rgba(211,189,139,.28);animation:scifeBootOrbit 24s linear infinite reverse}
+#bootLoader .boot-splash-inner{z-index:1;animation:scifeBootRise .8s cubic-bezier(.2,.8,.2,1) both}
+#bootLoader .boot-emblem-plate{box-shadow:0 16px 42px -14px rgba(166,201,158,.36),inset 0 1px rgba(255,255,255,.1);animation:scifePlateFloat 4s ease-in-out infinite}
+@keyframes scifeBootOrbit{to{rotate:360deg}}
+@keyframes scifeBootRise{from{opacity:0;transform:translateY(12px) scale(.96);filter:blur(4px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes scifePlateFloat{0%,100%{transform:translateY(0) rotateY(-4deg)}50%{transform:translateY(-4px) rotateY(4deg)}}
+@media(prefers-reduced-motion:reduce){#bootLoader::before,#bootLoader::after,#bootLoader .boot-splash-inner,#bootLoader .boot-emblem-plate{animation:none!important}}
 @media(max-width:760px){#app{display:none;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(280px,1fr) auto;gap:0;padding:0 16px calc(16px + env(safe-area-inset-bottom));min-height:100dvh}#app>.topbar{grid-column:1;grid-row:1}#chatQuotaBanner{grid-column:1;grid-row:2}#stage3dWrap{grid-column:1;grid-row:3;height:145px;margin:0 0 14px}#stage{min-height:145px;height:145px}.neural-core-wrap{width:40%;height:90%;max-width:140px}.stage-hud,.stage-readout,.stage-metrics{display:none}.quick-row-wrap{grid-column:1;grid-row:4;margin:0 0 12px}.quick-row{display:flex;overflow-x:auto;gap:7px}.quick-chip{flex:none;min-height:34px;border-radius:999px;white-space:nowrap;padding:7px 11px}.chat-wrap{grid-column:1;grid-row:5;min-height:280px;border-radius:15px}.chat{padding:16px 13px}.composer{grid-column:1;grid-row:6;padding-top:10px}}
 @media(max-width:440px){#app{padding-inline:12px}.stage-3d-wrap{height:116px}#stage{min-height:116px;height:116px}.neural-core-wrap{width:32%;height:95%}.chat-wrap{min-height:260px}.topbar .back{font-size:11px}.quick-chip{font-size:10px}}
 /* Matching premium controls with short, inexpensive interactions. */
@@ -6995,6 +7006,7 @@ html[data-theme]{--void:#050505;--void-2:#090909;--graphite:#111;--graphite-hi:#
 html[data-theme] body{background:#050505;color:var(--platinum);font-size:14px;line-height:1.62;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
 #app,#signalPage{color:var(--platinum)}
 .topbar,.chatQuotaBanner{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.icon-btn svg,.mic-btn svg,#signalPage .sig-upload-zone .icon svg{width:18px;height:18px;display:block}
 .topbar .title{font-weight:520;letter-spacing:-.025em}
 .btn,.btn-ghost,.icon-btn,.quick-chip,.settings-tab,.switch{touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:color .14s ease,background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease}
 .btn{min-height:42px;padding:10px 17px;border-radius:10px;font-size:12px;font-weight:600;box-shadow:none}

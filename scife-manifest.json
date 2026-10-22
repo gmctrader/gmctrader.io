@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#04070a",
-  "theme_color": "#04070a",
+  "background_color": "#0a100d",
+  "theme_color": "#0a100d",
   "icons": [
     { "src": "ghost-discipline-icon-v3.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "ghost-discipline-icon-v3.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }

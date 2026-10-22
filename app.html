@@ -21,9 +21,9 @@ try{
 }catch(e){}
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
-<meta name="theme-color" content="#05070a">
+<meta name="theme-color" content="#0a100d">
 <title>Ghost Discipline — GMC Traders</title>
 <script>(function(){try{var t=localStorage.getItem('gd_theme');if(t&&t!=='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <script>
@@ -1101,14 +1101,14 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 .elite-lock-banner .ic{font-size:38px;margin-bottom:10px;}
 #r_presetRow.demo-locked{opacity:0.55;position:relative;}
 #r_presetRow.demo-locked button{cursor:not-allowed;}
-#r_presetRow.demo-locked::after{content:'🔒 Presets unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
+#r_presetRow.demo-locked::after{content:'Presets unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
 #t_dateChartRow.demo-locked{opacity:0.55;position:relative;}
 #t_dateChartRow.demo-locked input{pointer-events:none;}
-#t_dateChartRow.demo-locked::after{content:'🔒 Custom date & calendar chart-link unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
+#t_dateChartRow.demo-locked::after{content:'Custom date and calendar chart links unlock with real access';font-size:11px;color:var(--slate-dim);width:100%;margin-top:2px;}
 #rulesConfluencePanel.demo-locked{position:relative;cursor:pointer;min-height:118px;}
 #rulesConfluencePanel.demo-locked>*{filter:blur(5px);opacity:0.65;pointer-events:none;user-select:none;}
 #rulesConfluencePanel.demo-locked::after{
-  content:'🔒 Setup Confluence unlocks with real access — tap to learn more';
+  content:'Setup Confluence unlocks with real access — select to learn more';
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
   padding:20px;font-size:12.5px;font-weight:500;color:var(--platinum);
   background:rgba(15,23,22,0.5);backdrop-filter:blur(2px);border-radius:inherit;
@@ -1126,12 +1126,12 @@ html.motion-reduced .boot-word, html.motion-reduced .boot-splash-inner{animation
 .field-locked{position:relative;opacity:0.5;filter:grayscale(0.4);}
 .field-locked input, .field-locked select, .field-locked textarea{cursor:pointer !important;caret-color:transparent;}
 .field-locked::after{
-  content:'🔒';position:absolute;top:0;right:0;font-size:12px;background:rgba(212,175,55,0.14);
+  content:'PRO';position:absolute;top:0;right:0;font:600 8px 'IBM Plex Mono',monospace;letter-spacing:.06em;background:rgba(212,175,55,0.14);
   border:1px solid rgba(212,175,55,0.35);border-radius:6px;padding:2px 6px;color:var(--gold-bright);
 }
 .card-locked{position:relative;opacity:0.5;filter:grayscale(0.4);cursor:pointer;}
 .card-locked::after{
-  content:'🔒 Real accounts only';position:absolute;top:14px;right:14px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  content:'Real accounts only';position:absolute;top:14px;right:14px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
   font-weight:600;letter-spacing:0.05em;background:rgba(212,175,55,0.14);border:1px solid rgba(212,175,55,0.35);
   border-radius:6px;padding:3px 8px;color:var(--gold-bright);
 }
@@ -2600,6 +2600,17 @@ setTimeout(function(){
         <button type="button" class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</button>
       </div>
       <button type="submit" class="btn-gold" id="authSubmitBtn"><span class="btn-spinner"></span><span class="btn-label" id="authSubmitLabel">Enter the terminal</span></button>
+      <div class="auth-social-divider" aria-hidden="true"><span>Or continue with</span></div>
+      <div class="auth-social-buttons">
+        <button type="button" class="auth-social-btn" onclick="handleOAuthSignIn('google',this)">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" transform="translate(0 4)"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.9c-.58 2.96-2.25 5.48-4.74 7.18l7.65 5.94c4.47-4.13 7.17-10.22 7.17-17.59Z"/><path fill="#FBBC05" d="M10.53 28.59a14.42 14.42 0 0 1 0-9.18l-7.98-6.19a23.94 23.94 0 0 0 0 21.56l7.98-6.19Z" transform="translate(0 4)"/><path fill="#34A853" d="M24 48c6.48 0 11.94-2.13 15.92-5.86l-7.65-5.94c-2.13 1.43-4.86 2.28-8.27 2.28-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" transform="translate(0 -2)"/></svg>
+          <span>Google</span>
+        </button>
+        <button type="button" class="auth-social-btn" onclick="handleOAuthSignIn('apple',this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.08c.02 2.28 2 3.04 2.02 3.05-.02.05-.32 1.1-1.05 2.18-.63.94-1.28 1.87-2.3 1.89-1 .02-1.33-.61-2.48-.61-1.15 0-1.52.59-2.46.63-.99.04-1.74-1.02-2.38-1.95-1.3-1.9-2.3-5.37-.96-7.72a3.7 3.7 0 0 1 3.1-1.9c.97-.02 1.89.66 2.48.66.58 0 1.68-.81 2.83-.69.48.02 1.83.19 2.7 1.48-.07.05-1.61.94-1.6 2.98ZM14.5 5.97c.52-.63.88-1.5.78-2.37-.75.03-1.66.5-2.2 1.13-.48.55-.9 1.43-.79 2.27.84.06 1.7-.42 2.21-1.03Z"/></svg>
+          <span>Apple</span>
+        </button>
+      </div>
       <div class="auth-foot" id="authFoot">New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your data stays private to your account.</div>
       <button type="button" class="btn-demo" id="startDemoBtn" onclick="openSneakPeek()">Sneak peek <span aria-hidden="true">↗</span></button>
       <div class="auth-demo-hint">Sample trading numbers · read-only preview</div>
@@ -2669,7 +2680,7 @@ setTimeout(function(){
 <!-- DEMO ALREADY USED (hard block) -->
 <div class="overlay" id="demoBlockedOverlay">
   <div class="modal" style="max-width:440px;text-align:center;">
-    <div class="demo-tease-icon">🜲</div>
+    <div class="demo-tease-icon"></div>
     <div class="demo-tease-title">You've already run the Proving Ground</div>
     <div class="demo-tease-copy">This email (or this device) has already used its 7-day trial. Discipline means the rule applies even when it's inconvenient — including to us. If you're serious about the terminal, this is where real access picks up.</div>
     <a class="btn-telegram" href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Message us on Telegram for full access</a>
@@ -2682,7 +2693,7 @@ setTimeout(function(){
 <!-- LOCKED FEATURE TEASE (shown when a demo trader taps a locked room) -->
 <div class="overlay" id="demoLockedFeatureOverlay">
   <div class="modal" style="max-width:420px;text-align:center;">
-    <div class="demo-tease-icon">🔒</div>
+    <div class="demo-tease-icon"></div>
     <div class="demo-tease-title" id="demoLockedFeatureTitle">This room is for real accounts</div>
     <div class="demo-tease-copy" id="demoLockedFeatureCopy">The Proving Ground tests discipline, not the full arsenal. This view unlocks the moment you're in for real.</div>
     <a class="btn-telegram" id="tierUpgradeAction" href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Unlock Full Access — Telegram</a>
@@ -2972,7 +2983,7 @@ setTimeout(function(){
     </nav>
     <div class="side-foot">
       <div class="demo-pill" id="demoPill" style="display:none;">
-        <span>👻 <b>Proving Ground</b> · <span id="demoDaysLeft"></span></span>
+        <span> <b>Proving Ground</b> · <span id="demoDaysLeft"></span></span>
         <button class="demo-exit" onclick="exitDemo()">Exit</button>
       </div>
       <div class="side-session">
@@ -3082,7 +3093,7 @@ setTimeout(function(){
   </nav>
 
   <main class="main" id="hud">
-    <div class="demo-top-banner" id="demoTopBanner" style="display:none;">👻 Trial — Proving Ground</div>
+    <div class="demo-top-banner" id="demoTopBanner" style="display:none;"> Trial — Proving Ground</div>
 
     <div class="journal-dateline" id="journalDateline" role="button" tabindex="0">
       <div class="jd-date"><span id="jdDate">—</span></div>
@@ -3164,7 +3175,7 @@ setTimeout(function(){
       </div>
 
       <div class="card card-ai tilt" id="aiCoachCard" style="margin-bottom:18px;">
-        <h2><span class="ai-orb"></span>AI <span class="accent">Coach</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('coach')" title="Ask Claude for a fresh read">✨ Ask AI</button></h2>
+        <h2><span class="ai-orb"></span>AI <span class="accent">Coach</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('coach')" title="Ask Claude for a fresh read">Ask AI</button></h2>
         <div class="ai-insight loading" id="aiCoachInsight">Reading your discipline data<span class="ai-cursor"></span></div>
         <div class="ai-source" id="aiCoachSource"></div>
       </div>
@@ -3246,7 +3257,7 @@ setTimeout(function(){
             </div>
             <button class="btn btn-sm btn-ghost" onclick="document.querySelector('.side-navbtn[data-view=journal]').click();">Full Journal →</button>
           </div>
-          <div class="trade-list" id="tradeLogOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph">📓</span>No trades logged yet. Close a trade to start your log.</div></div>
+          <div class="trade-list" id="tradeLogOverview" style="max-height:none;margin-top:14px;"><div class="empty-state"><span class="glyph"></span>No trades logged yet. Close a trade to start your log.</div></div>
           <div id="tradeLogOverviewMore" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--slate);cursor:pointer;font-weight:500;letter-spacing:0.01em;" onclick="document.querySelector('.side-navbtn[data-view=journal]').click();"></div>
         </div>
       </div>
@@ -3272,7 +3283,7 @@ setTimeout(function(){
         </div>
       </div>
       <div class="card card-ai tilt" style="margin-bottom:18px;">
-        <h2><span class="ai-orb"></span>AI <span class="accent">Market Pulse</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('brief')" title="Ask Claude for a fresh read">✨ Ask AI</button></h2>
+        <h2><span class="ai-orb"></span>AI <span class="accent">Market Pulse</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('brief')" title="Ask Claude for a fresh read">Ask AI</button></h2>
         <div class="ai-insight loading" id="aiBriefInsight">Synthesizing today's brief<span class="ai-cursor"></span></div>
         <div class="ai-source" id="aiBriefSource"></div>
       </div>
@@ -3353,7 +3364,7 @@ setTimeout(function(){
       </div>
 
       <div class="card card-ai tilt" style="margin-bottom:18px;">
-        <h2><span class="ai-orb"></span>AI <span class="accent">Insights</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('analytics')" title="Ask Claude for a fresh read">✨ Ask AI</button></h2>
+        <h2><span class="ai-orb"></span>AI <span class="accent">Insights</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('analytics')" title="Ask Claude for a fresh read">Ask AI</button></h2>
         <div class="ai-insight loading" id="aiAnalyticsInsight">Analyzing your edge<span class="ai-cursor"></span></div>
         <div class="ai-source" id="aiAnalyticsSource"></div>
       </div>
@@ -3537,7 +3548,7 @@ setTimeout(function(){
               <option value="rr_desc">Best R:R first</option>
             </select>
           </div>
-          <div id="tradeList"><div class="empty-state"><span class="glyph">📓</span>No trades logged yet.</div></div>
+          <div id="tradeList"><div class="empty-state"><span class="glyph"></span>No trades logged yet.</div></div>
         </div>
       </div>
     </div>
@@ -3663,9 +3674,9 @@ setTimeout(function(){
         <div class="card tilt">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <h2 style="margin-bottom:0;">Pending <span class="accent">Orders</span><span class="h2-badge" id="ordersCount"></span></h2>
-            <button class="btn btn-sm btn-ghost" onclick="openLotCalc()" title="Lot size calculator" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">🧮 <span class="lot-calc-btn-label">Lot Calc</span></button>
+            <button class="btn btn-sm btn-ghost" onclick="openLotCalc()" title="Lot size calculator" style="flex-shrink:0;display:flex;align-items:center;gap:6px;"> <span class="lot-calc-btn-label">Lot Calc</span></button>
           </div>
-          <div class="trade-list" id="ordersList" style="margin-top:14px;"><div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div></div>
+          <div class="trade-list" id="ordersList" style="margin-top:14px;"><div class="empty-state"><span class="glyph"></span>No pending orders. Place one to start tracking it.</div></div>
         </div>
       </div>
     </div>
@@ -3836,7 +3847,7 @@ setTimeout(function(){
 
       <div class="card tilt" style="margin-top:18px">
         <h2>Confluence <span class="accent">Score</span><span class="eyebrow">auto-built from your trade journal + check-ins</span></h2>
-        <div class="page-sub" style="margin-top:-6px;margin-bottom:12px;">Any logic concept pulled from a preset strategy is scored automatically the moment you log a trade using it — no separate check-in required. ⚡ marks items being fed live by your Trade Journal.</div>
+        <div class="page-sub" style="margin-top:-6px;margin-bottom:12px;">Any logic concept pulled from a preset strategy is scored automatically when you log a trade using it; no separate check-in is required. Live journal data is marked in the results.</div>
         <div id="snConfluenceList"></div>
       </div>
 
@@ -4115,7 +4126,7 @@ setTimeout(function(){
 
       <!-- Locked (non-Elite) state -->
       <div class="card tilt elite-lock-banner" id="teamEliteLock" style="display:none;">
-        <div class="ic">👥🔒</div>
+        <div class="ic"></div>
         <h2 style="justify-content:center;">Team is an <span class="accent">Elite</span> feature</h2>
         <p class="page-sub" style="max-width:440px;margin:6px auto 18px;">Invite trading partners by @handle, run synced weekly desk reviews, and see each other's real PnL &amp; setup logs side by side — auto-calculated, no spreadsheets.</p>
         <a class="btn btn-gold" id="teamUpgradeLink" href="#" target="_blank" rel="noopener">Request Elite →</a>
@@ -4165,13 +4176,13 @@ setTimeout(function(){
 
         <!-- Weekly Desk Review -->
         <div class="card tilt" id="teamReviewCard" style="display:none;">
-          <h2>Weekly Desk <span class="accent">Review</span><span class="eyebrow">auto-calculated · live-synced with your team</span></h2>
+          <h2>Weekly Desk <span class="accent">Review</span><span class="eyebrow">performance summary · synced with your team</span></h2>
           <div class="team-week-nav">
             <select id="team_selectTeam" onchange="onTeamSelectChange()" style="max-width:220px;"></select>
             <button class="btn btn-sm btn-ghost" onclick="shiftTeamWeek(-1)">← Prev week</button>
             <b id="teamWeekLabel">—</b>
             <button class="btn btn-sm btn-ghost" onclick="shiftTeamWeek(1)">Next week →</button>
-            <span class="hint" id="teamSyncHint" style="margin-left:auto;">🔄 syncing live</span>
+            <span class="hint" id="teamSyncHint" style="margin-left:auto;"> syncing live</span>
           </div>
 
           <div id="teamReviewBody">
@@ -4220,7 +4231,7 @@ setTimeout(function(){
 
       <div id="btSessionListWrap">
         <div class="card tilt" id="btEmptyState" style="display:none;">
-          <div class="empty-state"><span class="glyph">🧪</span>No backtest sessions yet. Start one to test a strategy against historical charts — trades logged here never touch your live streak, discipline score, or daily-loss gate.</div>
+          <div class="empty-state"><span class="glyph"></span>No backtest sessions yet. Start one to test a strategy against historical charts — trades logged here never touch your live streak, discipline score, or daily-loss gate.</div>
         </div>
         <div id="btSessionList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;"></div>
       </div>
@@ -4306,11 +4317,11 @@ setTimeout(function(){
       <div class="card tilt" style="margin-top:18px;">
         <h2>Request a <span class="accent">Review</span></h2>
         <p style="color:var(--slate);line-height:1.7;margin:0 0 14px;">
-          Reviews normally pop up on their own at the start of a new week or month. Don't want to wait? Pull up the last completed week or month whenever you want an honest look at how you traded.
+          Review a completed period across results, risk limits, and execution habits. Choose the previous week or month to open a concise performance summary.
         </p>
         <div class="btn-row" style="gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-ghost" onclick="requestManualReview('weekly')">Review Last Week</button>
-          <button class="btn btn-ghost" onclick="requestManualReview('monthly')">Review Last Month</button>
+          <button class="btn btn-ghost" onclick="requestManualReview('weekly')">Review previous week</button>
+          <button class="btn btn-ghost" onclick="requestManualReview('monthly')">Review previous month</button>
         </div>
       </div>
       <div class="card tilt" style="margin-top:18px;">
@@ -4375,12 +4386,12 @@ setTimeout(function(){
     <div id="pretradeMoodStep">
       <div style="color:var(--platinum);font-size:13px;font-weight:500;margin-bottom:10px;">How do you feel right now?</div>
       <div class="mood-grid" id="pretradeMoodChoices">
-        <div class="mood-chip" data-mood="calm" onclick="selectPretradeMood('calm')">😌 Calm</div>
-        <div class="mood-chip" data-mood="confident" onclick="selectPretradeMood('confident')">💪 Confident</div>
-        <div class="mood-chip" data-mood="fomo" onclick="selectPretradeMood('fomo')">😬 FOMO</div>
-        <div class="mood-chip" data-mood="revenge" onclick="selectPretradeMood('revenge')">😡 Revenge</div>
-        <div class="mood-chip" data-mood="bored" onclick="selectPretradeMood('bored')">🥱 Bored</div>
-        <div class="mood-chip" data-mood="anxious" onclick="selectPretradeMood('anxious')">😰 Anxious</div>
+        <div class="mood-chip" data-mood="calm" onclick="selectPretradeMood('calm')"> Calm</div>
+        <div class="mood-chip" data-mood="confident" onclick="selectPretradeMood('confident')"> Confident</div>
+        <div class="mood-chip" data-mood="fomo" onclick="selectPretradeMood('fomo')"> FOMO</div>
+        <div class="mood-chip" data-mood="revenge" onclick="selectPretradeMood('revenge')"> Revenge</div>
+        <div class="mood-chip" data-mood="bored" onclick="selectPretradeMood('bored')"> Bored</div>
+        <div class="mood-chip" data-mood="anxious" onclick="selectPretradeMood('anxious')"> Anxious</div>
       </div>
     </div>
     <div id="pretradeChecksStep" style="display:none;">
@@ -4402,7 +4413,7 @@ setTimeout(function(){
       </div>
       <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--slate);cursor:pointer;white-space:nowrap;flex-shrink:0;padding-top:2px;">
         <input type="checkbox" id="t_quickMode" onchange="toggleQuickLogMode()" style="width:16px;height:16px;flex-shrink:0;">
-        ⚡ Quick Log
+         Quick Log
       </label>
     </div>
     <div class="row2">
@@ -4439,12 +4450,12 @@ setTimeout(function(){
     <div class="field quicklog-hide">
       <label>Mindset while placing this trade</label>
       <div class="mood-grid" id="tradeMoodChoices">
-        <div class="mood-chip" data-mood="calm" onclick="selectMood('calm')">😌 Calm</div>
-        <div class="mood-chip" data-mood="confident" onclick="selectMood('confident')">💪 Confident</div>
-        <div class="mood-chip" data-mood="fomo" onclick="selectMood('fomo')">😬 FOMO</div>
-        <div class="mood-chip" data-mood="revenge" onclick="selectMood('revenge')">😡 Revenge</div>
-        <div class="mood-chip" data-mood="bored" onclick="selectMood('bored')">🥱 Bored</div>
-        <div class="mood-chip" data-mood="anxious" onclick="selectMood('anxious')">😰 Anxious</div>
+        <div class="mood-chip" data-mood="calm" onclick="selectMood('calm')"> Calm</div>
+        <div class="mood-chip" data-mood="confident" onclick="selectMood('confident')"> Confident</div>
+        <div class="mood-chip" data-mood="fomo" onclick="selectMood('fomo')"> FOMO</div>
+        <div class="mood-chip" data-mood="revenge" onclick="selectMood('revenge')"> Revenge</div>
+        <div class="mood-chip" data-mood="bored" onclick="selectMood('bored')"> Bored</div>
+        <div class="mood-chip" data-mood="anxious" onclick="selectMood('anxious')"> Anxious</div>
       </div>
     </div>
     <div class="field quicklog-hide"><label>Notes</label><textarea id="t_notes" placeholder="Setup, mindset, anything worth remembering."></textarea></div>
@@ -4698,7 +4709,7 @@ function ensureAtLeastOnePfAccount(){
 function accountTagHtml(accountId){
   if(!accountId || accountId==='personal') return '';
   const pf = getPropFirm(accountId);
-  return `<span class="tag-chip" style="color:var(--amber)">🏛️ ${escapeHtml(pf ? (pf.firmName||'Unnamed account') : 'Prop Firm (removed)')}</span>`;
+  return `<span class="tag-chip" style="color:var(--amber)"> ${escapeHtml(pf ? (pf.firmName||'Unnamed account') : 'Prop Firm (removed)')}</span>`;
 }
 let currentUser = null;
 let isDemoMode = false;
@@ -4749,7 +4760,7 @@ let pendingViolation = false;
 let closingOrderId = null;
 let selectedMood = null;
 let pendingScreenshotFile = null;
-const MOOD_LABELS = { calm:'😌 Calm', confident:'💪 Confident', fomo:'😬 FOMO', revenge:'😡 Revenge', bored:'🥱 Bored', anxious:'😰 Anxious' };
+const MOOD_LABELS = { calm:'Calm', confident:'Confident', fomo:'FOMO', revenge:'Revenge', bored:'Bored', anxious:'Anxious' };
 function selectMood(mood){
   selectedMood = selectedMood===mood ? null : mood;
   document.querySelectorAll('#tradeMoodChoices .mood-chip').forEach(c=>c.classList.toggle('selected', c.dataset.mood===selectedMood));
@@ -4774,11 +4785,11 @@ function accountScopeLabel(scope){
   if(scope==='prop') return 'Prop Accounts';
   if(scope==='personal' || !scope) return 'Personal';
   const pf = getPropFirm(scope);
-  return pf ? ('🏛️ '+(pf.firmName||'Unnamed account')) : 'Prop Firm (removed)';
+  return pf ? (' '+(pf.firmName||'Unnamed account')) : 'Prop Firm (removed)';
 }
 function renderAccountScopeOptions(){
   const opts = ['<option value="personal">Personal</option>','<option value="prop">Prop Accounts</option>']
-    .concat((state.propFirms||[]).filter(pf=>pf.firmName || pf.startingBalance).map(pf=>`<option value="${pf.id}">🏛️ ${escapeHtml(pf.firmName||'Unnamed account')}</option>`))
+    .concat((state.propFirms||[]).filter(pf=>pf.firmName || pf.startingBalance).map(pf=>`<option value="${pf.id}"> ${escapeHtml(pf.firmName||'Unnamed account')}</option>`))
     .concat(['<option value="all">All Accounts (combined)</option>']);
   ['globalAccountScope','globalAccountScope2','globalAccountScope3','globalAccountScope4','globalAccountScope5'].forEach(id=>{
     const el = document.getElementById(id);
@@ -5374,6 +5385,35 @@ async function handleAuthSubmit(){
   btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = prevLabel;
 }
 
+async function handleOAuthSignIn(provider, button){
+  const supportedProviders = ['google','apple'];
+  if(!supportedProviders.includes(provider)) return;
+  const buttons = Array.from(document.querySelectorAll('.auth-social-btn'));
+  buttons.forEach(item=>{item.disabled=true;item.classList.toggle('is-loading',item===button);});
+  const label = provider === 'apple' ? 'Apple' : 'Google';
+  try{
+    // OAuth creates a new account automatically when the provider identity is
+    // new, and signs in existing linked identities through the same flow.
+    saveAuthPersistenceChoice();
+    const redirect = new URL(window.location.href);
+    redirect.searchParams.set('signin','1');
+    redirect.searchParams.delete('signup');
+    redirect.hash = '';
+    const options = { redirectTo: redirect.toString() };
+    if(provider === 'google') options.queryParams = { prompt:'select_account' };
+    const { error } = await sb.auth.signInWithOAuth({ provider, options });
+    if(error) throw error;
+  }catch(error){
+    const message = String(error?.message || '');
+    if(/provider.*(disabled|not enabled|not found)|unsupported provider/i.test(message)){
+      showAuthMsg(`${label} sign-in is not enabled yet. The site owner needs to finish its provider setup in Supabase Auth.`, 'error');
+    }else{
+      showAuthMsg(message || `Could not continue with ${label}. Please try again.`, 'error');
+    }
+    buttons.forEach(item=>{item.disabled=false;item.classList.remove('is-loading');});
+  }
+}
+
 let authMode = 'signin';
 function setAuthMode(mode){
   authMode = mode === 'signup' ? 'signup' : 'signin';
@@ -5383,14 +5423,14 @@ function setAuthMode(mode){
   const tierLabel = requestedTier ? (TIER_LABELS[requestedTier] || requestedTier) : '';
   document.querySelector('#authScreen .auth-title').textContent = signup ? 'Create your account' : 'Sign in';
   document.querySelector('#authScreen .auth-sub').textContent = signup
-    ? (tierLabel ? `Create your free account for ${tierLabel}. We’ll email a confirmation link; check Spam/Junk if it’s missing.` : 'Create a free account to get started. We’ll email a confirmation link; check Spam/Junk if it’s missing.')
-    : 'Sign in to your account, or create a free account to get started.';
+    ? (tierLabel ? `Create your account for ${tierLabel}. Email signup sends a confirmation link; check Spam or Junk if it’s missing.` : 'Create a free account with email, Google, or Apple. Email signup sends a confirmation link; check Spam or Junk if it’s missing.')
+    : 'Sign in with your email, Google, or Apple. New here? Create a free account to get started.';
   document.getElementById('authSubmitLabel').textContent = signup ? 'Create free account' : 'Enter the terminal';
   document.getElementById('authPassword').autocomplete = signup ? 'new-password' : 'current-password';
   document.querySelector('.auth-options-row').style.display = signup ? 'none' : '';
   document.getElementById('authFoot').innerHTML = signup
     ? 'Already have an account? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Sign in</button>'
-    : 'New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your data stays private to your account.';
+    : 'New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your journal remains private to your account.';
   document.getElementById('authMsg').classList.remove('show');
 }
 function toggleAuthMode(){ setAuthMode(authMode === 'signin' ? 'signup' : 'signin'); }
@@ -5635,7 +5675,7 @@ function getDeviceFingerprint(){
       const ctx = c.getContext('2d');
       ctx.textBaseline = 'top';
       ctx.font = "14px 'IBM Plex Mono'";
-      ctx.fillText('gmc-fp-🜲-9f3', 2, 2);
+      ctx.fillText('gmc-fp-icon-9f3', 2, 2);
       parts.push(c.toDataURL());
     }catch(e){}
     try{
@@ -5805,7 +5845,7 @@ function applyDemoLocks(){
       if(!badge){
         badge = document.createElement('span');
         badge.className = 'lock-badge';
-        badge.textContent = '🔒 PRO';
+        badge.textContent = ' PRO';
         btn.appendChild(badge);
       }
     } else if(badge){
@@ -5821,7 +5861,7 @@ function applyDemoLocks(){
       if(!gaBadge){
         gaBadge = document.createElement('span');
         gaBadge.className = 'lock-badge';
-        gaBadge.textContent = '🔒 PRO';
+        gaBadge.textContent = ' PRO';
         getAppBtn.appendChild(gaBadge);
       }
     } else if(gaBadge){
@@ -5883,7 +5923,7 @@ function applyTierLocks(){
         badge.className = 'lock-badge';
         btn.appendChild(badge);
       }
-      badge.textContent = premiumLocked ? '🔒 PREMIUM' : (eliteLocked ? '🔒 ELITE' : '🔒 PRO');
+      badge.textContent = premiumLocked ? ' PREMIUM' : (eliteLocked ? ' ELITE' : ' PRO');
     } else if(badge){
       badge.remove();
     }
@@ -6175,7 +6215,7 @@ async function renderEdgeTgCard(){
   el.innerHTML = `<div class="card" style="margin-top:18px"><h2>Telegram <span class="accent">alerts</span></h2>
     <div class="hint" style="margin-bottom:12px">Get a message when a prop account reaches 70% or 100% of its daily-loss or drawdown limit, or hits its profit target. Checked every 5 minutes on our servers, even when the app is closed, and instantly while it's open.</div>
     <div class="btn-row" style="align-items:center;gap:12px;flex-wrap:wrap">${gdTgLinked
-      ? `<span class="hint" style="margin:0">✅ Telegram linked</span><button class="btn btn-primary" onclick="gdTelegramTest()">Send test alert</button><button class="btn btn-ghost" onclick="gdTelegramUnlink()">Disconnect</button>`
+      ? `<span class="hint" style="margin:0">Telegram linked</span><button class="btn btn-primary" onclick="gdTelegramTest()">Send test alert</button><button class="btn btn-ghost" onclick="gdTelegramUnlink()">Disconnect</button>`
       : `<button class="btn btn-primary" onclick="gdTelegramConnect()">Connect Telegram</button><button class="btn btn-ghost" onclick="renderEdgeTgCard()">I've tapped Start — refresh</button>`}</div></div>`;
 }
 async function gdTelegramConnect(){
@@ -7059,7 +7099,7 @@ function buildMiniEquitySparkline(trades){
 }
 
 function showPeriodReview(kind, label, data){
-  document.getElementById('periodReviewTitle').textContent = kind==='monthly' ? 'Monthly Review' : 'Last Week Review';
+  document.getElementById('periodReviewTitle').textContent = kind==='monthly' ? 'Monthly performance review' : 'Weekly performance review';
   document.getElementById('periodReviewSub').textContent = label;
   const netReturnDisplay = data.netReturnPct!=null
     ? `${data.netReturnPct>=0?'+':''}${data.netReturnPct.toFixed(2)}%`
@@ -7813,7 +7853,7 @@ async function pushMySnapshot(teamId, monday){
 async function loadWeeklyReviewForSelectedTeam(silent){
   if(!teamSelectedId) return;
   const weekStr = teamDateStr(teamWeekStart);
-  if(!silent) document.getElementById('teamSyncHint').textContent = '🔄 syncing…';
+  if(!silent) document.getElementById('teamSyncHint').textContent = ' syncing…';
   await pushMySnapshot(teamSelectedId, teamWeekStart);
   const { data: snaps } = await sb.from('team_weekly_snapshots').select('*').eq('team_id', teamSelectedId).eq('week_start', weekStr);
   teamCurrentSnapshots = snaps || [];
@@ -7845,7 +7885,7 @@ async function loadWeeklyReviewForSelectedTeam(silent){
   if(brainstormEl && document.activeElement !== brainstormEl) brainstormEl.value = reviewRow.brainstorm || '';
   const commitWrap = document.getElementById('teamCommitWrap');
   if(!commitWrap || (!commitWrap.contains(document.activeElement) && !interacting)) renderTeamCommitments(reviewRow, members);
-  document.getElementById('teamSyncHint').textContent = '🔄 synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('teamSyncHint').textContent = ' synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
 /* ---------- render: PnL / setup log ---------- */
@@ -8265,7 +8305,7 @@ function renderMomentumBanner(){
     }
   }
 
-  el.innerHTML = `<span class="mb-ico">${count>0?'🔥':'📓'}</span><span>${streakMsg}${trendMsg}</span>`;
+  el.innerHTML = `<span class="mb-ico">${count>0?'':''}</span><span>${streakMsg}${trendMsg}</span>`;
   el.classList.add('show');
 }
 
@@ -8634,7 +8674,7 @@ function renderPfAccountSwitch(){
   ensureAtLeastOnePfAccount();
   const html = state.propFirms.map(pf=>`
     <div class="pf-account-chip ${pf.id===activePfId?'active':''}" onclick="selectPropFirmAccount('${pf.id}')">
-      <span>🏛️ ${escapeHtml(pf.firmName || 'Unnamed account')}</span>
+      <span> ${escapeHtml(pf.firmName || 'Unnamed account')}</span>
       ${state.propFirms.length>1 ? `<button onclick="event.stopPropagation(); removePropFirmAccount('${pf.id}')" title="Remove account">✕</button>` : ''}
     </div>`).join('') + `<button class="pf-account-add" onclick="addPropFirmAccount()">+ Add Account</button>`;
   // Same account switcher is shown on Compliance AND the Risk Console — both
@@ -8839,7 +8879,7 @@ function renderPropFirmCompliance(){
     headerBadge.className = 'pf-badge off';
     headerBadge.textContent = 'Not configured';
     wrap.innerHTML = `<div class="card tilt"><div class="pf-empty-onboard">
-      <span class="glyph">🏛️</span>
+      <span class="glyph"></span>
       <h3>No challenge set up yet</h3>
       <p>Fill in your prop firm's rules on the left — starting balance, profit target, drawdown and loss limits — then save to turn on live pass/fail tracking here.</p>
     </div></div>`;
@@ -8883,7 +8923,7 @@ function renderPropFirmCompliance(){
 
       ${breaches.length ? `
       <div class="pf-breach-banner">
-        <span>⚠️</span>
+        <span>⚠</span>
         <div><b>${breaches.length} rule${breaches.length>1?'s':''} breached</b>${breaches.join(', ')} — this account would currently fail the challenge.</div>
       </div>` : ''}
 
@@ -8953,7 +8993,7 @@ function renderPropFirmRisk(){
   const pf = activePropFirm();
   const m = pf ? computePropFirmMetrics(pf) : null;
   if(!pf || !m){
-    body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph">🎛️</span>Set up a challenge in Prop Firm Compliance first — starting balance and at least one risk limit — and its risk console will build itself here.</div></div>`;
+    body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph"></span>Set up a challenge in Prop Firm Compliance first — starting balance and at least one risk limit — and its risk console will build itself here.</div></div>`;
     return;
   }
   const sym = pfCurSym(pf);
@@ -9002,7 +9042,7 @@ function renderPropFirmRisk(){
     <div class="card tilt" style="margin-top:16px;">
       <h2>Risk <span class="accent">Ledger</span></h2>
       <div class="hint" style="margin:-4px 0 10px;">Every trading day on this account — balance and drawdown-from-peak at the close of each day.</div>
-      ${series.length===0 ? '<div class="empty-state"><span class="glyph">📒</span>No trades logged on this account yet.</div>' : `
+      ${series.length===0 ? '<div class="empty-state"><span class="glyph"></span>No trades logged on this account yet.</div>' : `
       <div class="lead-table-wrap"><table class="lead-table"><thead><tr><th>Date</th><th>Day P/L</th><th>Balance</th><th>Drawdown from peak</th></tr></thead><tbody>
       ${(()=>{
         let bal = m.start, peak = m.start, rows = '';
@@ -9043,7 +9083,7 @@ function renderPropFirmRiskChart(pf, m, series, ddFloor, targetLevel){
   if(!el) return;
   const sym = pfCurSym(pf);
   if(series.length===0){
-    el.innerHTML = '<div class="empty-state" style="padding:30px 10px;"><span class="glyph">🎛️</span>No trades on this account yet — the panel lights up once you log the first one.</div>';
+    el.innerHTML = '<div class="empty-state" style="padding:30px 10px;"><span class="glyph"></span>No trades on this account yet — the panel lights up once you log the first one.</div>';
     return;
   }
   let bal = m.start;
@@ -9094,7 +9134,7 @@ function renderPropFirmPayouts(){
   if(!body) return;
   const accounts = (state.propFirms||[]).filter(pf=>pf.startingBalance);
   if(accounts.length===0){
-    body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph">🧾</span>No configured challenges yet — set one up in Prop Firm Compliance and it'll appear here for comparison and payout projection.</div></div>`;
+    body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph"></span>No configured challenges yet — set one up in Prop Firm Compliance and it'll appear here for comparison and payout projection.</div></div>`;
     return;
   }
   const rows = accounts.map(pf=>{
@@ -9144,7 +9184,7 @@ function renderPropFirmPayouts(){
           const ddPct = r.m.maxOverallDrawdownDollar ? Math.min(100, r.m.drawdownUsed/r.m.maxOverallDrawdownDollar*100) : null;
           const dlPct = r.m.maxDailyLossDollar ? Math.min(100, r.m.todayLoss/r.m.maxDailyLossDollar*100) : null;
           return `<tr style="cursor:pointer;${r.pf.id===activePfId?'background:rgba(255,255,255,0.03);':''}" onclick="pfOpenRiskFor('${r.pf.id}')">
-            <td>🏛️ ${escapeHtml(r.pf.firmName||'Unnamed account')}</td>
+            <td> ${escapeHtml(r.pf.firmName||'Unnamed account')}</td>
             <td>${PF_PHASE_LABELS[r.m.phase]}</td>
             <td>${r.sym}${r.m.currentBalance.toFixed(2)}</td>
             <td style="color:${r.m.totalProfit>=0?'var(--win-bright)':'var(--loss-bright)'}">${r.m.totalProfit>=0?'+':'-'}${r.sym}${Math.abs(r.m.totalProfit).toFixed(2)}</td>
@@ -9164,7 +9204,7 @@ function renderPropFirmPayouts(){
       ${rows.map(r=>`
         <div class="pf-metric" style="margin-bottom:10px;">
           <div class="pf-metric-head">
-            <div><div class="pf-metric-title">🏛️ ${escapeHtml(r.pf.firmName||'Unnamed account')}</div><div class="pf-metric-sub">${r.projection}</div></div>
+            <div><div class="pf-metric-title"> ${escapeHtml(r.pf.firmName||'Unnamed account')}</div><div class="pf-metric-sub">${r.projection}</div></div>
             ${r.m.phase==='funded' ? `<div class="pf-badge off">${r.m.profitSplitPct?r.m.profitSplitPct+'% split':'Split not set'}</div>` : ''}
           </div>
         </div>`).join('')}
@@ -9191,8 +9231,8 @@ function pfPayoutLogHtml(){
   const table = rows.length ? `<div class="lead-table-wrap" style="margin-top:14px;"><table class="lead-table">
       <thead><tr><th>Date</th><th>Account</th><th>Withdrawn</th><th>Your share</th><th>Note</th><th></th></tr></thead>
       <tbody>${rows.map(({pf,x})=>{ const sym = pfCurSym(pf), split = pf.funded && pf.funded.profitSplitPct;
-        return `<tr><td>${escapeHtml(x.date)}</td><td>🏛️ ${escapeHtml(pf.firmName||'Unnamed account')}</td><td>${sym}${Number(x.amount).toFixed(2)}</td><td>${split?sym+(x.amount*split/100).toFixed(2)+' ('+split+'%)':'—'}</td><td>${escapeHtml(x.note||'')}</td><td><button class="btn btn-sm btn-ghost" onclick="deletePfPayout('${pf.id}','${x.id}')" title="Delete">✕</button></td></tr>`; }).join('')}</tbody>
-    </table></div>` : `<div class="empty-state" style="margin-top:14px;"><span class="glyph">💸</span>No payouts logged yet.</div>`;
+        return `<tr><td>${escapeHtml(x.date)}</td><td> ${escapeHtml(pf.firmName||'Unnamed account')}</td><td>${sym}${Number(x.amount).toFixed(2)}</td><td>${split?sym+(x.amount*split/100).toFixed(2)+' ('+split+'%)':'—'}</td><td>${escapeHtml(x.note||'')}</td><td><button class="btn btn-sm btn-ghost" onclick="deletePfPayout('${pf.id}','${x.id}')" title="Delete">✕</button></td></tr>`; }).join('')}</tbody>
+    </table></div>` : `<div class="empty-state" style="margin-top:14px;"><span class="glyph"></span>No payouts logged yet.</div>`;
   return `<div class="card tilt" style="margin-top:16px;"><h2>Payout <span class="accent">Log</span></h2>
     <div class="hint" style="margin:-4px 0 12px;">Log the profit you withdraw each time. It comes off the funded Payout Progress bar, so the bar always shows profit earned since your last withdrawal.</div>${form}${table}</div>`;
 }
@@ -10066,7 +10106,7 @@ function renderDayReview(){
   const iso = todayStr();
   const trades = filteredTrades().filter(t=>t.date===iso);
   if(trades.length===0){
-    body.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>No trades logged yet today — plan is still open.</div>';
+    body.innerHTML = '<div class="empty-state"><span class="glyph"></span>No trades logged yet today — plan is still open.</div>';
     return;
   }
   const wins = trades.filter(t=>t.result==='win').length;
@@ -10186,7 +10226,7 @@ function renderNewsList(items, econEvents){
   if(!body) return;
   econEvents = econEvents || [];
   if((!items || items.length===0) && econEvents.length===0){
-    body.innerHTML = '<div class="empty-state"><span class="glyph">📰</span>No headlines returned right now.</div>';
+    body.innerHTML = '<div class="empty-state"><span class="glyph"></span>No headlines returned right now.</div>';
     return;
   }
   const watched = watchedPairList();
@@ -10206,22 +10246,22 @@ function renderNewsList(items, econEvents){
     html += usdBiasCardHtml(computeUsdBias(econEvents));
   }
   if(econEvents.length || important.length){
-    html += `<div class="hint-inline" style="display:block;margin:0 0 8px;color:var(--loss-bright);">📊 Important — moves every pair</div>`;
+    html += `<div class="hint-inline" style="display:block;margin:0 0 8px;color:var(--loss-bright);"> Important — moves every pair</div>`;
     html += econEvents.slice(0,6).map(econEventRowHtml).join('');
     html += important.slice(0,6).map(it=>newsRowHtml(it)).join('');
   }
   if(watched.length && pairSpecific.length){
-    html += `<div class="hint-inline" style="display:block;margin:14px 0 8px;color:var(--gold-bright);">👁 Watched pairs</div>`;
+    html += `<div class="hint-inline" style="display:block;margin:14px 0 8px;color:var(--gold-bright);"> Watched pairs</div>`;
     html += pairSpecific.slice(0,10).map(it=>newsRowHtml(it, it._pair)).join('');
   }
   // With watched pairs set, the feed stays limited to what actually matters —
   // important macro releases plus your specific pairs. Only fall back to a
   // general headline list when there's nothing being watched at all.
   if(!watched.length && other.length){
-    html += `<div class="hint-inline" style="display:block;margin:14px 0 8px;">📰 Market headlines</div>`;
+    html += `<div class="hint-inline" style="display:block;margin:14px 0 8px;"> Market headlines</div>`;
     html += other.slice(0,10).map(it=>newsRowHtml(it)).join('');
   }
-  body.innerHTML = html || '<div class="empty-state"><span class="glyph">📰</span>No headlines returned right now.</div>';
+  body.innerHTML = html || '<div class="empty-state"><span class="glyph"></span>No headlines returned right now.</div>';
 }
 
 /* ============ JOURNAL ============ */
@@ -10254,7 +10294,7 @@ function journalTradeRowHtml(t){
         ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
         ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
         ${ruleViolationChipHtml(t)}
-        ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
+        ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()"> TradingView</a>` : ''}
       </div>
     </div>
     <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
@@ -10394,7 +10434,7 @@ function renderJournal(){
   else if(sortMode==='rr_desc') trades.sort((a,b)=>(parseFloat(b.rr)||0)-(parseFloat(a.rr)||0));
 
   if(trades.length===0){
-    list.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>'+(filteredTrades().length===0?'No trades logged yet.':'No trades match your search/filter.')+'</div>';
+    list.innerHTML = '<div class="empty-state"><span class="glyph"></span>'+(filteredTrades().length===0?'No trades logged yet.':'No trades match your search/filter.')+'</div>';
   } else if(sortMode==='newest' || sortMode==='oldest'){
     // Chronological sorts get grouped into day sections with a per-day P/L
     // header — this is the "checking your daily results" view, not just a
@@ -10665,7 +10705,7 @@ function renderSnStrategyGrid(){
         <div class="strat-name" style="font-weight:600;">${escapeHtml(s.name)}${t?` <span class="tag-chip" style="background:${t.color}22;color:${t.color};">${t.short}</span>`:''}</div>
         <button class="btn btn-sm btn-ghost" onclick="removeSnStrategy('${s.id}')" title="Remove strategy">✕</button>
       </div>
-      <div class="strat-logic-chips" style="margin-top:8px;">${s.items.map(i=>`<span class="tag-chip">${i.source==='preset'?'⚡ ':''}${escapeHtml(i.text)}</span>`).join('')}</div>
+      <div class="strat-logic-chips" style="margin-top:8px;">${s.items.map(i=>`<span class="tag-chip">${i.source==='preset'?' ':''}${escapeHtml(i.text)}</span>`).join('')}</div>
     </div>`;
   }).join('');
 }
@@ -10747,7 +10787,7 @@ function renderSnCheckinLists(){
   if(!pendEl) return;
   pendEl.innerHTML = pending.length ? pending.map(c=>`
     <div class="check-item pass" style="flex-wrap:wrap;">
-      <span>👁</span>
+      <span></span>
       <div style="flex:1;min-width:180px;">
         <b>${escapeHtml(c.strategyName)}</b>${c.pair?(' · '+escapeHtml(c.pair)):''} <span style="color:var(--slate);">· ${c.date} ${c.time||''}</span>
         <div class="strat-logic-chips" style="margin-top:6px;">${c.itemIds.map(id=>`<span class="tag-chip">${escapeHtml(snItemLabel(id))}</span>`).join('')}</div>
@@ -10806,7 +10846,7 @@ function renderSnConfluence(){
       : 'linear-gradient(90deg,var(--loss),var(--loss-bright))';
     return `
     <div class="confluence-row">
-      <div class="confluence-label">${r.auto?'⚡ ':''}${escapeHtml(r.label)}</div>
+      <div class="confluence-label">${r.auto?' ':''}${escapeHtml(r.label)}</div>
       <div class="confluence-bar-wrap"><div class="confluence-bar" style="width:${r.winRate}%;background:${barColor}"></div></div>
       <div class="confluence-stats"><b>${r.winRate}%</b><span>${r.wins}W / ${r.losses}L · ${r.trades} logged</span></div>
     </div>`;
@@ -10918,10 +10958,10 @@ function renderMoodBreakdown(){
       const best = eligible.slice().sort((a,b)=>b.winRate-a.winRate)[0];
       const worst = eligible.slice().sort((a,b)=>a.winRate-b.winRate)[0];
       if(best.label!==worst.label){
-        insightEl.innerHTML = `<div class="insight-banner"><span class="insight-ico">💡</span><span>You're sharpest trading <b>${best.label}</b> — ${best.winRate}% win rate over ${best.trades} trades. Your worst is <b>${worst.label}</b> at ${worst.winRate}% (${worst.pnl>=0?'+':'-'}${curSym()}${Math.abs(worst.pnl).toFixed(0)} total). That gap is your edge to protect.</span></div>`;
+        insightEl.innerHTML = `<div class="insight-banner"><span class="insight-ico"></span><span>You're sharpest trading <b>${best.label}</b> — ${best.winRate}% win rate over ${best.trades} trades. Your worst is <b>${worst.label}</b> at ${worst.winRate}% (${worst.pnl>=0?'+':'-'}${curSym()}${Math.abs(worst.pnl).toFixed(0)} total). That gap is your edge to protect.</span></div>`;
       } else { insightEl.innerHTML = ''; }
     } else {
-      insightEl.innerHTML = '<div class="insight-banner"><span class="insight-ico">💡</span><span>Tag at least two different moods over a few trades each and this banner will tell you which mindset is actually making you money.</span></div>';
+      insightEl.innerHTML = '<div class="insight-banner"><span class="insight-ico"></span><span>Tag at least two different moods over a few trades each and this banner will tell you which mindset is actually making you money.</span></div>';
     }
   }
   el.innerHTML = rows.map(r=>{
@@ -10993,9 +11033,9 @@ function renderTimingBreakdown(){
         const bestHour = hourEligible.slice().sort((a,b)=>b.winRate-a.winRate)[0];
         parts.push(`Your sharpest window is around <b>${bestHour.name}</b> — ${bestHour.winRate}% win rate over ${bestHour.trades} trades.`);
       }
-      insightEl.innerHTML = `<div class="insight-banner"><span class="insight-ico">⏱️</span><span>${parts.join(' ')}</span></div>`;
+      insightEl.innerHTML = `<div class="insight-banner"><span class="insight-ico">⏱</span><span>${parts.join(' ')}</span></div>`;
     } else {
-      insightEl.innerHTML = '<div class="insight-banner"><span class="insight-ico">⏱️</span><span>Log a few more trades across different days and times — this banner will surface your best and worst windows automatically.</span></div>';
+      insightEl.innerHTML = '<div class="insight-banner"><span class="insight-ico">⏱</span><span>Log a few more trades across different days and times — this banner will surface your best and worst windows automatically.</span></div>';
     }
   }
 }
@@ -11161,7 +11201,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const subElEmpty = subId ? document.getElementById(subId) : null;
   if(subElEmpty) subElEmpty.textContent = 'cumulative P/L · ' + eqLabel;
   if(trades.length===0){
-    container.innerHTML = eqO ? eqO.emptyHtml : `<div class="empty-state"><span class="glyph">📈</span>No trades yet on ${escapeHtml(eqLabel)} — your equity curve will build as you log trades.</div>`;
+    container.innerHTML = eqO ? eqO.emptyHtml : `<div class="empty-state"><span class="glyph"></span>No trades yet on ${escapeHtml(eqLabel)} — your equity curve will build as you log trades.</div>`;
     if(totalEl){ totalEl.textContent=eqSym+'0'; totalEl.className='equity-total'; }
     if(eqO && eqO.onEmpty) eqO.onEmpty(); else { setEquityStats([]); setEquityFooter([]); }
     return;
@@ -12327,7 +12367,7 @@ function btStatsFor(sessionId){
 // (per-trade R, not real timestamps/$ amounts) and doesn't need it.
 function renderBacktestEquitySvg(curve){
   if(!curve || curve.length<2){
-    return '<div class="empty-state" style="padding:30px 0;"><span class="glyph">📈</span>Log a trade to start this session\'s R curve.</div>';
+    return '<div class="empty-state" style="padding:30px 0;"><span class="glyph"></span>Log a trade to start this session\'s R curve.</div>';
   }
   const W=680, H=200, padL=40, padR=16, padT=16, padB=26;
   const plotW=W-padL-padR, plotH=H-padT-padB;
@@ -12489,7 +12529,7 @@ function renderBacktestView(){
   const st = btStatsFor(session.id);
   banner.style.display = 'flex';
   banner.innerHTML = `
-    <span>🧪 <b>Backtest Mode</b> · ${escapeHtml(session.name)} — these trades never touch your live stats or streak</span>
+    <span> <b>Backtest Mode</b> · ${escapeHtml(session.name)} — these trades never touch your live stats or streak</span>
     <button class="btn btn-ghost btn-sm" onclick="exitBacktestSession()">Exit to Sessions</button>`;
 
   const trades = backtestTradesFor(session.id).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.id-a.id));
@@ -12553,7 +12593,7 @@ function renderBacktestView(){
           </div>
           <button class="btn btn-ghost btn-sm" onclick="deleteBacktestTrade(${t.id})">Remove</button>
         </div>`).join('')}</div>`
-        : `<div class="empty-state"><span class="glyph">🎯</span>No trades yet — log the first one from this session's historical chart.</div>`}
+        : `<div class="empty-state"><span class="glyph"></span>No trades yet — log the first one from this session's historical chart.</div>`}
     </div>`;
 }
 
@@ -12682,7 +12722,7 @@ function populatePropOrderSelectors(){
   const pfs = state.propFirms||[];
   aSel.innerHTML = pfs.length ? pfs.map(pf=>`<option value="${pf.id}">${escapeHtml(pf.firmName||'Unnamed account')}</option>`).join('') : '<option value="">No prop accounts yet — add one in Prop Firm</option>';
   aSel.value = [...aSel.options].some(o=>o.value===prevA) ? prevA : (pfs[0] ? pfs[0].id : '');
-  scopeSel.innerHTML = '<option value="all">All prop accounts</option>' + pfs.map(pf=>`<option value="${pf.id}">🏛️ ${escapeHtml(pf.firmName||'Unnamed account')}</option>`).join('');
+  scopeSel.innerHTML = '<option value="all">All prop accounts</option>' + pfs.map(pf=>`<option value="${pf.id}"> ${escapeHtml(pf.firmName||'Unnamed account')}</option>`).join('');
   if(![...scopeSel.options].some(o=>o.value===propOrderScope)) propOrderScope = 'all';
   scopeSel.value = propOrderScope;
   const box = document.getElementById('propOrderLogicChoices');
@@ -12816,7 +12856,7 @@ function propOrderStatusHtml(){
   const pfs = (state.propFirms||[]).filter(pf=>propOrderScope==='all' || pf.id===propOrderScope);
   const cards = pfs.map(pf=>{
     const m = computePropFirmMetrics(pf);
-    if(!m) return `<div class="card" style="padding:12px 14px;flex:1 1 260px;"><b>🏛️ ${escapeHtml(pf.firmName||'Unnamed account')}</b><div class="hint" style="margin-top:6px;">Set a starting balance in Prop Firm to see live limits.</div></div>`;
+    if(!m) return `<div class="card" style="padding:12px 14px;flex:1 1 260px;"><b> ${escapeHtml(pf.firmName||'Unnamed account')}</b><div class="hint" style="margin-top:6px;">Set a starting balance in Prop Firm to see live limits.</div></div>`;
     const sym = pfCurSym(pf);
     const pend = (state.psychology.orders||[]).filter(o=>o.account===pf.id || (o.account==='propfirm' && pfs.length===1));
     const openRisk = pend.reduce((a,o)=>a+(o.riskAmt||0),0);
@@ -12833,7 +12873,7 @@ function propOrderStatusHtml(){
     }
     const chip = (l,v,c) => `<div style="min-width:88px;"><div class="hint" style="margin:0;">${l}</div><b style="color:${c||'inherit'}">${v}</b></div>`;
     return `<div class="card" style="padding:12px 14px;flex:1 1 300px;">
-      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;"><b>🏛️ ${escapeHtml(pf.firmName||'Unnamed account')}</b><span class="hint" style="margin:0;">${escapeHtml((pf.phase||'challenge'))}${m.overallStatus==='fail'?' · ⛔ limit breached':''}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;"><b> ${escapeHtml(pf.firmName||'Unnamed account')}</b><span class="hint" style="margin:0;">${escapeHtml((pf.phase||'challenge'))}${m.overallStatus==='fail'?' · ⛔ limit breached':''}</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:14px;">
         ${chip('Balance', f(m.currentBalance))}
         ${chip('Daily room', dlRoom!=null?f(dlRoom):'—')}
@@ -12854,7 +12894,7 @@ function renderPropOrders(){
   const c = document.getElementById('propOrdersCount');
   if(c) c.textContent = orders.length ? `${orders.length} pending` : '';
   list.innerHTML = orders.length ? buildOrderRowsHTML(orders)
-    : '<div class="empty-state"><span class="glyph">🏛️</span>No pending prop orders. Place one to start tracking it.</div>';
+    : '<div class="empty-state"><span class="glyph"></span>No pending prop orders. Place one to start tracking it.</div>';
 }
 const ORDERS_OVERVIEW_LIMIT = 4;
 const TRADE_LOG_OVERVIEW_LIMIT = 5;
@@ -12864,7 +12904,7 @@ function renderTradeLogOverview(){
   if(!list) return;
   const trades = filteredTrades().slice().sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
   if(trades.length===0){
-    list.innerHTML = '<div class="empty-state"><span class="glyph">📓</span>No trades logged yet. Close a trade to start your log.</div>';
+    list.innerHTML = '<div class="empty-state"><span class="glyph"></span>No trades logged yet. Close a trade to start your log.</div>';
     if(moreEl) moreEl.style.display = 'none';
     return;
   }
@@ -12924,7 +12964,7 @@ function renderTraderIdentity(){
     el.innerHTML = header + `<div class="identity-empty">Log ${left} more trade${left===1?'':'s'} with a mood tag and a real read on how you trade will start forming here.</div>`;
     return;
   }
-  const stripMoodEmoji = m => (MOOD_LABELS[m]||m||'').replace(/^\S+\s/,'');
+  const stripMoodEmoji = m => MOOD_LABELS[m]||m||'';
   el.innerHTML = header + `
     <div class="identity-title">${id.archetype}</div>
     <div class="identity-desc">${id.desc}</div>
@@ -12944,7 +12984,7 @@ function renderOrders(){
   if(list){
     list.innerHTML = orders.length
       ? buildOrderRowsHTML(orders)
-      : '<div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div>';
+      : '<div class="empty-state"><span class="glyph"></span>No pending orders. Place one to start tracking it.</div>';
   }
   renderOrdersOverview(orders);
   renderPropOrders();
@@ -12955,7 +12995,7 @@ function renderOrdersOverview(orders){
   if(!list) return;
   if(!orders) orders = (state.psychology.orders||[]).filter(o=>(activeTraderFilter==='all' || o.trader===activeTraderFilter) && accountMatchesScope(o.account)).slice().reverse();
   if(orders.length===0){
-    list.innerHTML = '<div class="empty-state"><span class="glyph">🎫</span>No pending orders. Place one to start tracking it.</div>';
+    list.innerHTML = '<div class="empty-state"><span class="glyph"></span>No pending orders. Place one to start tracking it.</div>';
     if(moreEl) moreEl.style.display = 'none';
     return;
   }
@@ -13170,7 +13210,7 @@ function showCalDay(iso){
               ${(t.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
               ${t.mood ? `<span class="tag-chip mood">${MOOD_LABELS[t.mood]||t.mood}</span>` : ''}
               ${ruleViolationChipHtml(t)}
-              ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()">📈 TradingView</a>` : ''}
+              ${t.tvLink ? `<a href="${escapeHtml(t.tvLink)}" target="_blank" rel="noopener noreferrer" class="tag-chip tv-link" onclick="event.stopPropagation()"> TradingView</a>` : ''}
             </div>
           </div>
           <div class="trade-pnl"><b style="color:${pnl>=0?'var(--win-bright)':'var(--loss-bright)'}">${pnl>=0?('+'+sym):('-'+sym)}${Math.abs(pnl).toFixed(0)}</b><span class="rr">${t.rr ?? '—'} RR</span></div>
@@ -13269,8 +13309,8 @@ if('serviceWorker' in navigator){
 // light/dark split, so it treats any colour theme as "dark" automatically.
 const GD_THEMES = ['light','dark','black','red','blue','purple','gold','slate'];
 const GD_THEME_COLOR = {
-  light:'#ffffff', dark:'#03050a', black:'#000000', red:'#0a0304', blue:'#03060d',
-  purple:'#08040d', gold:'#0a0704', slate:'#05070a'
+  light:'#f5f6f2', dark:'#0a100d', black:'#050505', red:'#0a100d', blue:'#0a100d',
+  purple:'#0a100d', gold:'#0a100d', slate:'#0a100d'
 };
 function applyGdTheme(t){
   const theme = GD_THEMES.includes(t) ? t : 'slate';
@@ -13543,12 +13583,12 @@ document.addEventListener('keydown', function(e){
 <!-- PERIOD REVIEW MODAL (weekly / monthly, auto-triggered on the Overview page) -->
 <div class="overlay" id="periodReviewOverlay">
   <div class="modal" style="max-width:440px;">
-    <h3 id="periodReviewTitle">Last Week Review</h3>
+    <h3 id="periodReviewTitle">Weekly performance review</h3>
     <div class="sub" id="periodReviewSub"></div>
     <div id="periodReviewBody"></div>
     <div class="btn-row" style="margin-top:6px;gap:10px;display:flex;">
-      <button class="side-logout" style="flex:1;" onclick="closePeriodReview()">Close</button>
-      <button class="btn btn-primary btn-sm" style="flex:1;" onclick="closePeriodReview(); document.querySelector('.side-navbtn[data-view=analytics]').click();">View Analytics</button>
+      <button class="side-logout" style="flex:1;" onclick="closePeriodReview()">Close review</button>
+      <button class="btn btn-primary btn-sm" style="flex:1;" onclick="closePeriodReview(); document.querySelector('.side-navbtn[data-view=analytics]').click();">Open analytics</button>
     </div>
   </div>
 </div>
@@ -14021,7 +14061,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
 
         var btn = document.querySelector('.ai-refresh-btn[onclick*="\'' + kind + '\'"]');
         var doCall = function(){
-          if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = '✨ Thinking…'; }
+          if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = 'Thinking…'; }
 
           window.__gdScifeModel = usingShared ? sharedModelForTier() : scifeCfg.model;
           var system = AI_SYSTEM_PROMPTS[kind];
@@ -14039,7 +14079,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
           }).catch(function(err){
             console.warn('gdAskAI(' + kind + ') failed, keeping heuristic text:', err);
           }).finally(function(){
-            if(btn){ btn.disabled = false; btn.classList.remove('spin'); btn.textContent = '✨ Ask AI'; }
+            if(btn){ btn.disabled = false; btn.classList.remove('spin'); btn.textContent = 'Ask AI'; }
           });
         };
 
@@ -14278,8 +14318,8 @@ EQ_OPTS_PROVIDERS['propEquityChart'] = function(){
     trades, sym, pnl: pnlOfRaw, label: name,
     axisOffset: bal, refLines: refs, fitRefs: peRange==='limits',
     emptyHtml: configured
-      ? `<div class="empty-state"><span class="glyph">📈</span>No trades on ${escapeHtml(name)} yet — place an order against this account in <b>Prop Orders</b> and its curve will build here.</div>`
-      : `<div class="empty-state"><span class="glyph">🏛️</span>Set a starting balance and your risk limits in <b>Prop Firm</b> first — then this curve draws itself against your target and breach floor.</div>`,
+      ? `<div class="empty-state"><span class="glyph"></span>No trades on ${escapeHtml(name)} yet — place an order against this account in <b>Prop Orders</b> and its curve will build here.</div>`
+      : `<div class="empty-state"><span class="glyph"></span>Set a starting balance and your risk limits in <b>Prop Firm</b> first — then this curve draws itself against your target and breach floor.</div>`,
     sub: (trs)=> `${trs.length} trade${trs.length!==1?'s':''} · ${m ? PF_PHASE_LABELS[m.phase] : 'Prop'} · ${escapeHtml(name)}`,
     onStats: (trs, dd)=>{ setPropEquityStats(trs, dd, sym); setEquityFooter(trs, PE_FOOTER_IDS); },
     onEmpty: ()=>{ setPropEquityStats([], 0, sym); setEquityFooter([], PE_FOOTER_IDS); }
@@ -14324,7 +14364,7 @@ function renderPeStatus(){
   const m = pf ? computePropFirmMetrics(pf) : null;
   const name = pf ? (pf.firmName || 'Unnamed account') : 'Prop firm';
   if(!pf || !m){
-    el.innerHTML = `<div class="pe-headline"><div class="pe-firm">🏛️ ${escapeHtml(name)}</div><span class="pf-badge off">Not configured</span></div>
+    el.innerHTML = `<div class="pe-headline"><div class="pe-firm"> ${escapeHtml(name)}</div><span class="pf-badge off">Not configured</span></div>
       <div class="hint" style="margin:0">Add a starting balance and risk limits on the <b>Prop Firm</b> page to track this account against its challenge rules.</div>`;
     return;
   }
@@ -14373,7 +14413,7 @@ function renderPeStatus(){
 
   el.innerHTML = `
     <div class="pe-headline">
-      <div class="pe-firm">🏛️ ${escapeHtml(name)}</div>
+      <div class="pe-firm"> ${escapeHtml(name)}</div>
       <span class="pe-phase">${PF_PHASE_LABELS[m.phase]}</span>
       <span class="pf-badge ${st[0]}">${st[1]}</span>
     </div>
@@ -14387,7 +14427,7 @@ function renderPeRecent(){
   const sym = pfCurSym(pf);
   const trs = peTrades(pf).slice(-8).reverse();
   if(!trs.length){
-    body.innerHTML = `<div class="empty-state"><span class="glyph">📒</span>No trades logged on this account yet.</div>`;
+    body.innerHTML = `<div class="empty-state"><span class="glyph"></span>No trades logged on this account yet.</div>`;
     return;
   }
   const rows = trs.map(t=>{
@@ -15390,6 +15430,58 @@ html[data-theme="light"] .equity-wrap{background:radial-gradient(ellipse 90% 90%
 .quick-scife-modal iframe{background:#050505}
 @media(max-width:760px){.quick-scife-overlay{right:12px;bottom:calc(138px + env(safe-area-inset-bottom));width:min(430px,calc(100vw - 24px));height:min(590px,calc(100dvh - 168px - env(safe-area-inset-bottom)))} }
 @media(max-width:390px){.quick-scife-overlay{right:9px;width:calc(100vw - 18px);height:min(540px,calc(100dvh - 160px - env(safe-area-inset-bottom)))} }
+
+/* Final brand finish: calmer controls, a cinematic but restrained boot, and safe-area aware chrome. */
+html,body{min-height:100%;-webkit-tap-highlight-color:transparent}
+html[data-theme] #authScreen{min-height:100vh;min-height:100svh;min-height:100dvh;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
+html[data-theme] .auth-social-divider{display:flex;align-items:center;gap:13px;margin:21px 0 14px;color:var(--slate-dim);font:10px 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase}
+html[data-theme] .auth-social-divider::before,html[data-theme] .auth-social-divider::after{content:'';height:1px;flex:1;background:var(--steel)}
+html[data-theme] .auth-social-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+html[data-theme] .auth-social-btn{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:0 15px;border:1px solid var(--steel-hi);border-radius:11px;background:color-mix(in srgb,var(--panel-solid) 82%,transparent);color:var(--platinum);font:600 12px 'Instrument Sans',sans-serif;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+html[data-theme] .auth-social-btn:hover{background:color-mix(in srgb,var(--bronze-bright) 9%,var(--panel-solid));border-color:color-mix(in srgb,var(--bronze-bright) 52%,var(--steel-hi));transform:translateY(-1px)}
+html[data-theme] .auth-social-btn:focus-visible{outline:2px solid var(--bronze-bright);outline-offset:3px}
+html[data-theme] .auth-social-btn:disabled{opacity:.62;cursor:wait;transform:none}
+html[data-theme] .auth-social-btn svg{width:17px;height:17px;flex:none}
+html[data-theme] .auth-social-btn.is-loading{position:relative}
+html[data-theme] .auth-social-btn.is-loading::after{content:'';width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gdAuthSpin .65s linear infinite}
+@keyframes gdAuthSpin{to{transform:rotate(360deg)}}
+html[data-theme] .auth-foot{margin-top:20px}
+html[data-theme] .auth-forgot{font-family:'Instrument Sans',sans-serif}
+html[data-theme] button,html[data-theme] input,html[data-theme] select,html[data-theme] textarea{font-family:'Instrument Sans',sans-serif}
+html[data-theme] .btn,html[data-theme] .btn-gold,html[data-theme] .btn-demo,html[data-theme] .side-logout{font-family:'Instrument Sans',sans-serif;letter-spacing:.005em}
+html[data-theme] .btn{font-weight:600}
+html[data-theme] .btn:focus-visible,html[data-theme] .btn-gold:focus-visible,html[data-theme] .btn-demo:focus-visible,html[data-theme] .side-logout:focus-visible{outline:2px solid var(--bronze-bright);outline-offset:3px}
+html[data-theme] #periodReviewOverlay .modal{border-radius:20px;padding:26px;background:linear-gradient(155deg,color-mix(in srgb,var(--panel-solid) 95%,var(--bronze-bright)),var(--panel-solid));box-shadow:0 28px 90px -38px rgba(0,0,0,.8),inset 0 1px rgba(255,255,255,.06)}
+html[data-theme] #periodReviewTitle{font:500 25px/1.15 'Fraunces',Georgia,serif;letter-spacing:-.025em}
+html[data-theme] #periodReviewSub{font:10px 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase}
+html[data-theme] #bootSplash{isolation:isolate;background:radial-gradient(ellipse at 50% 48%,#15231c 0, #0a100d 47%,#060907 100%);perspective:none}
+html[data-theme] #bootSplash::before{content:'';display:block!important;position:absolute;inset:-30%;left:auto;right:auto;top:auto;bottom:auto;width:160%;height:160%;opacity:.72;transform:none;background:conic-gradient(from 30deg at 50% 50%,transparent 0 17%,rgba(166,201,158,.11) 22%,transparent 31% 48%,rgba(211,189,139,.09) 55%,transparent 64% 82%,rgba(166,201,158,.1) 90%,transparent 100%);filter:blur(32px);mask-image:radial-gradient(ellipse at center,#000 12%,transparent 68%);animation:gdBootAurora 16s ease-in-out infinite alternate}
+html[data-theme] #bootSplash::after{content:'';display:block!important;position:absolute;inset:12% 7%;left:7%;right:7%;top:12%;height:76%;transform:none;border:1px solid rgba(207,224,201,.09);border-radius:50%;background:radial-gradient(ellipse at center,transparent 45%,rgba(174,206,163,.035) 61%,transparent 70%);mask-image:none;opacity:.9;animation:gdBootOrbit 24s linear infinite}
+@keyframes gdBootAurora{from{transform:rotate(-12deg) scale(.94);opacity:.5}to{transform:rotate(12deg) scale(1.06);opacity:.9}}
+@keyframes gdBootOrbit{to{transform:rotate(360deg)}}
+html[data-theme] .boot-rain,html[data-theme] .boot-particles{display:none!important}
+html[data-theme] .boot-splash-inner{gap:17px;transform:none;animation:gdBootReveal .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes gdBootReveal{from{opacity:0;transform:translateY(14px) scale(.97);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+html[data-theme] .boot-emblem{width:126px;height:126px}
+html[data-theme] .boot-emblem-ring-1{inset:-8px;border-top-color:var(--bronze-bright);border-right-color:rgba(166,201,158,.25);filter:drop-shadow(0 0 12px color-mix(in srgb,var(--bronze-bright) 60%,transparent));animation-duration:12s}
+html[data-theme] .boot-emblem-ring-2{inset:-18px;border-bottom-color:var(--gold-bright);border-left-color:rgba(211,189,139,.16);animation-duration:19s;opacity:.65}
+html[data-theme] .boot-emblem .brk{animation:none;opacity:.42;border-color:var(--gold-bright)}
+html[data-theme] .boot-emblem-plate{width:78px;height:78px;border-radius:22px;animation:gdBootPlate 7s ease-in-out infinite;box-shadow:0 18px 55px -15px rgba(166,201,158,.3),inset 0 1px rgba(255,255,255,.12)}
+@keyframes gdBootPlate{0%,100%{transform:perspective(800px) rotateY(-5deg) rotateX(2deg)}50%{transform:perspective(800px) rotateY(5deg) rotateX(-2deg)}}
+html[data-theme] .boot-emblem-plate::after{height:34px;background:linear-gradient(180deg,transparent,rgba(211,189,139,.2),transparent);animation:bootScan 3.3s ease-in-out infinite}
+html[data-theme] .boot-word{font-size:clamp(24px,4vw,31px);letter-spacing:-.02em}
+html[data-theme] .boot-terminal{background:rgba(6,10,8,.5);border-color:rgba(207,224,201,.1);border-radius:999px;padding:9px 16px;color:var(--bronze-bright)}
+html[data-theme] .boot-bar{width:min(250px,64vw);height:2px;gap:5px}
+html[data-theme] .boot-bar span{width:auto;flex:1;height:100%;background:rgba(207,224,201,.12);animation:bootTick 2s ease-in-out infinite}
+html[data-theme] .boot-enter-btn{background:linear-gradient(110deg,#b7c9b0,#e0d1a8);color:#121812;border-radius:12px;box-shadow:0 12px 34px -14px rgba(166,201,158,.45);font:600 12px 'Instrument Sans',sans-serif;letter-spacing:.03em;text-transform:none}
+html[data-theme] .boot-enter-btn.show{animation:none}
+html[data-theme] .net-banner{top:env(safe-area-inset-top,0px);padding:10px 16px;background:#171d18;color:#e5e9e1;border-bottom:1px solid rgba(211,189,139,.28);box-shadow:0 14px 34px -24px rgba(0,0,0,.9);font:500 12px 'Instrument Sans',sans-serif}
+html[data-theme] .net-banner::before{content:'';display:inline-block;width:7px;height:7px;margin:0 9px 1px 0;border-radius:50%;background:#d4a869;box-shadow:0 0 10px rgba(212,168,105,.35)}
+html[data-theme] .renewal-banner{top:env(safe-area-inset-top,0px)}
+html[data-theme] .net-banner.show + .renewal-banner.show{top:calc(env(safe-area-inset-top,0px) + 44px)}
+html[data-theme] .glyph:empty,html[data-theme] .demo-tease-icon:empty,html[data-theme] .ic:empty,html[data-theme] .mb-ico:empty,html[data-theme] .insight-ico:empty{display:none!important}
+@media(max-width:700px){html[data-theme] #authScreen{padding-left:18px;padding-right:18px}.auth-wrap{gap:28px}.auth-card{width:100%;max-width:480px}.auth-social-btn{min-height:44px}.boot-emblem{width:112px;height:112px}.boot-emblem-plate{width:70px;height:70px}}
+@media(prefers-reduced-motion:reduce){html[data-theme] #bootSplash::before,html[data-theme] #bootSplash::after,html[data-theme] .boot-splash-inner,html[data-theme] .boot-emblem-ring,html[data-theme] .boot-emblem-plate,html[data-theme] .auth-social-btn.is-loading::after{animation:none!important}}
 
 </style>
 

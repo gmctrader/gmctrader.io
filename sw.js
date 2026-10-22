@@ -15,7 +15,7 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v7';
+const CACHE_VERSION = 'gd-shell-v8';
 const APP_SHELL = [
   './index.html',
   './app.html',
