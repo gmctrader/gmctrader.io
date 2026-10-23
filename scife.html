@@ -7180,6 +7180,172 @@ html[data-theme="red"],html[data-theme="blue"],html[data-theme="purple"],html[da
 html[data-theme="red"] body,html[data-theme="blue"] body,html[data-theme="purple"] body,html[data-theme="gold"] body,html[data-theme="slate"] body{background:#080808!important}
 
 html[data-theme="slate"]{--bronze-bright:#c0ccd4;--bronze:#91a1ad;--bronze-dim:#3d4a52;--bronze-ink:#101619}
+/* Conversation-first SciFe workspace. This is a visual-only pass: the
+   existing controls, IDs and event handlers remain in place. */
+#app{
+  width:min(100%,1600px);max-width:1600px;height:100dvh;min-height:620px;margin:0 auto;
+  grid-template-columns:minmax(252px,310px) minmax(0,1fr);
+  grid-template-rows:72px auto minmax(178px,230px) minmax(170px,1fr) 82px;
+  gap:0 clamp(20px,3vw,38px);padding:0 clamp(20px,4vw,64px) 18px;overflow:hidden;
+}
+#app>.topbar{
+  grid-column:1/-1;grid-row:1;display:flex;align-items:center;gap:20px;min-width:0;
+  padding:0;border-bottom:1px solid rgba(238,240,233,.09);background:transparent;
+}
+#app>.topbar .back{
+  display:inline-flex;align-items:center;min-height:36px;padding:0 11px;border:1px solid var(--steel);
+  border-radius:10px;color:#b9beb4;font-size:11px;text-decoration:none;white-space:nowrap;
+}
+#app>.topbar .back:hover{background:#151614;color:var(--platinum);border-color:rgba(184,205,169,.28)}
+#app>.topbar .title{font-size:20px;font-weight:550;letter-spacing:-.04em}
+#app>.topbar .topbar-icons{margin-left:auto;gap:8px}
+#app>.topbar .icon-btn{width:38px;height:38px;border-radius:11px}
+#chatQuotaBanner{
+  grid-column:1/-1;grid-row:2;min-height:36px;margin:0 0 14px!important;padding:7px 12px!important;
+  border:1px solid var(--steel)!important;border-radius:0 0 11px 11px!important;
+  background:#0d0e0c!important;color:#a4aaa0!important;font-size:10px!important;
+}
+#stage3dWrap{grid-column:1;grid-row:3;position:relative;min-width:0;margin:0;perspective:none}
+#stage3dWrap::before,#quickRow::before{
+  position:absolute;z-index:2;left:14px;top:12px;color:#92998d;font:600 9px/1.2 'IBM Plex Mono',monospace;
+  letter-spacing:.13em;pointer-events:none;
+}
+#stage3dWrap::before{content:'SCIFE  /  COMPANION'}
+#stage{height:100%;min-height:0;max-height:none;overflow:hidden;border:1px solid rgba(184,205,169,.14);border-radius:16px;
+  background:radial-gradient(ellipse at 50% 52%,rgba(151,186,135,.10),#10110f 72%);
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 18px 38px -32px #000;transform:none!important}
+#stage::before,.stage-glare,.stage-hud,.stage-readout,.stage-metrics{display:none!important}
+.stage-fallback{opacity:.22!important;animation:none!important}
+.neural-core-wrap{width:62%;height:78%;max-width:178px;opacity:.72;filter:none}
+.neural-core-etch{opacity:.3}
+.stage-status{left:14px;bottom:12px;font:500 10px/1.2 'IBM Plex Mono',monospace;color:#a9b09f}
+.stage-status .dot{box-shadow:0 0 8px currentColor}
+.quick-row-wrap{grid-column:1;grid-row:4;align-self:stretch;min-width:0;margin:0;padding:18px 0 0;overflow:hidden}
+#quickRow{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:7px;height:100%;padding:20px 0 0;overflow-y:auto}
+#quickRow::before{content:'QUICK START';top:0;left:2px}
+.quick-row-wrap::after{display:none!important}
+.quick-chip{
+  display:flex;align-items:center;justify-content:flex-start;min-width:0;min-height:42px;padding:8px 10px;
+  border:1px solid rgba(238,240,233,.09);border-radius:10px;background:#10110f;color:#bfc4ba;
+  font-size:10.5px;line-height:1.35;text-align:left;white-space:normal;box-shadow:none;
+}
+.quick-chip:hover{transform:translateY(-1px);border-color:rgba(184,205,169,.27);background:#171914;color:#f0f1e9}
+.chat-wrap{
+  grid-column:2;grid-row:3/5;display:flex;flex-direction:column;position:relative;min-width:0;min-height:0;height:100%;
+  overflow:hidden;border:1px solid rgba(238,240,233,.10);border-radius:17px;
+  background:linear-gradient(145deg,#111210,#0c0d0b);box-shadow:inset 0 1px rgba(255,255,255,.035),0 22px 54px -42px #000;
+}
+.chat{flex:1;min-height:0;height:100%;align-content:start;gap:15px;padding:clamp(20px,3.4vw,42px);overflow-y:auto;overscroll-behavior:contain}
+.chat:empty::before{content:'Your next clear decision starts here.';display:block;max-width:17ch;margin:auto auto 0;color:#eceee7;
+  font:500 clamp(25px,3vw,38px)/1.16 'Fraunces',Georgia,serif;letter-spacing:-.035em;text-align:center}
+.chat:empty::after{content:'Ask SciFe to review your journal, talk through your trading day, or help you think through a setup.';
+  display:block;max-width:43ch;margin:12px auto auto;color:#a2a79d;font-size:13px;line-height:1.7;text-align:center}
+.chat:has(.bubble:only-child){justify-content:center;align-items:center}
+.chat:has(.bubble:only-child) .bubble{max-width:min(80%,700px);align-self:center;padding:21px 25px;border:1px solid rgba(184,205,169,.15);
+  border-radius:15px;background:#171814;color:#e8ebe2;text-align:center;font:500 17px/1.55 'Fraunces',Georgia,serif}
+.bubble{max-width:min(80%,700px);padding:13px 16px;border-radius:14px;font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.bubble.system{background:#151614;border-color:rgba(238,240,233,.08);color:#d4d7cf}
+.bubble.user{background:#1d1d18;border-color:rgba(210,189,145,.18);color:#f1f0e7}
+.composer{grid-column:2;grid-row:5;position:relative;bottom:auto;z-index:3;min-width:0;padding:11px 0 0;background:transparent}
+.composer-row{min-height:56px;padding:7px 8px 7px 14px;gap:8px;border:1px solid rgba(238,240,233,.13);border-radius:13px;
+  background:#11120f;box-shadow:0 12px 32px -25px #000,inset 0 1px rgba(255,255,255,.035)}
+.composer-row input{min-width:0;font-size:14px;color:#f0f1e9}
+.composer-row input::placeholder{color:#92988e}
+.mic-btn{width:36px;height:36px;border-radius:10px;color:#bec4b8}
+.send-btn{width:38px;height:38px;border-radius:10px}
+.send-btn:disabled{opacity:.4;filter:saturate(.4)}
+.scroll-latest{bottom:12px}
+
+/* Bring signal review and settings into the same visual system. */
+#signalPage{width:min(100%,1040px)!important;max-width:1040px!important;padding:0 clamp(18px,4vw,44px) 42px!important}
+#signalPage>.topbar{position:sticky;top:0;z-index:8;padding:14px 0;background:rgba(5,5,5,.96);border-bottom:1px solid var(--steel)}
+#signalPage .sig-hero{padding:clamp(24px,4vw,36px);margin:22px 0 16px;border:1px solid rgba(184,205,169,.14);border-radius:16px;
+  background:radial-gradient(ellipse at 100% 0%,rgba(184,205,169,.07),transparent 50%),#11120f;box-shadow:inset 0 1px rgba(255,255,255,.035)}
+#signalPage .sig-hero::after{display:none}
+#signalPage .sig-hero-title{font-size:clamp(29px,4vw,40px);letter-spacing:-.04em}
+#signalPage .sig-hero-sub{max-width:68ch;color:#a4a99f;line-height:1.75}
+#signalPage .sig-console-card,#signalPage .sig-card{border:1px solid rgba(238,240,233,.09);border-radius:15px;background:#10110f;box-shadow:inset 0 1px rgba(255,255,255,.025)}
+#signalPage .sig-card{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;padding:22px 24px 6px}
+#signalPage .sig-card .field{min-width:0}
+#signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1/-1}
+#signalPage .field label{color:#c9cdc4}
+#signalPage .field input,#signalPage .field select,#signalPage .sig-textarea{min-height:46px;border-radius:10px;background:#0b0c0b!important}
+#signalPage .sig-upload-zone{min-height:136px;border-radius:12px}
+#signalPage #sig_analyzeBtn{min-height:53px;border-radius:11px}
+#settingsOverlay .modal{border-radius:16px}
+#settingsOverlay .settings-tabs{scrollbar-width:thin}
+#settingsOverlay .settings-tab{min-height:40px;border-radius:9px}
+button:focus-visible,.icon-btn:focus-visible,.quick-chip:focus-visible,.settings-tab:focus-visible{outline:2px solid var(--bronze-bright)!important;outline-offset:3px}
+
+html[data-theme="light"] #stage{background:radial-gradient(ellipse at 50% 52%,rgba(116,150,98,.14),#f7f8f4 72%)}
+html[data-theme="light"] .quick-chip{background:#fffefa;color:#435145;border-color:rgba(28,39,31,.14)}
+html[data-theme="light"] .quick-chip:hover{background:#f3f5ef;color:#202a22}
+html[data-theme="light"] .chat-wrap,html[data-theme="light"] .composer-row{background:#fffefa}
+html[data-theme="light"] .chat:empty::before{color:#202a22}
+html[data-theme="light"] .chat:empty::after{color:#5e6b61}
+html[data-theme="light"] .bubble.system{background:#f2f4ef;color:#253027;border-color:rgba(28,39,31,.12)}
+html[data-theme="light"] .bubble.user{background:#f5f0e5;color:#29271e;border-color:rgba(130,102,51,.2)}
+html[data-theme="light"] .composer-row input{color:#202a22}
+html[data-theme="light"] #signalPage>.topbar{background:rgba(5,5,5,.96)}
+
+@media(max-width:900px) and (min-width:761px){
+  #app{grid-template-columns:minmax(218px,260px) minmax(0,1fr);column-gap:18px;padding-inline:20px}
+  #quickRow{grid-template-columns:1fr}
+  .quick-chip{min-height:36px}
+}
+@media(max-width:760px){
+  #app{width:100%;height:auto;min-height:100dvh;grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto 138px auto minmax(260px,1fr) 76px;gap:0;padding:0 16px calc(14px + env(safe-area-inset-bottom));overflow:visible}
+  #app>.topbar{grid-column:1;grid-row:1;min-height:64px;padding:8px 0;gap:10px}
+  #app>.topbar .back{min-height:34px;padding:0 9px;font-size:10px}
+  #app>.topbar .title{font-size:18px}
+  #app>.topbar .topbar-icons{gap:6px}
+  #app>.topbar .icon-btn{width:36px;height:36px}
+  #chatQuotaBanner{grid-column:1;grid-row:2;margin-bottom:10px!important}
+  #stage3dWrap{grid-column:1;grid-row:3;margin-bottom:10px}
+  #stage{border-radius:13px}
+  #stage3dWrap::before{top:10px;left:12px}
+  .neural-core-wrap{width:35%;height:84%;max-width:132px}
+  .stage-status{left:12px;bottom:9px}
+  .quick-row-wrap{grid-column:1;grid-row:4;margin:0;padding:0 0 11px;overflow:visible}
+  #quickRow{display:flex;align-items:center;height:auto;padding:20px 0 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  #quickRow::-webkit-scrollbar{display:none}
+  #quickRow::before{top:0}
+  .quick-chip{flex:0 0 auto;min-height:37px;max-width:210px;padding:8px 11px;border-radius:999px;font-size:10px;white-space:nowrap}
+  .chat-wrap{grid-column:1;grid-row:5;min-height:260px;height:auto;border-radius:14px}
+  .chat{min-height:260px;padding:20px 15px}
+  .chat:empty::before{font-size:27px}
+  .chat:empty::after{font-size:12px}
+  .bubble{max-width:92%;font-size:13px}
+  .composer{grid-column:1;grid-row:6;padding-top:9px}
+  .composer-row{min-height:53px}
+  #signalPage{padding-inline:16px!important}
+  #signalPage .sig-card{grid-template-columns:1fr;padding:18px 16px 4px}
+  #signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1}
+  #signalPage .sig-hero{padding:22px 18px;margin-top:15px}
+  #settingsOverlay{padding:12px;align-items:flex-end}
+  #settingsOverlay .modal{max-height:90dvh;padding:24px 18px calc(18px + env(safe-area-inset-bottom));border-radius:16px 16px 12px 12px}
+}
+@media(max-width:440px){
+  #app{padding-inline:12px}
+  #app>.topbar{gap:7px}
+  #app>.topbar .back{font-size:9px}
+  #app>.topbar .title{font-size:17px}
+  #stage3dWrap{height:118px}
+  .quick-chip{max-width:185px}
+  .chat{padding:18px 12px}
+  #signalPage .sig-hero-badge{display:none}
+  #signalPage .sig-hero-title{font-size:28px}
+  #settingsOverlay .settings-tabs{gap:3px}
+  #settingsOverlay .settings-tab{min-width:66px;font-size:10px}
+}
+@media(max-height:720px) and (min-width:761px){
+  #app{grid-template-rows:62px auto minmax(150px,190px) minmax(130px,1fr) 74px;min-height:540px}
+  #chatQuotaBanner{margin-bottom:8px!important}
+  .composer{padding-top:8px}
+}
+@media(prefers-reduced-motion:reduce){.quick-chip,.btn,.icon-btn{transition:none!important}}
+
 </style>
 
 </body>
