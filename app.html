@@ -8051,7 +8051,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='brief') renderBrief();
     if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
     if(btn.dataset.view==='edgelab') renderEdgeLab();
-    if(btn.dataset.view==='journal') renderJournal();
+    if(btn.dataset.view==='journal') { renderJournal(); playJournalLoadAnimation(); }
     if(btn.dataset.view==='tradeplan') renderDailyTradePlan();
     if(btn.dataset.view==='reviewroom') renderReviewRoom();
     if(btn.dataset.view==='profile') renderProfileDetails();
@@ -15560,7 +15560,62 @@ html[data-theme] .boot-enter-btn.show{animation:none}
 html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{background:#000}
 @media(prefers-reduced-motion:reduce){html[data-theme] .boot-splash-inner,html[data-theme] .boot-bar span{animation:none!important}}
 
+
+/* Cinematic journal arrival: a layered book opening in a slow orbital field. */
+.journal-load-experience[hidden]{display:none!important}
+.journal-load-experience{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:22px;padding:24px 18px;background:radial-gradient(ellipse at 50% 42%,rgba(50,82,57,.42),rgba(5,9,7,.94) 59%,rgba(2,4,3,.98));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:1;transition:opacity .34s ease;pointer-events:none;overflow:hidden}
+.journal-load-experience.is-leaving{opacity:0}
+.journal-load-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.journal-load-scene{position:relative;width:min(88vw,360px);height:230px;display:grid;place-items:center;perspective:980px;isolation:isolate}
+.journal-load-aura{position:absolute;width:210px;height:150px;border-radius:50%;background:radial-gradient(ellipse,rgba(182,215,153,.23),rgba(73,117,79,.12) 38%,transparent 72%);filter:blur(12px);animation:journal-aura-breathe 3.4s ease-in-out infinite}
+.journal-load-orbit{position:absolute;width:310px;height:98px;border:1px solid rgba(192,220,168,.36);border-radius:50%;transform-style:preserve-3d;box-shadow:0 0 24px rgba(111,158,105,.12),inset 0 0 18px rgba(192,220,168,.06)}
+.journal-load-orbit--one{transform:rotateX(68deg) rotateZ(-28deg);animation:journal-orbit-one 7s linear infinite}
+.journal-load-orbit--two{width:270px;height:128px;border-color:rgba(219,191,119,.23);transform:rotateX(66deg) rotateZ(52deg);animation:journal-orbit-two 11s linear infinite}
+.journal-load-orbit::after{content:"";position:absolute;left:18%;top:14%;width:6px;height:6px;border-radius:50%;background:#e7d29d;box-shadow:0 0 12px 3px rgba(231,210,157,.6)}
+.journal-load-book{position:relative;width:min(75vw,250px);height:154px;transform-style:preserve-3d;transform:rotateX(17deg) rotateY(-8deg) rotateZ(-5deg);filter:drop-shadow(0 24px 20px rgba(0,0,0,.42))}
+.journal-load-pages{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(228,234,211,.65);border-radius:11px;overflow:hidden;background:#e7e8d7;box-shadow:0 0 0 4px rgba(194,216,175,.08),0 0 28px rgba(166,207,147,.18);transform:translateZ(-4px)}
+.journal-load-page{position:relative;display:flex;flex-direction:column;gap:10px;padding:20px 16px 12px;background:linear-gradient(135deg,#f4f0dd,#dce5d2 72%,#c8d7bc);overflow:hidden}
+.journal-load-page--right{border-left:1px solid rgba(67,91,62,.22);background:linear-gradient(225deg,#f4f0dd,#e5eadb 74%,#d1dcc7)}
+.journal-load-page-label{color:#70836c;font:600 7px/1 'IBM Plex Mono',monospace;letter-spacing:.17em}
+.journal-load-page-rule{height:2px;width:62%;border-radius:2px;background:rgba(74,101,69,.36)}
+.journal-load-page-line{height:2px;width:88%;border-radius:2px;background:rgba(85,104,74,.2)}
+.journal-load-page-line.short{width:52%}
+.journal-load-page-line.mid{width:72%}
+.journal-load-chart{position:relative;height:34px;margin-top:auto;border-bottom:1px solid rgba(72,103,71,.3);background:repeating-linear-gradient(to bottom,transparent 0 10px,rgba(78,105,71,.11) 10px 11px)}
+.journal-load-chart svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.journal-load-spine{position:absolute;z-index:2;top:0;bottom:0;left:50%;width:7px;transform:translateX(-50%) translateZ(2px);background:linear-gradient(90deg,rgba(44,64,45,.5),rgba(244,239,217,.68),rgba(44,64,45,.35));box-shadow:0 0 12px rgba(45,70,45,.18)}
+.journal-load-cover{position:absolute;z-index:3;inset:0;transform-origin:left center;transform-style:preserve-3d}
+.journal-load-cover-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(224,238,205,.56);border-radius:11px;backface-visibility:hidden;overflow:hidden}
+.journal-load-cover-front{background:radial-gradient(circle at 52% 18%,rgba(172,203,145,.34),transparent 43%),linear-gradient(145deg,#203a2a,#102219 54%,#09130e);box-shadow:inset 0 1px 0 rgba(243,246,225,.32),inset 0 0 0 5px rgba(196,221,174,.06),0 12px 28px rgba(0,0,0,.25)}
+.journal-load-cover-front::before{content:"";position:absolute;inset:10px;border:1px solid rgba(203,222,179,.17);border-radius:6px}
+.journal-load-cover-back{transform:rotateY(180deg);background:linear-gradient(135deg,#bbceaa,#7f9a73 58%,#405941);box-shadow:inset 0 0 0 6px rgba(39,61,39,.08)}
+.journal-load-emblem{position:relative;width:28px;height:28px;border:1px solid rgba(227,239,206,.68);border-radius:50%;display:grid;place-items:center;color:#e3edcf;box-shadow:0 0 18px rgba(178,212,150,.2)}
+.journal-load-emblem::before,.journal-load-emblem::after{content:"";position:absolute;width:36px;height:12px;border:1px solid rgba(218,234,195,.76);border-radius:50%;transform:rotate(-32deg)}
+.journal-load-emblem::after{transform:rotate(58deg);border-color:rgba(216,190,127,.74)}
+.journal-load-emblem span{width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 32% 25%,#fff,#bfd5aa 45%,#597858);box-shadow:0 0 8px rgba(195,230,166,.7)}
+.journal-load-cover-brand{color:#b9c9a8;font:600 7px/1 'IBM Plex Mono',monospace;letter-spacing:.25em}
+.journal-load-cover-title{color:#edf1e7;font:550 17px/.95 'Fraunces',Georgia,serif;letter-spacing:.12em;text-align:center}
+.journal-load-cover-foot{color:#9bad8e;font:500 6px/1 'IBM Plex Mono',monospace;letter-spacing:.19em}
+.journal-load-copy{display:grid;justify-items:center;gap:7px;text-align:center}
+.journal-load-copy .eyebrow{color:#b3c99e;font:600 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em}
+.journal-load-copy strong{color:#f0f2ea;font:550 19px/1.1 'Instrument Sans',sans-serif;letter-spacing:-.025em}
+.journal-load-copy>span:last-of-type{color:#9da99b;font-size:12px}
+.journal-load-progress{width:150px;height:2px;margin-top:6px;border-radius:9px;background:rgba(194,216,175,.16);overflow:hidden}
+.journal-load-progress i{display:block;width:34%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#9eb98d,#e5d29b);box-shadow:0 0 12px rgba(201,225,172,.7);transform:translateX(-115%)}
+.journal-load-experience.is-active .journal-load-book{animation:journal-book-float 2.8s ease-in-out infinite}
+.journal-load-experience.is-active .journal-load-cover{animation:journal-cover-open 1.72s cubic-bezier(.2,.78,.22,1) both}
+.journal-load-experience.is-active .journal-load-pages{animation:journal-page-light 1.7s ease-out both}
+.journal-load-experience.is-active .journal-load-progress i{animation:journal-progress-run 1.65s cubic-bezier(.22,.7,.25,1) forwards}
+@keyframes journal-cover-open{0%,16%{transform:rotateY(0)}70%,100%{transform:rotateY(-148deg)}}
+@keyframes journal-book-float{0%,100%{transform:translate3d(0,4px,0) rotateX(15deg) rotateY(-10deg) rotateZ(-5deg)}50%{transform:translate3d(0,-5px,8px) rotateX(20deg) rotateY(8deg) rotateZ(-1deg)}}
+@keyframes journal-page-light{0%{filter:brightness(.72)}48%,100%{filter:brightness(1.04)}}
+@keyframes journal-progress-run{0%{transform:translateX(-115%)}100%{transform:translateX(330%)}}
+@keyframes journal-aura-breathe{0%,100%{transform:scale(.88);opacity:.58}50%{transform:scale(1.12);opacity:1}}
+@keyframes journal-orbit-one{to{transform:rotateX(68deg) rotateZ(332deg)}}
+@keyframes journal-orbit-two{to{transform:rotateX(66deg) rotateZ(-308deg)}}
+@media(max-width:520px){.journal-load-experience{gap:16px;padding:18px 12px}.journal-load-scene{height:204px}.journal-load-book{height:138px}.journal-load-page{gap:8px;padding:17px 12px 10px}.journal-load-copy strong{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.journal-load-experience,.journal-load-experience *{animation:none!important;transition:none!important}.journal-load-experience.is-active .journal-load-cover{transform:rotateY(-148deg)}.journal-load-experience.is-active .journal-load-progress i{transform:translateX(180%)}}
 </style>
 
-</body>
+<div class="journal-load-experience" id="journalLoadExperience" hidden role="status" aria-live="polite" aria-atomic="true"><span class="journal-load-sr">Opening your trading journal.</span><div class="journal-load-scene" aria-hidden="true"><div class="journal-load-aura"></div><div class="journal-load-orbit journal-load-orbit--one"></div><div class="journal-load-orbit journal-load-orbit--two"></div><div class="journal-load-book"><div class="journal-load-pages"><div class="journal-load-page"><span class="journal-load-page-label">SESSION NOTES</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9" fill="none" stroke="#6e956a" stroke-width="2"/><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9 120 40 0 40Z" fill="#7eaa72" fill-opacity=".12"/></svg></div></div><div class="journal-load-page journal-load-page--right"><span class="journal-load-page-label">TRADE REVIEW</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4" fill="none" stroke="#b69855" stroke-width="2"/><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4 120 40 0 40Z" fill="#b69855" fill-opacity=".13"/></svg></div></div><div class="journal-load-spine"></div><div class="journal-load-cover"><div class="journal-load-cover-face journal-load-cover-front"><div class="journal-load-emblem"><span></span></div><span class="journal-load-cover-brand">GHOST DISCIPLINE</span><strong class="journal-load-cover-title">TRADE<br>JOURNAL</strong><span class="journal-load-cover-foot">RECORD · REVIEW · REFINE</span></div><div class="journal-load-cover-face journal-load-cover-back"></div></div></div></div><div class="journal-load-copy" aria-hidden="true"><span class="eyebrow">JOURNAL / SYNC</span><strong>Opening your journal</strong><span>Bringing your trades into focus</span><div class="journal-load-progress"><i></i></div></div></div><script>(function(){var loader=document.getElementById('journalLoadExperience');window.playJournalLoadAnimation=function(){if(!loader)return;clearTimeout(loader._journalCloseTimer);clearTimeout(loader._journalHideTimer);loader.hidden=false;loader.classList.remove('is-leaving','is-active');void loader.offsetWidth;loader.classList.add('is-active');var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;loader._journalCloseTimer=window.setTimeout(function(){loader.classList.add('is-leaving');loader._journalHideTimer=window.setTimeout(function(){loader.hidden=true;loader.classList.remove('is-active','is-leaving');},360);},reduce?360:1640);};})();</script></body>
 </html>
