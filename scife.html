@@ -7465,7 +7465,7 @@ html.quick-mode .conversation-header{display:none!important}
 .welcome-copy p{max-width:65ch;margin:11px 0 0;color:#aab3a4;font-size:13px;line-height:1.6}
 .welcome-aside{flex:none;display:flex;align-items:center;gap:10px;margin-bottom:5px;padding:11px 13px;border:1px solid rgba(226,234,220,.1);border-radius:11px;background:rgba(18,25,19,.72);color:#c7d0bf;font-size:11px;white-space:nowrap}
 .welcome-aside-mark{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#263323;color:#c5d7b2;font-size:15px}
-.quick-row-wrap{grid-column:2;grid-row:4;min-width:0;margin:0;padding:13px 0 14px;border-top:1px solid rgba(226,234,220,.09)}
+.quick-row-wrap{grid-column:2;grid-row:4;min-width:0;min-height:210px;height:auto;margin:0;padding:13px 0 14px;overflow:visible!important;border-top:1px solid rgba(226,234,220,.09)}
 .prompt-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#95a38d;font:600 9px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em}
 .prompt-heading span:last-child{color:#798575;font:400 10px/1.3 'Instrument Sans',sans-serif;letter-spacing:0}
 #quickRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(76px,auto);align-content:start;height:auto!important;max-height:none!important;gap:8px;overflow:visible!important;padding:0}
@@ -7532,6 +7532,13 @@ html[data-theme="light"] .composer-row input{color:#253223}
   #stage{padding:22px 18px 18px}.companion-brand-top{margin-bottom:30px}
   .welcome-aside{white-space:normal;max-width:175px}
 }
+@media(max-height:820px) and (min-width:761px){
+  #app{grid-template-rows:auto auto minmax(132px,auto) minmax(205px,auto) minmax(104px,1fr) auto;height:auto;overflow:visible}
+  .welcome-hero{padding-top:12px;padding-bottom:15px}
+  .quick-row-wrap{min-height:210px}
+  .chat-wrap{min-height:144px}
+  .chat{padding-top:11px;padding-bottom:12px}
+}
 @media(max-width:760px){
   #app{width:100%;height:auto;min-height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 92px auto auto minmax(280px,1fr) auto;gap:0;padding:0 16px calc(12px + env(safe-area-inset-bottom));overflow:visible}
   #app>.topbar{grid-column:1;grid-row:1;min-height:60px;padding:7px 0}
@@ -7557,7 +7564,7 @@ html[data-theme="light"] .composer-row input{color:#253223}
   .welcome-copy h1{max-width:22ch;font-size:clamp(27px,7.8vw,35px)}
   .welcome-copy p{margin-top:8px;font-size:12px}
   .welcome-aside{display:none}
-  .quick-row-wrap{grid-column:1;grid-row:5;padding:11px 0 12px}
+  .quick-row-wrap{grid-column:1;grid-row:5;min-height:0;height:auto;padding:11px 0 12px}
   .prompt-heading{margin-bottom:8px}
   #quickRow{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
   .quick-chip.prompt-card{min-height:69px;padding:10px;gap:8px;border-radius:10px}
