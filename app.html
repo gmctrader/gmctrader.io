@@ -3289,7 +3289,7 @@ setTimeout(function(){
             <div class="row2">
               <div class="field" id="brief_apiKeyFieldWrap">
                 <label>News API key <span class="hint-inline">free at finnhub.io</span></label>
-                <input type="text" id="brief_apiKey" placeholder="Paste your free Finnhub API key" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
+                <input type="password" id="brief_apiKey" placeholder="Paste your free Finnhub API key" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="saveBriefSettingsDebounced()">
               </div>
               <div class="field" id="brief_apiKeyConnectedWrap" style="display:none;">
                 <label>News API key</label>
@@ -3313,8 +3313,8 @@ setTimeout(function(){
                   </div></section>
                 </div>
                 <div class="watch-entry-grid">
-                  <div><label for="brief_pairEntry">Pairs &amp; assets <span class="hint-inline">type symbols</span></label><input type="text" id="brief_pairEntry" placeholder="EURUSD, GBPJPY, XAUUSD" autocapitalize="characters" spellcheck="false" oninput="syncBriefWatchSelection()"><div class="hint">Enter pairs or assets, separated by commas.</div></div>
-                  <div class="watch-custom-box"><label class="watch-custom-toggle"><input type="checkbox" id="brief_customEnabled" onchange="toggleBriefCustom()"> <span>Add a custom symbol</span></label><div id="brief_customWrap" style="display:none;"><label for="brief_customEntry">Custom symbols <span class="hint-inline">optional</span></label><input type="text" id="brief_customEntry" placeholder="Type another ticker" autocapitalize="characters" spellcheck="false" oninput="syncBriefWatchSelection()"></div></div>
+                  <div><label for="brief_pairEntry">Pairs &amp; assets <span class="hint-inline">type symbols</span></label><input type="text" id="brief_pairEntry" placeholder="EURUSD, XAUUSD, OANDA:EURUSD" autocapitalize="characters" spellcheck="false" oninput="syncBriefWatchSelection()"><div class="hint">Enter pairs or assets, separated by commas. Use an exact exchange:symbol feed when needed.</div></div>
+                  <div class="watch-custom-box"><label class="watch-custom-toggle"><input type="checkbox" id="brief_customEnabled" onchange="toggleBriefCustom()"> <span>Add a custom symbol or feed</span></label><div id="brief_customWrap" style="display:none;"><label for="brief_customEntry">Custom symbol or TradingView feed <span class="hint-inline">optional</span></label><input type="text" id="brief_customEntry" placeholder="OANDA:EURUSD" autocapitalize="characters" spellcheck="false" oninput="syncBriefWatchSelection()"></div></div>
                 </div>
                 <div class="hint watch-source-note">Your brief prioritizes high-impact inflation, central-bank, jobs and growth news, then filters headlines for selected markets. Stories come from Finnhub; relevance uses the returned headline and summary text.</div>
               </div>
@@ -9786,10 +9786,15 @@ function showBriefKeyField(){
 const BRIEF_CURRENCIES = new Set(['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD','ZAR']);
 const BRIEF_INDICES = new Set(['US500','SPX500','SP500','NAS100','USTEC','US100','US30','DJ30','GER40','DAX','UK100','FTSE','JP225','NIKKEI']);
 const BRIEF_TRADINGVIEW_SPECIAL_SYMBOLS = { XAUUSD:'CMCMARKETS:GOLD', XAGUSD:'OANDA:XAGUSD', BTCUSD:'BITSTAMP:BTCUSD', ETHUSD:'BITSTAMP:ETHUSD' };
-function normalizeBriefWatchToken(value){ return String(value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function normalizeBriefWatchToken(value){
+  const token=String(value||'').trim().toUpperCase();
+  return /^[A-Z0-9._-]+:[A-Z0-9._-]+$/.test(token) ? token : token.replace(/[^A-Z0-9]/g,'');
+}
+function briefWatchBaseSymbol(value){ return normalizeBriefWatchToken(value).split(':').pop().replace(/[^A-Z0-9]/g,''); }
 function watchedPairList(){ return [...new Set((state.brief.watchedPairs||'').split(',').map(normalizeBriefWatchToken).filter(Boolean))]; }
 function pairTradingViewSymbol(pair){
   const token=normalizeBriefWatchToken(pair);
+  if(/^[A-Z0-9._-]+:[A-Z0-9._-]+$/.test(token))return token;
   if(BRIEF_TRADINGVIEW_SPECIAL_SYMBOLS[token])return BRIEF_TRADINGVIEW_SPECIAL_SYMBOLS[token];
   if(/^[A-Z]{6}$/.test(token))return `FX:${token}`;
   return null;
@@ -9820,7 +9825,7 @@ function hydrateBriefWatchControls(value){
   const hidden=document.getElementById('brief_watchedPairs');if(hidden)hidden.value=tokens.join(', ');
 }
 function pairCurrencyCodes(pair){
-  const p = (pair||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const p = briefWatchBaseSymbol(pair);
   if(p==='XAUUSD') return ['XAU','GOLD','USD'];
   if(p==='XAGUSD') return ['XAG','SILVER','USD'];
   if(p==='BTCUSD') return ['BTC','BITCOIN','USD'];
@@ -9971,7 +9976,7 @@ function renderBrief(){
 // currency like "USD", an index like "US30") still gets its orderbook + P&L
 // info below, just without a price line.
 function pairFinnhubSymbol(pair){
-  const p = (pair||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const p = briefWatchBaseSymbol(pair);
   if(p==='XAUUSD') return 'OANDA:XAU_USD';
   if(p==='XAGUSD') return 'OANDA:XAG_USD';
   if(p==='BTCUSD') return 'BINANCE:BTCUSDT';
@@ -10031,12 +10036,12 @@ function renderPairWatchTradingView(watched){
   if(key===briefPairWatchTradingViewKey)return;
   briefPairWatchTradingViewKey=key;
   host.replaceChildren();
-  if(!isElite()){
-    host.innerHTML=`<div class="brief-pair-watch-tv-locked hint">TradingView pair prices are available on Elite (2 symbols) and Premium (unlimited). <a href="${escapeHtml(packageUpgradeUrl('elite'))}" style="color:var(--gold-bright);font-weight:600;">Upgrade to Elite →</a></div>`;
+  if(!selection.pairs.length){
+    host.innerHTML='<div class="brief-pair-watch-tv-empty hint">Choose a forex pair or add an asset to see TradingView prices here. Single currencies only filter Market News.</div>';
     return;
   }
-  if(!selection.visible.length){
-    host.innerHTML='<div class="brief-pair-watch-tv-empty hint">Choose forex pairs below to see their TradingView prices here.</div>';
+  if(!isElite()){
+    host.innerHTML=`<div class="brief-pair-watch-tv-locked hint">TradingView pair prices are available on Elite (2 symbols) and Premium (unlimited). <a href="${escapeHtml(packageUpgradeUrl('elite'))}" style="color:var(--gold-bright);font-weight:600;">Upgrade to Elite →</a></div>`;
     return;
   }
   const shownPairs=selection.visible.map(item=>item.pair);
@@ -10058,7 +10063,7 @@ function renderPairWatchTradingView(watched){
     const script=document.createElement('script');
     script.type='module';
     script.src='https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js';
-    script.onerror=()=>{const status=host.querySelector('.brief-pair-watch-tv-source');if(status)status.textContent='TradingView prices could not load. Try refreshing the brief.';};
+    script.onerror=()=>{briefPairWatchTradingViewScriptStarted=false;briefPairWatchTradingViewKey='';const status=host.querySelector('.brief-pair-watch-tv-source');if(status)status.textContent='TradingView prices could not load. Try refreshing the brief.';};
     document.head.appendChild(script);
   }
 }
@@ -10104,13 +10109,20 @@ function renderPairWatchList(watched, hasKey){
   const body = document.getElementById('briefPairWatchBody');
   if(!body) return;
   renderPairWatchTradingView(watched);
+  const watchable=watched.filter(pair=>!BRIEF_CURRENCIES.has(pair));
+  if(!watchable.length){
+    body.innerHTML=watched.length
+      ? '<div class="hint" style="margin:0;">Your currency selections still filter Market News. Add a forex pair or asset to track its price here.</div>'
+      : '<div class="hint" style="margin:0;">Add a forex pair or asset below to see its price, pending orders, and today\'s P&amp;L here.</div>';
+    return;
+  }
   const tvSelection=briefPairWatchTradingViewSelection(watched);
   const tvVisiblePairs=new Set(tvSelection.visible.map(item=>item.pair));
   const tvPairs=new Set(tvSelection.pairs.map(item=>item.pair));
   const iso = todayStr();
   const todaysTrades = filteredTrades().filter(t=>t.date===iso);
   const openOrders = state.psychology.orders||[];
-  body.innerHTML = watched.map(p=>{
+  body.innerHTML = watchable.map(p=>{
     const q = briefPairWatchCache.quotes ? briefPairWatchCache.quotes[p] : null;
     let priceLine;
     if(isElite() && tvVisiblePairs.has(p)){
@@ -10120,16 +10132,19 @@ function renderPairWatchList(watched, hasKey){
     } else if(q){
       const up = q.dp >= 0;
       priceLine = `<span class="mono" style="font-weight:600;">${q.c}</span> <span style="color:${up?'var(--win-bright)':'var(--loss-bright)'};font-weight:600;">${up?'▲':'▼'} ${up?'+':''}${q.dp.toFixed(2)}%</span> <span class="hint-inline">today's range ${q.l}–${q.h}</span>`;
+    } else if(!pairFinnhubSymbol(p) && !pairTradingViewSymbol(p)){
+      priceLine = '<span class="hint-inline">No price feed is mapped. Add its exact exchange:symbol in the custom feed below.</span>';
     } else if(!hasKey){
       priceLine = '<span class="hint-inline">Add a Finnhub API key below for live price moves.</span>';
     } else {
       priceLine = '<span class="hint-inline">No live price available for this ticker.</span>';
     }
-    const pairOrders = openOrders.filter(o=>(o.pair||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===p);
+    const pairToken=briefWatchBaseSymbol(p);
+    const pairOrders = openOrders.filter(o=>(o.pair||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===pairToken);
     const orderLine = pairOrders.length
       ? `${pairOrders.length} pending order${pairOrders.length>1?'s':''} on the book (${pairOrders.map(o=>o.direction||'?').join(', ')})`
       : 'No pending orders on this pair';
-    const pairTrades = todaysTrades.filter(t=>(t.pair||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===p);
+    const pairTrades = todaysTrades.filter(t=>(t.pair||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===pairToken);
     const pairPnl = pairTrades.reduce((s,t)=>s+pnlOf(t),0);
     let statusLine;
     if(pairTrades.length===0){
@@ -10327,7 +10342,7 @@ function renderNewsList(items, econEvents){
   const instrumentTerms={USD:['USD','U.S. DOLLAR','US DOLLAR','FEDERAL RESERVE','FED '],EUR:['EUR','EURO','EUROZONE','EURO AREA','ECB'],GBP:['GBP','STERLING','BRITISH POUND','BANK OF ENGLAND','BOE'],JPY:['JPY','JAPANESE YEN','BANK OF JAPAN','BOJ'],AUD:['AUD','AUSTRALIAN DOLLAR','RESERVE BANK OF AUSTRALIA','RBA'],CAD:['CAD','CANADIAN DOLLAR','BANK OF CANADA','BOC'],CHF:['CHF','SWISS FRANC','SWISS NATIONAL BANK','SNB'],NZD:['NZD','NEW ZEALAND DOLLAR','RESERVE BANK OF NEW ZEALAND','RBNZ'],ZAR:['ZAR','SOUTH AFRICAN RAND','SOUTH AFRICAN RESERVE BANK','SARB'],US500:['S&P 500','S&P500','SPX','WALL STREET','US STOCKS'],SPX500:['S&P 500','SPX'],SP500:['S&P 500','SPX'],NAS100:['NASDAQ','NAS 100','NDX','TECH STOCKS'],USTEC:['NASDAQ','NDX'],US100:['NASDAQ','NDX'],US30:['DOW JONES','DOW','DJIA','US 30'],DJ30:['DOW JONES','DJIA'],GER40:['DAX','GERMAN STOCKS','GERMANY 40'],DAX:['DAX','GERMAN STOCKS'],UK100:['FTSE','UK 100','BRITISH STOCKS'],FTSE:['FTSE','UK 100'],JP225:['NIKKEI','NIKKEI 225','JAPAN 225'],NIKKEI:['NIKKEI','NIKKEI 225']};
   const classified = (items||[]).map(it=>{
     const hay = ((it.headline||'') + ' ' + (it.summary||'')).toUpperCase();
-    const matchedPair = watched.find(p=>{const terms=instrumentTerms[p]||pairCurrencyCodes(p);return terms.some(term=>term.length>3?hay.includes(term):new RegExp('(^|[^A-Z])'+term+'([^A-Z]|$)').test(hay));}) || null;
+    const matchedPair = watched.find(p=>{const base=briefWatchBaseSymbol(p);const terms=instrumentTerms[base]||pairCurrencyCodes(p);return terms.some(term=>term.length>3?hay.includes(term):new RegExp('(^|[^A-Z])'+term+'([^A-Z]|$)').test(hay));}) || null;
     const highImpact=isHighImpactHeadline(hay);
     return Object.assign({},it,{_pair:matchedPair,_highImpact:highImpact,_urgency:highImpact?3:matchedPair?2:1});
   }).sort((a,b)=>b._urgency-a._urgency||(Number(b.datetime)||0)-(Number(a.datetime)||0));
