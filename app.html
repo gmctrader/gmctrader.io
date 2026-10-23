@@ -2467,7 +2467,7 @@ if(window.gdMotionLevel() === 'reduced') document.documentElement.classList.add(
   <div class="boot-particles">
     <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
-  <div class="boot-splash-inner"><p class="boot-kicker">GHOST DISCIPLINE · PRIVATE WORKSPACE</p><div class="gd-splash-scene" aria-hidden="true"><div class="gd-splash-colorwash"></div><div class="gd-splash-orbit gd-splash-orbit--one"></div><div class="gd-splash-orbit gd-splash-orbit--two"></div><span class="gd-splash-drop gd-splash-drop--a"></span><span class="gd-splash-drop gd-splash-drop--b"></span><span class="gd-splash-drop gd-splash-drop--c"></span><span class="gd-splash-drop gd-splash-drop--d"></span><span class="gd-splash-drop gd-splash-drop--e"></span><span class="gd-splash-drop gd-splash-drop--f"></span><div class="gd-splash-logo"><span class="gd-splash-logo-halo"></span><img src="ghost-discipline-logo-v2.png" alt="" onerror="gdLogoFallback(this)"></div><span class="gd-splash-glint"></span></div><div class="gd-boot-copy"><p class="boot-word">Ghost Discipline</p><div class="boot-terminal"><div class="boot-sub"><span class="boot-sub-line">Opening your workspace</span></div></div></div><div class="boot-bar"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><button type="button" id="bootEnterBtn" class="boot-enter-btn"><span>Open workspace</span></button></div>
+  <div class="boot-splash-inner"><p class="boot-kicker">GHOST DISCIPLINE · PRIVATE WORKSPACE</p><div class="gd-splash-scene" aria-hidden="true"><div class="gd-splash-colorwash"></div><div class="gd-splash-orbit gd-splash-orbit--one"></div><div class="gd-splash-orbit gd-splash-orbit--two"></div><div class="gd-splash-logo"><span class="gd-splash-logo-halo"></span><img src="ghost-discipline-logo-v2.png" alt="" onerror="gdLogoFallback(this)"></div><span class="gd-splash-glint"></span></div><div class="gd-boot-copy"><p class="boot-word">Ghost Discipline</p><div class="boot-terminal"><div class="boot-sub"><span class="boot-sub-line">Opening your workspace</span></div></div></div><div class="boot-bar"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><button type="button" id="bootEnterBtn" class="boot-enter-btn"><span>Open workspace</span></button></div>
 </div>
 <script>
 // Hard safety net: if the main boot script ever throws before it can hide
@@ -15680,43 +15680,38 @@ html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{backgr
 @keyframes gdJournalSceneIn{from{opacity:0;transform:translateY(8px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 
-/* Centered Ghost Discipline logo with a soft, full-colour splash on workspace entry. */
-#bootSplash{isolation:isolate;perspective:none;background:radial-gradient(circle at 50% 43%,rgba(69,185,125,.1),transparent 25%),radial-gradient(circle at 50% 44%,rgba(105,84,195,.11),transparent 47%),#050806}
-#bootSplash .boot-splash-inner{position:relative;z-index:2;display:grid;justify-items:center;gap:5px;width:min(96vw,620px);padding:10px 14px 16px;transform:none!important;filter:none!important;animation:gdBootContentIn .8s cubic-bezier(.2,.8,.2,1) both}
-#bootSplash .boot-kicker{margin:0;color:#d6e1cb;font:600 9px/1.2 'IBM Plex Mono',monospace;letter-spacing:.22em;text-align:center;opacity:.82}
-.gd-splash-scene{position:relative;isolation:isolate;display:grid;place-items:center;width:min(78vw,300px,34vh);aspect-ratio:1;margin:0 auto;perspective:900px;transform-style:preserve-3d}
-.gd-splash-colorwash{position:absolute;inset:5%;border-radius:50%;opacity:.86;filter:blur(9px) saturate(145%);background:radial-gradient(ellipse at 18% 31%,rgba(49,238,184,.9) 0 3%,rgba(49,238,184,.28) 9%,transparent 27%),radial-gradient(ellipse at 77% 23%,rgba(255,101,115,.85) 0 3%,rgba(255,101,115,.25) 11%,transparent 29%),radial-gradient(ellipse at 79% 76%,rgba(117,118,255,.91) 0 3%,rgba(117,118,255,.26) 11%,transparent 29%),radial-gradient(ellipse at 21% 77%,rgba(255,205,83,.88) 0 4%,rgba(255,205,83,.25) 11%,transparent 28%),radial-gradient(ellipse at 50% 5%,rgba(160,243,92,.72) 0 3%,rgba(160,243,92,.2) 10%,transparent 25%),radial-gradient(ellipse at 50% 96%,rgba(255,126,213,.76) 0 3%,rgba(255,126,213,.2) 10%,transparent 27%)}
-.gd-splash-orbit{position:absolute;left:50%;top:50%;border:1px solid rgba(225,238,214,.34);border-radius:50%;transform-style:preserve-3d;box-shadow:0 0 22px rgba(120,221,172,.1),inset 0 0 16px rgba(255,255,255,.04)}
-.gd-splash-orbit--one{width:97%;height:39%;transform:translate(-50%,-50%) rotateX(66deg) rotateZ(-28deg);animation:gdSplashOrbitOne 10s linear infinite}
-.gd-splash-orbit--two{width:88%;height:47%;border-color:rgba(255,213,129,.34);transform:translate(-50%,-50%) rotateY(65deg) rotateZ(35deg);animation:gdSplashOrbitTwo 13s linear infinite reverse}
-.gd-splash-orbit::after{content:"";position:absolute;left:18%;top:14%;width:6px;height:6px;border-radius:50%;background:#f4e5bd;box-shadow:0 0 13px 4px rgba(244,229,189,.65)}
-.gd-splash-drop{position:absolute;z-index:1;width:clamp(9px,3vw,15px);height:clamp(18px,6vw,31px);border-radius:80% 24% 72% 32%;filter:blur(.3px);mix-blend-mode:screen;box-shadow:0 0 18px currentColor;animation:gdSplashDrop 3.8s ease-in-out infinite}
-.gd-splash-drop--a{left:14%;top:26%;color:#42ecc2;background:currentColor;transform:rotate(34deg)}
-.gd-splash-drop--b{right:15%;top:25%;color:#ff7777;background:currentColor;transform:rotate(68deg);animation-delay:.35s}
-.gd-splash-drop--c{right:17%;bottom:20%;color:#887dff;background:currentColor;transform:rotate(135deg);animation-delay:.7s}
-.gd-splash-drop--d{left:19%;bottom:19%;color:#ffd65e;background:currentColor;transform:rotate(205deg);animation-delay:1.05s}
-.gd-splash-drop--e{left:47%;top:7%;color:#b2ef64;background:currentColor;transform:rotate(4deg);animation-delay:.5s}
-.gd-splash-drop--f{right:44%;bottom:4%;color:#ff83c9;background:currentColor;transform:rotate(178deg);animation-delay:.9s}
-.gd-splash-logo{position:relative;z-index:3;display:grid;place-items:center;width:clamp(80px,23vw,112px);aspect-ratio:1;border:1px solid rgba(247,249,238,.62);border-radius:26px;background:linear-gradient(145deg,rgba(239,246,225,.96),rgba(184,209,158,.96));box-shadow:0 0 0 7px rgba(242,248,229,.045),0 0 32px rgba(126,226,169,.34),0 0 74px rgba(143,105,255,.21),inset 0 1px 0 rgba(255,255,255,.85);transform:translateZ(24px);animation:gdSplashLogoFloat 4.2s ease-in-out infinite}
-.gd-splash-logo img{position:relative;z-index:2;width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(14,26,16,.24))}
-.gd-splash-logo-halo{position:absolute;inset:-12px;border:1px solid rgba(239,244,220,.39);border-radius:31px;box-shadow:0 0 24px rgba(135,255,209,.22),inset 0 0 16px rgba(173,255,225,.08);animation:gdSplashHalo 2.8s ease-in-out infinite}
-.gd-splash-glint{position:absolute;z-index:4;left:22%;top:20%;width:15%;height:6px;border-radius:50%;transform:rotate(-42deg);background:rgba(255,255,255,.84);filter:blur(1px);box-shadow:0 0 16px 5px rgba(255,255,255,.28);animation:gdSplashGlint 3.2s ease-in-out infinite}
+
+/* Refined post-sign-in brand reveal: subdued colour, precise motion, centered mark. */
+#bootSplash{isolation:isolate;perspective:none;background:radial-gradient(ellipse at 50% 45%,rgba(64,112,76,.12),transparent 29%),radial-gradient(ellipse at 50% 44%,rgba(137,102,61,.08),transparent 49%),#060907}
+#bootSplash .boot-splash-inner{position:relative;z-index:2;display:grid;justify-items:center;gap:7px;width:min(96vw,620px);padding:10px 14px 16px;transform:none!important;filter:none!important;animation:gdBootContentIn .8s cubic-bezier(.2,.8,.2,1) both}
+#bootSplash .boot-kicker{margin:0;color:#bdc7b9;font:600 9px/1.2 'IBM Plex Mono',monospace;letter-spacing:.2em;text-align:center;opacity:.76}
+.gd-splash-scene{position:relative;isolation:isolate;display:grid;place-items:center;width:min(76vw,286px,33vh);aspect-ratio:1;margin:1px auto;perspective:950px;transform-style:preserve-3d}
+.gd-splash-colorwash{position:absolute;inset:8%;border-radius:50%;opacity:.82;filter:blur(21px) saturate(92%);background:radial-gradient(ellipse at 31% 35%,rgba(92,164,115,.36),transparent 49%),radial-gradient(ellipse at 70% 59%,rgba(191,148,83,.24),transparent 44%),radial-gradient(ellipse at 60% 23%,rgba(99,126,151,.17),transparent 47%);animation:gdCinematicGlow 8s ease-in-out infinite}
+.gd-splash-orbit{position:absolute;left:50%;top:50%;border:1px solid rgba(198,214,195,.24);border-radius:50%;transform-style:preserve-3d;box-shadow:0 0 18px rgba(119,164,119,.08),inset 0 0 12px rgba(255,255,255,.025)}
+.gd-splash-orbit--one{width:104%;height:42%;transform:translate(-50%,-50%) rotateX(67deg) rotateZ(-24deg);animation:gdCinematicOrbitOne 22s linear infinite}
+.gd-splash-orbit--two{width:96%;height:48%;border-color:rgba(196,165,111,.22);transform:translate(-50%,-50%) rotateY(64deg) rotateZ(31deg);animation:gdCinematicOrbitTwo 28s linear infinite reverse}
+.gd-splash-orbit::after{content:"";position:absolute;left:18%;top:14%;width:5px;height:5px;border-radius:50%;background:#c8d8bd;box-shadow:0 0 10px 3px rgba(178,208,166,.34)}
+.gd-splash-orbit--two::after{background:#d3b77e;box-shadow:0 0 10px 3px rgba(211,183,126,.28)}
+.gd-splash-logo{position:relative;z-index:3;display:grid;place-items:center;width:clamp(82px,21vw,104px);aspect-ratio:1;border:1px solid rgba(219,229,211,.34);border-radius:23px;background:linear-gradient(145deg,rgba(29,41,32,.97),rgba(13,19,15,.97));box-shadow:0 0 0 6px rgba(224,234,214,.025),0 12px 36px rgba(0,0,0,.35),0 0 38px rgba(105,151,103,.16),inset 0 1px 0 rgba(255,255,255,.08);transform:translateZ(20px);animation:gdCinematicLogo 5.5s ease-in-out infinite}
+.gd-splash-logo img{position:relative;z-index:2;width:74%;height:74%;object-fit:contain;filter:drop-shadow(0 3px 7px rgba(0,0,0,.3))}
+.gd-splash-logo-halo{position:absolute;inset:-9px;border:1px solid rgba(196,214,188,.2);border-radius:28px;box-shadow:0 0 20px rgba(130,175,128,.12),inset 0 0 12px rgba(173,205,167,.035);animation:gdCinematicHalo 5s ease-in-out infinite}
+.gd-splash-glint{position:absolute;z-index:4;left:24%;top:20%;width:13%;height:4px;border-radius:50%;transform:rotate(-42deg);background:rgba(235,241,226,.56);filter:blur(1px);box-shadow:0 0 12px 3px rgba(220,232,209,.11);animation:gdCinematicGlint 5.8s ease-in-out infinite}
 #bootSplash .gd-boot-copy{display:grid;justify-items:center;gap:7px}
-#bootSplash .boot-word{margin:0;color:#f0f2ea;-webkit-text-fill-color:#f0f2ea;background:none;font:520 clamp(25px,5vw,34px)/1.05 'Instrument Sans',sans-serif;letter-spacing:-.045em;filter:none;animation:none}
+#bootSplash .boot-word{margin:0;color:#edf0e9;-webkit-text-fill-color:#edf0e9;background:none;font:520 clamp(24px,4.5vw,30px)/1.05 'Instrument Sans',sans-serif;letter-spacing:-.04em;filter:none;animation:none}
 #bootSplash .boot-sub{width:auto;height:auto;min-height:14px;text-align:center}
-#bootSplash .boot-sub-line{position:static;display:block;opacity:1;transform:none;animation:none;color:#c2cabb;font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.055em}
-#bootSplash .boot-bar{position:relative;width:164px;height:3px;margin:7px 0 0;overflow:hidden;border-radius:9px;background:rgba(207,225,185,.13)}
-#bootSplash .boot-bar::before{content:"";position:absolute;inset:0 auto 0 0;width:42%;border-radius:inherit;background:linear-gradient(90deg,#45e5bf,#9a84ff,#ff7fa1,#ffd86b);box-shadow:0 0 14px rgba(186,219,158,.7);animation:gdBootProgress 1.8s ease-in-out infinite}
+#bootSplash .boot-sub-line{position:static;display:block;opacity:1;transform:none;animation:none;color:#aeb7aa;font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.045em}
+#bootSplash .boot-bar{position:relative;width:154px;height:2px;margin:7px 0 0;overflow:hidden;border-radius:9px;background:rgba(207,225,185,.1)}
+#bootSplash .boot-bar::before{content:"";position:absolute;inset:0 auto 0 0;width:42%;border-radius:inherit;background:linear-gradient(90deg,transparent,#829f78,#c6ad79);box-shadow:0 0 10px rgba(153,186,137,.42);animation:gdBootProgress 2.3s ease-in-out infinite}
 #bootSplash .boot-bar span{display:none}
 #bootSplash .boot-enter-btn{margin-top:3px}
-@keyframes gdSplashOrbitOne{to{transform:translate(-50%,-50%) rotateX(66deg) rotateZ(332deg)}}
-@keyframes gdSplashOrbitTwo{to{transform:translate(-50%,-50%) rotateY(65deg) rotateZ(395deg)}}
-@keyframes gdSplashDrop{0%,100%{filter:blur(.3px) brightness(1);opacity:.86}50%{filter:blur(1px) brightness(1.6);opacity:.58;transform:translate3d(0,-7px,14px) rotate(24deg) scale(1.18)}}
-@keyframes gdSplashLogoFloat{0%,100%{transform:translate3d(0,2px,24px) rotateX(-3deg) rotateY(-5deg)}50%{transform:translate3d(0,-5px,32px) rotateX(5deg) rotateY(6deg)}}
-@keyframes gdSplashHalo{0%,100%{transform:scale(.96);opacity:.55}50%{transform:scale(1.08);opacity:1}}
-@keyframes gdSplashGlint{0%,100%{opacity:.25;transform:translate(-3px,2px) rotate(-42deg)}45%{opacity:.9;transform:translate(16px,9px) rotate(-42deg)}}
-@media(max-width:600px){.gd-splash-scene{width:min(72vw,250px,30vh)}#bootSplash .boot-splash-inner{gap:3px;padding:8px 12px 14px}#bootSplash .boot-word{font-size:26px}}
-@media(max-height:650px){.gd-splash-scene{width:min(58vw,210px,27vh)}}
+@keyframes gdCinematicGlow{0%,100%{opacity:.63;transform:scale(.96)}50%{opacity:.94;transform:scale(1.04)}}
+@keyframes gdCinematicOrbitOne{to{transform:translate(-50%,-50%) rotateX(67deg) rotateZ(336deg)}}
+@keyframes gdCinematicOrbitTwo{to{transform:translate(-50%,-50%) rotateY(64deg) rotateZ(391deg)}}
+@keyframes gdCinematicLogo{0%,100%{transform:translate3d(0,1px,20px) rotateX(-2deg)}50%{transform:translate3d(0,-3px,24px) rotateX(2deg)}}
+@keyframes gdCinematicHalo{0%,100%{transform:scale(.985);opacity:.55}50%{transform:scale(1.025);opacity:.92}}
+@keyframes gdCinematicGlint{0%,100%{opacity:.16;transform:translate(-2px,1px) rotate(-42deg)}42%{opacity:.66;transform:translate(12px,6px) rotate(-42deg)}}
+@media(max-width:600px){.gd-splash-scene{width:min(72vw,248px,30vh)}#bootSplash .boot-splash-inner{gap:5px;padding:8px 12px 14px}#bootSplash .boot-word{font-size:26px}}
+@media(max-height:650px){.gd-splash-scene{width:min(56vw,205px,26vh)}}
 @media(prefers-reduced-motion:reduce){.gd-splash-scene,.gd-splash-scene *{animation:none!important;transition:none!important}#bootSplash .boot-bar::before{animation:none!important}}
 
 </style>
