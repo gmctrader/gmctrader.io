@@ -1535,7 +1535,7 @@ setTimeout(function(){
     <div class="stage" id="stage">
       <div class="companion-brand">
         <div class="companion-brand-top">
-          <div class="companion-monogram" aria-hidden="true">S<span></span></div>
+          <div class="companion-monogram scife-orbit-mark" aria-hidden="true"><svg class="scife-logo-svg" viewBox="0 0 48 48" focusable="false"><defs><radialGradient id="scifeOrbCore" cx="32%" cy="28%" r="76%"><stop offset="0" stop-color="#f4f6e9"/><stop offset=".34" stop-color="#bfd5aa"/><stop offset=".72" stop-color="#73926a"/><stop offset="1" stop-color="#34533b"/></radialGradient><radialGradient id="scifeOrbGlow" cx="35%" cy="28%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".72"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><g class="scife-logo-orbit scife-logo-orbit--wide"><ellipse cx="24" cy="24" rx="18" ry="6.4" fill="none" stroke="#284833" stroke-width="2.5"/><ellipse cx="24" cy="24" rx="18" ry="6.4" fill="none" stroke="#f3f2dc" stroke-opacity=".86" stroke-width=".9"/><circle cx="42" cy="24" r="2.3" fill="#f4ebc9"/></g><circle class="scife-logo-core" cx="24" cy="24" r="8.6" fill="url(#scifeOrbCore)"/><circle cx="24" cy="24" r="8.6" fill="url(#scifeOrbGlow)"/><circle cx="24" cy="24" r="8.6" fill="none" stroke="#f4f4df" stroke-opacity=".68" stroke-width=".8"/><ellipse cx="21.4" cy="20.6" rx="2.6" ry="1.35" transform="rotate(-34 21.4 20.6)" fill="#fff" fill-opacity=".68"/><g class="scife-logo-orbit scife-logo-orbit--tilt"><ellipse cx="24" cy="24" rx="6.2" ry="18" fill="none" stroke="#416247" stroke-width="2.1"/><ellipse cx="24" cy="24" rx="6.2" ry="18" fill="none" stroke="#ecf1db" stroke-opacity=".8" stroke-width=".75"/><circle cx="24" cy="6" r="1.8" fill="#fff3d4"/></g></svg></div>
           <span class="companion-kicker">TRADING COMPANION</span>
         </div>
         <h2>SciFe</h2>
@@ -7603,7 +7603,20 @@ html.quick-mode .chat-wrap{grid-column:1;grid-row:2;min-height:0;height:100%;bor
 html.quick-mode .session-heading{display:none!important}
 html.quick-mode .composer{grid-column:1;grid-row:3}
 @media(prefers-reduced-motion:reduce){.prompt-arrow{transition:none!important}}
-.ui-icon{display:block;flex:none;width:1em;height:1em;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.prompt-arrow .ui-icon{width:15px;height:15px}.prompt-link .ui-icon{width:12px;height:12px}.welcome-aside-mark .ui-icon{width:14px;height:14px}.icon-btn>.ui-icon{width:16px;height:16px}</style>
+.ui-icon{display:block;flex:none;width:1em;height:1em;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.prompt-arrow .ui-icon{width:15px;height:15px}.prompt-link .ui-icon{width:12px;height:12px}.welcome-aside-mark .ui-icon{width:14px;height:14px}.icon-btn>.ui-icon{width:16px;height:16px}
+/* SciFe companion emblem: a small, layered orbital mark with gentle 3D motion. */
+.scife-orbit-mark{overflow:visible;perspective:120px;border-color:rgba(225,239,207,.56);background:radial-gradient(circle at 27% 20%,#e1e9cc 0,#c0d2aa 43%,#829974 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.58),0 8px 25px -15px rgba(182,218,153,.9)}
+.scife-orbit-mark .scife-logo-svg{display:block;width:100%;height:100%;overflow:visible;transform-style:preserve-3d;filter:drop-shadow(0 2px 2px rgba(35,62,42,.24));animation:scife-logo-float 5.6s ease-in-out infinite}
+.scife-logo-orbit{transform-box:view-box;transform-origin:24px 24px}
+.scife-logo-orbit--wide{animation:scife-orbit-wide 16s linear infinite}
+.scife-logo-orbit--tilt{animation:scife-orbit-tilt 11s linear infinite reverse}
+.scife-logo-core{transform-box:fill-box;transform-origin:center;animation:scife-core-breathe 3.8s ease-in-out infinite}
+@keyframes scife-logo-float{0%,100%{transform:translate3d(0,0,0) rotateX(-4deg) rotateY(-7deg)}50%{transform:translate3d(0,-1.5px,0) rotateX(6deg) rotateY(7deg)}}
+@keyframes scife-orbit-wide{to{transform:rotate(360deg)}}
+@keyframes scife-orbit-tilt{to{transform:rotate(360deg)}}
+@keyframes scife-core-breathe{0%,100%{transform:scale(.96);filter:brightness(.96)}50%{transform:scale(1.05);filter:brightness(1.08)}}
+@media(prefers-reduced-motion:reduce){.scife-orbit-mark .scife-logo-svg,.scife-logo-orbit,.scife-logo-core{animation:none!important}}
+</style>
 
 </body>
 </html>
