@@ -3243,8 +3243,9 @@ setTimeout(function(){
         <div class="card tilt" style="grid-column:1/-1;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
             <h2 style="margin:0;">Pair <span class="accent">Watch</span></h2>
-            <span class="hint-inline" id="briefPairWatchUpdatedLabel" style="text-transform:none;"></span>
+            <div style="display:flex;align-items:center;gap:10px;"><button type="button" class="side-logout" style="font-size:11px;padding:5px 12px;" onclick="document.getElementById('brief_marketWatchField')?.scrollIntoView({behavior:'smooth',block:'center'});">Choose pairs</button><span class="hint-inline" id="briefPairWatchUpdatedLabel" style="text-transform:none;"></span></div>
           </div>
+          <div id="briefPairWatchTradingView"></div>
           <div id="briefPairWatchBody"></div>
         </div>
         <div class="card tilt" style="grid-column:1/-1;">
@@ -3270,14 +3271,14 @@ setTimeout(function(){
                   <button type="button" class="side-logout" style="margin-left:auto;font-size:10.5px;padding:5px 10px;" onclick="showBriefKeyField()">Use a different key</button>
                 </div>
               </div>
-              <div class="field watch-selector-field" style="grid-column:1/-1;">
+              <div class="field watch-selector-field" id="brief_marketWatchField" style="grid-column:1/-1;">
                 <label>Market watch <span class="hint-inline">Choose what matters to you</span></label>
                 <input type="hidden" id="brief_watchedPairs" value="">
                 <div class="watch-groups">
                   <section class="watch-group" aria-label="Major currencies"><div class="watch-group-title">Currencies <span>major FX drivers</span></div><div class="watch-options" id="brief_currencyOptions">
                     <button type="button" class="watch-option" data-watch="USD" onclick="toggleBriefWatch(this)">USD <small>US dollar</small></button><button type="button" class="watch-option" data-watch="EUR" onclick="toggleBriefWatch(this)">EUR <small>Euro</small></button><button type="button" class="watch-option" data-watch="GBP" onclick="toggleBriefWatch(this)">GBP <small>Sterling</small></button><button type="button" class="watch-option" data-watch="JPY" onclick="toggleBriefWatch(this)">JPY <small>Yen</small></button><button type="button" class="watch-option" data-watch="AUD" onclick="toggleBriefWatch(this)">AUD <small>Australian dollar</small></button><button type="button" class="watch-option" data-watch="CAD" onclick="toggleBriefWatch(this)">CAD <small>Canadian dollar</small></button><button type="button" class="watch-option" data-watch="CHF" onclick="toggleBriefWatch(this)">CHF <small>Swiss franc</small></button><button type="button" class="watch-option" data-watch="NZD" onclick="toggleBriefWatch(this)">NZD <small>New Zealand dollar</small></button><button type="button" class="watch-option" data-watch="ZAR" onclick="toggleBriefWatch(this)">ZAR <small>South African rand</small></button>
                   </div></section>
-                  <section class="watch-group watch-pair-group" aria-label="Forex pairs"><div class="watch-group-title">Forex pairs <span>choose instruments for Pair Watch</span></div><div class="watch-options" id="brief_pairOptions">
+                  <section class="watch-group watch-pair-group" aria-label="Forex pairs"><div class="watch-group-title">Forex pairs <span>TradingView prices: Elite 2 · Premium unlimited</span></div><div class="watch-options" id="brief_pairOptions">
                     <button type="button" class="watch-option" data-watch="EURUSD" onclick="toggleBriefWatch(this)">EUR/USD</button><button type="button" class="watch-option" data-watch="GBPUSD" onclick="toggleBriefWatch(this)">GBP/USD</button><button type="button" class="watch-option" data-watch="USDJPY" onclick="toggleBriefWatch(this)">USD/JPY</button><button type="button" class="watch-option" data-watch="AUDUSD" onclick="toggleBriefWatch(this)">AUD/USD</button><button type="button" class="watch-option" data-watch="NZDUSD" onclick="toggleBriefWatch(this)">NZD/USD</button><button type="button" class="watch-option" data-watch="USDCAD" onclick="toggleBriefWatch(this)">USD/CAD</button><button type="button" class="watch-option" data-watch="USDCHF" onclick="toggleBriefWatch(this)">USD/CHF</button><button type="button" class="watch-option" data-watch="EURGBP" onclick="toggleBriefWatch(this)">EUR/GBP</button><button type="button" class="watch-option" data-watch="EURJPY" onclick="toggleBriefWatch(this)">EUR/JPY</button><button type="button" class="watch-option" data-watch="GBPJPY" onclick="toggleBriefWatch(this)">GBP/JPY</button><button type="button" class="watch-option" data-watch="AUDJPY" onclick="toggleBriefWatch(this)">AUD/JPY</button><button type="button" class="watch-option" data-watch="EURAUD" onclick="toggleBriefWatch(this)">EUR/AUD</button><button type="button" class="watch-option" data-watch="CADJPY" onclick="toggleBriefWatch(this)">CAD/JPY</button>
                   </div></section>
                   <section class="watch-group" aria-label="Major indices"><div class="watch-group-title">Indices <span>global benchmarks</span></div><div class="watch-options" id="brief_indexOptions">
@@ -9713,8 +9714,15 @@ function showBriefKeyField(){
 }
 const BRIEF_CURRENCIES = new Set(['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD','ZAR']);
 const BRIEF_INDICES = new Set(['US500','SPX500','SP500','NAS100','USTEC','US100','US30','DJ30','GER40','DAX','UK100','FTSE','JP225','NIKKEI']);
+const BRIEF_TRADINGVIEW_SPECIAL_SYMBOLS = { XAUUSD:'CMCMARKETS:GOLD', XAGUSD:'OANDA:XAGUSD', BTCUSD:'BITSTAMP:BTCUSD', ETHUSD:'BITSTAMP:ETHUSD' };
 function normalizeBriefWatchToken(value){ return String(value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''); }
 function watchedPairList(){ return [...new Set((state.brief.watchedPairs||'').split(',').map(normalizeBriefWatchToken).filter(Boolean))]; }
+function pairTradingViewSymbol(pair){
+  const token=normalizeBriefWatchToken(pair);
+  if(BRIEF_TRADINGVIEW_SPECIAL_SYMBOLS[token])return BRIEF_TRADINGVIEW_SPECIAL_SYMBOLS[token];
+  if(/^[A-Z]{6}$/.test(token))return `FX:${token}`;
+  return null;
+}
 function briefEntryTokens(id){ const el=document.getElementById(id); return el?el.value.split(',').map(normalizeBriefWatchToken).filter(Boolean):[]; }
 function syncBriefWatchSelection(){
   const hidden=document.getElementById('brief_watchedPairs'); if(!hidden)return;
@@ -9936,6 +9944,53 @@ function pairNewsForInsight(p){
 }
 let briefPairWatchCache = { quotes:{}, fetchedAt:0, forKey:'', error:null };
 const BRIEF_PAIRWATCH_CACHE_MS = 5*60*1000; // prices move fast, but no need to hammer the quote endpoint every render
+let briefPairWatchTradingViewKey = '';
+let briefPairWatchTradingViewScriptStarted = false;
+function briefPairWatchTradingViewSelection(watched){
+  const pairs=watched.map(pair=>({pair,symbol:pairTradingViewSymbol(pair)})).filter(item=>item.symbol);
+  const limit=isPremiumTier()?Infinity:(isElite()?2:0);
+  return { pairs, visible:limit===Infinity?pairs:pairs.slice(0,limit) };
+}
+function renderPairWatchTradingView(watched){
+  const host=document.getElementById('briefPairWatchTradingView');
+  if(!host)return;
+  const selection=briefPairWatchTradingViewSelection(watched);
+  const tier=isPremiumTier()?'premium':isElite()?'elite':(isDemoMode?'demo-':'')+userTier;
+  const key=`${tier}|${watched.join(',')}|${selection.visible.map(item=>item.symbol).join(',')}`;
+  if(key===briefPairWatchTradingViewKey)return;
+  briefPairWatchTradingViewKey=key;
+  host.replaceChildren();
+  if(!isElite()){
+    host.innerHTML=`<div class="brief-pair-watch-tv-locked hint">TradingView pair prices are available on Elite (2 symbols) and Premium (unlimited). <a href="${escapeHtml(packageUpgradeUrl('elite'))}" style="color:var(--gold-bright);font-weight:600;">Upgrade to Elite →</a></div>`;
+    return;
+  }
+  if(!selection.visible.length){
+    host.innerHTML='<div class="brief-pair-watch-tv-empty hint">Choose forex pairs below to see their TradingView prices here.</div>';
+    return;
+  }
+  const shownPairs=selection.visible.map(item=>item.pair);
+  const limitNote=selection.pairs.length>shownPairs.length
+    ? `<span class="brief-pair-watch-tv-limit">Elite shows 2 of ${selection.pairs.length} selected pairs. <a href="${escapeHtml(packageUpgradeUrl('premium'))}" style="color:var(--gold-bright);font-weight:600;">Premium shows all →</a></span>`
+    : '';
+  host.innerHTML=`<div class="brief-pair-watch-tv"><div class="brief-pair-watch-tv-head"><span>TradingView prices</span><span>${escapeHtml(shownPairs.join(', '))}</span></div><div class="brief-pair-watch-tv-tape"></div>${limitNote}<div class="brief-pair-watch-tv-source hint">Price timing and availability depend on the selected TradingView feed.</div></div>`;
+  const tape=host.querySelector('.brief-pair-watch-tv-tape');
+  const ticker=document.createElement('tv-ticker-tape');
+  ticker.setAttribute('symbols',selection.visible.map(item=>item.symbol).join(','));
+  ticker.setAttribute('item-size','compact');
+  ticker.setAttribute('hide-chart','');
+  ticker.setAttribute('theme','dark');
+  ticker.setAttribute('transparent','');
+  ticker.setAttribute('aria-label',`TradingView prices for ${shownPairs.join(', ')}`);
+  tape.appendChild(ticker);
+  if(!briefPairWatchTradingViewScriptStarted){
+    briefPairWatchTradingViewScriptStarted=true;
+    const script=document.createElement('script');
+    script.type='module';
+    script.src='https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js';
+    script.onerror=()=>{const status=host.querySelector('.brief-pair-watch-tv-source');if(status)status.textContent='TradingView prices could not load. Try refreshing the brief.';};
+    document.head.appendChild(script);
+  }
+}
 function renderPairWatchUpdatedLabel(){
   const el = document.getElementById('briefPairWatchUpdatedLabel');
   if(!el) return;
@@ -9947,6 +10002,7 @@ async function refreshPairWatch(force){
   const body = document.getElementById('briefPairWatchBody');
   if(!body) return;
   const watched = watchedPairList();
+  renderPairWatchTradingView(watched);
   if(!watched.length){
     body.innerHTML = '<div class="hint" style="margin:0;">Add watched pairs below to see price moves, orderbook exposure and today\'s P&L per pair here.</div>';
     return;
@@ -9976,13 +10032,21 @@ async function refreshPairWatch(force){
 function renderPairWatchList(watched, hasKey){
   const body = document.getElementById('briefPairWatchBody');
   if(!body) return;
+  renderPairWatchTradingView(watched);
+  const tvSelection=briefPairWatchTradingViewSelection(watched);
+  const tvVisiblePairs=new Set(tvSelection.visible.map(item=>item.pair));
+  const tvPairs=new Set(tvSelection.pairs.map(item=>item.pair));
   const iso = todayStr();
   const todaysTrades = filteredTrades().filter(t=>t.date===iso);
   const openOrders = state.psychology.orders||[];
   body.innerHTML = watched.map(p=>{
     const q = briefPairWatchCache.quotes ? briefPairWatchCache.quotes[p] : null;
     let priceLine;
-    if(q){
+    if(isElite() && tvVisiblePairs.has(p)){
+      priceLine = '<span class="hint-inline">Price shown above from TradingView.</span>';
+    } else if(isElite() && tvPairs.has(p)){
+      priceLine = '<span class="hint-inline">Elite includes 2 TradingView symbols; upgrade to Premium for the full pair list.</span>';
+    } else if(q){
       const up = q.dp >= 0;
       priceLine = `<span class="mono" style="font-weight:600;">${q.c}</span> <span style="color:${up?'var(--win-bright)':'var(--loss-bright)'};font-weight:600;">${up?'▲':'▼'} ${up?'+':''}${q.dp.toFixed(2)}%</span> <span class="hint-inline">today's range ${q.l}–${q.h}</span>`;
     } else if(!hasKey){
@@ -15344,7 +15408,7 @@ html[data-theme="black"] .bg-video-tint{background:linear-gradient(180deg,rgba(0
 html[data-theme="black"] .auth-video-vignette{background:linear-gradient(180deg,rgba(0,0,0,.4),rgba(0,0,0,.92))}
 html[data-theme="black"] #authScreen::before{background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px)}
 .swatch-black{background:linear-gradient(135deg,#000 0%,#080c0b 70%,#a5d5ad 100%)}
-.watch-groups{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:8px}.watch-group{min-width:0;padding:12px;border:1px solid var(--steel);border-radius:12px;background:color-mix(in srgb,var(--panel-solid) 78%,transparent)}.watch-group.watch-pair-group{grid-column:1/-1}
+.watch-groups{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:8px}.watch-group{min-width:0;padding:12px;border:1px solid var(--steel);border-radius:12px;background:color-mix(in srgb,var(--panel-solid) 78%,transparent)}.watch-group.watch-pair-group{grid-column:1/-1}.brief-pair-watch-tv{margin:2px 0 14px;padding:11px 12px;border:1px solid var(--steel);border-radius:12px;background:color-mix(in srgb,var(--panel-solid) 82%,transparent)}.brief-pair-watch-tv-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;color:var(--platinum);font-size:11px;font-weight:650}.brief-pair-watch-tv-head span:last-child{color:var(--slate);font:9px 'IBM Plex Mono',monospace}.brief-pair-watch-tv-tape tv-ticker-tape{display:block;width:100%;min-height:62px}.brief-pair-watch-tv-source{margin:5px 0 0!important}.brief-pair-watch-tv-limit{display:block;margin-top:7px;color:var(--amber);font-size:10px}.brief-pair-watch-tv-locked,.brief-pair-watch-tv-empty{margin:0 0 12px;padding:9px 0}
 .watch-group-title{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--platinum);font-size:11px;font-weight:650;letter-spacing:.04em}.watch-group-title span{color:var(--slate-dim);font-size:9px;font-weight:500;letter-spacing:0}
 .watch-options{display:flex;flex-wrap:wrap;gap:7px}.watch-option{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 9px;border:1px solid var(--steel);border-radius:9px;background:var(--void-2);color:var(--slate);font:600 10.5px 'IBM Plex Mono',monospace;cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease}.watch-option small{color:var(--slate-dim);font:500 9px 'Instrument Sans',sans-serif}
 .watch-option:hover{border-color:color-mix(in srgb,var(--bronze-bright) 50%,var(--steel));color:var(--platinum);transform:translateY(-1px)}.watch-option.is-selected{border-color:color-mix(in srgb,var(--bronze-bright) 55%,var(--steel));background:color-mix(in srgb,var(--bronze-bright) 12%,var(--panel-solid));color:var(--bronze-bright);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bronze-bright) 10%,transparent)}.watch-option.is-selected small{color:color-mix(in srgb,var(--bronze-bright) 70%,var(--slate))}
