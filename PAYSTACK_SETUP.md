@@ -3,7 +3,7 @@
 ## What's included
 
 - New users can create free accounts from the terminal sign-in screen.
-- Paid prices are in ZAR: Pro R499, Elite R1,199, Premium R1,999 per 30 days. Payments are one-time; users renew manually.
+- Paid prices are in ZAR per 30 days: Pro launch offer R299 (regularly R499; save R200), Elite R1,199, Premium R1,999. Payments are one-time; users renew manually.
 - The admin panel can grant a selected account a paid tier with **Complimentary · no payment**. That grant has no expiry and does not auto-renew.
 - The `paystack-checkout` Supabase Edge Function initializes checkout on the server, validates the signed-in account and package, verifies successful Paystack transactions, and applies a 30-day entitlement to that account. Each Paystack reference is recorded once, so retrying verification cannot extend access again.
 

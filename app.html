@@ -2435,6 +2435,20 @@ html[data-theme="light"] .card, html[data-theme="light"] .modal{box-shadow:0 14p
 /* ---- topbar rows: a hairline to separate the page title from the
    content below it, so dense screens get one more anchor point ---- */
 .topbar-row{padding-bottom:14px;border-bottom:1px solid var(--steel-hi);}
+.package-price .pro-launch-current{color:var(--bronze-bright)}
+.package-price .pro-launch-original{font-size:.65em;color:var(--slate)}
+.pro-launch-badge{display:inline-flex;align-items:center;margin-top:6px;padding:4px 8px;border:1px solid rgba(184,205,169,.34);border-radius:999px;background:rgba(184,205,169,.08);color:var(--bronze-bright);font:9px 'IBM Plex Mono',monospace;letter-spacing:.03em}
+.package-offer-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 20px;padding:15px 18px;border:1px solid rgba(184,205,169,.32);border-radius:14px;background:linear-gradient(105deg,rgba(184,205,169,.1),#10110f)}
+.package-offer-copy{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.package-offer-label{color:var(--bronze-bright);font:9px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
+.package-offer-price{display:flex;align-items:baseline;gap:7px;color:var(--platinum);font:500 16px 'IBM Plex Mono',monospace}
+.package-offer-price strong{color:var(--bronze-bright);font-weight:600}
+.package-offer-price del{color:var(--slate);font-size:11px}
+.package-offer-price small{color:var(--slate);font:10px 'Instrument Sans',sans-serif}
+.package-offer-savings{color:#c1c8bd;font-size:11px}
+.package-offer-banner .btn{min-height:38px;padding:0 16px;font-size:10px;white-space:nowrap}
+@media(max-width:720px){.package-card>p{font-size:12.5px!important;color:#bbc3b7!important}.package-card li{font-size:11.5px!important;color:#d0d5ce!important}.package-footnote{font-size:11px!important;color:#a3ac9f!important}}
+@media(max-width:720px){.package-offer-banner{align-items:stretch;flex-direction:column;gap:12px;padding:15px}.package-offer-copy{gap:8px 11px}.package-offer-banner .btn{width:100%}}
 </style></head>
 <body>
 <script>
@@ -2808,6 +2822,7 @@ setTimeout(function(){
       <div class="sdp-col"><span class="sdp-col-label">Discipline</span><span class="sdp-col-val" id="sdpScore">—</span></div>
     </div>
     <nav class="side-nav" id="sideNav" aria-label="Primary">
+      <div class="side-nav-label">Daily workflow</div>
       <button class="side-navbtn active" data-view="dashboard" aria-current="page">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Overview
@@ -2840,7 +2855,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
         Order Book
       </button>
-      <div class="side-divider"></div>
+      <div class="side-nav-label">Strategy &amp; mindset</div>
       <button class="side-navbtn" data-view="playbook">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Playbook
@@ -2857,7 +2872,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.8C1 8.5 3 5 6.5 5c2 0 3.3 1.1 5.5 3 2.2-1.9 3.5-3 5.5-3C21 5 23 8.5 21.5 12.2 19 16.65 12 21 12 21z"/></svg>
         Psychology
       </button>
-      <div class="side-divider"></div>
+      <div class="side-nav-label">Risk &amp; funding</div>
       <button class="side-navbtn" data-view="rules">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/></svg>
         Rule Builder
@@ -2883,7 +2898,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
         Prop Payouts
       </button>
-      <div class="side-divider"></div>
+      <div class="side-nav-label">Workspaces</div>
       <button class="side-navbtn" data-view="session">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         Session
@@ -2897,7 +2912,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 8-9"/><path d="M14 5h6v6"/></svg>
         Edge Lab
       </button>
-      <div class="side-divider"></div>
+      <div class="side-nav-label">AI assistant</div>
       <button class="side-navbtn" id="scifeNavBtn" onclick="handleSciFe()" aria-label="Open full SciFe workspace">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5a3 3 0 00-3 3v8a3 3 0 006 0v-8a3 3 0 00-3-3z"/><path d="M19 10.5v2a7 7 0 01-14 0v-2"/><path d="M12 19.5v3.5M8.25 23h7.5"/></svg>
         SciFe
@@ -3110,6 +3125,18 @@ setTimeout(function(){
           <button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a Trade</button>
         </div>
       </div>
+      <section class="first-session-guide" id="firstSessionGuide" aria-labelledby="firstSessionTitle" hidden>
+        <div class="first-session-head">
+          <div>
+            <div class="first-session-kicker">YOUR FIRST SESSION</div>
+            <h2 id="firstSessionTitle">Build your process before your first trade.</h2>
+            <p>Three quick steps to make this workspace yours.</p>
+          </div>
+          <span class="first-session-count" id="firstSessionCount"></span>
+        </div>
+        <div class="first-session-progress" role="progressbar" aria-label="First-session setup progress" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span id="firstSessionProgress"></span></div>
+        <div class="first-session-steps" id="firstSessionSteps"></div>
+      </section>
       <div class="momentum-banner" id="momentumBanner"></div>
       <div class="hero-row" id="heroStatsRow">
         <div class="hero-stat" id="hero_netPnl"><div class="hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></div><div class="hero-label">Net P/L</div><div class="hero-value">$0</div><div class="hero-sub">all logged trades</div><div class="hero-trend" id="hero_netPnl_trend"></div></div>
@@ -4236,9 +4263,10 @@ setTimeout(function(){
     <!-- PACKAGES -->
     <div class="view" id="view-packages">
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
+      <div class="package-offer-banner"><div class="package-offer-copy"><span class="package-offer-label">Pro launch offer</span><div class="package-offer-price"><strong>R299</strong><del>R499</del><small>/ 30 days</small></div><span class="package-offer-savings">Save R200</span></div><button class="btn btn-primary" onclick="openPackageRequest('pro')">Get Pro · R299</button></div>
       <div class="package-grid">
           <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">R0 <small>forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
-        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">R499 <small>/ 30 days</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro</button></article>
+        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price"><span class="pro-launch-current">R299</span> <del class="pro-launch-original" aria-label="Regular price: R499">R499</del> <small>/ 30 days</small><br><span class="pro-launch-badge">Launch offer · save R200</span></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro · R299</button></article>
         <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">R1,199 <small>/ 30 days</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
         <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">R1,999 <small>/ 30 days</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
       </div>
@@ -5971,7 +5999,7 @@ function showTierLockedFeatureTease(view){
   const premiumOnly = PREMIUM_LOCKED_VIEWS.includes(view);
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
   const requiredTier = premiumOnly ? 'premium' : (eliteOnly ? 'elite' : 'pro');
-  const tierPrice = { pro:499, elite:1199, premium:1999 }[requiredTier];
+  const tierPrice = { pro:299, elite:1199, premium:1999 }[requiredTier];
   document.getElementById('demoLockedFeatureTitle').textContent = premiumOnly ? `${label} is a Premium feature` : (eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`);
   document.getElementById('demoLockedFeatureCopy').textContent = premiumOnly
     ? `${label} is included in Premium. Premium also includes Elite and Pro features, plus the advanced SciFe model.`
@@ -8213,7 +8241,7 @@ function renderAll(){
   updateCurrencyLabels();
   renderTraderFilterOptions();
   renderAccountScopeOptions();
-  renderDashboard(); renderHeroStats(); renderMomentumBanner(); renderDailyChecklist(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
+  renderDashboard(); renderHeroStats(); renderMomentumBanner(); renderFirstSessionGuide(); renderDailyChecklist(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
   renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
   renderEquityChart('equityChart','equityTotal','equitySub');
@@ -8378,6 +8406,49 @@ function renderDailyChecklist(){
       <div class="ci-dot">${i.state==='done'?'✓':(i.state==='warn'?'!':'')}</div>
       <div class="ci-label"><b>${i.label}</b><span>${i.sub}</span></div>
     </div>`).join('');
+}
+
+function renderFirstSessionGuide(){
+  const guide = document.getElementById('firstSessionGuide');
+  if(!guide) return;
+  const hasLoggedTrade = (Array.isArray(state.trades)?state.trades:[]).some(trade=>!trade.backtestSession);
+  if(hasLoggedTrade){ guide.hidden = true; return; }
+  guide.hidden = false;
+
+  const steps = [
+    { action:'rules', done:!!state.rulesCompleted, title:'Set your risk guardrails', detail:'Choose the limits and stop rules that protect your account.', button:'Review risk rules' },
+    { action:'markets', done:watchedPairList().length>0, title:'Choose your markets', detail:'Pick the pairs and assets you want in your Daily Brief.', button:'Choose markets' },
+    { action:'trade', done:false, title:'Log your first trade', detail:'Record the decision and the context behind it.', button:'Log first trade' }
+  ];
+  const completeCount = steps.filter(step=>step.done).length;
+  const currentIndex = steps.findIndex(step=>!step.done);
+  const count = document.getElementById('firstSessionCount');
+  const progress = guide.querySelector('.first-session-progress');
+  const progressFill = document.getElementById('firstSessionProgress');
+  const stepsHost = document.getElementById('firstSessionSteps');
+  if(count) count.textContent = `${completeCount} of ${steps.length} steps complete`;
+  if(progress) progress.setAttribute('aria-valuenow',String(completeCount));
+  if(progressFill) progressFill.style.width = `${completeCount/steps.length*100}%`;
+  if(!stepsHost) return;
+  stepsHost.innerHTML = steps.map((step,index)=>{
+    const status = step.done?'is-done':(index===currentIndex?'is-current':'');
+    return `<div class="first-session-step ${status}"${index===currentIndex?' aria-current="step"':''}>
+      <span class="first-session-mark" aria-hidden="true">${step.done?'✓':String(index+1).padStart(2,'0')}</span>
+      <div class="first-session-copy"><strong>${step.title}</strong><span>${step.detail}</span></div>
+      <button class="first-session-action" type="button" data-first-session-action="${step.action}">${step.button}<span aria-hidden="true">→</span></button>
+    </div>`;
+  }).join('');
+  stepsHost.querySelectorAll('[data-first-session-action]').forEach(button=>{
+    button.addEventListener('click',()=>{
+      const action = button.dataset.firstSessionAction;
+      if(action==='rules') document.querySelector('.side-navbtn[data-view="rules"]')?.click();
+      if(action==='markets'){
+        document.querySelector('.side-navbtn[data-view="brief"]')?.click();
+        window.setTimeout(()=>document.getElementById('brief_marketWatchField')?.scrollIntoView({behavior:'smooth',block:'center'}),180);
+      }
+      if(action==='trade') openPretrade();
+    });
+  });
 }
 
 /* ============ PERSISTENT SIDEBAR PILL (streak + discipline score, visible on every view) ============ */
@@ -9728,7 +9799,7 @@ function syncBriefWatchSelection(){
   const hidden=document.getElementById('brief_watchedPairs'); if(!hidden)return;
   const selected=Array.from(document.querySelectorAll('.watch-option.is-selected')).map(el=>el.dataset.watch);
   const tokens=[...new Set([...selected,...briefEntryTokens('brief_pairEntry'),...briefEntryTokens('brief_customEntry')])];
-  hidden.value=tokens.join(', '); state.brief.watchedPairs=hidden.value; saveBriefSettingsDebounced();
+  hidden.value=tokens.join(', '); state.brief.watchedPairs=hidden.value; saveBriefSettingsDebounced(); renderFirstSessionGuide();
 }
 function toggleBriefWatch(button){button.classList.toggle('is-selected');button.setAttribute('aria-pressed',String(button.classList.contains('is-selected')));syncBriefWatchSelection();}
 function toggleBriefCustom(){
@@ -15162,6 +15233,31 @@ table{border-collapse:collapse}th{color:var(--slate-dim);font-size:9px;letter-sp
 #view-dashboard>#traderIdentityCard{grid-column:8/span 5;order:7;margin:0!important;align-self:stretch}
 #view-dashboard>#dashboardActivityGrid{grid-column:1/-1;order:8;margin:0!important}
 #view-dashboard>.card:last-child{grid-column:1/-1;order:9;margin:0!important}
+#view-dashboard>#firstSessionGuide{grid-column:1/-1;order:1;margin:0}
+.first-session-guide{padding:24px 26px;border:1px solid color-mix(in srgb,var(--gold) 23%,var(--steel));border-radius:20px;background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--gold) 8%,transparent),transparent 48%),linear-gradient(145deg,var(--panel-solid),var(--panel));box-shadow:inset 0 1px rgba(255,255,255,.04),0 18px 44px -38px rgba(0,0,0,.85)}
+.first-session-guide[hidden]{display:none!important}
+.first-session-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.first-session-kicker{margin-bottom:7px;color:var(--gold-bright);font:600 9px/1.2 'IBM Plex Mono',monospace;letter-spacing:.16em}
+.first-session-head h2{margin:0;color:var(--platinum);font-size:clamp(17px,2vw,21px);letter-spacing:-.025em}
+.first-session-head p{margin:6px 0 0;color:var(--slate);font-size:12px;line-height:1.5}
+.first-session-count{flex-shrink:0;padding:7px 10px;border:1px solid var(--steel);border-radius:999px;color:var(--slate);font-size:10px;font-weight:600;white-space:nowrap}
+.first-session-progress{height:3px;margin:17px 0 15px;overflow:hidden;border-radius:99px;background:var(--steel)}
+.first-session-progress span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--gold),var(--win-bright));transition:width .3s ease}
+.first-session-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.first-session-step{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:12px;padding:15px;border:1px solid var(--steel);border-radius:15px;background:color-mix(in srgb,var(--void-2) 70%,transparent);transition:border-color .2s ease,background .2s ease}
+.first-session-step.is-current{border-color:color-mix(in srgb,var(--gold-bright) 52%,var(--steel));background:color-mix(in srgb,var(--gold) 6%,var(--panel-solid))}
+.first-session-step.is-done{border-color:color-mix(in srgb,var(--win-bright) 28%,var(--steel))}
+.first-session-mark{display:grid;width:25px;height:25px;place-items:center;border:1px solid var(--steel-hi);border-radius:50%;color:var(--slate);font:600 9px/1 'IBM Plex Mono',monospace}
+.first-session-step.is-current .first-session-mark{border-color:var(--gold-bright);color:var(--gold-bright)}
+.first-session-step.is-done .first-session-mark{border-color:transparent;background:color-mix(in srgb,var(--win-bright) 15%,transparent);color:var(--win-bright);font:700 12px/1 'Instrument Sans',sans-serif}
+.first-session-copy{display:grid;gap:4px}
+.first-session-copy strong{color:var(--platinum);font-size:12px;line-height:1.4}
+.first-session-copy span{color:var(--slate);font-size:10px;line-height:1.5}
+.first-session-action{display:flex;align-items:center;gap:7px;margin-top:auto;padding:0;border:0;background:none;color:var(--gold-bright);font:600 10px/1.4 'Instrument Sans',sans-serif;cursor:pointer}
+.first-session-action:hover{color:var(--platinum)}
+.first-session-action:focus-visible{outline:2px solid var(--gold-bright);outline-offset:4px;border-radius:3px}
+@media(max-width:760px){.first-session-guide{padding:20px 18px}.first-session-steps{grid-template-columns:1fr}.first-session-step{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:center;gap:11px;padding:12px}.first-session-action{margin:0;white-space:nowrap}}
+@media(max-width:480px){.first-session-head{display:block}.first-session-count{display:inline-flex;margin-top:12px}.first-session-step{grid-template-columns:25px minmax(0,1fr)}.first-session-action{grid-column:2;margin-top:-2px}}
 /* Keep the navigation rail filled to the visible screen edge, including
    browsers where the dynamic viewport is shorter than legacy 100vh. */
 #appShell.show{min-height:100vh;min-height:100dvh;align-items:stretch}
@@ -15780,6 +15876,8 @@ html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{backgr
 @media(max-width:600px){.gd-splash-scene{width:min(72vw,248px,30vh)}#bootSplash .boot-splash-inner{gap:5px;padding:8px 12px 14px}#bootSplash .boot-word{font-size:26px}}
 @media(max-height:650px){.gd-splash-scene{width:min(56vw,205px,26vh)}}
 @media(prefers-reduced-motion:reduce){.gd-splash-scene,.gd-splash-scene *{animation:none!important;transition:none!important}#bootSplash .boot-bar::before{animation:none!important}}
+.side-nav-label{padding:14px 14px 4px;color:var(--slate-dim);font-size:8px;letter-spacing:.16em;opacity:.86}
+@media(max-width:960px){.side-nav-label{padding:10px 12px 3px}}
 
 </style>
 

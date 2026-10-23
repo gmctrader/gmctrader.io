@@ -94,6 +94,22 @@
     @keyframes draw-equity{to{stroke-dashoffset:0}}
     @media(prefers-reduced-motion:reduce){.hero::before,.hero-copy,.visual-stage,.visual-orbit,.visual-float-a,.visual-float-b,.equity-draw{animation:none!important}.equity-draw{stroke-dasharray:none;stroke-dashoffset:0}}
   </style>
+  <style>
+    .pro-launch-current{color:var(--mint)}
+    .pro-launch-original{font-size:.65em;color:var(--quiet)}
+    .pro-launch-badge{display:inline-flex;align-items:center;margin-top:6px;padding:4px 8px;border:1px solid rgba(166,201,158,.35);border-radius:999px;background:rgba(166,201,158,.08);color:var(--mint);font:9px var(--mono);letter-spacing:.03em}
+    .pro-offer-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 20px;padding:15px 18px;border:1px solid rgba(166,201,158,.32);border-radius:14px;background:linear-gradient(105deg,rgba(166,201,158,.1),rgba(16,24,19,.82))}
+    .pro-offer-copy{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .pro-offer-label{color:var(--mint);font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+    .pro-offer-price{display:flex;align-items:baseline;gap:7px;color:#e5e8dc;font:500 16px var(--mono)}
+    .pro-offer-price strong{color:var(--mint);font-weight:600}
+    .pro-offer-price del{color:var(--quiet);font-size:11px}
+    .pro-offer-price small{color:var(--quiet);font:10px var(--sans)}
+    .pro-offer-savings{color:var(--muted);font-size:11px}
+    .pro-offer-banner .btn{min-height:38px;padding:0 16px;font-size:10px;white-space:nowrap}
+    @media(max-width:720px){.plan>p{font-size:13px!important;color:#bac4b7!important}.plan li{font-size:11.5px!important;color:#d1d8cf!important}.membership-note{font-size:11px!important;color:#aab3a4!important}}
+    @media(max-width:720px){.pro-offer-banner{align-items:stretch;flex-direction:column;gap:12px;padding:15px}.pro-offer-copy{gap:8px 11px}.pro-offer-banner .btn{width:100%}}
+  </style>
 </head>
 <body>
   <header class="nav" id="top">
@@ -172,9 +188,9 @@
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/><circle cx="12" cy="12" r="4"/></svg></span><h3>SciFe Scan POV</h3><p>See an independent chart read and review suggested strategy-note refinements before saving.</p></article>
     </div></div></section>
 
-    <section class="section membership" id="membership"><div class="wrap"><div class="section-head"><div class="eyebrow">Membership</div><h2>Start with the journal.<br>Grow into the full desk.</h2><p>Create a free account to begin. Upgrade to a paid package when you are ready.</p></div><div class="plans">
+    <section class="section membership" id="membership"><div class="wrap"><div class="section-head"><div class="eyebrow">Membership</div><h2>Start with the journal.<br>Grow into the full desk.</h2><p>Create a free account to begin. Upgrade to a paid package when you are ready.</p></div><div class="pro-offer-banner"><div class="pro-offer-copy"><span class="pro-offer-label">Pro launch offer</span><div class="pro-offer-price"><strong>R299</strong><del>R499</del><small>/ 30 days</small></div><span class="pro-offer-savings">Save R200</span></div><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1&amp;plan=pro">Get Pro · R299</a></div><div class="plans">
       <article class="plan"><div class="plan-label">A considered start</div><h3>Free</h3><div class="price">R0 <small>/ forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><a class="btn btn-quiet" href="app.html?signin=1&amp;signup=1">Create free account</a></article>
-<article class="plan featured"><div class="plan-label">Most popular</div><h3>Pro</h3><div class="price">R499 <small>/ 30 days</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1&amp;plan=pro">Choose Pro</a></article>
+<article class="plan featured"><div class="plan-label">Most popular</div><h3>Pro</h3><div class="price"><span class="pro-launch-current">R299</span> <del class="pro-launch-original" aria-label="Regular price: R499">R499</del> <small>/ 30 days</small><br><span class="pro-launch-badge">Launch offer · save R200</span></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1&amp;plan=pro">Choose Pro · R299</a></article>
 <article class="plan"><div class="plan-label">For a trading desk</div><h3>Elite</h3><div class="price">R1,199 <small>/ 30 days</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><a class="btn btn-quiet" href="app.html?signin=1&amp;signup=1&amp;plan=elite">Choose Elite</a></article>
 <article class="plan"><div class="plan-label">Advanced analysis</div><h3>Premium</h3><div class="price">R1,999 <small>/ 30 days</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><a class="btn btn-quiet" href="app.html?signin=1&amp;signup=1&amp;plan=premium">Choose Premium</a></article>
 </div><p class="membership-note">Prices in ZAR · one payment gives 30 days of access; renew manually</p></div></section>

@@ -5,7 +5,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
-const plans = { pro: 499, elite: 1199, premium: 1999 } as const;
+const plans = { pro: 299, elite: 1199, premium: 1999 } as const;
 type Tier = keyof typeof plans;
 
 function reply(body: unknown, status = 200) {
