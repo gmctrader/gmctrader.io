@@ -78,17 +78,19 @@ Deno.serve(async (req) => {
       return reply({ error: 'Payment details did not match this account and package.' }, 403);
     }
 
-    const paidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const service = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-    const { data: existing, error: readError } = await service.from('trader_data').select('user_id').eq('user_id', user.id).maybeSingle();
-    if (readError) return reply({ error: 'Could not locate your trader account.' }, 500);
-    if (!existing) return reply({ error: 'Create your account profile before completing checkout.' }, 409);
-    const { error: updateError } = await service.from('trader_data').update({ tier, billing_cycle: 'monthly', paid_until: paidUntil }).eq('user_id', user.id);
-    if (updateError) {
-      console.error('Could not apply verified payment:', updateError.message);
+    const { data: applied, error: applyError } = await service.rpc('apply_verified_paystack_payment', {
+      p_reference: reference,
+      p_user_id: user.id,
+      p_tier: tier,
+      p_amount: Number(payment.amount),
+      p_currency: payment.currency,
+    });
+    if (applyError || !applied?.success) {
+      console.error('Could not apply verified payment:', applyError?.message || 'RPC returned no success result');
       return reply({ error: 'Payment was verified, but access could not be updated. Contact support with your Paystack reference.' }, 500);
     }
-    return reply({ success: true, tier, paid_until: paidUntil });
+    return reply({ success: true, tier: applied.tier, paid_until: applied.paid_until, already_applied: !!applied.already_applied });
   }
 
   return reply({ error: 'Unsupported action.' }, 400);

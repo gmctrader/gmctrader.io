@@ -36,7 +36,7 @@ function gdLogoFallback(img){
 <link rel="apple-touch-icon" href="ghost-discipline-icon-v3.png">
 <link rel="manifest" href="manifest.json">
 <meta property="og:title" content="Ghost Discipline — GMC Traders">
-<meta property="og:description" content="A private terminal for traders who keep their word.">
+<meta property="og:description" content="A focused terminal for traders who keep their word.">
 <meta property="og:image" content="https://ghost-discipline.web.app/ghost-discipline-share-v2.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://ghost-discipline.web.app/ghost-discipline-share-v2.png">
@@ -597,9 +597,10 @@ html[data-theme="dark"] .gd-ripple{background:rgba(255,255,255,0.24);}
   font-size:10px;color:var(--slate);margin-right:4px;}
 .cmdk-launcher{position:fixed;bottom:20px;right:76px;z-index:998;display:flex;align-items:center;gap:6px;
   padding:0 14px;height:46px;border-radius:23px;border:1px solid var(--steel-hi);background:var(--panel-solid);
-  color:var(--slate);font-size:12px;cursor:pointer;box-shadow:0 10px 24px -8px rgba(0,0,0,0.35);
+  color:var(--slate);font:inherit;font-size:12px;text-align:left;cursor:pointer;box-shadow:0 10px 24px -8px rgba(0,0,0,0.35);
   transition:transform .15s ease,color .2s ease;}
 .cmdk-launcher:hover{transform:translateY(-2px);color:var(--platinum);}
+.cmdk-launcher:focus-visible{outline:2px solid var(--mint);outline-offset:3px;}
 @media (max-width:760px){ .cmdk-launcher{display:none;} }
 /* Persistent "Ask SciFe" launcher — visible on every room in the terminal,
    not just the sidebar link, so help/analysis is always one tap away. */
@@ -2505,11 +2506,6 @@ setTimeout(function(){
 
 <!-- ============ AUTH SCREEN ============ -->
 <div id="authScreen">
-  <div class="auth-video-bg">
-    <video id="authBgVideo" autoplay muted loop playsinline preload="auto">
-      <source src="gmc.MP4" type="video/mp4">
-    </video>
-  </div>
   <div class="auth-video-vignette"></div>
   <div class="auth-blob auth-blob-cyan"></div>
   <div class="auth-blob auth-blob-purple"></div>
@@ -2518,7 +2514,7 @@ setTimeout(function(){
   <div class="auth-vignette"></div>
   <div class="auth-wrap">
     <div class="auth-brand">
-      <p class="auth-kicker">GMC Traders · Private terminal</p>
+      <p class="auth-kicker">GMC Traders · Trading terminal</p>
       <p style="margin:-6px 0 8px 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">
         <a href="index.html" style="color:var(--bronze-bright);text-decoration:none;font-weight:600;">← Back to the front door</a>
       </p>
@@ -2534,7 +2530,7 @@ setTimeout(function(){
         </div>
       </div>
       <h1 class="auth-headline">Keep your word.<br>Then take the trade.</h1>
-      <p class="auth-lede">Ghost Discipline is a private trading journal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan.</p>
+      <p class="auth-lede">Ghost Discipline is a trading journal that locks your risk rules before emotion gets a vote — then scores, honestly, whether you traded the plan.</p>
       <ul class="auth-pillars">
         <li>
           <span class="auth-pillar-index">01</span>
@@ -2542,7 +2538,7 @@ setTimeout(function(){
         </li>
         <li>
           <span class="auth-pillar-index">02</span>
-          <div><strong>An honest ledger</strong><span>Orders, journal, calendar and equity live in one private account — not a spreadsheet you can quietly edit later.</span></div>
+          <div><strong>An honest ledger</strong><span>Orders, journal, calendar and equity live together in your account — not a spreadsheet you can quietly edit later.</span></div>
         </li>
         <li>
           <span class="auth-pillar-index">03</span>
@@ -2580,7 +2576,7 @@ setTimeout(function(){
           <span>Google</span>
         </button>
       </div>
-      <div class="auth-foot" id="authFoot">New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your data stays private to your account.</div>
+      <div class="auth-foot" id="authFoot">New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your workspace is linked to your account.</div>
       <button type="button" class="btn-demo" id="startDemoBtn" onclick="openSneakPeek()">Sneak peek <span aria-hidden="true">↗</span></button>
       <div class="auth-demo-hint">Sample trading numbers · read-only preview</div>
     </form>
@@ -3550,7 +3546,7 @@ setTimeout(function(){
             </div>
           </div>
           <div class="sig-action-row"><button class="btn btn-primary" type="button" onclick="saveDailyTradePlan()">Save today's plan</button><button class="btn-ghost" type="button" onclick="clearDailyTradePlan()">Clear plan</button></div>
-          <div class="hint" id="tradePlanSavedHint" style="margin-top:10px;">Your plan is private and syncs with your journal.</div>
+          <div class="hint" id="tradePlanSavedHint" style="margin-top:10px;">Your plan syncs with your journal.</div>
         </div>
         <div class="card tilt"><h2>Plan <span class="accent">Reminder</span></h2><p class="page-sub">A directional lean is not an entry signal. Wait for the condition you wrote down, define the invalidation first, and let your Rule Builder limits govern risk.</p><div class="stat-row"><div class="stat"><b id="tp_savedState">Not saved</b><span>Today's plan</span></div><div class="stat"><b id="tp_checkedCount">0 / 4</b><span>Process checks</span></div></div><button class="btn btn-ghost btn-block" style="margin-top:18px" onclick="document.querySelector('.side-navbtn[data-view=rules]').click()">Review my risk rules →</button></div>
       </div>
@@ -4250,7 +4246,7 @@ setTimeout(function(){
           <div class="field profile-field-wide"><label for="profileGoal">Main trading goal</label><input type="text" id="profileGoal" placeholder="e.g. build consistency or pass a prop evaluation"></div>
           <div class="field profile-field-wide"><label for="profileChallenge">Discipline area to work on</label><input type="text" id="profileChallenge" placeholder="e.g. avoid revenge trades after a loss"></div>
         </div>
-        <div class="profile-actions"><span class="hint" id="profileSaveHint">Your profile is saved privately with your journal.</span><button class="btn btn-primary" onclick="saveProfileDetails()">Save profile</button></div>
+        <div class="profile-actions"><span class="hint" id="profileSaveHint">Your profile syncs with your journal.</span><button class="btn btn-primary" onclick="saveProfileDetails()">Save profile</button></div>
       </div>
     </div>
 
@@ -4258,7 +4254,7 @@ setTimeout(function(){
     <div class="view" id="view-packages">
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
       <div class="package-grid">
-        <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">$0 <small>forever</small></div><p>A useful private workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
+          <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">R0 <small>forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
         <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">R499 <small>/ 30 days</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro</button></article>
         <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">R1,199 <small>/ 30 days</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
         <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">R1,999 <small>/ 30 days</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
@@ -4341,7 +4337,7 @@ setTimeout(function(){
           <span class="social-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </a>
       </div>
-      <div class="footer-note">© <span id="footerYear">2026</span> GMC Traders — Ghost Discipline. A private tool for those who keep their word.</div>
+      <div class="footer-note">© <span id="footerYear">2026</span> GMC Traders — Ghost Discipline. A focused tool for those who keep their word.</div>
     </footer>
     <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
   </main>
@@ -4431,7 +4427,7 @@ setTimeout(function(){
     <div class="row2 quicklog-hide">
       <div class="field">
         <label>Chart screenshot <span class="hint-inline">optional</span></label>
-        <input type="file" id="t_screenshot" accept="image/*" onchange="onTradeScreenshotPicked(event)">
+        <input type="file" id="t_screenshot" accept="image/png,image/jpeg,image/webp" onchange="onTradeScreenshotPicked(event)">
         <div id="t_screenshotPreviewWrap" style="display:none;margin-top:8px;">
           <img id="t_screenshotPreview" alt="Chart screenshot preview" style="max-width:100%;max-height:140px;border-radius:10px;border:1px solid var(--steel-hi);display:block;object-fit:cover;">
           <button type="button" class="side-logout" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="clearTradeScreenshot()">Remove image</button>
@@ -5399,7 +5395,7 @@ function setAuthMode(mode){
   document.querySelector('.auth-options-row').style.display = signup ? 'none' : '';
   document.getElementById('authFoot').innerHTML = signup
     ? 'Already have an account? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Sign in</button>'
-    : 'New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your journal remains private to your account.';
+    : 'New here? <button type="button" class="auth-forgot" onclick="toggleAuthMode()">Create a free account</button>. Your workspace is linked to your account.';
   document.getElementById('authMsg').classList.remove('show');
 }
 function toggleAuthMode(){ setAuthMode(authMode === 'signin' ? 'signup' : 'signin'); }
@@ -6275,7 +6271,7 @@ function renderProfileDetails(){
   const emailEl=document.getElementById('profileEmail'); if(emailEl) emailEl.textContent=email;
   const planEl=document.getElementById('profilePlanChip'); if(planEl) planEl.textContent=(isDemoMode?'Proving Ground · Demo':(TIER_LABELS[userTier]||'Free')+' plan');
   const avatar=document.getElementById('profileAvatar'); if(avatar) avatar.textContent=(profile.name||meta.full_name||meta.name||email).trim().charAt(0).toUpperCase()||'G';
-  const hint=document.getElementById('profileSaveHint'); if(hint) hint.textContent=isDemoMode?'Saved on this device for the Proving Ground.':'Your details are saved privately with your journal.';
+  const hint=document.getElementById('profileSaveHint'); if(hint) hint.textContent=isDemoMode?'Saved on this device for the Proving Ground.':'Your details sync with your journal.';
 }
 async function saveProfileDetails(){
   const value=id=>(document.getElementById(id)?.value||'').trim();
@@ -6488,6 +6484,7 @@ async function loadOrCreateTraderData(){
     hydrateState(data);
     if(!data.onboarding_done) queueOnboardingQuestions();
   }
+  await refreshTradeScreenshotUrls(state.trades);
   applyTierLocks();
   updatePlanBadge();
   checkSubscriptionExpiry();
@@ -6568,7 +6565,10 @@ function hydrateState(row){
   state.session = row.session || DEFAULT_STATE.session;
   state.psychology = normalizePsychology(Object.assign({}, DEFAULT_STATE.psychology, row.psychology || {}));
   state.brief = Object.assign({}, DEFAULT_STATE.brief, row.brief || {});
-  state.trades = row.trades || [];
+  state.trades = (Array.isArray(row.trades) ? row.trades : []).map(trade=>{
+    const screenshotPath = getTradeScreenshotPath(trade);
+    return { ...trade, screenshotPath, screenshotUrl:null };
+  });
   // The Supabase column is snake_case ('backtest_sessions'); fall back to
   // the old camelCase key too, in case any row got saved under it before
   // this was fixed, so nobody's existing sessions silently vanish.
@@ -6631,13 +6631,19 @@ let conflictPending = null; // holds { payload, expectedVersion } while a confli
 function offlineKey(){ return OFFLINE_KEY_PREFIX + (currentUser ? currentUser.id : 'anon'); }
 
 function buildSavePayload(){
+  const tradesForSync = state.trades.map(trade=>{
+    const savedTrade = { ...trade, screenshotPath:getTradeScreenshotPath(trade) };
+    delete savedTrade.screenshotUrl;
+    if(!savedTrade.screenshotPath) delete savedTrade.screenshotPath;
+    return savedTrade;
+  });
   return {
     rules: state.rules,
     prop_firm: state.propFirms,
     session: state.session,
     psychology: state.psychology,
     brief: state.brief,
-    trades: state.trades,
+    trades: tradesForSync,
     backtest_sessions: state.backtestSessions,
     streak: state.streak,
     day: state.day,
@@ -12072,11 +12078,13 @@ function onResultChange(){
 
 /* ============ TRADE SCREENSHOT + TRADINGVIEW LINK ============ */
 const MAX_SCREENSHOT_MB = 8;
+const TRADE_SCREENSHOT_BUCKET = 'trade-screenshots';
+const TRADE_SCREENSHOT_URL_TTL_SECONDS = 24 * 60 * 60;
 function onTradeScreenshotPicked(e){
   const file = e.target.files && e.target.files[0];
   if(!file) return;
-  if(!file.type.startsWith('image/')){
-    showToast('That file isn\'t an image');
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+    showToast('Choose a PNG, JPEG, or WebP chart image');
     e.target.value = '';
     return;
   }
@@ -12108,17 +12116,56 @@ function isLikelyUrl(str){
 }
 async function uploadTradeScreenshot(file){
   if(!currentUser) return null;
-  const ext = (file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+  const ext = ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[file.type];
+  if(!ext) return null;
   const path = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
   try{
-    const { error: upErr } = await sb.storage.from('trade-screenshots').upload(path, file, { upsert:false, contentType: file.type });
+    const bucket = sb.storage.from(TRADE_SCREENSHOT_BUCKET);
+    const { error: upErr } = await bucket.upload(path, file, { upsert:false, contentType: file.type });
     if(upErr) throw upErr;
-    const { data } = sb.storage.from('trade-screenshots').getPublicUrl(path);
-    return data ? data.publicUrl : null;
+    const { data, error: signErr } = await bucket.createSignedUrl(path, TRADE_SCREENSHOT_URL_TTL_SECONDS);
+    if(signErr || !data || !data.signedUrl){
+      await bucket.remove([path]).catch(()=>{});
+      throw signErr || new Error('Could not create a signed screenshot link');
+    }
+    return { path, url:data.signedUrl };
   }catch(e){
     showToast('Screenshot upload failed — trade saved without it');
     return null;
   }
+}
+function getTradeScreenshotPath(trade){
+  if(!trade || !currentUser) return null;
+  let path = typeof trade.screenshotPath === 'string' ? trade.screenshotPath : '';
+  if(!path && typeof trade.screenshotUrl === 'string'){
+    try{
+      const url = new URL(trade.screenshotUrl);
+      const marker = `/storage/v1/object/public/${TRADE_SCREENSHOT_BUCKET}/`;
+      const offset = url.pathname.indexOf(marker);
+      if(offset >= 0) path = decodeURIComponent(url.pathname.slice(offset + marker.length));
+    }catch(e){}
+  }
+  if(!path || !path.startsWith(`${currentUser.id}/`) || path.split('/').some(part=>!part || part==='.' || part==='..')) return null;
+  return path;
+}
+async function refreshTradeScreenshotUrls(trades){
+  if(!currentUser || !Array.isArray(trades)) return;
+  const paths = Array.from(new Set(trades.map(getTradeScreenshotPath).filter(Boolean)));
+  if(!paths.length) return;
+  const urlsByPath = new Map();
+  for(let offset=0; offset<paths.length; offset+=100){
+    const { data, error } = await sb.storage.from(TRADE_SCREENSHOT_BUCKET).createSignedUrls(paths.slice(offset, offset+100), TRADE_SCREENSHOT_URL_TTL_SECONDS);
+    if(error || !Array.isArray(data)){
+      console.warn('Could not create signed trade screenshot links:', error && (error.message||error.code));
+      continue;
+    }
+    data.filter(item=>item && item.path && item.signedUrl).forEach(item=>urlsByPath.set(item.path,item.signedUrl));
+  }
+  trades.forEach(trade=>{
+    const path = getTradeScreenshotPath(trade);
+    trade.screenshotPath = path;
+    trade.screenshotUrl = path ? (urlsByPath.get(path) || null) : null;
+  });
 }
 function openScreenshotLightbox(url){
   if(!url) return;
@@ -12153,10 +12200,13 @@ async function submitTrade(){
   if(tvHint) tvHint.style.display = 'none';
 
   const saveBtn = document.getElementById('t_saveBtn');
+  let screenshotPath = null;
   let screenshotUrl = null;
   if(pendingScreenshotFile){
     if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Uploading image…'; }
-    screenshotUrl = await uploadTradeScreenshot(pendingScreenshotFile);
+    const uploadedScreenshot = await uploadTradeScreenshot(pendingScreenshotFile);
+    screenshotPath = uploadedScreenshot ? uploadedScreenshot.path : null;
+    screenshotUrl = uploadedScreenshot ? uploadedScreenshot.url : null;
     if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Save Trade'; }
   }
 
@@ -12174,7 +12224,7 @@ async function submitTrade(){
   const tAccountSel = document.getElementById('t_account');
   const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : ((tAccountSel && tAccountSel.value) || 'personal');
   const newTrade = { id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
-    screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
+    screenshotPath: screenshotPath || null, screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
     account: tradeAccount };
   state.trades.push(newTrade);
@@ -13190,7 +13240,7 @@ function showCalDay(iso){
 /* ============ SCIFE (optional voice AI companion, its own page) ============ */
 function scifeAccountGuard(){
   if(!isDemoMode) return false;
-  openDemoTease('SciFe needs a real account', 'SciFe stores your personal API key securely on your synced profile, so it needs a real account rather than the Proving Ground trial.');
+  openDemoTease('SciFe needs a real account', 'SciFe saves your account settings and usage with your journal. Your own provider key stays in this browser and is sent directly to the provider you choose.');
   toggleSidebar(false);
   return true;
 }
@@ -13238,7 +13288,15 @@ document.addEventListener('pointerdown',function(event){
 },{passive:true});
 
 /* ============ GET APP (platform-aware) ============ */
-function handleGetApp(){
+let gdDeferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(event){
+  event.preventDefault();
+  gdDeferredInstallPrompt = event;
+});
+window.addEventListener('appinstalled', function(){
+  gdDeferredInstallPrompt = null;
+});
+async function handleGetApp(){
   if(isDemoMode){
     openDemoTease('Get the App is for real accounts', 'The installable app carries your synced data with it — that only exists once you\'re past the trial. Stay in-browser for now.');
     toggleSidebar(false);
@@ -13246,28 +13304,33 @@ function handleGetApp(){
   }
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-  const isAndroid = /Android/i.test(ua);
   if(isIOS){
     document.getElementById('getAppOverlay').classList.add('show');
     toggleSidebar(false);
-  } else if(isAndroid){
-    const a = document.createElement('a');
-    a.href = 'ghost-discipline.apk';
-    a.download = 'ghost-discipline.apk';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    showToast('Downloading Ghost Discipline APK…');
-    toggleSidebar(false);
-  } else {
-    window.open('ghost-discipline.apk', '_blank');
-    toggleSidebar(false);
+    return;
   }
-}
-
-/* ============ PWA SERVICE WORKER ============ */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  const isInstalled = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+  if(isInstalled){
+    showToast('Ghost Discipline is already installed.');
+    toggleSidebar(false);
+    return;
+  }
+  if(gdDeferredInstallPrompt){
+    const installPrompt = gdDeferredInstallPrompt;
+    gdDeferredInstallPrompt = null;
+    try{
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      showToast(choice?.outcome === 'accepted' ? 'Installing Ghost Discipline…' : 'Install cancelled. You can try again from your browser menu.');
+    }catch(error){
+      console.warn('App install prompt unavailable:', error);
+      document.getElementById('getAppOverlay').classList.add('show');
+    }
+    toggleSidebar(false);
+    return;
+  }
+  document.getElementById('getAppOverlay').classList.add('show');
+  toggleSidebar(false);
 }
 
 /* ============ FIXED BRAND PALETTE ============ */
@@ -13402,9 +13465,8 @@ applyGdTheme();
   }
 
   /* ---- command palette (⌘K / Ctrl+K) ---- */
-  const cmdkOverlay = document.getElementById('cmdkOverlay');
-  const cmdkInput = document.getElementById('cmdkInput');
-  const cmdkList = document.getElementById('cmdkList');
+  let cmdkOverlay = null, cmdkInput = null, cmdkList = null, cmdkLauncher = null;
+  let cmdkReturnFocus = null;
   let cmdActive = 0, cmdFiltered = [];
   function buildCommands(){
     const cmds = [];
@@ -13430,11 +13492,27 @@ applyGdTheme();
   }
   function openCmdk(){
     if(!cmdkOverlay) return;
+    if(cmdkOverlay.classList.contains('show')) return;
+    cmdkReturnFocus = document.activeElement;
+    cmdkOverlay.inert = false;
+    cmdkOverlay.setAttribute('aria-hidden','false');
     renderCmdk('');
     cmdkOverlay.classList.add('show');
     setTimeout(()=>cmdkInput && cmdkInput.focus(), 30);
   }
-  function closeCmdk(){ if(!cmdkOverlay) return; cmdkOverlay.classList.remove('show'); if(cmdkInput) cmdkInput.value=''; }
+  function closeCmdk(){
+    if(!cmdkOverlay) return;
+    const wasOpen = cmdkOverlay.classList.contains('show');
+    cmdkOverlay.classList.remove('show');
+    cmdkOverlay.setAttribute('aria-hidden','true');
+    cmdkOverlay.inert = true;
+    if(cmdkInput) cmdkInput.value='';
+    if(wasOpen){
+      const target = cmdkReturnFocus && document.contains(cmdkReturnFocus) ? cmdkReturnFocus : cmdkLauncher;
+      target?.focus?.({preventScroll:true});
+      cmdkReturnFocus = null;
+    }
+  }
   function highlightCmd(){
     [...cmdkList.children].forEach((el,i)=>el.classList.toggle('active', i===cmdActive));
     const el = cmdkList.children[cmdActive];
@@ -13444,8 +13522,19 @@ applyGdTheme();
     const cmd = cmdFiltered[cmdActive];
     if(cmd){ closeCmdk(); setTimeout(cmd.run, 40); }
   }
-  window.openCommandPalette = openCmdk;
-  if(cmdkInput){
+  function initCommandPalette(){
+    cmdkOverlay = document.getElementById('cmdkOverlay');
+    cmdkInput = document.getElementById('cmdkInput');
+    cmdkList = document.getElementById('cmdkList');
+    cmdkLauncher = document.getElementById('cmdkLauncher');
+    if(!cmdkOverlay || !cmdkInput || !cmdkList) return;
+    cmdkOverlay.setAttribute('aria-hidden','true');
+    cmdkOverlay.inert = true;
+    if(cmdkLauncher){
+      const platform = navigator.userAgentData?.platform || navigator.platform || '';
+      const shortcut = cmdkLauncher.querySelector('.kbd');
+      if(shortcut) shortcut.textContent = /Mac|iPhone|iPad|iPod/i.test(platform) ? '⌘K' : 'Ctrl K';
+    }
     cmdkInput.addEventListener('input', ()=>renderCmdk(cmdkInput.value));
     cmdkInput.addEventListener('keydown', e=>{
       if(e.key==='ArrowDown'){ e.preventDefault(); cmdActive = Math.min(cmdActive+1, cmdFiltered.length-1); highlightCmd(); }
@@ -13453,8 +13542,6 @@ applyGdTheme();
       else if(e.key==='Enter'){ e.preventDefault(); runActive(); }
       else if(e.key==='Escape'){ closeCmdk(); }
     });
-  }
-  if(cmdkList){
     cmdkList.addEventListener('mousemove', e=>{
       const item = e.target.closest('.cmdk-item');
       if(!item) return;
@@ -13467,11 +13554,14 @@ applyGdTheme();
       cmdActive = +item.dataset.i;
       runActive();
     });
+    cmdkOverlay.addEventListener('click', e=>{ if(e.target===cmdkOverlay) closeCmdk(); });
+    document.addEventListener('keydown', e=>{
+      if((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmdk(); }
+    });
   }
-  if(cmdkOverlay) cmdkOverlay.addEventListener('click', e=>{ if(e.target===cmdkOverlay) closeCmdk(); });
-  document.addEventListener('keydown', e=>{
-    if((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmdk(); }
-  });
+  window.openCommandPalette = openCmdk;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initCommandPalette,{once:true});
+  else initCommandPalette();
 
   /* ---- global error safety net: surfaces unexpected JS errors as a
      toast instead of a silently broken screen; throttled so one bad
@@ -13529,15 +13619,15 @@ applyGdTheme();
   </div>
 </div>
 
-<!-- GET APP MODAL (iOS instructions) -->
+<!-- INSTALL APP MODAL (browser-menu instructions when an install prompt is unavailable) -->
 <div class="overlay" id="getAppOverlay">
   <div class="modal">
-    <h3>Add Ghost Discipline to Home Screen</h3>
-    <div class="sub">iOS doesn't allow app installs from outside the App Store — here's the equivalent.</div>
-    <div class="check-item pass"><span>1</span> Tap the <b>Share</b> icon in Safari's toolbar (square with an arrow pointing up).</div>
-    <div class="check-item pass"><span>2</span> Scroll down and tap <b>Add to Home Screen</b>.</div>
-    <div class="check-item pass"><span>3</span> Tap <b>Add</b> in the top right.</div>
-    <div class="ok-banner">That's it — Ghost Discipline now opens full-screen from your home screen like a native app, and stays up to date automatically since it loads the live site.</div>
+    <h3>Add Ghost Discipline to your device</h3>
+    <div class="sub">Use your browser's install option to add a shortcut to your workspace.</div>
+    <div class="check-item pass"><span>1</span> On iPhone or iPad, tap <b>Share</b> in Safari. In Chrome, open the <b>⋮</b> menu.</div>
+    <div class="check-item pass"><span>2</span> Choose <b>Add to Home Screen</b> or <b>Install app</b>.</div>
+    <div class="check-item pass"><span>3</span> Confirm <b>Add</b> or <b>Install</b> when your browser asks.</div>
+    <div class="ok-banner">The shortcut opens the live site, so your account and synced journal stay up to date.</div>
     <div class="btn-row" style="margin-top:16px;">
       <button class="side-logout" style="width:100%;" onclick="document.getElementById('getAppOverlay').classList.remove('show')">Got it</button>
     </div>
@@ -13772,6 +13862,24 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   function sharedModelForTier(){ return (typeof isPremiumTier === 'function' && isPremiumTier()) ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
   var SHARED_KEY = '__shared__'; // real key lives server-side (ai-proxy Edge Function)
   var FREE_DAILY_CHAT_LIMIT = 15;
+  var SCIFE_LOCAL_KEYS_PREFIX = 'gd_scife_provider_keys_v1_';
+  function readLocalScifeApiKeys(userId){
+    if(!userId) return {};
+    try{
+      var raw = localStorage.getItem(SCIFE_LOCAL_KEYS_PREFIX + userId);
+      var parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    }catch(e){ return {}; }
+  }
+  function writeLocalScifeApiKeys(userId, apiKeys){
+    if(!userId) return false;
+    try{
+      var safeKeys = apiKeys && typeof apiKeys === 'object' && !Array.isArray(apiKeys) ? apiKeys : {};
+      if(Object.keys(safeKeys).length) localStorage.setItem(SCIFE_LOCAL_KEYS_PREFIX + userId, JSON.stringify(safeKeys));
+      else localStorage.removeItem(SCIFE_LOCAL_KEYS_PREFIX + userId);
+      return true;
+    }catch(e){ return false; }
+  }
   function todayKeyLocal(){ var d=new Date(); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
   // Re-checks + increments the shared daily counter straight against the
   // synced row (not a local cache) so it can't be reset by reloading or
@@ -13781,6 +13889,14 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
     if(typeof sb === 'undefined' || typeof currentUser === 'undefined' || !currentUser) return Promise.resolve(true);
     return sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle().then(function(res){
       var s = (res.data && res.data.scife) || {};
+      var remoteKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? s.apiKeys : {};
+      if(s.apiKey && !remoteKeys[s.provider || 'google']) remoteKeys[s.provider || 'google'] = s.apiKey;
+      var localKeys = readLocalScifeApiKeys(currentUser.id);
+      var localSaved = writeLocalScifeApiKeys(currentUser.id, Object.assign({}, remoteKeys, localKeys));
+      if((Object.keys(remoteKeys).length || s.apiKey) && localSaved){
+        delete s.apiKeys;
+        delete s.apiKey;
+      }
       var usage = (s.usage && typeof s.usage==='object') ? s.usage : {};
       var today = todayKeyLocal();
       if(usage.chatDayKey !== today){ usage.chatDayKey = today; usage.chatCount = 0; }
@@ -13953,7 +14069,21 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
         return sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle()
           .then(function(res){
             if(res.error || !res.data || !res.data.scife) return null;
-            return res.data.scife;
+            var scifeCfg = res.data.scife;
+            var remoteKeys = (scifeCfg.apiKeys && typeof scifeCfg.apiKeys === 'object') ? Object.assign({}, scifeCfg.apiKeys) : {};
+            if(scifeCfg.apiKey && !remoteKeys[scifeCfg.provider || 'google']) remoteKeys[scifeCfg.provider || 'google'] = scifeCfg.apiKey;
+            var localKeys = readLocalScifeApiKeys(currentUser.id);
+            var apiKeys = Object.assign({}, remoteKeys, localKeys);
+            var localSaved = writeLocalScifeApiKeys(currentUser.id, apiKeys);
+            if((Object.keys(remoteKeys).length || scifeCfg.apiKey) && localSaved){
+              var safeScife = Object.assign({}, scifeCfg);
+              delete safeScife.apiKeys;
+              delete safeScife.apiKey;
+              sb.from('trader_data').update({ scife: safeScife }).eq('user_id', currentUser.id).then(function(){}).catch(function(){});
+            }
+            var clientConfig = Object.assign({}, scifeCfg, { apiKeys: apiKeys });
+            delete clientConfig.apiKey;
+            return clientConfig;
           })
           .catch(function(){ return null; });
       }catch(e){ return Promise.resolve(null); }
@@ -14035,7 +14165,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   <button class="renewal-banner-close" onclick="dismissRenewalBanner()" aria-label="Dismiss">✕</button>
 </div>
 
-<div class="cmdk-overlay" id="cmdkOverlay">
+<div class="cmdk-overlay" id="cmdkOverlay" aria-hidden="true" inert>
   <div class="cmdk-box" role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="cmdk-input-row">
       <span class="cmdk-ico">⌘</span>
@@ -14046,9 +14176,9 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   </div>
 </div>
 
-<div class="cmdk-launcher" id="cmdkLauncher" onclick="window.openCommandPalette && window.openCommandPalette()" title="Command palette">
+<button type="button" class="cmdk-launcher" id="cmdkLauncher" onclick="window.openCommandPalette && window.openCommandPalette()" title="Command palette" aria-label="Open command palette">
   <span>Jump to…</span><span class="kbd">⌘K</span>
-</div>
+</button>
 
 <div class="quick-scife-overlay" id="quickSciFeOverlay" aria-label="Quick SciFe chat">
   <div class="quick-scife-modal" role="dialog" aria-modal="false" aria-labelledby="quickSciFeTitle">
@@ -15057,7 +15187,7 @@ html[data-theme] .card,html[data-theme] .modal,html[data-theme] .auth-card{backg
 @media(max-height:900px){#appShell.show>.sidebar .side-navbtn{min-height:23px;height:23px;padding:2px 6px;font-size:9px}#appShell.show>.sidebar .side-nav-label{padding-top:4px}#appShell.show>.sidebar .side-divider{margin:2px 7px}#appShell.show>.sidebar .side-session{min-height:26px;padding:3px 8px;margin-bottom:3px;font-size:8px}#appShell.show>.sidebar .side-logout{min-height:29px;padding:4px}#appShell.show>.sidebar .side-device{margin-top:4px;padding-top:4px}#appShell.show>.sidebar .side-device-label{margin-bottom:2px}#appShell.show>.sidebar .side-reset-btn{min-height:27px;padding:4px 7px;font-size:9px}#appShell.show>.sidebar .side-device-hint{display:none}}
 @media(max-height:740px){#appShell.show>.sidebar .side-navbtn{min-height:21px;height:21px;padding:1px 5px;font-size:8.5px}#appShell.show>.sidebar .side-nav-label{padding-top:3px}#appShell.show>.sidebar .side-session{min-height:23px;padding:2px 7px;margin-bottom:2px}}
 /* Premium control and type finish, tuned for low-power devices. */
-html[data-theme]{--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#747b72;--bronze-bright:#b8cda9;--bronze:#91ad80;--gold:#d2bd91;--panel:#111;--panel-solid:#101010}
+html[data-theme]{--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#7d857b;--bronze-bright:#b8cda9;--bronze:#91ad80;--gold:#d2bd91;--panel:#111;--panel-solid:#101010}
 body{font-size:14px;line-height:1.62;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
 .page-title{font-size:clamp(27px,2.5vw,34px);letter-spacing:-.04em;filter:none}
 .page-sub,.hint,.card .hint{line-height:1.7;color:var(--slate)}
@@ -15242,7 +15372,7 @@ html[data-theme="light"]{
   --void:#f3f2ed;--void-2:#faf9f5;--graphite:#ecebe4;--graphite-hi:#e3e3da;
   --panel:rgba(255,255,252,.98);--panel-solid:#fffefa;--steel:rgba(28,39,31,.11);--steel-hi:rgba(28,39,31,.18);
   --bronze-bright:#537a59;--bronze:#3e6645;--bronze-dim:#d8e5d7;--bronze-ink:#172319;
-  --gold:#927342;--gold-bright:#a8874e;--gold-dim:#e8ddc3;--platinum:#202a22;--slate:#5e6b61;--slate-dim:#7b877e;
+  --gold:#927342;--gold-bright:#a8874e;--gold-dim:#e8ddc3;--platinum:#202a22;--slate:#5e6b61;--slate-dim:#626e64;
   --win-bright:#287746;--win:#3b8c59;--loss-bright:#b34c59;--loss:#9c3c49;--premium-line:rgba(35,48,38,.12);--premium-edge:rgba(35,48,38,.18)
 }
 html[data-theme="light"] body{background:#f3f2ed;color:#202a22}
