@@ -1533,6 +1533,15 @@ setTimeout(function(){
 
   <div class="stage-3d-wrap" id="stage3dWrap">
     <div class="stage" id="stage">
+      <div class="companion-brand">
+        <div class="companion-brand-top">
+          <div class="companion-monogram" aria-hidden="true">S<span></span></div>
+          <span class="companion-kicker">TRADING COMPANION</span>
+        </div>
+        <h2>SciFe</h2>
+        <p>A steady second voice for the decisions behind every trade.</p>
+      </div>
+      <div class="companion-principle"><span aria-hidden="true">01</span><span>Pause · review · decide</span></div>
       <div class="stage-fallback" aria-hidden="true"></div>
       <div class="neural-core-wrap" aria-hidden="true">
         <div class="neural-core-etch"></div>
@@ -1547,33 +1556,41 @@ setTimeout(function(){
       <div class="stage-readout"><span class="r2">SciFe intelligence engine</span></div>
       <div class="stage-metrics" id="stageMetrics">Cognition <b id="stageMetricCog">99.7%</b><br>Latency <b id="stageMetricLat">11ms</b></div>
       <div class="wave-ring" id="waveRing"></div>
-      <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
-      <div class="usd-bias-chip" id="usdBiasChip" onclick="speakUsdBias()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')speakUsdBias()" title="Tap to hear the auto USD bias" style="display:none;"></div>
+      <div class="companion-footer">
+        <div class="stage-status"><span class="dot"></span><span id="stageStatusText">Ready</span></div>
+        <div class="usd-bias-chip" id="usdBiasChip" onclick="speakUsdBias()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')speakUsdBias()" title="Tap to hear the auto USD bias" style="display:none;"></div>
+      </div>
       <div class="stage-emoji" id="stageEmoji"></div>
     </div>
   </div>
 
+  <section class="welcome-hero" aria-labelledby="welcomeTitle">
+    <div class="welcome-copy">
+      <span class="welcome-eyebrow"><i></i> A CLEARER SPACE TO THINK</span>
+      <h1 id="welcomeTitle">Make your next decision a deliberate one.</h1>
+      <p>Review your journal, reset your mindset, or test a setup against your own rules.</p>
+    </div>
+    <div class="welcome-aside"><span class="welcome-aside-mark" aria-hidden="true">↗</span><span>Start with one honest question.</span></div>
+  </section>
+
   <div class="quick-row-wrap">
+    <div class="prompt-heading"><span>START A SESSION</span><span>Choose a path</span></div>
     <div class="quick-row" id="quickRow">
-      <div class="quick-chip" onclick="quickAsk('day')">✦ How was my day?</div>
-      <div class="quick-chip" onclick="quickAsk('journal')">◈ Journal overview</div>
-      <div class="quick-chip" onclick="quickAsk('trader')">◎ What kind of trader am I?</div>
-      <div class="quick-chip" onclick="quickAsk('emotions')">✧ Let's talk emotions</div>
-      <div class="quick-chip" onclick="quickAsk('news')">News and events coming up</div>
-      <div class="quick-chip" onclick="quickAsk('usdbias')">USD bias now</div>
-      <div class="quick-chip" onclick="openSignalPage()">Analyze a setup</div>
+      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('day')"><span class="prompt-index">01</span><span class="prompt-card-copy"><strong>Review today</strong><small>Make sense of your trades and decisions.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('journal')"><span class="prompt-index">02</span><span class="prompt-card-copy"><strong>Explore your journal</strong><small>Look for patterns across your entries.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('emotions')"><span class="prompt-index">03</span><span class="prompt-card-copy"><strong>Check your mindset</strong><small>Name what is influencing you today.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="openSignalPage()"><span class="prompt-index">04</span><span class="prompt-card-copy"><strong>Review a setup</strong><small>Compare an idea with your trading rules.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
+    </div>
+    <div class="prompt-extras" aria-label="More prompts">
+      <span>MORE</span>
+      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('trader')">Trader profile <span aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('news')">News &amp; events <span aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('usdbias')">USD bias <span aria-hidden="true">↗</span></button>
     </div>
   </div>
 
   <div class="chat-wrap">
-    <div class="conversation-header">
-      <div class="conversation-copy">
-        <span class="conversation-eyebrow">SCIFE · YOUR TRADING COMPANION</span>
-        <h2>Conversation</h2>
-        <p>Reflect on your journal, mindset, or a setup you’re considering.</p>
-      </div>
-      <span class="conversation-badge"><i></i>Ready when you are</span>
-    </div>
+    <div class="session-heading"><span><i></i> YOUR SESSION</span><span>Talk it through at your own pace</span></div>
     <div class="chat" id="chatLog"></div>
     <div class="scroll-latest" id="scrollLatestBtn" onclick="scrollChatToBottom(true)">↓ New messages</div>
   </div>
@@ -7356,7 +7373,178 @@ html[data-theme="light"] #signalPage>.topbar{background:rgba(11,16,13,.96)}
   .stage-status{left:11px;bottom:8px}
   .quick-row-wrap{grid-column:1;grid-row:4;margin:0;padding:0 0 10px;overflow:visible}
   #quickRow{display:flex;align-items:center;height:auto;padding:19px 0 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
-  #quickRow::before{top:0}
+  #quick/* SciFe home: a deliberate welcome, actionable prompt cards, and a compact companion rail. */
+#app{
+  width:min(100%,1480px);max-width:1480px;grid-template-columns:minmax(235px,290px) minmax(0,1fr);
+  grid-template-rows:auto auto minmax(150px,auto) auto minmax(170px,1fr) auto;column-gap:clamp(24px,3.5vw,50px);
+  row-gap:0;padding:0 clamp(22px,4vw,60px) 22px;overflow:hidden;
+}
+#app>.topbar{grid-column:1/-1;grid-row:1;min-height:68px;padding:13px 0;border-bottom:1px solid rgba(226,234,220,.1)}
+#chatQuotaBanner{grid-column:1/-1;grid-row:2}
+#stage3dWrap{grid-column:1;grid-row:3/7;min-height:0;margin:20px 0 0;perspective:none}
+#stage3dWrap::before{display:none!important}
+#stage{
+  position:relative;display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;gap:24px;
+  width:100%;height:100%;min-height:0;max-height:none;padding:26px 24px 21px;overflow:hidden;
+  border:1px solid rgba(191,211,174,.18);border-radius:19px;
+  background:radial-gradient(ellipse at 14% 7%,rgba(124,166,105,.16),transparent 44%),linear-gradient(155deg,#172019 0%,#101611 50%,#0d120e 100%);
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 24px 55px -45px #000;transform:none!important;
+}
+#stage::before{display:block!important;content:'';position:absolute;inset:auto -105px 20% auto;width:280px;height:280px;border:1px solid rgba(190,214,173,.08);border-radius:50%;box-shadow:0 0 0 30px rgba(190,214,173,.018),0 0 0 62px rgba(190,214,173,.014);pointer-events:none}
+#stage::after{content:'';position:absolute;top:0;left:24px;width:42px;height:2px;background:#b7cf9f;opacity:.8}
+.stage-fallback,.neural-core-wrap,.stage-tint,.stage-glare,.stage-hud,.stage-readout,.stage-metrics,.wave-ring,.stage-emoji{display:none!important}
+.companion-brand,.companion-principle,.companion-footer{position:relative;z-index:2}
+.companion-brand-top{display:flex;align-items:center;gap:12px;margin-bottom:38px}
+.companion-monogram{position:relative;display:grid;place-items:center;width:48px;height:48px;border:1px solid rgba(206,224,191,.3);border-radius:15px;background:linear-gradient(145deg,#c6d9b5,#8ea87e);color:#172016;font:650 24px/1 'Fraunces',Georgia,serif;box-shadow:0 8px 26px -18px rgba(195,220,176,.9)}
+.companion-monogram span{position:absolute;right:8px;bottom:8px;width:5px;height:5px;border-radius:50%;background:#34452f}
+.companion-kicker{color:#aab99e;font:600 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.13em}
+.companion-brand h2{margin:0 0 10px;color:#f0f2eb;font:550 clamp(31px,3.2vw,43px)/1.05 'Instrument Sans',sans-serif;letter-spacing:-.055em}
+.companion-brand p{max-width:24ch;margin:0;color:#abb6a7;font-size:13px;line-height:1.7}
+.companion-principle{display:flex;align-items:center;gap:10px;padding-top:15px;border-top:1px solid rgba(226,234,220,.1);color:#c9d2c2;font-size:11px;letter-spacing:.02em}
+.companion-principle>span:first-child{color:#9fb38f;font:600 9px/1 'IBM Plex Mono',monospace}
+.companion-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:20px;border-top:1px solid rgba(226,234,220,.1)}
+.stage-status{position:static;display:inline-flex;align-items:center;gap:8px;color:#b7c3b1;font:500 10px/1.3 'IBM Plex Mono',monospace}
+.stage-status .dot{width:7px;height:7px;background:#a4c18c;box-shadow:0 0 10px rgba(164,193,140,.5)}
+.usd-bias-chip{position:static!important;display:none;max-width:100%;padding:6px 8px!important;border:1px solid rgba(226,234,220,.13)!important;border-radius:8px!important;background:rgba(10,15,11,.62)!important;color:#d2c39a!important;font:600 9px/1.3 'IBM Plex Mono',monospace!important}
+.welcome-hero{grid-column:2;grid-row:3;display:flex;align-items:flex-end;justify-content:space-between;gap:26px;min-width:0;padding:19px 0 22px}
+.welcome-copy{max-width:740px;min-width:0}
+.welcome-eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:9px;color:#9db58d;font:600 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.13em}
+.welcome-eyebrow i,.session-heading>span:first-child i{display:block;width:6px;height:6px;border-radius:50%;background:#acc596;box-shadow:0 0 9px rgba(172,197,150,.5)}
+.welcome-copy h1{max-width:18ch;margin:0;color:#f0f1e9;font:560 clamp(28px,3.3vw,43px)/1.08 'Instrument Sans',sans-serif;letter-spacing:-.052em}
+.welcome-copy p{max-width:65ch;margin:11px 0 0;color:#aab3a4;font-size:13px;line-height:1.6}
+.welcome-aside{flex:none;display:flex;align-items:center;gap:10px;margin-bottom:5px;padding:11px 13px;border:1px solid rgba(226,234,220,.1);border-radius:11px;background:rgba(18,25,19,.72);color:#c7d0bf;font-size:11px;white-space:nowrap}
+.welcome-aside-mark{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#263323;color:#c5d7b2;font-size:15px}
+.quick-row-wrap{grid-column:2;grid-row:4;min-width:0;margin:0;padding:13px 0 14px;border-top:1px solid rgba(226,234,220,.09)}
+.prompt-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#95a38d;font:600 9px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em}
+.prompt-heading span:last-child{color:#798575;font:400 10px/1.3 'Instrument Sans',sans-serif;letter-spacing:0}
+#quickRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow:visible;padding:0}
+#quickRow::before{display:none!important}
+.quick-chip.prompt-card{
+  display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:76px;padding:12px 13px;
+  border:1px solid rgba(226,234,220,.11);border-radius:12px;background:linear-gradient(135deg,#141b15,#111612);
+  color:#e5eadf;text-align:left;white-space:normal;box-shadow:inset 0 1px rgba(255,255,255,.025);cursor:pointer
+}
+.quick-chip.prompt-card:hover{transform:translateY(-2px);border-color:rgba(183,207,164,.35);background:linear-gradient(135deg,#1a241a,#141a15);box-shadow:0 12px 25px -22px rgba(180,211,156,.55)}
+.prompt-index{flex:none;display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(181,207,161,.15);border-radius:9px;background:rgba(148,177,128,.08);color:#a9c192;font:600 9px/1 'IBM Plex Mono',monospace}
+.prompt-card-copy{display:grid;gap:3px;min-width:0}
+.prompt-card-copy strong{overflow:hidden;color:#e9ede4;font-size:12px;font-weight:600;line-height:1.3;text-overflow:ellipsis}
+.prompt-card-copy small{color:#9da99a;font-size:10px;line-height:1.35}
+.prompt-arrow{flex:none;margin-left:auto;color:#a3b497;font-size:15px;transition:transform .15s ease}
+.quick-chip.prompt-card:hover .prompt-arrow{transform:translate(2px,-2px)}
+.prompt-extras{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:10px}
+.prompt-extras>span{margin-right:3px;color:#778375;font:600 8px/1 'IBM Plex Mono',monospace;letter-spacing:.1em}
+.quick-chip.prompt-link{display:inline-flex;align-items:center;gap:8px;min-height:28px;padding:5px 9px;border:1px solid rgba(226,234,220,.09);border-radius:7px;background:transparent;color:#aab5a4;font-size:9px;line-height:1.2;cursor:pointer}
+.quick-chip.prompt-link:hover{transform:translateY(-1px);border-color:rgba(183,207,164,.28);background:rgba(183,207,164,.06);color:#edf1e8}
+.prompt-link span{color:#91a484}
+.chat-wrap{grid-column:2;grid-row:5;display:flex;flex-direction:column;justify-self:stretch;width:100%;max-width:none;min-width:0;min-height:0;height:100%;overflow:hidden;border:1px solid rgba(226,234,220,.1);border-radius:14px;background:linear-gradient(140deg,rgba(19,25,20,.95),rgba(13,17,14,.94));box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.session-heading{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px;padding:0 16px;border-bottom:1px solid rgba(226,234,220,.08);color:#7f8d7a;font:600 8px/1.2 'IBM Plex Mono',monospace;letter-spacing:.1em}
+.session-heading>span:first-child{display:flex;align-items:center;gap:8px;color:#b3c1a9}
+.session-heading>span:first-child i{width:5px;height:5px}
+.session-heading>span:last-child{color:#849080;font:400 10px/1.3 'Instrument Sans',sans-serif;letter-spacing:0}
+.chat{flex:1;min-height:0;height:auto;align-content:start;justify-content:flex-start;gap:12px;padding:17px 17px 20px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.chat:empty{justify-content:flex-start}
+.chat:empty::before{content:'Your thoughts have room here.';max-width:23ch;margin:6px 0 0;color:#e9ede4;font:560 20px/1.2 'Instrument Sans',sans-serif;letter-spacing:-.035em;text-align:left}
+.chat:empty::after{content:'Pick a prompt above or write what is on your mind.';max-width:45ch;margin:0;color:#9da99a;font-size:12px;line-height:1.55;text-align:left}
+.chat:has(.bubble:only-child){justify-content:flex-start;align-items:flex-start;padding-top:16px}
+.chat:has(.bubble:only-child) .bubble{max-width:min(100%,680px);align-self:flex-start;padding:0;border:0;border-radius:0;background:transparent;color:#d6ddd1;text-align:left;font:400 13px/1.72 'Instrument Sans',sans-serif;box-shadow:none}
+.chat:has(.bubble:only-child) .bubble::before{display:none!important;content:none!important}
+.bubble{max-width:min(82%,720px);padding:10px 13px;border-radius:11px;font-size:12px;line-height:1.65}
+.composer{grid-column:2;grid-row:6;position:relative;bottom:auto;z-index:3;justify-self:stretch;width:100%;max-width:none;min-width:0;padding:10px 0 0;background:transparent}
+.composer-row{min-height:54px;padding:6px 7px 6px 11px;gap:8px;border:1px solid rgba(226,234,220,.14);border-radius:12px;background:#121813;box-shadow:0 12px 28px -24px #000,inset 0 1px rgba(255,255,255,.04)}
+.composer-row input{min-width:0;font-size:13px;color:#eff2eb}
+.composer-row input::placeholder{color:#9fa99a}
+.mic-btn{width:35px;height:35px;border-radius:9px;color:#bac5b4}
+.send-btn{width:37px;height:37px;border-radius:9px}
+.send-btn:disabled{opacity:.46;filter:saturate(.35)}
+.scroll-latest{bottom:10px}
+html[data-theme="light"] body{background:#f1f3ee!important;color:#222a21}
+html[data-theme="light"] #stage{background:radial-gradient(ellipse at 12% 0%,rgba(124,166,105,.14),transparent 44%),linear-gradient(155deg,#f9fbf6,#edf2e9);border-color:rgba(70,97,59,.2)}
+html[data-theme="light"] .companion-brand h2,html[data-theme="light"] .welcome-copy h1,html[data-theme="light"] .prompt-card-copy strong,html[data-theme="light"] .chat:empty::before{color:#263224}
+html[data-theme="light"] .companion-brand p,html[data-theme="light"] .welcome-copy p,html[data-theme="light"] .welcome-aside,html[data-theme="light"] .chat:empty::after{color:#5f6e59}
+html[data-theme="light"] .companion-kicker,html[data-theme="light"] .companion-principle,html[data-theme="light"] .stage-status{color:#596b52}
+html[data-theme="light"] .companion-principle,html[data-theme="light"] .companion-footer,html[data-theme="light"] .quick-row-wrap,html[data-theme="light"] .session-heading{border-color:rgba(37,52,36,.13)}
+html[data-theme="light"] .welcome-aside,html[data-theme="light"] .chat-wrap,html[data-theme="light"] .composer-row{background:#f9fbf7;border-color:rgba(37,52,36,.14)}
+html[data-theme="light"] .welcome-aside-mark{background:#e7eee1;color:#526b46}
+html[data-theme="light"] .prompt-heading{color:#5c7054}
+html[data-theme="light"] .prompt-heading span:last-child,html[data-theme="light"] .session-heading>span:last-child{color:#6b7765}
+html[data-theme="light"] .quick-chip.prompt-card{background:linear-gradient(135deg,#fff,#f4f7f1);border-color:rgba(37,52,36,.13);box-shadow:inset 0 1px #fff}
+html[data-theme="light"] .quick-chip.prompt-card:hover{background:#f1f6ed;border-color:rgba(70,97,59,.3)}
+html[data-theme="light"] .prompt-index{background:#edf3e8;border-color:rgba(70,97,59,.14);color:#5b754e}
+html[data-theme="light"] .prompt-card-copy small,html[data-theme="light"] .quick-chip.prompt-link{color:#5f6e59}
+html[data-theme="light"] .quick-chip.prompt-link{border-color:rgba(37,52,36,.12)}
+html[data-theme="light"] .session-heading,html[data-theme="light"] .session-heading>span:first-child{color:#56684f}
+html[data-theme="light"] .chat:has(.bubble:only-child) .bubble,html[data-theme="light"] .bubble.system{color:#34412f}
+html[data-theme="light"] .composer-row input{color:#253223}
+@media(max-width:940px) and (min-width:761px){
+  #app{grid-template-columns:minmax(205px,235px) minmax(0,1fr);column-gap:22px;padding-inline:22px}
+  #stage{padding:22px 18px 18px}.companion-brand-top{margin-bottom:30px}
+  .welcome-aside{white-space:normal;max-width:175px}
+}
+@media(max-width:760px){
+  #app{width:100%;height:auto;min-height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 92px auto auto minmax(280px,1fr) auto;gap:0;padding:0 16px calc(12px + env(safe-area-inset-bottom));overflow:visible}
+  #app>.topbar{grid-column:1;grid-row:1;min-height:60px;padding:7px 0}
+  #app>.topbar .back{min-height:33px;padding:0 9px;font-size:10px}
+  #app>.topbar .title{font-size:17px}
+  #app>.topbar .topbar-icons{gap:6px}
+  #app>.topbar .icon-btn{width:34px;height:34px}
+  #chatQuotaBanner{grid-column:1;grid-row:2;margin-bottom:8px!important}
+  #stage3dWrap{grid-column:1;grid-row:3;height:92px;margin:0 0 11px}
+  #stage{flex-direction:row;align-items:center;gap:10px;padding:10px 13px;border-radius:13px}
+  #stage::after{left:13px;width:29px}
+  .companion-brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .companion-brand-top{flex:none;margin:0}
+  .companion-monogram{width:38px;height:38px;border-radius:11px;font-size:19px}
+  .companion-monogram span{right:6px;bottom:6px;width:4px;height:4px}
+  .companion-kicker,.companion-brand p,.companion-principle{display:none}
+  .companion-brand h2{margin:0;font-size:16px;letter-spacing:-.03em}
+  .companion-footer{justify-content:flex-end;gap:8px;margin:0;padding:0;border:0}
+  .stage-status{font-size:9px;white-space:nowrap}
+  .usd-bias-chip{font-size:8px!important;max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .welcome-hero{grid-column:1;grid-row:4;align-items:flex-start;padding:7px 0 17px}
+  .welcome-eyebrow{margin-bottom:7px;font-size:8px}
+  .welcome-copy h1{max-width:22ch;font-size:clamp(27px,7.8vw,35px)}
+  .welcome-copy p{margin-top:8px;font-size:12px}
+  .welcome-aside{display:none}
+  .quick-row-wrap{grid-column:1;grid-row:5;padding:11px 0 12px}
+  .prompt-heading{margin-bottom:8px}
+  #quickRow{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .quick-chip.prompt-card{min-height:69px;padding:10px;gap:8px;border-radius:10px}
+  .prompt-index{width:25px;height:25px;border-radius:7px;font-size:8px}
+  .prompt-card-copy strong{font-size:10px}.prompt-card-copy small{font-size:9px}
+  .prompt-arrow{font-size:13px}
+  .prompt-extras{gap:6px;margin-top:8px}.prompt-extras>span{display:none}
+  .quick-chip.prompt-link{min-height:27px;padding:5px 7px;font-size:8px}
+  .chat-wrap{grid-column:1;grid-row:6;min-height:280px;height:auto;border-radius:12px}
+  .session-heading{min-height:36px;padding-inline:12px}
+  .session-heading>span:last-child{font-size:9px}
+  .chat{min-height:245px;padding:14px 12px}
+  .chat:empty::before{font-size:18px}
+  .chat:empty::after{font-size:11px}
+  .bubble{max-width:94%;font-size:12px}
+  .composer{grid-column:1;grid-row:7;max-width:none;padding-top:8px}
+  .composer-row{min-height:50px}
+  #signalPage{padding-inline:16px!important}
+  #signalPage .sig-card{grid-template-columns:1fr;padding:17px 15px 4px}
+  #signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1}
+  #signalPage .sig-hero{padding:21px 17px;margin-top:14px}
+  #settingsOverlay{padding:12px;align-items:flex-end}
+  #settingsOverlay .modal{max-height:90dvh;padding:23px 17px calc(17px + env(safe-area-inset-bottom));border-radius:15px 15px 11px 11px}
+}
+@media(max-width:390px){
+  #app{padding-inline:12px}
+  .companion-footer{gap:5px}.stage-status{font-size:8px}
+  .quick-chip.prompt-card{gap:6px;padding:9px 8px}
+  .prompt-card-copy small{font-size:8px}
+  .prompt-link{font-size:8px!important}
+}
+html.quick-mode .welcome-hero,html.quick-mode .prompt-heading,html.quick-mode .prompt-extras{display:none!important}
+html.quick-mode .quick-row-wrap{display:none!important}
+html.quick-mode #stage3dWrap{display:none!important}
+html.quick-mode .chat-wrap{grid-column:1;grid-row:2;min-height:0;height:100%;border:0;border-radius:0;background:transparent;box-shadow:none}
+html.quick-mode .session-heading{display:none!important}
+html.quick-mode .composer{grid-column:1;grid-row:3}
+@media(prefers-reduced-motion:reduce){.prompt-arrow{transition:none!important}}
+Row::before{top:0}
   #quickRow::-webkit-scrollbar{display:none}
   .quick-chip{flex:0 0 auto;width:auto;min-height:36px;max-width:205px;padding:7px 11px;border-radius:999px;font-size:10px;white-space:nowrap}
   .chat-wrap{grid-column:1;grid-row:5;min-height:310px;height:auto;max-width:none;border-top:1px solid rgba(222,232,217,.1)}
