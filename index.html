@@ -61,10 +61,31 @@
     .market-embed{min-height:94px;padding:11px 16px;border:1px solid var(--line-hi);border-radius:15px;background:rgba(13,19,15,.82);color-scheme:dark;--tv-widget-background-color:transparent;--tv-widget-text-color:#e8eee4;--tv-widget-font-family:'Instrument Sans',Arial,sans-serif;--tv-widget-positive-color:#a6c99e;--tv-widget-negative-color:#d89491;overflow:hidden}
     .market-embed tv-ticker-tape{display:block;width:100%;min-height:68px}
     .market-loading{margin:0;padding:28px 6px;color:var(--quiet);font:10px var(--mono);letter-spacing:.04em;text-align:center}
+    .market-watch-config{margin:-9px 0 16px;border:1px solid var(--line);border-radius:13px;background:rgba(13,19,15,.5)}
+    .market-watch-config summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;color:var(--text);font-size:11px;font-weight:600;cursor:pointer;list-style:none}
+    .market-watch-config summary::-webkit-details-marker{display:none}
+    .market-watch-config summary::after{content:'+';color:#b8cda9;font:16px var(--mono)}
+    .market-watch-config[open] summary::after{content:'−'}
+    .market-watch-count{margin-left:auto;color:var(--quiet);font:9px var(--mono);font-weight:400}
+    .market-watch-panel{padding:0 14px 14px}
+    .market-watch-help{margin:0 0 12px;color:var(--quiet);font-size:10px;line-height:1.6}
+    .market-watch-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .market-watch-group{min-width:0;margin:0;padding:10px;border:1px solid var(--line);border-radius:10px}
+    .market-watch-group legend{padding:0 5px;color:#c4cec0;font:9px var(--mono);letter-spacing:.04em;text-transform:uppercase}
+    .market-watch-option{display:flex;align-items:center;gap:8px;min-height:29px;color:var(--muted);font-size:10px;cursor:pointer}
+    .market-watch-option input{accent-color:#a6c99e}
+    .market-watch-option small{margin-left:auto;color:var(--quiet);font:8px var(--mono)}
+    .market-watch-custom{display:flex;gap:8px;margin-top:12px}
+    .market-watch-custom input{flex:1;min-width:0;min-height:36px;padding:0 11px;border:1px solid var(--line-hi);border-radius:9px;background:#080d09;color:var(--text);font:10px var(--mono)}
+    .market-watch-custom button,.market-watch-reset{min-height:36px;padding:0 12px;border:1px solid var(--line-hi);border-radius:9px;background:rgba(166,201,158,.1);color:#dce8d7;font:600 9px var(--mono);cursor:pointer}
+    .market-watch-custom button:hover,.market-watch-reset:hover{border-color:#a6c99e;background:rgba(166,201,158,.17)}
+    .market-watch-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+    .market-watch-status{min-height:14px;margin:0;color:#b8cda9;font-size:9px}
+    .market-watch-status.is-error{color:#e6a3a3}
     .market-foot{display:flex;justify-content:space-between;gap:14px;margin-top:13px;color:var(--quiet);font-size:9px;line-height:1.6}
     .market-foot a{flex:none;color:#b8cda9;text-decoration:underline;text-decoration-color:rgba(184,205,169,.4);text-underline-offset:3px}
     .market-foot a:hover{color:var(--text)}
-    @media(max-width:720px){.market-section{padding:58px 0 62px}.market-head{align-items:flex-start;flex-direction:column;gap:15px}.market-status-pill{font-size:8px}.market-embed{padding:8px 9px;min-height:82px}.market-foot{flex-direction:column;font-size:9px}.market-foot a{align-self:flex-start}}
+    @media(max-width:720px){.market-section{padding:58px 0 62px}.market-head{align-items:flex-start;flex-direction:column;gap:15px}.market-status-pill{font-size:8px}.market-embed{padding:8px 9px;min-height:82px}.market-watch-options{grid-template-columns:repeat(2,minmax(0,1fr))}.market-watch-panel{padding:0 10px 10px}.market-watch-config summary{padding:11px}.market-foot{flex-direction:column;font-size:9px}.market-foot a{align-self:flex-start}}
     @keyframes hero-aura{from{transform:translate3d(-1.5%,0,0) scale(.96);opacity:.7}to{transform:translate3d(1.5%,1%,0) scale(1.05);opacity:1}}
     @keyframes hero-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
     @keyframes orbit-drift{from{transform:translateZ(-28px) rotate(-3deg)}to{transform:translateZ(-28px) rotate(2deg)}}
@@ -118,10 +139,19 @@
           <div><div class="eyebrow">Market snapshot</div><h2 id="marketTitle">A live read on the markets.</h2><p>Selected currency pairs, gold, and digital assets in one glance. Use your broker’s quote for trade decisions.</p></div>
           <div class="market-status-pill"><span class="market-live-dot" aria-hidden="true"></span>External market feed</div>
         </div>
+        <details class="market-watch-config" id="marketWatchConfig">
+          <summary><span>Choose markets</span><span class="market-watch-count" id="marketWatchCount" aria-live="polite"></span></summary>
+          <div class="market-watch-panel">
+            <p class="market-watch-help">Choose up to 12 instruments for this watchlist. Your choices are saved in this browser. For other instruments, enter the TradingView exchange and symbol, such as OANDA:EURUSD.</p>
+            <div class="market-watch-options" id="marketWatchOptions"></div>
+            <div class="market-watch-custom"><input id="marketWatchCustomInput" type="text" placeholder="Exchange:Symbol" aria-label="Custom TradingView exchange and symbol" autocapitalize="characters" spellcheck="false"><button id="marketWatchAddCustom" type="button">Add symbol</button></div>
+            <div class="market-watch-footer"><p class="market-watch-status" id="marketWatchStatus" role="status" aria-live="polite"></p><button class="market-watch-reset" id="marketWatchReset" type="button">Restore defaults</button></div>
+          </div>
+        </details>
         <div class="market-embed" id="marketWidgetHost" aria-label="Live currency, gold and cryptocurrency quotes">
           <p class="market-loading" id="marketLoading">Connecting to the market feed…</p>
         </div>
-        <div class="market-foot"><span>Forex and crypto data are listed by TradingView as real-time; availability and timing can vary by instrument and source.</span><a href="https://www.tradingview.com/pricing/?share_your_love=superghostlah711" target="_blank" rel="noopener noreferrer">Market data by TradingView ↗</a></div>
+        <div class="market-foot"><span>Prices and real-time access depend on the selected TradingView feed, instrument, and exchange.</span><a href="https://www.tradingview.com/pricing/?share_your_love=superghostlah711" target="_blank" rel="noopener noreferrer">Market data by TradingView ↗</a></div>
       </div>
     </section>
 
@@ -172,24 +202,136 @@
     const marketSection=document.getElementById('markets');
     const marketHost=document.getElementById('marketWidgetHost');
     const marketLoading=document.getElementById('marketLoading');
+    const marketWatchOptions=document.getElementById('marketWatchOptions');
+    const marketWatchCount=document.getElementById('marketWatchCount');
+    const marketWatchStatus=document.getElementById('marketWatchStatus');
+    const marketWatchStorageKey='gd_market_watch_symbols_v1';
+    const marketWatchLimit=12;
+    const defaultMarketSymbols=['FX:EURUSD','FX:GBPUSD','FX:USDJPY','FX:AUDUSD','CMCMARKETS:GOLD','BITSTAMP:BTCUSD','BITSTAMP:ETHUSD'];
+    const marketSymbolOptions=[
+      {group:'Forex',label:'EUR/USD',symbol:'FX:EURUSD'},
+      {group:'Forex',label:'GBP/USD',symbol:'FX:GBPUSD'},
+      {group:'Forex',label:'USD/JPY',symbol:'FX:USDJPY'},
+      {group:'Forex',label:'AUD/USD',symbol:'FX:AUDUSD'},
+      {group:'Forex',label:'NZD/USD',symbol:'FX:NZDUSD'},
+      {group:'Forex',label:'USD/CAD',symbol:'FX:USDCAD'},
+      {group:'Forex',label:'USD/CHF',symbol:'FX:USDCHF'},
+      {group:'Forex',label:'EUR/GBP',symbol:'FX:EURGBP'},
+      {group:'Forex',label:'EUR/JPY',symbol:'FX:EURJPY'},
+      {group:'Forex',label:'GBP/JPY',symbol:'FX:GBPJPY'},
+      {group:'Forex',label:'AUD/JPY',symbol:'FX:AUDJPY'},
+      {group:'Commodities',label:'Gold',symbol:'CMCMARKETS:GOLD'},
+      {group:'Crypto',label:'Bitcoin',symbol:'BITSTAMP:BTCUSD'},
+      {group:'Crypto',label:'Ethereum',symbol:'BITSTAMP:ETHUSD'}
+    ];
+    const validMarketSymbol=value=>/^[A-Z0-9._-]+:[A-Z0-9._!$-]+$/.test(String(value||''));
+    function readSavedMarketSymbols(){
+      try{
+        const saved=localStorage.getItem(marketWatchStorageKey);
+        if(saved===null)return [...defaultMarketSymbols];
+        const parsed=JSON.parse(saved);
+        if(!Array.isArray(parsed))return [...defaultMarketSymbols];
+        return [...new Set(parsed.map(symbol=>String(symbol).trim().toUpperCase()).filter(validMarketSymbol))].slice(0,marketWatchLimit);
+      }catch(error){return [...defaultMarketSymbols];}
+    }
+    let selectedMarketSymbols=readSavedMarketSymbols();
     let marketFeedStarted=false;
-    function loadMarketFeed(){
-      if(marketFeedStarted||!marketHost)return;
-      marketFeedStarted=true;
+    let marketWidgetScriptStarted=false;
+    function setMarketWatchStatus(message,isError=false){
+      if(!marketWatchStatus)return;
+      marketWatchStatus.textContent=message;
+      marketWatchStatus.classList.toggle('is-error',isError);
+    }
+    function renderMarketWatchOptions(){
+      if(!marketWatchOptions)return;
+      const focusedSymbol=document.activeElement?.matches('.market-watch-option input')?document.activeElement.value:null;
+      marketWatchOptions.replaceChildren();
+      const known=new Set(marketSymbolOptions.map(option=>option.symbol));
+      const groups=[...new Set(marketSymbolOptions.map(option=>option.group))].map(group=>({name:group,options:marketSymbolOptions.filter(option=>option.group===group)}));
+      const customSymbols=selectedMarketSymbols.filter(symbol=>!known.has(symbol));
+      if(customSymbols.length)groups.push({name:'Custom symbols',options:customSymbols.map(symbol=>({label:symbol,symbol}))});
+      groups.forEach(group=>{
+        const fieldset=document.createElement('fieldset');
+        fieldset.className='market-watch-group';
+        const legend=document.createElement('legend');
+        legend.textContent=group.name;
+        fieldset.appendChild(legend);
+        group.options.forEach(option=>{
+          const label=document.createElement('label');
+          label.className='market-watch-option';
+          const input=document.createElement('input');
+          input.type='checkbox';
+          input.value=option.symbol;
+          input.checked=selectedMarketSymbols.includes(option.symbol);
+          input.addEventListener('change',()=>{
+            const next=input.checked?[...selectedMarketSymbols,option.symbol]:selectedMarketSymbols.filter(symbol=>symbol!==option.symbol);
+            if(next.length>marketWatchLimit){input.checked=false;setMarketWatchStatus(`Choose up to ${marketWatchLimit} instruments.`,true);return;}
+            saveMarketWatch(next);
+          });
+          const name=document.createElement('span');
+          name.textContent=option.label;
+          const symbol=document.createElement('small');
+          symbol.textContent=option.symbol;
+          label.append(input,name,symbol);
+          fieldset.appendChild(label);
+        });
+        marketWatchOptions.appendChild(fieldset);
+      });
+      if(marketWatchCount)marketWatchCount.textContent=selectedMarketSymbols.length?`${selectedMarketSymbols.length} selected`:'None selected';
+      if(focusedSymbol){
+        const nextFocus=Array.from(marketWatchOptions.querySelectorAll('input')).find(input=>input.value===focusedSymbol);
+        if(nextFocus)nextFocus.focus({preventScroll:true});
+        else document.getElementById('marketWatchCustomInput')?.focus({preventScroll:true});
+      }
+    }
+    function renderMarketFeed(){
+      if(!marketHost)return;
+      marketHost.querySelector('tv-ticker-tape')?.remove();
+      if(!selectedMarketSymbols.length){
+        if(marketLoading){marketLoading.hidden=false;marketLoading.textContent='Choose one or more instruments to show market prices.';}
+        return;
+      }
       const ticker=document.createElement('tv-ticker-tape');
-      ticker.setAttribute('symbols','FX:EURUSD,FX:GBPUSD,FX:USDJPY,FX:AUDUSD,CMCMARKETS:GOLD,BITSTAMP:BTCUSD,BITSTAMP:ETHUSD');
+      ticker.setAttribute('symbols',selectedMarketSymbols.join(','));
       ticker.setAttribute('item-size','compact');
       ticker.setAttribute('hide-chart','');
       ticker.setAttribute('theme','dark');
       ticker.setAttribute('transparent','');
-      ticker.setAttribute('aria-label','Forex, gold and cryptocurrency market prices');
+      ticker.setAttribute('aria-label',`TradingView market prices for ${selectedMarketSymbols.join(', ')}`);
       marketHost.insertBefore(ticker,marketLoading);
+      if(marketLoading)marketLoading.hidden=true;
+      if(marketWidgetScriptStarted)return;
+      marketWidgetScriptStarted=true;
       const widgetScript=document.createElement('script');
       widgetScript.type='module';
       widgetScript.src='https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js';
-      widgetScript.onload=()=>{if(marketLoading)marketLoading.hidden=true;};
-      widgetScript.onerror=()=>{if(marketLoading)marketLoading.innerHTML='The market feed could not load. <a href="https://www.tradingview.com/pricing/?share_your_love=superghostlah711" target="_blank" rel="noopener noreferrer">Open TradingView ↗</a>';};
+      widgetScript.onerror=()=>{if(marketLoading){marketLoading.hidden=false;marketLoading.innerHTML='The market feed could not load. <a href="https://www.tradingview.com/pricing/?share_your_love=superghostlah711" target="_blank" rel="noopener noreferrer">Open TradingView ↗</a>';}};
       document.head.appendChild(widgetScript);
+    }
+    function saveMarketWatch(symbols){
+      selectedMarketSymbols=[...new Set(symbols.map(symbol=>String(symbol).trim().toUpperCase()).filter(validMarketSymbol))].slice(0,marketWatchLimit);
+      try{localStorage.setItem(marketWatchStorageKey,JSON.stringify(selectedMarketSymbols));}catch(error){}
+      renderMarketWatchOptions();
+      setMarketWatchStatus('Watchlist saved in this browser.');
+      if(marketFeedStarted)renderMarketFeed();
+    }
+    function addCustomMarketSymbol(){
+      const input=document.getElementById('marketWatchCustomInput');
+      const symbol=String(input?.value||'').trim().toUpperCase();
+      if(!validMarketSymbol(symbol)){setMarketWatchStatus('Enter a symbol with an exchange prefix, such as OANDA:EURUSD.',true);input?.focus();return;}
+      if(selectedMarketSymbols.includes(symbol)){setMarketWatchStatus(`${symbol} is already selected.`,true);return;}
+      if(selectedMarketSymbols.length>=marketWatchLimit){setMarketWatchStatus(`Choose up to ${marketWatchLimit} instruments.`,true);return;}
+      saveMarketWatch([...selectedMarketSymbols,symbol]);
+      if(input)input.value='';
+    }
+    document.getElementById('marketWatchAddCustom')?.addEventListener('click',addCustomMarketSymbol);
+    document.getElementById('marketWatchCustomInput')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();addCustomMarketSymbol();}});
+    document.getElementById('marketWatchReset')?.addEventListener('click',()=>{saveMarketWatch([...defaultMarketSymbols]);setMarketWatchStatus('Default watchlist restored.');});
+    renderMarketWatchOptions();
+    function loadMarketFeed(){
+      if(marketFeedStarted||!marketHost)return;
+      marketFeedStarted=true;
+      renderMarketFeed();
     }
     if(marketSection&&'IntersectionObserver' in window){
       const marketObserver=new IntersectionObserver((entries)=>{if(entries.some(entry=>entry.isIntersecting)){loadMarketFeed();marketObserver.disconnect();}},{rootMargin:'240px 0px'});
