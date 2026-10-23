@@ -7373,7 +7373,48 @@ html[data-theme="light"] #signalPage>.topbar{background:rgba(11,16,13,.96)}
   .stage-status{left:11px;bottom:8px}
   .quick-row-wrap{grid-column:1;grid-row:4;margin:0;padding:0 0 10px;overflow:visible}
   #quickRow{display:flex;align-items:center;height:auto;padding:19px 0 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
-  #quick/* SciFe home: a deliberate welcome, actionable prompt cards, and a compact companion rail. */
+  #quick
+Row::before{top:0}
+  #quickRow::-webkit-scrollbar{display:none}
+  .quick-chip{flex:0 0 auto;width:auto;min-height:36px;max-width:205px;padding:7px 11px;border-radius:999px;font-size:10px;white-space:nowrap}
+  .chat-wrap{grid-column:1;grid-row:5;min-height:310px;height:auto;max-width:none;border-top:1px solid rgba(222,232,217,.1)}
+  .conversation-header{min-height:76px;padding:13px 2px}
+  .conversation-copy h2{font-size:18px}
+  .conversation-copy p{font-size:11px}
+  .conversation-badge{padding:6px 8px;font-size:9px}
+  .chat{min-height:310px;padding:20px 2px}
+  .chat:has(.bubble:only-child){padding-top:20px}
+  .chat:has(.bubble:only-child) .bubble{max-width:100%;font-size:13px}
+  .bubble{max-width:92%;font-size:12px}
+  .composer{grid-column:1;grid-row:6;max-width:none;padding-top:8px}
+  .composer-row{min-height:51px}
+  #signalPage{padding-inline:16px!important}
+  #signalPage .sig-card{grid-template-columns:1fr;padding:17px 15px 4px}
+  #signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1}
+  #signalPage .sig-hero{padding:21px 17px;margin-top:14px}
+  #settingsOverlay{padding:12px;align-items:flex-end}
+  #settingsOverlay .modal{max-height:90dvh;padding:23px 17px calc(17px + env(safe-area-inset-bottom));border-radius:15px 15px 11px 11px}
+}
+@media(max-width:440px){
+  #app{padding-inline:12px}
+  #app>.topbar{gap:6px}
+  #app>.topbar .back{font-size:9px}
+  #app>.topbar .title{font-size:16px}
+  #stage3dWrap{height:112px}
+  .conversation-badge{display:none}
+  #signalPage .sig-hero-title{font-size:27px}
+  #settingsOverlay .settings-tabs{gap:3px}
+  #settingsOverlay .settings-tab{min-width:65px;font-size:10px}
+}
+html.quick-mode .conversation-header{display:none!important}
+@media(max-height:720px) and (min-width:761px){
+  #app{grid-template-rows:60px auto minmax(155px,185px) minmax(130px,1fr) 72px;min-height:540px}
+  #chatQuotaBanner{margin-bottom:7px!important}
+  .composer{padding-top:7px}
+}
+@media(prefers-reduced-motion:reduce){.quick-chip,.btn,.icon-btn{transition:none!important}}
+
+/* SciFe home: a deliberate welcome, actionable prompt cards, and a compact companion rail. */
 #app{
   width:min(100%,1480px);max-width:1480px;grid-template-columns:minmax(235px,290px) minmax(0,1fr);
   grid-template-rows:auto auto minmax(150px,auto) auto minmax(170px,1fr) auto;column-gap:clamp(24px,3.5vw,50px);
@@ -7544,45 +7585,6 @@ html.quick-mode .chat-wrap{grid-column:1;grid-row:2;min-height:0;height:100%;bor
 html.quick-mode .session-heading{display:none!important}
 html.quick-mode .composer{grid-column:1;grid-row:3}
 @media(prefers-reduced-motion:reduce){.prompt-arrow{transition:none!important}}
-Row::before{top:0}
-  #quickRow::-webkit-scrollbar{display:none}
-  .quick-chip{flex:0 0 auto;width:auto;min-height:36px;max-width:205px;padding:7px 11px;border-radius:999px;font-size:10px;white-space:nowrap}
-  .chat-wrap{grid-column:1;grid-row:5;min-height:310px;height:auto;max-width:none;border-top:1px solid rgba(222,232,217,.1)}
-  .conversation-header{min-height:76px;padding:13px 2px}
-  .conversation-copy h2{font-size:18px}
-  .conversation-copy p{font-size:11px}
-  .conversation-badge{padding:6px 8px;font-size:9px}
-  .chat{min-height:310px;padding:20px 2px}
-  .chat:has(.bubble:only-child){padding-top:20px}
-  .chat:has(.bubble:only-child) .bubble{max-width:100%;font-size:13px}
-  .bubble{max-width:92%;font-size:12px}
-  .composer{grid-column:1;grid-row:6;max-width:none;padding-top:8px}
-  .composer-row{min-height:51px}
-  #signalPage{padding-inline:16px!important}
-  #signalPage .sig-card{grid-template-columns:1fr;padding:17px 15px 4px}
-  #signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1}
-  #signalPage .sig-hero{padding:21px 17px;margin-top:14px}
-  #settingsOverlay{padding:12px;align-items:flex-end}
-  #settingsOverlay .modal{max-height:90dvh;padding:23px 17px calc(17px + env(safe-area-inset-bottom));border-radius:15px 15px 11px 11px}
-}
-@media(max-width:440px){
-  #app{padding-inline:12px}
-  #app>.topbar{gap:6px}
-  #app>.topbar .back{font-size:9px}
-  #app>.topbar .title{font-size:16px}
-  #stage3dWrap{height:112px}
-  .conversation-badge{display:none}
-  #signalPage .sig-hero-title{font-size:27px}
-  #settingsOverlay .settings-tabs{gap:3px}
-  #settingsOverlay .settings-tab{min-width:65px;font-size:10px}
-}
-html.quick-mode .conversation-header{display:none!important}
-@media(max-height:720px) and (min-width:761px){
-  #app{grid-template-rows:60px auto minmax(155px,185px) minmax(130px,1fr) 72px;min-height:540px}
-  #chatQuotaBanner{margin-bottom:7px!important}
-  .composer{padding-top:7px}
-}
-@media(prefers-reduced-motion:reduce){.quick-chip,.btn,.icon-btn{transition:none!important}}
 </style>
 
 </body>
