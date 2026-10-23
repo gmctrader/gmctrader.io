@@ -7,6 +7,8 @@
       "**/node_modules/**",
       "supabase/**",
       ".github/**",
+      "PAYSTACK_SETUP.md",
+      "STORAGE_SETUP.md",
       "*.bat"
     ]
   }

@@ -1496,6 +1496,7 @@ setTimeout(function(){
       </div>
       <input type="password" id="setupKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false" oninput="onKeyInput('setup')">
       <div class="hint" id="setupKeyHint"></div>
+      <div class="hint" style="margin-top:6px;">Your key stays in this browser and goes directly to the provider you choose. It does not sync to other devices.</div>
       <a class="key-link" id="setupKeyLink" href="#" target="_blank" rel="noopener">Get a free API key →</a>
     </div>
     <div class="field">
@@ -1764,6 +1765,7 @@ setTimeout(function(){
         </div>
         <input type="password" id="settingsKeyInput" placeholder="paste your key" autocomplete="off" spellcheck="false" oninput="onKeyInput('settings')">
         <div class="hint" id="settingsKeyHint"></div>
+        <div class="hint" style="margin-top:6px;">Your key stays in this browser and goes directly to the provider you choose. It does not sync to other devices.</div>
         <a class="key-link" id="settingsKeyLink" href="#" target="_blank" rel="noopener">Get a free API key →</a>
       </div>
       <div class="field">
@@ -1873,6 +1875,24 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
 let scife = { provider:'google', apiKeys:{}, model:'gemini-3.8-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'', imgCount:0, imgDayKey:'' }, chartMemory:{}, sigSessions:[] };
+const SCIFE_LOCAL_KEYS_PREFIX = 'gd_scife_provider_keys_v1_';
+function readLocalScifeApiKeys(userId=currentUser && currentUser.id){
+  if(!userId) return {};
+  try{
+    const raw = localStorage.getItem(SCIFE_LOCAL_KEYS_PREFIX + userId);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  }catch(e){ return {}; }
+}
+function writeLocalScifeApiKeys(apiKeys, userId=currentUser && currentUser.id){
+  if(!userId) return false;
+  try{
+    const safeKeys = apiKeys && typeof apiKeys === 'object' && !Array.isArray(apiKeys) ? apiKeys : {};
+    if(Object.keys(safeKeys).length) localStorage.setItem(SCIFE_LOCAL_KEYS_PREFIX + userId, JSON.stringify(safeKeys));
+    else localStorage.removeItem(SCIFE_LOCAL_KEYS_PREFIX + userId);
+    return true;
+  }catch(e){ return false; }
+}
 /* ============ SHARED PLAN KEY ============
    The trader running this deployment supplies one Gemini key that everyone
    uses by default (nobody needs to go get their own to start chatting).
@@ -2667,10 +2687,12 @@ async function loadTraderRow(){
   userTier = TIER_ORDER.includes(traderRow.tier) ? traderRow.tier : 'free';
   const s = traderRow.scife || {};
   const provider = s.provider || 'google';
-  // apiKeys is the new per-provider map; fall back to migrating an old
-  // single "apiKey" field (from before multi-provider support) if present.
-  const apiKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? { ...s.apiKeys } : {};
-  if(s.apiKey && !apiKeys[provider]) apiKeys[provider] = s.apiKey;
+  // BYOK secrets are kept in this browser only. Migrate any old keys from the
+  // synced row before replacing its secret-bearing SciFe object below.
+  const remoteApiKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? { ...s.apiKeys } : {};
+  if(s.apiKey && !remoteApiKeys[provider]) remoteApiKeys[provider] = s.apiKey;
+  const localApiKeys = readLocalScifeApiKeys(currentUser.id);
+  const apiKeys = { ...remoteApiKeys, ...localApiKeys };
   const u = (s.usage && typeof s.usage === 'object') ? s.usage : {};
   scife = {
     provider,
@@ -2688,6 +2710,11 @@ async function loadTraderRow(){
     // so it should be an explicit opt-in from Settings, not a silent default.
     webSearch: !!s.webSearch
   };
+  if(Object.keys(remoteApiKeys).length && writeLocalScifeApiKeys(apiKeys, currentUser.id)){
+    // Re-save immediately so legacy provider secrets are removed from the
+    // synced account row. They remain available on this browser only.
+    await saveScife();
+  }
   rolloverUsageWeek();
   updateScanBanner();
 }
@@ -2940,9 +2967,14 @@ function activeModel(){
 }
 
 async function saveScife(){
+  const keysStoredLocally = writeLocalScifeApiKeys(scife.apiKeys || {}, currentUser && currentUser.id);
+  const safeScife = { ...scife };
+  delete safeScife.apiKeys;
+  delete safeScife.apiKey;
   const { error } = await sb.from('trader_data')
-    .upsert({ user_id: currentUser.id, scife }, { onConflict: 'user_id' });
+    .upsert({ user_id: currentUser.id, scife: safeScife }, { onConflict: 'user_id' });
   if(error) showToast('Could not save SciFe settings: ' + (error.message||error.code));
+  else if(!keysStoredLocally && Object.keys(scife.apiKeys || {}).length) showToast('Your provider key could not be saved in this browser. It was not sent to your account storage.');
 }
 
 /* ============ SETUP / SETTINGS ============ */
