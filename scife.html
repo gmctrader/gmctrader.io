@@ -1524,7 +1524,7 @@ setTimeout(function(){
     <div class="title serif">SciFe</div>
     <div class="topbar-icons">
       <div class="icon-btn" role="button" tabindex="0" onclick="openSignalPage()" onkeydown="if(event.key==='Enter')openSignalPage()" title="Analyze a setup" aria-label="Open Signal analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 4.4 4.4M10.8 7.5v6.6M7.5 10.8h6.6"/></svg></div>
-      <div class="icon-btn" role="button" tabindex="0" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()" title="Settings" aria-label="Open settings">⚙</div>
+      <div class="icon-btn" role="button" tabindex="0" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()" title="Settings" aria-label="Open settings"><svg class="ui-icon ui-icon-gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-1.7 1.7-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.5v.1h-2.4v-.1a1.65 1.65 0 0 0-1-1.5 1.65 1.65 0 0 0-1.82.33l-.06.06-1.7-1.7.06-.06A1.65 1.65 0 0 0 8.6 15a1.65 1.65 0 0 0-1.5-1H7v-2.4h.1a1.65 1.65 0 0 0 1.5-1 1.65 1.65 0 0 0-.33-1.82L8.2 8.7 9.9 7l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.5v-.1h2.4v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.82-.33l.06-.06 1.7 1.7-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.5 1h.1v2.4h-.1a1.65 1.65 0 0 0-1.47 1.02Z"/></svg></div>
     </div>
   </div>
   <div id="chatQuotaBanner" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(16,185,129,0.07);border-bottom:1px solid var(--steel);color:var(--slate);">
@@ -1577,22 +1577,22 @@ setTimeout(function(){
       <h1 id="welcomeTitle">Make your next decision a deliberate one.</h1>
       <p>Review your journal, reset your mindset, or test a setup against your own rules.</p>
     </div>
-    <div class="welcome-aside"><span class="welcome-aside-mark" aria-hidden="true">↗</span><span>Start with one honest question.</span></div>
+    <div class="welcome-aside"><span class="welcome-aside-mark" aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span><span>Start with one honest question.</span></div>
   </section>
 
   <div class="quick-row-wrap">
     <div class="prompt-heading"><span>START A SESSION</span><span>Choose a path</span></div>
     <div class="quick-row" id="quickRow">
-      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('day')"><span class="prompt-index">01</span><span class="prompt-card-copy"><strong>Review today</strong><small>Make sense of your trades and decisions.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
-      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('journal')"><span class="prompt-index">02</span><span class="prompt-card-copy"><strong>Explore your journal</strong><small>Look for patterns across your entries.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
-      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('emotions')"><span class="prompt-index">03</span><span class="prompt-card-copy"><strong>Check your mindset</strong><small>Name what is influencing you today.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
-      <button class="quick-chip prompt-card" type="button" onclick="openSignalPage()"><span class="prompt-index">04</span><span class="prompt-card-copy"><strong>Review a setup</strong><small>Compare an idea with your trading rules.</small></span><span class="prompt-arrow" aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('day')"><span class="prompt-index">01</span><span class="prompt-card-copy"><strong>Review today</strong><small>Make sense of your trades and decisions.</small></span><span class="prompt-arrow" aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('journal')"><span class="prompt-index">02</span><span class="prompt-card-copy"><strong>Explore your journal</strong><small>Look for patterns across your entries.</small></span><span class="prompt-arrow" aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="quickAsk('emotions')"><span class="prompt-index">03</span><span class="prompt-card-copy"><strong>Check your mindset</strong><small>Name what is influencing you today.</small></span><span class="prompt-arrow" aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
+      <button class="quick-chip prompt-card" type="button" onclick="openSignalPage()"><span class="prompt-index">04</span><span class="prompt-card-copy"><strong>Review a setup</strong><small>Compare an idea with your trading rules.</small></span><span class="prompt-arrow" aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
     </div>
     <div class="prompt-extras" aria-label="More prompts">
       <span>MORE</span>
-      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('trader')">Trader profile <span aria-hidden="true">↗</span></button>
-      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('news')">News &amp; events <span aria-hidden="true">↗</span></button>
-      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('usdbias')">USD bias <span aria-hidden="true">↗</span></button>
+      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('trader')">Trader profile <span aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
+      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('news')">News &amp; events <span aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
+      <button class="quick-chip prompt-link" type="button" onclick="quickAsk('usdbias')">USD bias <span aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span></button>
     </div>
   </div>
 
@@ -1649,7 +1649,7 @@ setTimeout(function(){
   <div class="sig-console-card">
     <div id="sig_scanBanner" class="sig-scan-banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;">
       <span id="sig_scanBannerText">Scans remaining this week: —</span>
-      <span class="icon-btn" role="button" tabindex="0" style="width:26px;height:26px;font-size:13px;" title="Settings" aria-label="Open settings" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()">⚙</span>
+      <span class="icon-btn" role="button" tabindex="0" style="width:26px;height:26px;font-size:13px;" title="Settings" aria-label="Open settings" onclick="openSettings()" onkeydown="if(event.key==='Enter')openSettings()"><svg class="ui-icon ui-icon-gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-1.7 1.7-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.5v.1h-2.4v-.1a1.65 1.65 0 0 0-1-1.5 1.65 1.65 0 0 0-1.82.33l-.06.06-1.7-1.7.06-.06A1.65 1.65 0 0 0 8.6 15a1.65 1.65 0 0 0-1.5-1H7v-2.4h.1a1.65 1.65 0 0 0 1.5-1 1.65 1.65 0 0 0-.33-1.82L8.2 8.7 9.9 7l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.5v-.1h2.4v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.82-.33l.06-.06 1.7 1.7-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.5 1h.1v2.4h-.1a1.65 1.65 0 0 0-1.47 1.02Z"/></svg></span>
     </div>
     <div class="sig-meter-track"><div class="sig-meter-fill" id="sig_scanMeterFill" style="width:100%;"></div></div>
     <div class="sig-history-row" style="display:flex;align-items:center;gap:8px;">
@@ -7603,7 +7603,7 @@ html.quick-mode .chat-wrap{grid-column:1;grid-row:2;min-height:0;height:100%;bor
 html.quick-mode .session-heading{display:none!important}
 html.quick-mode .composer{grid-column:1;grid-row:3}
 @media(prefers-reduced-motion:reduce){.prompt-arrow{transition:none!important}}
-</style>
+.ui-icon{display:block;flex:none;width:1em;height:1em;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.prompt-arrow .ui-icon{width:15px;height:15px}.prompt-link .ui-icon{width:12px;height:12px}.welcome-aside-mark .ui-icon{width:14px;height:14px}.icon-btn>.ui-icon{width:16px;height:16px}</style>
 
 </body>
 </html>
