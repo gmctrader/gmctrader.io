@@ -2482,7 +2482,7 @@ if(window.gdMotionLevel() === 'reduced') document.documentElement.classList.add(
   <div class="boot-particles">
     <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
-  <div class="boot-splash-inner"><p class="boot-kicker">GHOST DISCIPLINE · PRIVATE WORKSPACE</p><div class="gd-splash-scene" aria-hidden="true"><div class="gd-splash-colorwash"></div><div class="gd-splash-orbit gd-splash-orbit--one"></div><div class="gd-splash-orbit gd-splash-orbit--two"></div><div class="gd-splash-logo"><span class="gd-splash-logo-halo"></span><img src="ghost-discipline-logo-v2.png" alt="" onerror="gdLogoFallback(this)"></div><span class="gd-splash-glint"></span></div><div class="gd-boot-copy"><p class="boot-word">Ghost Discipline</p><div class="boot-terminal"><div class="boot-sub"><span class="boot-sub-line">Opening your workspace</span></div></div></div><div class="boot-bar"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><button type="button" id="bootEnterBtn" class="boot-enter-btn"><span>Open workspace</span></button></div>
+  <div class="boot-splash-inner"><p class="boot-kicker">GHOST DISCIPLINE · PRIVATE WORKSPACE</p><div class="gd-splash-scene" aria-hidden="true"><div class="gd-splash-colorwash"></div><div class="gd-splash-orbit gd-splash-orbit--one"></div><div class="gd-splash-orbit gd-splash-orbit--two"></div><div class="gd-splash-logo"><span class="gd-splash-logo-halo"></span><img src="ghost-discipline-logo-v2.png" width="104" height="104" decoding="async" fetchpriority="high" alt="" onerror="gdLogoFallback(this)"></div><span class="gd-splash-glint"></span></div><div class="gd-boot-copy"><p class="boot-word">Ghost Discipline</p><div class="boot-terminal"><div class="boot-sub"><span class="boot-sub-line">Opening your workspace</span></div></div></div><div class="boot-bar"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><button type="button" id="bootEnterBtn" class="boot-enter-btn"><span>Open workspace</span></button></div>
 </div>
 <script>
 // Hard safety net: if the main boot script ever throws before it can hide
@@ -2666,34 +2666,37 @@ setTimeout(function(){
      — helps SciFe personalise its coaching from turn one instead of starting
      cold. Free tier must answer to continue; Pro/Elite can skip. -->
 <div class="overlay" id="onboardingOverlay">
-  <div class="modal" style="max-width:480px;" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-    <h3 class="serif" id="onboardingTitle">A few questions for SciFe</h3>
-    <div class="sub">Nothing here is graded — it just helps SciFe's coaching fit how you actually trade. Takes under a minute.</div>
-    <div class="auth-msg" id="onboardingMsg" role="alert"></div>
-    <div class="field">
-      <label>What markets do you mainly trade?</label>
-      <input type="text" id="ob_markets" placeholder="e.g. XAUUSD, EURUSD, indices">
+  <div class="modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-describedby="onboardingIntro">
+    <div class="onboarding-heading">
+      <div><div class="onboarding-kicker">YOUR TRADER PROFILE · 01—05</div><h3 id="onboardingTitle">Set your starting point</h3><p class="sub" id="onboardingIntro">A few quick prompts make your journal and SciFe coaching feel like yours.</p></div>
+      <div class="onboarding-rank-chip" aria-live="polite"><span class="onboarding-rank-dot"></span><span><small>CURRENT RANK</small><b id="obRankChip">Rookie</b></span></div>
     </div>
-    <div class="field">
-      <label>How long have you been trading?</label>
-      <select id="ob_experience">
-        <option value="">Select…</option>
-        <option value="new">Under 6 months</option>
-        <option value="1-2y">1–2 years</option>
-        <option value="3-5y">3–5 years</option>
-        <option value="5y+">5+ years</option>
-      </select>
+    <div class="onboarding-progress" id="onboardingProgress" role="progressbar" aria-label="Profile setup progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"><span id="onboardingProgressFill"></span></div>
+    <div class="auth-msg" id="onboardingMsg" role="alert" aria-live="polite"></div>
+    <div class="onboarding-stage" id="onboardingStage">
+      <section class="onboarding-slide is-active" data-onboarding-step="0" aria-hidden="false">
+        <div class="onboarding-step-tag">01 / YOUR MARKETS</div><h4>What do you like to trade?</h4><p>Tell us what you watch so your workspace can start with the right context.</p>
+        <div class="field"><label for="ob_markets">Markets or symbols</label><input type="text" id="ob_markets" data-onboarding-field placeholder="e.g. XAUUSD, EURUSD, indices" autocomplete="off"></div>
+      </section>
+      <section class="onboarding-slide" data-onboarding-step="1" aria-hidden="true" hidden>
+        <div class="onboarding-step-tag">02 / TIME IN THE MARKETS</div><h4>How long have you been trading?</h4><p>There is no experience threshold here. This only helps tune your coaching.</p>
+        <div class="field"><label for="ob_experience">Your experience</label><select id="ob_experience" data-onboarding-field><option value="">Choose a range…</option><option value="new">Under 6 months</option><option value="1-2y">1–2 years</option><option value="3-5y">3–5 years</option><option value="5y+">5+ years</option></select></div>
+      </section>
+      <section class="onboarding-slide" data-onboarding-step="2" aria-hidden="true" hidden>
+        <div class="onboarding-step-tag">03 / YOUR PRESSURE POINT</div><h4>What tests your discipline?</h4><p>Name the moment that tends to pull you away from the plan. Your answer stays in your profile.</p>
+        <div class="field"><label for="ob_weakness">The hardest part for you</label><input type="text" id="ob_weakness" data-onboarding-field placeholder="e.g. stopping after a loss" autocomplete="off"></div>
+      </section>
+      <section class="onboarding-slide" data-onboarding-step="3" aria-hidden="true" hidden>
+        <div class="onboarding-step-tag">04 / YOUR INTENTION</div><h4>What should this journal help you improve?</h4><p>Choose one useful focus for your next stretch of trading.</p>
+        <div class="field"><label for="ob_goal">Your main focus</label><input type="text" id="ob_goal" data-onboarding-field placeholder="e.g. follow my risk rules consistently" autocomplete="off"></div>
+      </section>
+      <section class="onboarding-slide onboarding-reveal" data-onboarding-step="4" aria-hidden="true" hidden>
+        <div class="onboarding-step-tag">05 / YOUR JOURNEY BEGINS</div><div class="onboarding-rank-reveal"><div class="onboarding-rank-medallion" aria-hidden="true"><span class="onboarding-rank-orbit onboarding-rank-orbit-a"></span><span class="onboarding-rank-orbit onboarding-rank-orbit-b"></span><b id="obRankLetter">R</b></div><div><div class="onboarding-rank-label">YOUR STARTING RANK</div><h4 id="obRankTitle">Rookie</h4><p id="obRankCopy">Every trader starts by building a record.</p></div></div>
+        <div class="onboarding-milestone"><div><span>NEXT RANK</span><b id="obRankNext">Apprentice</b></div><p id="obRankRequirements">3 trades · 2 rule-kept sessions · 1 trade review</p><div class="onboarding-rank-note">Ranks grow automatically from your journal habits. Profit never counts toward a rank.</div></div>
+      </section>
     </div>
-    <div class="field">
-      <label>What usually breaks your discipline first?</label>
-      <input type="text" id="ob_weakness" placeholder="e.g. revenge trading after a loss">
-    </div>
-    <div class="field">
-      <label>What's the #1 goal you want this journal to help with?</label>
-      <input type="text" id="ob_goal" placeholder="e.g. stop overtrading, pass a prop challenge">
-    </div>
-    <button class="btn-gold" id="onboardingSubmitBtn" onclick="submitOnboarding()">Save & Continue</button>
-    <button class="btn-ghost" id="onboardingSkipBtn" style="margin-top:10px;width:100%;" onclick="skipOnboarding()">Skip for now</button>
+    <div class="onboarding-footer"><button type="button" class="btn-ghost onboarding-back" id="onboardingBackBtn" onclick="moveOnboardingStep(-1)" disabled>← Back</button><span class="onboarding-step-count"><b id="onboardingStepNumber">01</b> <span>/ 05</span></span><button type="button" class="btn-gold onboarding-next" id="onboardingNextBtn" onclick="moveOnboardingStep(1)">Continue <span aria-hidden="true">→</span></button><button type="button" class="btn-gold onboarding-submit" id="onboardingSubmitBtn" onclick="submitOnboarding()" hidden>Save profile &amp; enter <span aria-hidden="true">→</span></button></div>
+    <button type="button" class="btn-ghost onboarding-skip" id="onboardingSkipBtn" onclick="skipOnboarding()">Skip for now</button>
   </div>
 </div>
 
@@ -3130,7 +3133,7 @@ setTimeout(function(){
         <div class="first-session-head">
           <div>
             <div class="first-session-kicker">YOUR FIRST SESSION</div>
-            <h2 id="firstSessionTitle">Build your process before your first trade.</h2>
+            <h2 id="firstSessionTitle">Build your process before your first trade. <button class="first-session-get-app" type="button" onclick="handleGetApp()">(Get app)</button></h2>
             <p>Three quick steps to make this workspace yours.</p>
           </div>
           <span class="first-session-count" id="firstSessionCount"></span>
@@ -6239,10 +6242,106 @@ setTimeout(gdEvaluateAlerts, 8000);
    queueOnboardingQuestions() is called from loadOrCreateTraderData() for any
    trader whose row has onboarding_done !== true. It waits for the boot
    splash/gate to clear so it never fights the rules-setup gate for attention. */
+const GD_JOURNEY_RANKS = [
+  { name:'Rookie', letter:'R', tradeTarget:3, sessionTarget:2, reviewTarget:1, description:'Start here. Write down your process, then build a record one session at a time.' },
+  { name:'Apprentice', letter:'A', tradeTarget:10, sessionTarget:5, reviewTarget:5, description:'You are building a habit of recording decisions and checking how they matched your plan.' },
+  { name:'Consistent', letter:'C', tradeTarget:25, sessionTarget:12, reviewTarget:15, description:'Your journal shows repeated practice: recorded trades, rule-kept sessions, and honest reviews.' },
+  { name:'Process-led', letter:'P', tradeTarget:null, sessionTarget:null, reviewTarget:null, description:'You have built a strong record of showing up for the process. Keep refining it.' }
+];
+function getJourneyRank(){
+  const trades = liveTrades();
+  const tradeIds = new Set(trades.map(trade=>String(trade.id)));
+  const reviews = new Set((state.psychology.tradeReviews||[]).map(review=>String(review.tradeId)).filter(id=>tradeIds.has(id)));
+  const history = state.psychology.disciplineHistory||[];
+  const today=state.day?.date;
+  const cleanDates = new Set(history.filter(day=>day && day.date!==today && day.trades>0 && day.ruleBroken!==true).map(day=>day.date));
+  if(state.day && state.day.tradesCount>0 && !state.day.ruleBrokenToday && !cleanDates.has(state.day.date)) cleanDates.add(state.day.date);
+  const stats = { trades:trades.length, sessions:cleanDates.size, reviews:reviews.size };
+  let index = 0;
+  for(let i=0;i<GD_JOURNEY_RANKS.length-1;i++){
+    const next=GD_JOURNEY_RANKS[i];
+    if(stats.trades>=next.tradeTarget && stats.sessions>=next.sessionTarget && stats.reviews>=next.reviewTarget) index=i+1;
+    else break;
+  }
+  const rank=GD_JOURNEY_RANKS[index], next=GD_JOURNEY_RANKS[index+1]||null;
+  const progress=next ? Math.round(((Math.min(stats.trades/ rank.tradeTarget,1)+Math.min(stats.sessions/rank.sessionTarget,1)+Math.min(stats.reviews/rank.reviewTarget,1))/3)*100) : 100;
+  return { index, rank, next, stats, progress };
+}
+function journeyRequirements(rank){
+  return `${rank.tradeTarget} trades · ${rank.sessionTarget} rule-kept sessions · ${rank.reviewTarget} trade review${rank.reviewTarget===1?'':'s'}`;
+}
+function renderJourneyRank(){
+  const journey=getJourneyRank();
+  const nextCopy=journey.next ? journeyRequirements(journey.rank) : 'You have reached the final process rank.';
+  return `<section class="journey-rank-panel" aria-label="Trader journey rank">
+    <div class="journey-rank-main"><span class="journey-rank-medallion" aria-hidden="true">${journey.rank.letter}</span><div><span class="journey-rank-kicker">TRADER JOURNEY · RANK ${journey.index+1} / ${GD_JOURNEY_RANKS.length}</span><strong>${journey.rank.name}</strong></div><span class="journey-rank-auto">AUTO-RANKED</span></div>
+    <p>${journey.next ? `Next: <b>${journey.next.name}</b> · ${nextCopy}` : nextCopy}</p>
+    <div class="journey-rank-progress" role="progressbar" aria-label="Progress to next trader rank" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${journey.progress}"><span style="width:${journey.progress}%"></span></div>
+    <div class="journey-rank-stats"><span><b>${journey.stats.trades}</b> trades</span><span><b>${journey.stats.sessions}</b> rule-kept sessions</span><span><b>${journey.stats.reviews}</b> reviews</span></div>
+    <small>Ranks follow journal habits, never profit.</small>
+  </section>`;
+}
+let onboardingCurrentStep=0;
+const ONBOARDING_STEP_TOTAL=5;
+function syncOnboardingRankPreview(){
+  const journey=getJourneyRank();
+  const chip=document.getElementById('obRankChip'); if(chip) chip.textContent=journey.rank.name;
+  const title=document.getElementById('obRankTitle'); if(title) title.textContent=journey.rank.name;
+  const letter=document.getElementById('obRankLetter'); if(letter) letter.textContent=journey.rank.letter;
+  const copy=document.getElementById('obRankCopy'); if(copy) copy.textContent=journey.rank.description;
+  const next=document.getElementById('obRankNext'); if(next) next.textContent=journey.next?journey.next.name:'All milestones reached';
+  const requirements=document.getElementById('obRankRequirements'); if(requirements) requirements.textContent=journey.next?journeyRequirements(journey.rank):'Your process record has reached every rank milestone.';
+}
+function prepareOnboardingQuestions(){
+  const fields={ob_markets:userProfile.markets,ob_experience:userProfile.experience,ob_weakness:userProfile.weakness,ob_goal:userProfile.goal};
+  Object.entries(fields).forEach(([id,value])=>{const input=document.getElementById(id);if(input&&!input.value&&value)input.value=value;});
+  syncOnboardingRankPreview();
+  setOnboardingStep(0,0);
+}
+function setOnboardingStep(step,direction){
+  onboardingCurrentStep=Math.max(0,Math.min(ONBOARDING_STEP_TOTAL-1,step));
+  document.querySelectorAll('#onboardingStage [data-onboarding-step]').forEach((slide,index)=>{
+    const active=index===onboardingCurrentStep;
+    slide.hidden=!active;
+    slide.setAttribute('aria-hidden',active?'false':'true');
+    slide.classList.toggle('is-active',active);
+    slide.classList.remove('enter-forward','enter-backward');
+    if(active&&direction) slide.classList.add(direction>0?'enter-forward':'enter-backward');
+  });
+  const number=document.getElementById('onboardingStepNumber'); if(number) number.textContent=String(onboardingCurrentStep+1).padStart(2,'0');
+  const progress=document.getElementById('onboardingProgress'); if(progress) progress.setAttribute('aria-valuenow',String(onboardingCurrentStep+1));
+  const fill=document.getElementById('onboardingProgressFill'); if(fill) fill.style.width=`${(onboardingCurrentStep+1)/ONBOARDING_STEP_TOTAL*100}%`;
+  const back=document.getElementById('onboardingBackBtn'); if(back) back.disabled=onboardingCurrentStep===0;
+  const next=document.getElementById('onboardingNextBtn'); if(next) next.hidden=onboardingCurrentStep===ONBOARDING_STEP_TOTAL-1;
+  const submit=document.getElementById('onboardingSubmitBtn'); if(submit) submit.hidden=onboardingCurrentStep!==ONBOARDING_STEP_TOTAL-1;
+  if(onboardingCurrentStep===ONBOARDING_STEP_TOTAL-1) syncOnboardingRankPreview();
+  const msg=document.getElementById('onboardingMsg'); if(msg){msg.textContent='';msg.className='auth-msg';}
+  if(direction){const field=document.querySelector(`#onboardingStage [data-onboarding-step="${onboardingCurrentStep}"] [data-onboarding-field]`);if(field)window.setTimeout(()=>field.focus({preventScroll:true}),120);}
+}
+function moveOnboardingStep(direction){
+  if(direction>0&&onboardingCurrentStep<ONBOARDING_STEP_TOTAL-1){
+    const slide=document.querySelector(`#onboardingStage [data-onboarding-step="${onboardingCurrentStep}"]`);
+    const field=slide?.querySelector('[data-onboarding-field]');
+    if(field&&!String(field.value||'').trim()){
+      const msg=document.getElementById('onboardingMsg');
+      msg.textContent=field.tagName==='SELECT'?'Choose an experience range to continue.':'Add a short answer to continue.';
+      msg.className='auth-msg show error';
+      field.focus();
+      return;
+    }
+  }
+  setOnboardingStep(onboardingCurrentStep+direction,direction);
+}
 function queueOnboardingQuestions(){
   const tryShow = ()=>{
+    const splash=document.getElementById('bootSplash');
+    if(splash && splash.style.display!=='none'){
+      setTimeout(tryShow, 220);
+      return;
+    }
     if(document.getElementById('appShell').classList.contains('show') || document.getElementById('gateScreen').classList.contains('show')){
-      document.getElementById('onboardingSkipBtn').style.display = isFreeTier() ? 'none' : 'block';
+      document.getElementById('onboardingSkipBtn').hidden = isFreeTier();
+      prepareOnboardingQuestions();
       document.getElementById('onboardingOverlay').classList.add('show');
     } else {
       setTimeout(tryShow, 300);
@@ -6318,13 +6417,14 @@ function openPackageRequest(tier){
   })();
 }
 async function submitOnboarding(){
+  if(onboardingCurrentStep!==ONBOARDING_STEP_TOTAL-1){moveOnboardingStep(1);return;}
   const markets = document.getElementById('ob_markets').value.trim();
   const experience = document.getElementById('ob_experience').value;
   const weakness = document.getElementById('ob_weakness').value.trim();
   const goal = document.getElementById('ob_goal').value.trim();
   if(!markets || !experience || !weakness || !goal){
     const msg = document.getElementById('onboardingMsg');
-    msg.textContent = 'Please answer every question — this is what SciFe uses to personalise itself.';
+    msg.textContent = 'Complete the four short answers to finish your profile.';
     msg.className = 'auth-msg show error';
     return;
   }
@@ -6335,7 +6435,8 @@ async function submitOnboarding(){
 }
 async function skipOnboarding(){
   if(isFreeTier()) return; // Free tier can't skip — button is hidden for them anyway
-  await sb.from('trader_data').update({ onboarding_done: true }).eq('user_id', currentUser.id);
+  const {error}=await sb.from('trader_data').update({ onboarding_done: true }).eq('user_id', currentUser.id);
+  if(error){showToast('Could not save this choice. Please try again.','error');return;}
   document.getElementById('onboardingOverlay').classList.remove('show');
 }
 function openDemoTease(title, copy){
@@ -10499,6 +10600,7 @@ async function saveTradeReview(){
   await saveState();
   activeReviewTradeId=null;
   renderReviewRoom();
+  renderTraderIdentity();
   showToast('Trade review saved');
 }
 function renderRecentTradeReviews(){
@@ -13047,13 +13149,14 @@ function renderTraderIdentity(){
   if(!el) return;
   const id = computeTraderIdentity();
   const header = `<h2><span class="ai-orb"></span>Trader <span class="accent">Identity</span><span class="ai-chip">AI-detected</span></h2>`;
+  const journey = renderJourneyRank();
   if(!id.ready){
     const left = 5 - id.count;
-    el.innerHTML = header + `<div class="identity-empty">Log ${left} more trade${left===1?'':'s'} with a mood tag and a real read on how you trade will start forming here.</div>`;
+    el.innerHTML = header + journey + `<div class="identity-empty">Log ${left} more trade${left===1?'':'s'} with a mood tag and a real read on how you trade will start forming here.</div>`;
     return;
   }
   const stripMoodEmoji = m => MOOD_LABELS[m]||m||'';
-  el.innerHTML = header + `
+  el.innerHTML = header + journey + `
     <div class="identity-title">${id.archetype}</div>
     <div class="identity-desc">${id.desc}</div>
     <div class="identity-traits">
@@ -15869,18 +15972,63 @@ html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{backgr
 @media(prefers-reduced-motion:reduce){.gd-splash-scene,.gd-splash-scene *{animation:none!important;transition:none!important}#bootSplash .boot-bar::before{animation:none!important}}
 .side-nav-label{padding:14px 14px 4px;color:var(--slate-dim);font-size:8px;letter-spacing:.16em;opacity:.86}
 @media(max-width:960px){.side-nav-label{padding:10px 12px 3px}}
-#bootSplash{background:radial-gradient(ellipse at 50% 42%,rgba(166,201,158,.1),transparent 42%),#050806!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-#bootSplash::before,#bootSplash::after,#bootSplash .gd-splash-scene,#bootSplash .gd-splash-scene *{animation:none!important;filter:none!important}
-#bootSplash .gd-splash-scene{transform:none!important}
-#bootSplash .boot-splash-inner{animation:none!important;transform:none!important;filter:none!important}
-#bootSplash .boot-bar{position:relative;width:154px;height:2px;margin:7px 0 0;overflow:hidden;border-radius:9px;background:rgba(207,225,185,.1)}
-#bootSplash .boot-bar::before{animation:gdWorkspaceLoadProgress 1.25s ease-in-out infinite}
+/* Cinematic startup: keep the mark compact on first paint, then let its 3D
+   scene arrive with the workspace instead of flashing at source-image size. */
+#bootSplash{isolation:isolate;perspective:1150px;background:radial-gradient(ellipse at 50% 44%,rgba(113,159,105,.16),transparent 35%),radial-gradient(ellipse at 50% 52%,rgba(177,141,81,.09),transparent 58%),#050806;transition:opacity .52s cubic-bezier(.2,.8,.2,1),visibility .52s}
+#bootSplash::before{display:block!important;inset:-38%;left:auto;right:auto;top:auto;bottom:auto;width:176%;height:176%;opacity:.72;transform:none;background:conic-gradient(from 0deg at 50% 50%,transparent 0 16%,rgba(166,201,158,.12) 21%,transparent 30% 47%,rgba(211,189,139,.10) 54%,transparent 63% 81%,rgba(166,201,158,.11) 89%,transparent 100%);filter:blur(30px);mask-image:radial-gradient(ellipse at center,#000 10%,transparent 68%);animation:gdBootAurora 9s ease-in-out infinite alternate}
+#bootSplash::after{display:block!important;inset:13% auto auto;left:50%;width:min(80vw,680px);height:min(80vw,680px);transform:translateX(-50%);border:1px solid rgba(207,224,201,.1);border-radius:50%;background:radial-gradient(ellipse at center,transparent 54%,rgba(174,206,163,.045) 65%,transparent 71%);mask-image:none;opacity:.8;animation:gdBootOrbit 30s linear infinite}
+#bootSplash .boot-splash-inner{width:min(96vw,620px);gap:10px;transform:translateZ(0);animation:gdBootContentIn .82s cubic-bezier(.2,.8,.2,1) both}
+#bootSplash .gd-splash-scene{width:min(74vw,286px,34vh);animation:gdSplashSceneFloat 6.8s ease-in-out infinite;will-change:transform}
+#bootSplash .gd-splash-logo{width:clamp(96px,22vw,122px);border-radius:27px;animation:gdCinematicLogo 3.9s ease-in-out infinite;box-shadow:0 0 0 7px rgba(224,234,214,.035),0 20px 46px rgba(0,0,0,.42),0 0 54px rgba(105,151,103,.22),inset 0 1px 0 rgba(255,255,255,.1)}
+#bootSplash .gd-splash-logo img{width:74%;height:74%;object-fit:contain;filter:drop-shadow(0 3px 7px rgba(0,0,0,.3))}
+#bootSplash .gd-splash-orbit--one{animation-duration:8.5s}
+#bootSplash .gd-splash-orbit--two{animation-duration:12s}
+#bootSplash .gd-splash-logo-halo{animation-duration:2.8s}
+#bootSplash .gd-splash-glint{animation-duration:3.2s}
+#bootSplash .boot-kicker{color:#c4d2c0;letter-spacing:.24em}
+#bootSplash .boot-bar{position:relative;width:186px;height:3px;margin:5px 0 0;overflow:hidden;border-radius:9px;background:rgba(207,225,185,.13)}
+#bootSplash .boot-bar::before{content:"";position:absolute;inset:0 auto 0 0;width:44%;border-radius:inherit;background:linear-gradient(90deg,transparent,#93b184,#e1c486,transparent);box-shadow:0 0 12px rgba(187,219,158,.58);animation:gdWorkspaceLoadProgress 1.55s cubic-bezier(.45,0,.35,1) infinite}
 #bootSplash .boot-bar span{display:none!important;animation:none!important}
-.gd-section-transition{background:rgba(5,8,6,.94)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:opacity .18s ease!important}
-.gd-section-transition .journal-load-aura,.gd-section-transition .journal-load-orbit,.gd-section-transition .journal-load-book,.gd-section-transition .journal-load-cover,.gd-section-transition .journal-load-pages{animation:none!important;filter:none!important}
-.gd-section-transition .journal-load-book{transform:none!important;filter:none!important}
-.gd-section-progress i{animation-duration:.24s!important}
+.gd-section-transition{background:rgba(5,8,6,.88)!important;backdrop-filter:blur(13px)!important;-webkit-backdrop-filter:blur(13px)!important;transition:opacity .24s ease!important}
+.gd-section-transition.is-running .journal-load-cover{animation-duration:1.04s}
+.gd-section-transition.is-running .journal-load-pages{animation-duration:1.05s}
+.gd-section-transition.is-running .journal-load-progress i{animation-duration:1.02s}
+.gd-section-transition.is-running .journal-load-book{filter:drop-shadow(0 28px 30px rgba(0,0,0,.5))}
+@keyframes gdBootAurora{from{transform:rotate(-18deg) scale(.94);opacity:.48}to{transform:rotate(18deg) scale(1.06);opacity:.92}}
+@keyframes gdBootOrbit{to{transform:translateX(-50%) rotate(360deg)}}
+@keyframes gdBootContentIn{from{opacity:0;transform:translate3d(0,18px,-20px) scale(.94);filter:blur(8px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+@keyframes gdSplashSceneFloat{0%,100%{transform:translate3d(0,2px,0) rotateX(-2deg)}50%{transform:translate3d(0,-5px,9px) rotateX(2deg)}}
 @keyframes gdWorkspaceLoadProgress{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
+
+/* Five short onboarding slides with a lightweight 3D card transition. */
+#onboardingOverlay{z-index:100001;padding:18px}
+.onboarding-modal{width:min(100%,760px);max-height:min(90vh,780px);max-height:min(90dvh,780px);overflow:auto;padding:clamp(22px,4vw,34px);border:1px solid rgba(184,207,175,.25);border-radius:24px;background:radial-gradient(ellipse at 88% 0%,rgba(143,177,124,.13),transparent 37%),linear-gradient(148deg,#121a14,#0a100c 72%)!important;box-shadow:0 36px 110px -38px rgba(0,0,0,.85),inset 0 1px rgba(255,255,255,.07);color:#edf2e9;perspective:1300px}
+.onboarding-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.onboarding-kicker,.onboarding-step-tag,.onboarding-rank-kicker,.onboarding-rank-label,.onboarding-milestone>div:first-child>span{font:600 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#a8c091}
+.onboarding-heading h3{margin:8px 0 5px;color:#f1f3ed;font:540 clamp(24px,4vw,31px)/1.05 'Instrument Sans',sans-serif;letter-spacing:-.04em}
+.onboarding-heading .sub{max-width:480px;margin:0;color:#a6b0a3;font-size:12px;line-height:1.6}
+.onboarding-rank-chip{display:flex;align-items:center;gap:9px;flex-shrink:0;padding:9px 13px;border:1px solid rgba(192,210,177,.18);border-radius:14px;background:rgba(255,255,255,.035)}
+.onboarding-rank-dot{width:8px;height:8px;border-radius:50%;background:#bfd89f;box-shadow:0 0 12px rgba(191,216,159,.72)}
+.onboarding-rank-chip span:last-child{display:grid;gap:3px}.onboarding-rank-chip small{color:#859184;font:500 8px/1 'IBM Plex Mono',monospace;letter-spacing:.12em}.onboarding-rank-chip b{color:#eef2e8;font-size:12px}
+.onboarding-progress{height:3px;margin:22px 0 18px;border-radius:99px;background:rgba(230,238,220,.1);overflow:hidden}.onboarding-progress span{display:block;width:20%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#90ae7e,#dfc184);box-shadow:0 0 14px rgba(183,210,148,.4);transition:width .42s cubic-bezier(.2,.8,.2,1)}
+.onboarding-modal .auth-msg{min-height:0;margin:0}.onboarding-modal .auth-msg:not(.show){display:none}.onboarding-modal .auth-msg.show{margin:0 0 11px}
+.onboarding-stage{position:relative;min-height:255px;perspective:1200px;transform-style:preserve-3d}
+.onboarding-slide{box-sizing:border-box;min-height:250px;padding:23px clamp(18px,4vw,32px);border:1px solid rgba(213,229,203,.13);border-radius:19px;background:linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.018));box-shadow:inset 0 1px rgba(255,255,255,.05),0 18px 42px -34px rgba(0,0,0,.8);backface-visibility:hidden;transform-style:preserve-3d}
+.onboarding-slide[hidden]{display:none!important}.onboarding-slide.is-active.enter-forward{animation:onboardingCardForward .56s cubic-bezier(.18,.78,.2,1) both}.onboarding-slide.is-active.enter-backward{animation:onboardingCardBackward .56s cubic-bezier(.18,.78,.2,1) both}
+.onboarding-slide h4{margin:11px 0 7px;color:#f0f3ec;font:540 clamp(22px,3.5vw,28px)/1.12 'Instrument Sans',sans-serif;letter-spacing:-.035em}.onboarding-slide>p{max-width:520px;margin:0 0 20px;color:#a7b1a3;font-size:12px;line-height:1.6}
+.onboarding-slide .field{max-width:560px;margin:0}.onboarding-slide .field label{margin-bottom:7px;color:#cad4c4;font-size:10px}.onboarding-slide .field input,.onboarding-slide .field select{min-height:47px;border-color:rgba(198,217,187,.2);border-radius:12px;background:rgba(2,7,4,.32);color:#eff3eb;font-size:14px}.onboarding-slide .field input:focus,.onboarding-slide .field select:focus{border-color:#aac990;box-shadow:0 0 0 3px rgba(170,201,144,.12)}
+.onboarding-footer{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-top:17px}.onboarding-footer button{width:auto;min-height:43px;border-radius:12px}.onboarding-back{justify-self:start;padding:0 15px;color:#aeb9a9}.onboarding-next,.onboarding-submit{justify-self:end;padding:0 19px;background:linear-gradient(135deg,#b8d19f,#819c70);color:#0b130c;box-shadow:0 7px 20px rgba(138,171,113,.16)}.onboarding-step-count{color:#eaf0e5;font:600 11px 'IBM Plex Mono',monospace}.onboarding-step-count span{color:#778276}.onboarding-footer [hidden],.onboarding-skip[hidden]{display:none!important}.onboarding-skip{display:block;margin:11px auto 0;padding:5px 10px;border:0;color:#7f8b7d;font-size:10px}.onboarding-skip:hover{color:#d2ddca}
+.onboarding-reveal{display:flex;flex-direction:column;justify-content:center;gap:19px}.onboarding-rank-reveal{display:flex;align-items:center;gap:20px}.onboarding-rank-medallion{position:relative;display:grid;place-items:center;width:90px;height:90px;flex:none;border:1px solid rgba(203,222,184,.36);border-radius:27px;background:linear-gradient(145deg,#26382a,#0d1710);box-shadow:0 13px 34px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.13);transform:rotateY(-9deg) rotateX(5deg);transform-style:preserve-3d}
+.onboarding-rank-medallion>b{color:#e1edcf;font:600 30px 'Fraunces',serif;text-shadow:0 0 22px rgba(195,221,166,.45)}.onboarding-rank-orbit{position:absolute;inset:-8px;border:1px solid rgba(180,207,155,.4);border-radius:32px;transform:rotateX(65deg) rotateZ(18deg);animation:onboardingOrbit 7s linear infinite}.onboarding-rank-orbit-b{inset:-13px;border-color:rgba(211,183,126,.32);transform:rotateY(64deg) rotateZ(-20deg);animation-duration:10s;animation-direction:reverse}.onboarding-rank-reveal h4{margin:6px 0 3px;font:560 30px/1 'Fraunces',Georgia,serif}.onboarding-rank-reveal p{margin:0;color:#a7b1a3;font-size:11px;line-height:1.5}
+.onboarding-milestone{padding:14px 16px;border:1px solid rgba(200,219,188,.14);border-radius:14px;background:rgba(255,255,255,.028)}.onboarding-milestone>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:12px}.onboarding-milestone>div:first-child>b{color:#e8eddf;font-size:12px}.onboarding-milestone p{margin:7px 0 5px;color:#c4cebd;font-size:11px}.onboarding-rank-note{color:#879282;font-size:10px;line-height:1.5}
+.journey-rank-panel{margin:13px 0 15px;padding:14px;border:1px solid rgba(188,209,175,.16);border-radius:15px;background:radial-gradient(ellipse at 0 0,rgba(151,181,127,.09),transparent 62%),rgba(255,255,255,.018)}
+.journey-rank-main{display:flex;align-items:center;gap:10px}.journey-rank-medallion{display:grid;width:34px;height:34px;flex:none;place-items:center;border:1px solid rgba(192,215,176,.32);border-radius:11px;background:linear-gradient(145deg,#293a2c,#111a13);color:#dce9cf;font:600 13px 'Fraunces',serif;box-shadow:0 6px 17px rgba(0,0,0,.2)}.journey-rank-main>div{display:grid;gap:4px}.journey-rank-kicker{font-size:7px;letter-spacing:.13em;color:#899a82}.journey-rank-main>div>strong{color:#eff2e9;font:550 17px 'Fraunces',Georgia,serif}.journey-rank-auto{margin-left:auto;color:#a8bd98;font:600 7px 'IBM Plex Mono',monospace;letter-spacing:.11em}.journey-rank-panel>p{margin:10px 0 8px;color:#aab5a5;font-size:9px;line-height:1.55}.journey-rank-panel>p b{color:#e5ecdd}.journey-rank-progress{height:3px;overflow:hidden;border-radius:99px;background:rgba(220,232,211,.1)}.journey-rank-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#90ad7c,#d5ba7b);transition:width .4s ease}.journey-rank-stats{display:flex;flex-wrap:wrap;gap:10px 15px;margin-top:8px;color:#859182;font-size:8px}.journey-rank-stats b{color:#d1ddc8;font:600 9px 'IBM Plex Mono',monospace}.journey-rank-panel>small{display:block;margin-top:7px;color:#778373;font-size:8px}
+.first-session-head h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px}.first-session-get-app{padding:0;border:0;background:none;color:var(--gold-bright);font:600 .68em 'Instrument Sans',sans-serif;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--gold-bright) 45%,transparent);text-underline-offset:3px;cursor:pointer}.first-session-get-app:hover{color:var(--platinum)}.first-session-get-app:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:3px}
+@keyframes onboardingCardForward{from{opacity:0;transform:rotateY(-13deg) translate3d(24px,5px,-28px);filter:blur(5px)}to{opacity:1;transform:rotateY(0) translate3d(0,0,0);filter:blur(0)}}
+@keyframes onboardingCardBackward{from{opacity:0;transform:rotateY(13deg) translate3d(-24px,5px,-28px);filter:blur(5px)}to{opacity:1;transform:rotateY(0) translate3d(0,0,0);filter:blur(0)}}
+@keyframes onboardingOrbit{to{transform:rotateX(65deg) rotateZ(378deg)}}
+@media(max-width:620px){#onboardingOverlay{align-items:flex-end;padding:9px}.onboarding-modal{max-height:94vh;max-height:94dvh;padding:21px 17px calc(18px + env(safe-area-inset-bottom));border-radius:23px 23px 17px 17px}.onboarding-heading{gap:10px}.onboarding-rank-chip{padding:8px 9px}.onboarding-rank-chip small{font-size:7px}.onboarding-stage{min-height:245px}.onboarding-slide{min-height:242px;padding:20px 16px}.onboarding-rank-reveal{gap:14px}.onboarding-rank-medallion{width:72px;height:72px;border-radius:23px}.onboarding-rank-reveal h4{font-size:26px}.onboarding-footer{gap:7px}.onboarding-footer button{min-height:41px;font-size:10px}.onboarding-next,.onboarding-submit{padding:0 11px}.onboarding-back{padding:0 9px}}
+@media(prefers-reduced-motion:reduce){#bootSplash::before,#bootSplash::after,#bootSplash .gd-splash-scene,#bootSplash .gd-splash-scene *,#bootSplash .boot-splash-inner,.onboarding-slide,.onboarding-rank-orbit,.onboarding-progress span,.journey-rank-progress span{animation:none!important;transition:none!important}.gd-section-transition,.gd-section-transition *{animation:none!important;transition:none!important}}
 
 </style>
 
@@ -15899,8 +16047,8 @@ document.addEventListener('DOMContentLoaded', function(){
       overlay._sectionHideTimer = window.setTimeout(function(){
         overlay.hidden = true;
         overlay.classList.remove('is-running','is-leaving');
-      }, 180);
-    }, reduced ? 0 : 180);
+      }, 240);
+    }, reduced ? 0 : 1040);
   };
 });
 </script>
