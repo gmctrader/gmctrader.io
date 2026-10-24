@@ -2,7 +2,7 @@
   "name": "SciFe — Ghost Discipline",
   "short_name": "SciFe",
   "description": "Voice companion for Ghost Discipline — talk through setups, get signal checks, stay in the discipline.",
-  "start_url": "./scife.html",
+  "start_url": "./companion?full=1",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -17,7 +17,7 @@
       "name": "Open Ghost Discipline",
       "short_name": "Terminal",
       "description": "Back to the trading terminal and journal",
-      "url": "./app.html",
+      "url": "./workspace?signin=1",
       "icons": [{ "src": "ghost-discipline-icon-v3.png", "sizes": "512x512", "type": "image/png" }]
     }
   ]

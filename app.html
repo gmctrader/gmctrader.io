@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>(function(){try{var q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,''));var inviteOrRecovery=['invite','recovery'].includes(h.get('type'));var signupCallback=q.has('code')||h.get('type')==='signup';var authFlow=inviteOrRecovery||signupCallback;var path=location.pathname;var cleanPath=location.protocol==='https:'&&/\/app\.html$/i.test(path);if(cleanPath)path=path.replace(/app\.html$/i,'workspace');if(signupCallback){q.set('signin','1');q.delete('signup');}if(signupCallback||cleanPath){var s=q.toString();history.replaceState(null,'',path+(s?'?'+s:'')+location.hash);}if(!q.has('signin')&&!authFlow)location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
+<script>(function(){try{var q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,''));var inviteOrRecovery=['invite','recovery'].includes(h.get('type'));var signupCallback=q.has('code')||h.get('type')==='signup';var authFlow=inviteOrRecovery||signupCallback;var path=location.pathname;var cleanPath=location.protocol==='https:'&&/\/app\.html$/i.test(path);if(cleanPath)path=path.replace(/app\.html$/i,'workspace');if(signupCallback){q.set('signin','1');q.delete('signup');}if(signupCallback||cleanPath){var s=q.toString();history.replaceState(null,'',path+(s?'?'+s:'')+location.hash);}if(!q.has('signin')&&!authFlow)location.replace(location.protocol==='https:'?new URL('home',location.href).href:new URL('index.html',location.href).href);if(location.protocol==='https:')document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('a[href]').forEach(function(link){try{var target=new URL(link.href,location.href);if(target.origin!==location.origin)return;if(/\/index\.html$/i.test(target.pathname))target.pathname=target.pathname.replace(/index\.html$/i,'home');else if(/\/app\.html$/i.test(target.pathname))target.pathname=target.pathname.replace(/app\.html$/i,'workspace');else if(/\/scife\.html$/i.test(target.pathname))target.pathname=target.pathname.replace(/scife\.html$/i,'companion');link.href=target.href;}catch(e){}});});}catch(e){}})();</script>
 <script>
 // Set the real theme (from a prior visit) before first paint, so there's
 // no flash of the light "portal" look while the rest of the page loads.
@@ -4724,7 +4724,8 @@ function isElite(){ return tierAtLeast('elite'); }
 function packageUpgradeUrl(wantedTier){
   const tier = String(wantedTier || 'pro').toLowerCase();
   const safeTier = ['pro','elite','premium'].includes(tier) ? tier : 'pro';
-  return `app.html?signin=1&signup=1&plan=${safeTier}`;
+  const route = location.protocol==='https:' ? 'workspace' : 'app.html';
+  return `${route}?signin=1&signup=1&plan=${safeTier}`;
 }
 let pendingViolation = false;
 let closingOrderId = null;
@@ -8058,6 +8059,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='calendar') renderCalendar();
     if(btn.dataset.view==='brief') renderBrief();
     if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
+    if(btn.dataset.view==='playbook') renderPlaybook();
     if(btn.dataset.view==='edgelab') renderEdgeLab();
     if(btn.dataset.view==='journal') renderJournal();
     if(btn.dataset.view==='tradeplan') renderDailyTradePlan();
@@ -8184,28 +8186,24 @@ document.addEventListener('mousemove', (e)=>{
 (function(){
   const hasFinePointer = window.matchMedia('(pointer:fine)').matches;
   if(hasFinePointer) return;
-  let t = 0;
-  function idleDrift(){
-    t += 0.006;
-    const gx = Math.sin(t)*0.5, gy = Math.cos(t*0.7)*0.5;
-    document.querySelectorAll('.bg-video-layer video').forEach(v=>{
-      v.style.transform = `translate(-50%,-50%) scale(1.1) rotateX(${-gy*3}deg) rotateY(${gx*3}deg)`;
-    });
-    const authVid = document.getElementById('authBgVideo');
-    if(authVid) authVid.style.transform = `translate(-50%,-50%) scale(1.12) rotateX(${-gy*4}deg) rotateY(${gx*4}deg)`;
-    requestAnimationFrame(idleDrift);
-  }
-  requestAnimationFrame(idleDrift);
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const videos = Array.from(document.querySelectorAll('.bg-video-layer video'));
+  const authVideo = document.getElementById('authBgVideo');
+  if(authVideo) videos.push(authVideo);
+  if(!videos.length) return;
+  let frame = 0;
+  let pendingTransform = '';
   window.addEventListener('deviceorientation', (e)=>{
     if(e.gamma==null || e.beta==null) return;
     const gx = Math.max(-1, Math.min(1, e.gamma/45));
     const gy = Math.max(-1, Math.min(1, (e.beta-45)/45));
-    document.querySelectorAll('.bg-video-layer video').forEach(v=>{
-      v.style.transform = `translate(-50%,-50%) scale(1.1) rotateX(${-gy*4}deg) rotateY(${gx*4}deg)`;
+    pendingTransform = `translate(-50%,-50%) scale(1.1) rotateX(${-gy*3}deg) rotateY(${gx*3}deg)`;
+    if(frame) return;
+    frame = requestAnimationFrame(()=>{
+      videos.forEach(video=>{ video.style.transform = pendingTransform; });
+      frame = 0;
     });
-    const authVid = document.getElementById('authBgVideo');
-    if(authVid) authVid.style.transform = `translate(-50%,-50%) scale(1.12) rotateX(${-gy*5}deg) rotateY(${gx*5}deg)`;
-  });
+  }, {passive:true});
 })();
 
 /* ============ COUNT-UP NUMBER ANIMATION ============ */
@@ -8232,17 +8230,22 @@ function animateCount(el, from, to, isMoney, decimals, short, symOverride){
 
 /* ============ RENDER ============ */
 function renderAll(){
+  const activeView = document.querySelector('.view.active')?.id || 'view-dashboard';
   renderDemoStatus();
   updateCurrencyLabels();
   renderTraderFilterOptions();
   renderAccountScopeOptions();
-  renderDashboard(); renderHeroStats(); renderMomentumBanner(); renderFirstSessionGuide(); renderDailyChecklist(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); renderJournal(); updateSessionPill();
-  renderPlaybook(); renderDashChart(); renderLeaderboards(); populateTradeSelectors(); renderGauges(); renderDisciplineScore();
+  renderDashboard(); renderHeroStats(); renderMomentumBanner(); renderFirstSessionGuide(); renderDailyChecklist(); updateDisciplinePill(); renderRulesForm(); renderPropFirmForm(); renderPropFirmCompliance(); renderSessionForm(); renderPsychologyForm(); updateSessionPill();
+  populateTradeSelectors(); renderGauges(); renderDisciplineScore();
   renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
-  renderEquityChart('equityChart','equityTotal','equitySub');
+  if(activeView==='view-analytics') { renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
+  if(activeView==='view-journal') renderJournal();
+  if(activeView==='view-orders') renderOrders();
+  if(activeView==='view-playbook') renderPlaybook();
+  if(activeView==='view-stratnotes') renderStrategyNotes();
   if(document.getElementById('view-tradeplan')?.classList.contains('active')) renderDailyTradePlan();
   if(document.getElementById('view-reviewroom')?.classList.contains('active')) renderReviewRoom();
-  renderOrders(); renderTradeLogOverview(); renderTraderIdentity(); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); renderStrategyNotes();
+  renderTradeLogOverview(); renderTraderIdentity();
   if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('view-brief') && document.getElementById('view-brief').classList.contains('active')) renderBrief();
   if(document.getElementById('view-propfirmrisk') && document.getElementById('view-propfirmrisk').classList.contains('active')) renderPropFirmRisk();
@@ -12031,7 +12034,8 @@ function updateSessionPill(){
   if(lc) lc.textContent = new Date().toLocaleTimeString();
   if(lcs) lcs.textContent = (inSession ? 'Inside your defined trading window' : (state.session.restrict ? 'Outside window — trading is restricted' : 'Outside window — restriction is off')) + (activeSessions.length ? ' · Active: ' + activeSessions.join(', ') : '');
 }
-setInterval(()=>{ updateSessionPill(); if(currentUser && state.rules.coolingOffMinutes!=null) renderGauges(); }, 1000);
+setInterval(()=>{ if(document.visibilityState!=='hidden') updateSessionPill(); }, 1000);
+setInterval(()=>{ if(document.visibilityState!=='hidden' && currentUser && state.rules.coolingOffMinutes!=null) renderGauges(); }, 15000);
 
 /* ============ PRE-TRADE CHECK ============ */
 const RISKY_MOODS = ['fomo','revenge','anxious'];
@@ -13311,7 +13315,7 @@ function scifeAccountGuard(){
 // The page navigation is reserved for the full SciFe workspace.
 function handleSciFe(){
   if(scifeAccountGuard()) return;
-  window.location.assign('scife.html?full=1');
+  window.location.assign((location.protocol==='https:'?'companion':'scife.html')+'?full=1');
 }
 // The floating star stays on the current journal page and opens a compact chat dock.
 function handleQuickSciFe(){
@@ -13320,7 +13324,7 @@ function handleQuickSciFe(){
   const frame=document.getElementById('quickSciFeFrame');
   const fab=document.getElementById('scifeFab');
   if(!overlay||!frame) return;
-  if(!frame.getAttribute('src')) frame.setAttribute('src','scife.html?quick=1');
+  if(!frame.getAttribute('src')) frame.setAttribute('src',(location.protocol==='https:'?'companion':'scife.html')+'?quick=1');
   const open=!overlay.classList.contains('show');
   overlay.classList.toggle('show',open);
   if(fab) fab.setAttribute('aria-expanded',String(open));
@@ -13329,7 +13333,7 @@ function openQuickSciFe(){
   const overlay=document.getElementById('quickSciFeOverlay');
   const frame=document.getElementById('quickSciFeFrame');
   if(!overlay||!frame) return;
-  if(!frame.getAttribute('src')) frame.setAttribute('src','scife.html?quick=1');
+  if(!frame.getAttribute('src')) frame.setAttribute('src',(location.protocol==='https:'?'companion':'scife.html')+'?quick=1');
   overlay.classList.add('show');
   document.getElementById('scifeFab')?.setAttribute('aria-expanded','true');
 }
@@ -13887,14 +13891,25 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
     try{ renderBrief(); }catch(e){}
   }
 
+  var insightUpdateTimer = 0;
+  function scheduleTick(){
+    if(insightUpdateTimer) return;
+    insightUpdateTimer = setTimeout(function(){ insightUpdateTimer = 0; tick(); }, 160);
+  }
+
   function boot(){
     tick();
-    setInterval(tick, 3000);
-    var hud = document.getElementById('hud');
-    if(hud && window.MutationObserver){
-      var mo = new MutationObserver(function(){ tick(); });
-      mo.observe(hud, {childList:true, subtree:true, characterData:true});
+    if(window.MutationObserver){
+      var sourceIds = ['streakNum','scoreNum','scoreTier','statTodayPnl','es_profitFactor','es_avgWin','es_avgLoss','eqFooterWinRateNum','es_maxDD','briefNewsBody'];
+      var observer = new MutationObserver(scheduleTick);
+      sourceIds.forEach(function(id){
+        var source = document.getElementById(id);
+        if(source) observer.observe(source, {childList:true, subtree:true, characterData:true});
+      });
     }
+    var watchedPairs = document.getElementById('brief_watchedPairs');
+    if(watchedPairs){ watchedPairs.addEventListener('input', scheduleTick); watchedPairs.addEventListener('change', scheduleTick); }
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') scheduleTick(); });
   }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
 
@@ -15854,8 +15869,40 @@ html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{backgr
 @media(prefers-reduced-motion:reduce){.gd-splash-scene,.gd-splash-scene *{animation:none!important;transition:none!important}#bootSplash .boot-bar::before{animation:none!important}}
 .side-nav-label{padding:14px 14px 4px;color:var(--slate-dim);font-size:8px;letter-spacing:.16em;opacity:.86}
 @media(max-width:960px){.side-nav-label{padding:10px 12px 3px}}
+#bootSplash{background:radial-gradient(ellipse at 50% 42%,rgba(166,201,158,.1),transparent 42%),#050806!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#bootSplash::before,#bootSplash::after,#bootSplash .gd-splash-scene,#bootSplash .gd-splash-scene *{animation:none!important;filter:none!important}
+#bootSplash .gd-splash-scene{transform:none!important}
+#bootSplash .boot-splash-inner{animation:none!important;transform:none!important;filter:none!important}
+#bootSplash .boot-bar{position:relative;width:154px;height:2px;margin:7px 0 0;overflow:hidden;border-radius:9px;background:rgba(207,225,185,.1)}
+#bootSplash .boot-bar::before{animation:gdWorkspaceLoadProgress 1.25s ease-in-out infinite}
+#bootSplash .boot-bar span{display:none!important;animation:none!important}
+.gd-section-transition{background:rgba(5,8,6,.94)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:opacity .18s ease!important}
+.gd-section-transition .journal-load-aura,.gd-section-transition .journal-load-orbit,.gd-section-transition .journal-load-book,.gd-section-transition .journal-load-cover,.gd-section-transition .journal-load-pages{animation:none!important;filter:none!important}
+.gd-section-transition .journal-load-book{transform:none!important;filter:none!important}
+.gd-section-progress i{animation-duration:.24s!important}
+@keyframes gdWorkspaceLoadProgress{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
 
 </style>
 
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const overlay = document.getElementById('gdSectionTransition');
+  const original = window.playSectionTransition;
+  if(!overlay || typeof original!=='function') return;
+  window.playSectionTransition = function(view){
+    original(view);
+    clearTimeout(overlay._sectionCloseTimer);
+    clearTimeout(overlay._sectionHideTimer);
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    overlay._sectionCloseTimer = window.setTimeout(function(){
+      overlay.classList.add('is-leaving');
+      overlay._sectionHideTimer = window.setTimeout(function(){
+        overlay.hidden = true;
+        overlay.classList.remove('is-running','is-leaving');
+      }, 180);
+    }, reduced ? 0 : 180);
+  };
+});
+</script>
 <div id="gdSectionTransition" class="gd-section-transition" hidden role="status" aria-live="polite" aria-atomic="true"><span id="gdSectionLive" class="gd-section-sr">Opening workspace section</span><div class="gd-section-transition-inner"><div class="journal-load-scene" aria-hidden="true"><div class="journal-load-aura"></div><div class="journal-load-orbit journal-load-orbit--one"></div><div class="journal-load-orbit journal-load-orbit--two"></div><div class="journal-load-book"><div class="journal-load-pages"><div class="journal-load-page"><span class="journal-load-page-label">SESSION NOTES</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9" fill="none" stroke="#6e956a" stroke-width="2"/><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9 120 40 0 40Z" fill="#7eaa72" fill-opacity=".12"/></svg></div></div><div class="journal-load-page journal-load-page--right"><span class="journal-load-page-label">TRADE REVIEW</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4" fill="none" stroke="#b69855" stroke-width="2"/><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4 120 40 0 40Z" fill="#b69855" fill-opacity=".13"/></svg></div></div><div class="journal-load-spine"></div><div class="journal-load-cover"><div class="journal-load-cover-face journal-load-cover-front"><div class="journal-load-emblem"><span></span></div><span class="journal-load-cover-brand">GHOST DISCIPLINE</span><strong class="journal-load-cover-title">TRADE<br>JOURNAL</strong><span class="journal-load-cover-foot">RECORD · REVIEW · REFINE</span></div><div class="journal-load-cover-face journal-load-cover-back"></div></div></div></div><div class="gd-section-copy" aria-hidden="true"><span class="gd-section-kicker">GHOST DISCIPLINE / WORKSPACE</span><strong id="gdSectionTitle">Preparing your workspace</strong><span id="gdSectionSubtitle">Bringing your next section into focus</span><div class="gd-section-progress"><i></i></div></div></div></div><script>(function(){var overlay=document.getElementById('gdSectionTransition');var title=document.getElementById('gdSectionTitle');var subtitle=document.getElementById('gdSectionSubtitle');var live=document.getElementById('gdSectionLive');var labels={dashboard:['Trading floor','Bringing your account into focus'],brief:['Market brief','Gathering the session at a glance'],analytics:['Performance lab','Drawing your trading patterns into view'],calendar:['Economic calendar','Lining up the events that shape the session'],journal:['Your journal','Opening your trading story'],tradeplan:['Daily trade plan','Setting the intention before the next move'],reviewroom:['Review room','Preparing a calm look back at your process'],orders:['Order book','Bringing open and closed orders into view'],playbook:['Strategy playbook','Laying out your setups and rules'],stratnotes:['Strategy notes','Opening the ideas behind your trades'],backtest:['Backtest lab','Preparing a space to test your rules'],psychology:['Mindset check-in','Making room for a clear decision'],rules:['Risk rules','Bringing your guardrails into focus'],propfirm:['Prop firm settings','Preparing your account limits'],proporders:['Prop firm orders','Organizing your challenge activity'],propequity:['Prop firm equity','Mapping your challenge progress'],propfirmrisk:['Risk monitor','Bringing your limits into view'],propfirmpayout:['Payout planner','Preparing your payout details'],session:['Session workspace','Setting up your active session'],team:['Team workspace','Bringing your shared review into focus'],edgelab:['Edge lab','Preparing your performance stress test'],profile:['Trader profile','Opening your trading identity'],packages:['Membership','Loading your account options'],about:['About Ghost Discipline','Opening the product details']};window.playSectionTransition=function(view){if(!overlay)return;var copy=labels[view]||['Opening workspace','Bringing this section into focus'];if(title)title.textContent=copy[0];if(subtitle)subtitle.textContent=copy[1];if(live)live.textContent='Opening '+copy[0]+'. '+copy[1]+'.';clearTimeout(overlay._sectionCloseTimer);clearTimeout(overlay._sectionHideTimer);overlay.hidden=false;overlay.classList.remove('is-leaving','is-running');void overlay.offsetWidth;overlay.classList.add('is-running');var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;overlay._sectionCloseTimer=window.setTimeout(function(){overlay.classList.add('is-leaving');overlay._sectionHideTimer=window.setTimeout(function(){overlay.hidden=true;overlay.classList.remove('is-running','is-leaving');},300);},reduce?140:1640);};})();</script></body>
 </html>

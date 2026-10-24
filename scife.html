@@ -7,8 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="SciFe">
 <meta name="theme-color" content="#0a100d">
+<meta name="robots" content="noindex,nofollow">
 <title>SciFe — Ghost Discipline</title>
-<script>(function(){try{var q=new URLSearchParams(location.search);if(q.get('quick')==='1')document.documentElement.classList.add('quick-mode');else if(q.get('full')!=='1')location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
+<script>(function(){try{var q=new URLSearchParams(location.search);var path=location.pathname;var quick=q.get('quick')==='1';var full=q.get('full')==='1';if(quick)document.documentElement.classList.add('quick-mode');if(location.protocol==='https:'&&/\/scife\.html$/i.test(path)){history.replaceState(null,'',path.replace(/scife\.html$/i,'companion')+location.search+location.hash);}if(!quick&&!full)location.replace(location.protocol==='https:'?new URL('home',location.href).href:new URL('index.html',location.href).href);if(location.protocol==='https:')document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('a[href]').forEach(function(link){try{var target=new URL(link.href,location.href);if(target.origin===location.origin&&/\/app\.html$/i.test(target.pathname)){target.pathname=target.pathname.replace(/app\.html$/i,'workspace');link.href=target.href;}}catch(e){}});});}catch(e){}})();</script>
 <script>(function(){
   var GD_THEMES=['light','dark','black','red','blue','purple','gold','slate'];
   try{
@@ -6333,14 +6334,15 @@ function initNeuralCore(){
     ctx.setTransform(dpr,0,0,dpr,0,0);
   }
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', ()=>{ resize(); if(reduceMotion) draw(); });
 
-  let rotY = 0, rotX = 0.35, t = 0, pulses = [];
+  let rotY = 0, rotX = 0.35, t = 0, pulses = [], coreRAF = 0, coreTimer = 0;
   function lerpColor(a, b, m){
     return [0,1,2].map(i => Math.round(a[i] + (b[i]-a[i])*m));
   }
   function draw(){
-    if(!w || !h){ requestAnimationFrame(draw); return; }
+    coreRAF = 0;
+    if(document.visibilityState === 'hidden' || !w || !h) return;
     ctx.clearRect(0,0,w,h);
     const cx = w/2, cy = h/2;
     const radius = Math.min(w,h) * 0.44;
@@ -6434,9 +6436,23 @@ function initNeuralCore(){
     ctx.fillStyle = core;
     ctx.beginPath(); ctx.arc(cx,cy,radius*0.6,0,Math.PI*2); ctx.fill();
 
-    requestAnimationFrame(draw);
+    if(!reduceMotion) coreTimer = window.setTimeout(()=>{ coreTimer = 0; coreRAF = requestAnimationFrame(draw); },33);
   }
-  requestAnimationFrame(draw);
+  function resume(){
+    if(!reduceMotion && document.visibilityState !== 'hidden' && !coreRAF && !coreTimer) coreRAF = requestAnimationFrame(draw);
+  }
+  function pause(){
+    if(coreRAF) cancelAnimationFrame(coreRAF);
+    if(coreTimer) clearTimeout(coreTimer);
+    coreRAF = 0;
+    coreTimer = 0;
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState === 'hidden') pause();
+    else if(reduceMotion) draw();
+    else resume();
+  });
+  if(reduceMotion) draw(); else resume();
 }
 
 /* Cosmetic instrument readout (top-right of the stage) — small randomized
@@ -6802,7 +6818,14 @@ function stopSpeaking(){
 /* ============ SPEECH-TO-TEXT (free, browser-native, optional) ============ */
 function setupSpeechRecognition(){
   buildWaveRing();
-  if(!document.documentElement.classList.contains('quick-mode')){setupStageParallax();initNeuralCore();startCoreMetricsTicker();}
+  if(!document.documentElement.classList.contains('quick-mode')){
+    const core = document.querySelector('.neural-core-wrap');
+    const metrics = document.getElementById('stageMetrics');
+    const stage = document.getElementById('stage');
+    if(core && getComputedStyle(core).display!=='none') initNeuralCore();
+    if(metrics && getComputedStyle(metrics).display!=='none') startCoreMetricsTicker();
+    if(stage && getComputedStyle(stage).transform!=='none') setupStageParallax();
+  }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){
     document.getElementById('micBtn').style.display = 'none';
@@ -7616,6 +7639,28 @@ html.quick-mode .composer{grid-column:1;grid-row:3}
 @keyframes scife-orbit-tilt{to{transform:rotate(360deg)}}
 @keyframes scife-core-breathe{0%,100%{transform:scale(.96);filter:brightness(.96)}50%{transform:scale(1.05);filter:brightness(1.08)}}
 @media(prefers-reduced-motion:reduce){.scife-orbit-mark .scife-logo-svg,.scife-logo-orbit,.scife-logo-core{animation:none!important}}
+html[data-theme] body:has(#app){background:radial-gradient(ellipse 64% 48% at 51% 0%,rgba(166,201,158,.09),transparent 68%),#050806!important}
+#app>.topbar{background:rgba(10,16,12,.94);border-bottom-color:rgba(221,231,215,.12)}
+#stage{background:radial-gradient(ellipse at 14% 7%,rgba(124,166,105,.16),transparent 44%),linear-gradient(155deg,#172019 0%,#101611 50%,#0d120e 100%);border-color:rgba(191,211,174,.2)}
+#stage .companion-brand h2{font:500 clamp(32px,3.6vw,46px)/1.03 'Fraunces',Georgia,serif;letter-spacing:-.04em}
+#stage .companion-brand p{max-width:25ch;color:#b6c0b1;font-size:14px;line-height:1.7}
+#stage .companion-monogram,#stage .scife-logo-svg,#stage .scife-logo-orbit,#stage .scife-logo-core{animation:none!important;filter:none!important}
+#app .welcome-copy h1{font:500 clamp(32px,3.5vw,48px)/1.08 'Fraunces',Georgia,serif;letter-spacing:-.04em}
+#app .welcome-copy p{font-size:14px;line-height:1.75}
+#app .welcome-eyebrow{color:#a6c99e}
+#app .quick-chip.prompt-card{border-color:rgba(166,201,158,.16);border-radius:14px;background:linear-gradient(140deg,#172019,#101611)}
+#app .prompt-card-copy strong{font-size:13px}
+#app .prompt-card-copy small{font-size:11px;line-height:1.45}
+#app .chat-wrap{border-color:rgba(221,231,215,.13);background:linear-gradient(145deg,#121a13,#0d120e)}
+#app .composer-row{border-color:rgba(221,231,215,.18);background:#111811}
+@media(max-width:760px){#app .welcome-copy h1{font-size:clamp(28px,8.5vw,38px)}#app .welcome-copy p{font-size:12px}}
+#bootLoader{background:radial-gradient(ellipse at 50% 42%,rgba(166,201,158,.1),transparent 42%),#050806!important;perspective:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#bootLoader::before,#bootLoader::after{display:none!important;animation:none!important}
+#bootLoader .boot-splash-inner,#bootLoader .boot-emblem-plate{animation:none!important;filter:none!important;transform:none!important}
+#bootLoader .boot-bar{position:relative;width:154px;height:2px;overflow:hidden;border-radius:9px;background:rgba(207,225,185,.1)}
+#bootLoader .boot-bar::before{content:"";position:absolute;inset:0 auto 0 0;width:42%;border-radius:inherit;background:linear-gradient(90deg,transparent,#829f78,#c6ad79);animation:gdWorkspaceLoadProgress 1.25s ease-in-out infinite}
+#bootLoader .boot-bar span{display:none!important;animation:none!important}
+@keyframes gdWorkspaceLoadProgress{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
 </style>
 
 </body>

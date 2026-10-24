@@ -13,8 +13,16 @@
     ],
     "rewrites": [
       {
+        "source": "/home{,/**}",
+        "destination": "/index.html"
+      },
+      {
         "source": "/workspace{,/**}",
         "destination": "/app.html"
+      },
+      {
+        "source": "/companion{,/**}",
+        "destination": "/scife.html"
       }
     ]
   }

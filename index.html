@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0a100d">
   <script>document.documentElement.setAttribute('data-theme','slate');</script>
+  <script>(function(){try{if(location.protocol==='https:'&&/\/index\.html$/i.test(location.pathname)){history.replaceState(null,'',location.pathname.replace(/index\.html$/i,'home')+location.search+location.hash);}}catch(e){}})();</script>
   <meta name="description" content="Ghost Discipline is a trading journal and risk terminal for traders who want an honest record of their process.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Ghost Discipline">
@@ -40,6 +41,7 @@
     @media(max-width:720px){.nav-actions .btn-quiet{display:inline-flex;min-height:39px;padding:0 11px;font-size:10px}.nav-actions .btn-primary{min-height:39px;padding:0 12px;font-size:10px}}
     @media(max-width:390px){.nav-inner{gap:8px}.nav-actions{gap:5px}.nav-actions .btn-quiet{padding:0 8px;font-size:9px}.nav-actions .btn-primary{padding:0 9px;font-size:9px}.brand{gap:7px;font-size:10px}.brand img{width:25px;height:25px}.mobile-menu{width:38px;height:38px}}
 
+    .preview-gallery{border-top:1px solid var(--line);background:linear-gradient(180deg,rgba(20,30,23,.34),transparent 34%)}.preview-gallery .section-head{margin-bottom:38px}.preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:1120px;margin:0 auto}.preview-card{overflow:hidden;margin:0;border:1px solid var(--line-hi);border-radius:18px;background:linear-gradient(145deg,rgba(19,28,22,.96),rgba(12,18,14,.98));box-shadow:0 24px 60px -46px #000;transition:transform .22s,border-color .22s}.preview-card:hover{transform:translateY(-3px);border-color:rgba(166,201,158,.34)}.preview-card img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#0b100c}.preview-card figcaption{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:17px 19px 19px;border-top:1px solid var(--line)}.preview-caption-copy{display:grid;gap:4px}.preview-caption-copy strong{font-size:13px;font-weight:600;color:var(--text)}.preview-caption-copy span{color:var(--muted);font-size:11px;line-height:1.55}.preview-caption-tag{flex:none;padding:5px 8px;border:1px solid rgba(166,201,158,.18);border-radius:999px;color:var(--mint);font:8px var(--mono);letter-spacing:.07em;text-transform:uppercase}.preview-disclaimer{margin:20px auto 0;text-align:center;color:var(--quiet);font:9px/1.7 var(--mono);letter-spacing:.025em;max-width:80ch}
   </style>
   <style>
     /* A quiet, cinematic arrival: ambient light, a fine field grid, and a chart line that draws once. */
@@ -110,12 +112,16 @@
     @media(max-width:720px){.plan>p{font-size:13px!important;color:#bac4b7!important}.plan li{font-size:11.5px!important;color:#d1d8cf!important}.membership-note{font-size:11px!important;color:#aab3a4!important}}
     @media(max-width:720px){.pro-offer-banner{align-items:stretch;flex-direction:column;gap:12px;padding:15px}.pro-offer-copy{gap:8px 11px}.pro-offer-banner .btn{width:100%}}
   </style>
+  <style>
+    @media(max-width:720px){.preview-grid{grid-template-columns:1fr;gap:13px}.preview-card figcaption{padding:14px}.preview-caption-tag{font-size:7px}}
+    @media(prefers-reduced-motion:reduce){.preview-card{transition:none}.preview-card:hover{transform:none}}
+  </style>
 </head>
 <body>
   <header class="nav" id="top">
     <div class="wrap nav-inner">
       <a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a>
-      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#markets">Markets</a><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#membership">Membership</a><a href="#faq">FAQ</a></nav>
+      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#markets">Markets</a><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#preview-gallery">Product tour</a><a href="#membership">Membership</a><a href="#faq">FAQ</a></nav>
       <div class="nav-actions"><a class="btn btn-quiet" href="app.html?signin=1">Sign in</a><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1">Create account <span aria-hidden="true">→</span></a><button class="mobile-menu" type="button" id="menuToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
     </div>
   </header>
@@ -188,6 +194,13 @@
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/><circle cx="12" cy="12" r="4"/></svg></span><h3>SciFe Scan POV</h3><p>See an independent chart read and review suggested strategy-note refinements before saving.</p></article>
     </div></div></section>
 
+    <section class="section preview-gallery" id="preview-gallery" aria-labelledby="previewTitle"><div class="wrap"><div class="section-head"><div class="eyebrow">Inside the workspace</div><h2 id="previewTitle">A closer look at the process.</h2><p>Browser-free sample screens styled to match the workspace. Trades, figures, and conversation below are fictional demo content—not a live account.</p></div><div class="preview-grid">
+      <figure class="preview-card"><img src="preview-daily-brief.svg" alt="Daily Brief sample screen with a four-pair watchlist and pre-session checklist; no live quotes" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>Daily Brief &amp; Pair Watch</strong><span>Choose the markets you follow and keep your session plan close.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
+      <figure class="preview-card"><img src="preview-trade-journal.svg" alt="Trade Journal sample screen with three fictional trade rows and review tags" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>Trade Journal</strong><span>Keep the setup, decision, result, and chart reference together.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
+      <figure class="preview-card"><img src="preview-analytics.svg" alt="Analytics sample screen with fictional statistics and a synthetic equity curve" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>Analytics &amp; review</strong><span>See how a sample record can reveal patterns in a trading process.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
+      <figure class="preview-card"><img src="preview-scife.svg" alt="SciFe sample screen with reflective prompts and a fictional conversation" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>SciFe reflection</strong><span>Ask thoughtful questions about your journal and next steps.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
+    </div><p class="preview-disclaimer">All names, dates, trades, charts, and metrics in these previews are fictional examples for illustration only. They are not live market quotes, actual user results, or financial advice.</p></div></section>
+
     <section class="section membership" id="membership"><div class="wrap"><div class="section-head"><div class="eyebrow">Membership</div><h2>Start with the journal.<br>Grow into the full desk.</h2><p>Create a free account to begin. Upgrade to a paid package when you are ready.</p></div><div class="pro-offer-banner"><div class="pro-offer-copy"><span class="pro-offer-label">Pro launch offer</span><div class="pro-offer-price"><strong>R299</strong><del>R499</del><small>/ 30 days</small></div><span class="pro-offer-savings">Save R200</span></div><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1&amp;plan=pro">Get Pro · R299</a></div><div class="plans">
       <article class="plan"><div class="plan-label">A considered start</div><h3>Free</h3><div class="price">R0 <small>/ forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><a class="btn btn-quiet" href="app.html?signin=1&amp;signup=1">Create free account</a></article>
 <article class="plan featured"><div class="plan-label">Most popular</div><h3>Pro</h3><div class="price"><span class="pro-launch-current">R299</span> <del class="pro-launch-original" aria-label="Regular price: R499">R499</del> <small>/ 30 days</small><br><span class="pro-launch-badge">Launch offer · save R200</span></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1&amp;plan=pro">Choose Pro · R299</a></article>
@@ -208,6 +221,18 @@
 
   <footer class="footer"><div class="wrap"><div class="footer-main"><a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a><div class="footer-links"><a href="app.html?signin=1">Member sign in</a><a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Contact the team</a></div></div><p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past performance and process discipline do not guarantee future results.</p></div></footer>
   <script>
+    if(location.protocol==='https:'){
+      document.querySelectorAll('a[href]').forEach(function(link){
+        try{
+          var target=new URL(link.href,location.href);
+          if(target.origin!==location.origin)return;
+          if(/\/app\.html$/i.test(target.pathname))target.pathname=target.pathname.replace(/app\.html$/i,'workspace');
+          else if(/\/index\.html$/i.test(target.pathname))target.pathname=target.pathname.replace(/index\.html$/i,'home');
+          else if(/\/scife\.html$/i.test(target.pathname))target.pathname=target.pathname.replace(/scife\.html$/i,'companion');
+          link.href=target.href;
+        }catch(e){}
+      });
+    }
     document.documentElement.setAttribute('data-theme','slate');
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#0a100d');
     try{localStorage.setItem('gd_theme','slate');}catch(error){}

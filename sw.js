@@ -3,9 +3,8 @@
  *
  * Strategy:
  *  - App shell (HTML/manifest/icons) is precached on install and served
- *    "network-first, falling back to cache" so a fresh deploy is picked up
- *    immediately when online, but the last-known-good shell still loads
- *    offline or on a flaky connection.
+ *    stale-while-revalidate so an available shell opens immediately, with
+ *    successful same-origin requests refreshing the cache in the background.
  *  - Everything cross-origin (Supabase, Google Fonts, jsDelivr, speech
  *    APIs, etc.) is left completely alone — never intercepted, never
  *    cached — so auth, live data, and voice features always hit the
@@ -15,18 +14,24 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v15';
+const CACHE_VERSION = 'gd-shell-v17';
 const APP_SHELL = [
   './index.html',
   './app.html',
+  './home',
   './workspace?signin=1',
+  './companion?full=1',
   './landing.html',
   './scife.html',
   './manifest.json',
   './scife-manifest.json',
   './ghost-discipline-icon-v3.png',
   './ghost-discipline-logo-v2.png',
-  './ghost-discipline-share-v2.png'
+  './ghost-discipline-share-v2.png',
+  './preview-daily-brief.svg',
+  './preview-trade-journal.svg',
+  './preview-analytics.svg',
+  './preview-scife.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -58,16 +63,21 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   if (new URL(req.url).origin !== self.location.origin) return;
 
-  event.respondWith(
-    fetch(req)
-      .then((res) => {
-        // Only cache successful, basic (same-origin) responses.
-        if (res && res.status === 200 && res.type === 'basic') {
-          const copy = res.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
-  );
+  const networkPromise = fetch(req).then((res) => {
+    if (res && res.status === 200 && res.type === 'basic') {
+      const copy = res.clone();
+      caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
+    }
+    return res;
+  });
+  event.waitUntil(networkPromise.then(() => undefined).catch(() => undefined));
+  event.respondWith((async () => {
+    const cached = await caches.match(req, { ignoreSearch: true });
+    if (cached) return cached;
+    try {
+      return await networkPromise;
+    } catch (error) {
+      return await caches.match('./home') || await caches.match('./index.html');
+    }
+  })());
 });
