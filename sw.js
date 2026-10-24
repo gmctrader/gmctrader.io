@@ -14,7 +14,7 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v21';
+const CACHE_VERSION = 'gd-shell-v22';
 const APP_SHELL = [
   './index.html',
   './app.html',
@@ -37,7 +37,7 @@ const APP_SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
