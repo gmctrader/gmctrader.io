@@ -1,6 +1,8 @@
 # Private trade screenshot storage setup
 
-The app now stores a screenshot object path in each trade and requests a short-lived signed URL when it needs to display the image. The bucket must be private and the migration must be applied before this frontend change is deployed.
+New trade screenshot uploads are temporarily disabled in the app until this migration is confirmed on the live Supabase project and the owner-isolation checks below pass. Existing screenshots remain readable when their storage is configured; the app stores their object paths and requests short-lived signed URLs to display them.
+
+The bucket must be private and the migration must be applied before uploads are re-enabled.
 
 ## Apply
 

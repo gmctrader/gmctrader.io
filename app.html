@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>(function(){try{var q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,''));var inviteOrRecovery=['invite','recovery'].includes(h.get('type'));var signupCallback=q.has('code')||h.get('type')==='signup';var authFlow=inviteOrRecovery||signupCallback;if(signupCallback){q.set('signin','1');q.delete('signup');var s=q.toString();history.replaceState(null,'',location.pathname+(s?'?'+s:'')+location.hash);}if(!q.has('signin')&&!authFlow)location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
+<script>(function(){try{var q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,''));var inviteOrRecovery=['invite','recovery'].includes(h.get('type'));var signupCallback=q.has('code')||h.get('type')==='signup';var authFlow=inviteOrRecovery||signupCallback;var path=location.pathname;var cleanPath=location.protocol==='https:'&&/\/app\.html$/i.test(path);if(cleanPath)path=path.replace(/app\.html$/i,'workspace');if(signupCallback){q.set('signin','1');q.delete('signup');}if(signupCallback||cleanPath){var s=q.toString();history.replaceState(null,'',path+(s?'?'+s:'')+location.hash);}if(!q.has('signin')&&!authFlow)location.replace(new URL('index.html',location.href).href);}catch(e){}})();</script>
 <script>
 // Set the real theme (from a prior visit) before first paint, so there's
 // no flash of the light "portal" look while the rest of the page loads.
@@ -17,6 +17,7 @@ try{
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
 <meta name="theme-color" content="#0a100d">
+<meta name="robots" content="noindex,nofollow">
 <title>Ghost Discipline — GMC Traders</title>
 <script>document.documentElement.setAttribute('data-theme','slate');</script>
 <script>
@@ -2931,7 +2932,7 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
         About &amp; Reset
       </button>
-      <button class="side-navbtn" id="getAppBtn" onclick="handleGetApp()">
+      <button class="side-navbtn" id="getAppBtn" onclick="handleGetApp()" title="Install this app or see bookmark instructions">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M9 18h6"/><path d="M12 6v6l3 2"/></svg>
         Get App
       </button>
@@ -4436,17 +4437,10 @@ setTimeout(function(){
     </div>
     <div class="field quicklog-hide"><label>Notes</label><textarea id="t_notes" placeholder="Setup, mindset, anything worth remembering."></textarea></div>
     <div class="row2 quicklog-hide">
-      <div class="field">
-        <label>Chart screenshot <span class="hint-inline">optional</span></label>
-        <input type="file" id="t_screenshot" accept="image/png,image/jpeg,image/webp" onchange="onTradeScreenshotPicked(event)">
-        <div id="t_screenshotPreviewWrap" style="display:none;margin-top:8px;">
-          <img id="t_screenshotPreview" alt="Chart screenshot preview" style="max-width:100%;max-height:140px;border-radius:10px;border:1px solid var(--steel-hi);display:block;object-fit:cover;">
-          <button type="button" class="side-logout" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="clearTradeScreenshot()">Remove image</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>TradingView link <span class="hint-inline">optional</span></label>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Chart link <span class="hint-inline">optional</span></label>
         <input type="url" id="t_tvlink" placeholder="https://www.tradingview.com/x/XXXXXXXX/" autocapitalize="off" spellcheck="false">
+        <div class="hint">Paste a shareable TradingView chart link to keep it with this trade.</div>
         <div class="hint" id="t_tvlinkHint" style="display:none;color:var(--loss-bright);">That doesn't look like a link — check it and try again.</div>
       </div>
     </div>
@@ -4735,7 +4729,6 @@ function packageUpgradeUrl(wantedTier){
 let pendingViolation = false;
 let closingOrderId = null;
 let selectedMood = null;
-let pendingScreenshotFile = null;
 const MOOD_LABELS = { calm:'Calm', confident:'Confident', fomo:'FOMO', revenge:'Revenge', bored:'Bored', anxious:'Anxious' };
 function selectMood(mood){
   selectedMood = selectedMood===mood ? null : mood;
@@ -6261,7 +6254,8 @@ async function saveOnboardingAnswers(profile){
   const { error } = await sb.from('trader_data')
     .update({ profile, onboarding_done: true })
     .eq('user_id', currentUser.id);
-  if(error) showToast('Could not save your answers: ' + (error.message||error.code));
+  if(error){ showToast('Could not save your answers: ' + (error.message||error.code), 'error'); return false; }
+  return true;
 }
 function renderProfileDetails(){
   let profile = userProfile || {};
@@ -6333,9 +6327,10 @@ async function submitOnboarding(){
     msg.className = 'auth-msg show error';
     return;
   }
-  await saveOnboardingAnswers(Object.assign({},userProfile||{},{ markets, experience, weakness, goal }));
+  const saved = await saveOnboardingAnswers(Object.assign({},userProfile||{},{ markets, experience, weakness, goal }));
+  if(!saved) return;
   document.getElementById('onboardingOverlay').classList.remove('show');
-  showToast('Thanks — SciFe will use this from your next chat.');
+  showToast('Setup saved — SciFe will use it next chat. Use Get App to install or bookmark this page.', 'success', 7000);
 }
 async function skipOnboarding(){
   if(isFreeTier()) return; // Free tier can't skip — button is hidden for them anyway
@@ -12170,7 +12165,6 @@ function proceedToTrade(){
   if(tAcctWrap) tAcctWrap.classList.remove('field-locked');
   updateTradeRiskPreview();
   onStrategyChange();
-  clearTradeScreenshot();
   document.getElementById('t_tvlink').value='';
   document.getElementById('t_tvlinkHint').style.display='none';
   setupTradeDateChartRow();
@@ -12210,63 +12204,12 @@ function onResultChange(){
   updateTradeRiskPreview();
 }
 
-/* ============ TRADE SCREENSHOT + TRADINGVIEW LINK ============ */
-const MAX_SCREENSHOT_MB = 8;
+/* ============ EXISTING TRADE SCREENSHOT SUPPORT + TRADINGVIEW LINK ============ */
 const TRADE_SCREENSHOT_BUCKET = 'trade-screenshots';
 const TRADE_SCREENSHOT_URL_TTL_SECONDS = 24 * 60 * 60;
-function onTradeScreenshotPicked(e){
-  const file = e.target.files && e.target.files[0];
-  if(!file) return;
-  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
-    showToast('Choose a PNG, JPEG, or WebP chart image');
-    e.target.value = '';
-    return;
-  }
-  if(file.size > MAX_SCREENSHOT_MB*1024*1024){
-    showToast(`Image is over ${MAX_SCREENSHOT_MB}MB — pick a smaller one`);
-    e.target.value = '';
-    return;
-  }
-  pendingScreenshotFile = file;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    document.getElementById('t_screenshotPreview').src = reader.result;
-    document.getElementById('t_screenshotPreviewWrap').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-function clearTradeScreenshot(){
-  pendingScreenshotFile = null;
-  const input = document.getElementById('t_screenshot');
-  if(input) input.value = '';
-  const wrap = document.getElementById('t_screenshotPreviewWrap');
-  if(wrap) wrap.style.display = 'none';
-  const preview = document.getElementById('t_screenshotPreview');
-  if(preview) preview.src = '';
-}
 function isLikelyUrl(str){
   if(!str) return false;
   try{ const u = new URL(str); return u.protocol==='http:' || u.protocol==='https:'; }catch(e){ return false; }
-}
-async function uploadTradeScreenshot(file){
-  if(!currentUser) return null;
-  const ext = ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[file.type];
-  if(!ext) return null;
-  const path = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-  try{
-    const bucket = sb.storage.from(TRADE_SCREENSHOT_BUCKET);
-    const { error: upErr } = await bucket.upload(path, file, { upsert:false, contentType: file.type });
-    if(upErr) throw upErr;
-    const { data, error: signErr } = await bucket.createSignedUrl(path, TRADE_SCREENSHOT_URL_TTL_SECONDS);
-    if(signErr || !data || !data.signedUrl){
-      await bucket.remove([path]).catch(()=>{});
-      throw signErr || new Error('Could not create a signed screenshot link');
-    }
-    return { path, url:data.signedUrl };
-  }catch(e){
-    showToast('Screenshot upload failed — trade saved without it');
-    return null;
-  }
 }
 function getTradeScreenshotPath(trade){
   if(!trade || !currentUser) return null;
@@ -12333,17 +12276,6 @@ async function submitTrade(){
   }
   if(tvHint) tvHint.style.display = 'none';
 
-  const saveBtn = document.getElementById('t_saveBtn');
-  let screenshotPath = null;
-  let screenshotUrl = null;
-  if(pendingScreenshotFile){
-    if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Uploading image…'; }
-    const uploadedScreenshot = await uploadTradeScreenshot(pendingScreenshotFile);
-    screenshotPath = uploadedScreenshot ? uploadedScreenshot.path : null;
-    screenshotUrl = uploadedScreenshot ? uploadedScreenshot.url : null;
-    if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Save Trade'; }
-  }
-
   // Demo users always log as today with no calendar chart-redirect, regardless of
   // what's in the (disabled) fields — this is enforced here too, not just in the UI.
   let tradeDate = todayStr();
@@ -12358,7 +12290,7 @@ async function submitTrade(){
   const tAccountSel = document.getElementById('t_account');
   const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : ((tAccountSel && tAccountSel.value) || 'personal');
   const newTrade = { id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
-    screenshotPath: screenshotPath || null, screenshotUrl: screenshotUrl || null, tvLink: tvLinkRaw || null, openChartOnCalendar: openChartOnCalendar && !!tvLinkRaw,
+    screenshotPath:null, screenshotUrl:null, tvLink:tvLinkRaw || null, openChartOnCalendar:openChartOnCalendar && !!tvLinkRaw,
     pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
     account: tradeAccount };
   state.trades.push(newTrade);
@@ -12430,7 +12362,6 @@ async function submitTrade(){
     if(result==='win') fireConfetti();
   }
   pendingViolation = false;
-  clearTradeScreenshot();
   document.getElementById('t_tvlink').value = '';
   document.getElementById('t_date').value = todayStr();
   document.getElementById('t_openChartOnCalendar').checked = false;
@@ -13189,7 +13120,6 @@ function closeOrder(id, result){
   updateTradeRiskPreview();
   if(order.riskAmt!=null && result==='loss'){ const li=document.getElementById('t_lossAmount'); li.value=order.riskAmt; li.dataset.touched='1'; }
   if(order.rewardAmt!=null && result==='win'){ const wi=document.getElementById('t_winAmount'); wi.value=order.rewardAmt; wi.dataset.touched='1'; }
-  clearTradeScreenshot();
   document.getElementById('t_tvlink').value='';
   document.getElementById('t_tvlinkHint').style.display='none';
   setupTradeDateChartRow();
@@ -13430,16 +13360,42 @@ window.addEventListener('beforeinstallprompt', function(event){
 window.addEventListener('appinstalled', function(){
   gdDeferredInstallPrompt = null;
 });
+function openGetAppGuide(){
+  const ua = navigator.userAgent || '';
+  const platform = navigator.userAgentData?.platform || navigator.platform || '';
+  const isIOS = isIOSInstallDevice();
+  const isAndroid = /Android/i.test(ua);
+  const isMac = /Mac/i.test(platform) && !isIOS;
+  const heading = document.getElementById('getAppPlatformTitle');
+  const instructions = document.getElementById('getAppInstructions');
+  const overlay = document.getElementById('getAppOverlay');
+  if(!overlay || !instructions) return;
+  let steps;
+  let bookmark;
+  if(isIOS){
+    if(heading) heading.textContent = 'On iPhone or iPad';
+    steps = ['Open this page in Safari.', 'Tap Share, then Add to Home Screen, and confirm Add.'];
+    bookmark = 'Prefer a bookmark? In Safari, tap Share, then Add Bookmark.';
+  } else if(isAndroid){
+    if(heading) heading.textContent = 'On Android';
+    steps = ['Open your browser menu (⋮).', 'Choose Install app or Add to Home screen, then confirm.'];
+    bookmark = 'Prefer a bookmark? Open the browser menu and choose Add bookmark.';
+  } else {
+    if(heading) heading.textContent = 'On your computer';
+    steps = ['Choose the install icon in the address bar or your browser menu, then select Install app.'];
+    bookmark = `Prefer a bookmark? Press ${isMac?'⌘+D':'Ctrl+D'}.`;
+  }
+  instructions.innerHTML = steps.map((step,index)=>`<div class="check-item pass"><span>${index+1}</span>${step}</div>`).join('') + `<div class="hint" style="margin-top:10px;">${bookmark}</div>`;
+  overlay.classList.add('show');
+}
+function isIOSInstallDevice(){
+  const ua = navigator.userAgent || '';
+  const platform = navigator.userAgentData?.platform || navigator.platform || '';
+  return /iPhone|iPad|iPod/i.test(ua) || (/Mac/i.test(platform) && navigator.maxTouchPoints > 1);
+}
 async function handleGetApp(){
   if(isDemoMode){
     openDemoTease('Get the App is for real accounts', 'The installable app carries your synced data with it — that only exists once you\'re past the trial. Stay in-browser for now.');
-    toggleSidebar(false);
-    return;
-  }
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
-  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-  if(isIOS){
-    document.getElementById('getAppOverlay').classList.add('show');
     toggleSidebar(false);
     return;
   }
@@ -13449,21 +13405,27 @@ async function handleGetApp(){
     toggleSidebar(false);
     return;
   }
+  const isIOS = isIOSInstallDevice();
+  if(isIOS){
+    openGetAppGuide();
+    toggleSidebar(false);
+    return;
+  }
   if(gdDeferredInstallPrompt){
     const installPrompt = gdDeferredInstallPrompt;
     gdDeferredInstallPrompt = null;
     try{
       await installPrompt.prompt();
       const choice = await installPrompt.userChoice;
-      showToast(choice?.outcome === 'accepted' ? 'Installing Ghost Discipline…' : 'Install cancelled. You can try again from your browser menu.');
+      showToast(choice?.outcome === 'accepted' ? 'Installing Ghost Discipline…' : 'Install dismissed. Choose Get App again for install or bookmark steps.');
     }catch(error){
       console.warn('App install prompt unavailable:', error);
-      document.getElementById('getAppOverlay').classList.add('show');
+      openGetAppGuide();
     }
     toggleSidebar(false);
     return;
   }
-  document.getElementById('getAppOverlay').classList.add('show');
+  openGetAppGuide();
   toggleSidebar(false);
 }
 
@@ -13533,7 +13495,7 @@ applyGdTheme();
   toastStack.id = 'toastStack';
   document.body.appendChild(toastStack);
   const TOAST_ICONS = { success:'✓', error:'✕', warn:'!', info:'i' };
-  window.showToast = function(msg, type){
+  window.showToast = function(msg, type, durationMs){
     type = (type && TOAST_ICONS[type]) ? type : 'info';
     const el = document.createElement('div');
     el.className = 'toast2 ' + type;
@@ -13542,7 +13504,8 @@ applyGdTheme();
     const txt = document.createElement('span'); txt.textContent = msg;
     el.appendChild(ico); el.appendChild(txt);
     toastStack.appendChild(el);
-    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(), 320); }, 2800);
+    const duration = Number.isFinite(durationMs) ? Math.max(2800, durationMs) : 2800;
+    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(), 320); }, duration);
     while(toastStack.children.length > 3) toastStack.removeChild(toastStack.firstChild);
   };
   const legacyToast = document.getElementById('toast');
@@ -13755,13 +13718,11 @@ applyGdTheme();
 
 <!-- INSTALL APP MODAL (browser-menu instructions when an install prompt is unavailable) -->
 <div class="overlay" id="getAppOverlay">
-  <div class="modal">
-    <h3>Add Ghost Discipline to your device</h3>
-    <div class="sub">Use your browser's install option to add a shortcut to your workspace.</div>
-    <div class="check-item pass"><span>1</span> On iPhone or iPad, tap <b>Share</b> in Safari. In Chrome, open the <b>⋮</b> menu.</div>
-    <div class="check-item pass"><span>2</span> Choose <b>Add to Home Screen</b> or <b>Install app</b>.</div>
-    <div class="check-item pass"><span>3</span> Confirm <b>Add</b> or <b>Install</b> when your browser asks.</div>
-    <div class="ok-banner">The shortcut opens the live site, so your account and synced journal stay up to date.</div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="getAppTitle">
+    <h3 id="getAppTitle">Add Ghost Discipline to your device</h3>
+    <div class="sub" id="getAppPlatformTitle">Install the app or bookmark this page for quick access.</div>
+    <div id="getAppInstructions"></div>
+    <div class="ok-banner">Either option is a shortcut to the live site; your account and journal stay synced.</div>
     <div class="btn-row" style="margin-top:16px;">
       <button class="side-logout" style="width:100%;" onclick="document.getElementById('getAppOverlay').classList.remove('show')">Got it</button>
     </div>

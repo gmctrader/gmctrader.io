@@ -10,6 +10,12 @@
       "PAYSTACK_SETUP.md",
       "STORAGE_SETUP.md",
       "*.bat"
+    ],
+    "rewrites": [
+      {
+        "source": "/workspace{,/**}",
+        "destination": "/app.html"
+      }
     ]
   }
 }
