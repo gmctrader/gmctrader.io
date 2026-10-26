@@ -9775,7 +9775,7 @@ function renderPropFirmPayouts(){
       <div class="hero-stat"><div class="hero-label">Failed accounts</div><div class="hero-value">${failedAccounts}</div></div>
       <div class="hero-stat"><div class="hero-label">Passing right now</div><div class="hero-value">${rows.filter(r=>(r.pf.accountStatus||'active')==='active' && r.m.overallStatus==='pass').length} / ${rows.filter(r=>(r.pf.accountStatus||'active')==='active').length}</div></div>
       <div class="hero-stat ${totalCombined>=0?'pos':'neg'}"><div class="hero-label">Combined prop P/L, in ${state.rules.currency||'USD'}</div><div class="hero-value">${totalCombined>=0?'+':'-'}${curSym()}${shortMoney(Math.abs(totalCombined))}</div></div>
-      <div class="hero-stat"><div class="hero-label">Withdrawals logged</div><div class="hero-value">${withdrawalCount}</div></div>
+      <div class="hero-stat"><div class="hero-label" title="Count of payout transactions logged across all accounts">Payout entries logged</div><div class="hero-value">${withdrawalCount}</div></div>
       <div class="hero-stat"><div class="hero-label">Withdrawn, in ${state.rules.currency||'USD'}</div><div class="hero-value">${curSym()}${shortMoney(totalWithdrawn)}</div></div>
     </div>
 
