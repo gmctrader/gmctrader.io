@@ -2063,6 +2063,12 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .pf-account-chip button:hover{color:var(--loss);}
 .pf-account-add{display:flex;align-items:center;gap:6px;border:1px dashed var(--steel-hi);border-radius:100px;padding:7px 14px;font-size:12.5px;color:var(--slate);cursor:pointer;background:transparent;}
 .pf-account-add:hover{color:var(--bronze-bright);border-color:var(--bronze-dim);}
+.pf-outcome-controls{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:12px;align-items:end;margin:12px 0 8px;}
+.pf-history-option{display:flex;align-items:flex-start;gap:9px;min-height:68px;padding:10px 12px;border:1px solid var(--steel);border-radius:12px;color:var(--platinum);font-size:11px;line-height:1.45;cursor:pointer;}
+.pf-history-option input{width:auto;flex:none;margin:3px 0 0;accent-color:var(--bronze-bright);}
+.pf-history-option strong,.pf-history-option small{display:block;}
+.pf-history-option small{margin-top:4px;color:var(--slate);font-size:10px;line-height:1.45;}
+@media(max-width:600px){.pf-outcome-controls{grid-template-columns:1fr;}}
 @media(max-width:820px){.pf-risk-hero{grid-template-columns:1fr !important;}}
 </style>
 <style>
@@ -4100,6 +4106,17 @@ setTimeout(function(){
             <div class="pf-phase-chip" data-phase="funded" onclick="setPfPhase('funded', true)">Funded</div>
           </div>
           <div class="hint" id="pfPhaseHint" style="margin:8px 0 4px;"></div>
+          <div class="pf-outcome-controls">
+            <div class="field"><label for="pf_accountStatus">Account outcome</label><select id="pf_accountStatus">
+              <option value="active">Active</option>
+              <option value="passed">Passed evaluation</option>
+              <option value="violated">Violated / failed</option>
+            </select></div>
+            <label class="pf-history-option" for="pf_clearHistoryOnViolation">
+              <input type="checkbox" id="pf_clearHistoryOnViolation">
+              <span><strong>Clear this account’s trades when marked violated</strong><small>On the first save as violated, remove only this account’s trades. The failed result stays in your totals.</small></span>
+            </label>
+          </div>
 
           <!-- Phase-specific fields: what's asked here changes depending on whether the
                account is still a Challenge/Verification (profit target driven) or
@@ -4836,6 +4853,7 @@ let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 function blankPropFirmAccount(id){
   return { id: id || ('pf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)), firmName:'', phase:'challenge', currency:null, startingBalance:null,
     maxDailyLossValue:null, maxDailyLossUnit:'pct', maxOverallDrawdownValue:null, maxOverallDrawdownUnit:'pct', drawdownType:'static',
+    accountStatus:'active', clearHistoryOnViolation:false,
     challenge:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
     verification:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
     funded:{ profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null },
@@ -8917,6 +8935,7 @@ async function saveRules(){
 // cadence instead. Daily loss and overall drawdown stay in the "Risk Limits"
 // group because firms enforce those identically across every phase.
 const PF_PHASE_LABELS = { challenge:'Challenge', verification:'Verification', funded:'Funded' };
+const PF_ACCOUNT_STATUS_LABELS = { active:'Active', passed:'Passed evaluation', violated:'Violated / failed' };
 // Snapshot version used by computePropFirmMetrics — never mutates the
 // account (a metrics calc shouldn't have side effects), unlike pfPhaseData
 // below which is specifically for the live edit form.
@@ -8996,6 +9015,8 @@ function renderPropFirmForm(){
   document.getElementById('pf_maxOverallDrawdownUnit').value = pf.maxOverallDrawdownUnit || 'pct';
   document.getElementById('pf_maxDailyLossValue').value = pf.maxDailyLossValue ?? '';
   document.getElementById('pf_maxOverallDrawdownValue').value = pf.maxOverallDrawdownValue ?? '';
+  document.getElementById('pf_accountStatus').value = pf.accountStatus || 'active';
+  document.getElementById('pf_clearHistoryOnViolation').checked = !!pf.clearHistoryOnViolation;
   document.getElementById('pf_maxDailyLossValue').placeholder = (pf.maxDailyLossUnit==='currency') ? 'e.g. 500' : 'e.g. 5';
   document.getElementById('pf_maxOverallDrawdownValue').placeholder = (pf.maxOverallDrawdownUnit==='currency') ? 'e.g. 1000' : 'e.g. 10';
   const startEl = document.getElementById('pfCurSymStart');
@@ -9021,6 +9042,8 @@ async function savePropFirm(){
     };
   }
   const blank = blankPropFirmAccount();
+  const accountStatus = document.getElementById('pf_accountStatus').value || 'active';
+  const clearHistoryOnViolation = document.getElementById('pf_clearHistoryOnViolation').checked;
   const phaseStart = Object.assign({ challenge:null, verification:null, funded:null }, existing.phaseStart || {});
   const psEl = document.getElementById('pf_phaseStart');
   if(psEl) phaseStart[phase] = psEl.value || null;
@@ -9035,11 +9058,18 @@ async function savePropFirm(){
     maxOverallDrawdownUnit: document.getElementById('pf_maxOverallDrawdownUnit').value || 'pct',
     maxOverallDrawdownValue: numOrNullFrom('pf_maxOverallDrawdownValue'),
     drawdownType: document.getElementById('pf_drawdownType').value,
+    accountStatus, clearHistoryOnViolation,
     challenge: carried.challenge || blank.challenge,
     verification: carried.verification || blank.verification,
     funded: carried.funded || blank.funded,
     phaseStart, payouts: existing.payouts || [],
   };
+  const isNewViolation = accountStatus==='violated' && (existing.accountStatus || 'active')!=='violated';
+  const tradesToClear = isNewViolation && clearHistoryOnViolation
+    ? (state.trades||[]).filter(t=>t.account===existing.id).length
+    : 0;
+  if(tradesToClear && !confirm(`Mark “${updated.firmName || 'this account'}” as violated and permanently remove ${tradesToClear} trade${tradesToClear===1?'':'s'} tagged to it from your journal? Personal trades and trades on other prop accounts will stay.`)) return;
+  if(tradesToClear) state.trades = state.trades.filter(t=>t.account!==existing.id);
   const idx = state.propFirms.findIndex(p=>p.id===existing.id);
   if(idx>-1) state.propFirms[idx] = updated; else state.propFirms.push(updated);
   await saveState();
@@ -9277,8 +9307,9 @@ function renderPropFirmCompliance(){
     return;
   }
 
-  headerBadge.className = 'pf-badge ' + m.overallStatus;
-  headerBadge.textContent = m.overallStatus==='pass' ? 'On Track' : (m.overallStatus==='warn' ? 'At Risk' : 'Rule Breached');
+  const accountStatus = pf.accountStatus || 'active';
+  headerBadge.className = 'pf-badge ' + (accountStatus==='violated' ? 'fail' : (accountStatus==='passed' ? 'pass' : m.overallStatus));
+  headerBadge.textContent = accountStatus!=='active' ? PF_ACCOUNT_STATUS_LABELS[accountStatus] : (m.overallStatus==='pass' ? 'On Track' : (m.overallStatus==='warn' ? 'At Risk' : 'Rule Breached'));
 
   const sym = pfCurSym();
   const fmt = n => (n<0?'-':'') + sym + Math.abs(n).toFixed(0);
@@ -9556,24 +9587,34 @@ function renderPropFirmPayouts(){
 
   const totalCombined = rows.reduce((s,r)=> s + (r.m.totalProfit * (getCachedFxRate(r.pf.currency, state.rules.currency) ?? 1)), 0);
   const totalWithdrawn = (state.propFirms||[]).reduce((s,pf)=> s + (pf.payouts||[]).reduce((a,x)=>a+(parseFloat(x.amount)||0),0) * (getCachedFxRate(pf.currency, state.rules.currency) ?? 1), 0);
+  const failedAccounts = rows.filter(r=>r.pf.accountStatus==='violated' || ((r.pf.accountStatus||'active')==='active' && r.m.overallStatus==='fail')).length;
+  const passedEvaluations = rows.filter(r=>r.pf.accountStatus==='passed').length;
+  const withdrawalCount = (state.propFirms||[]).reduce((sum,pf)=>sum+(pf.payouts||[]).length,0);
 
   body.innerHTML = `
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:16px;">
-      <div class="hero-stat"><div class="hero-label">Active challenges</div><div class="hero-value">${rows.length}</div></div>
+      <div class="hero-stat"><div class="hero-label">Active challenges</div><div class="hero-value">${rows.filter(r=>r.m.phase!=='funded' && (r.pf.accountStatus||'active')==='active').length}</div></div>
       <div class="hero-stat"><div class="hero-label">Funded accounts</div><div class="hero-value">${rows.filter(r=>r.m.phase==='funded').length}</div></div>
-      <div class="hero-stat"><div class="hero-label">Passing right now</div><div class="hero-value">${rows.filter(r=>r.m.overallStatus==='pass').length} / ${rows.length}</div></div>
+      <div class="hero-stat"><div class="hero-label">Passed evaluations</div><div class="hero-value">${passedEvaluations}</div></div>
+      <div class="hero-stat"><div class="hero-label">Failed accounts</div><div class="hero-value">${failedAccounts}</div></div>
+      <div class="hero-stat"><div class="hero-label">Passing right now</div><div class="hero-value">${rows.filter(r=>(r.pf.accountStatus||'active')==='active' && r.m.overallStatus==='pass').length} / ${rows.filter(r=>(r.pf.accountStatus||'active')==='active').length}</div></div>
       <div class="hero-stat ${totalCombined>=0?'pos':'neg'}"><div class="hero-label">Combined prop P/L, in ${state.rules.currency||'USD'}</div><div class="hero-value">${totalCombined>=0?'+':'-'}${curSym()}${shortMoney(Math.abs(totalCombined))}</div></div>
+      <div class="hero-stat"><div class="hero-label">Withdrawals logged</div><div class="hero-value">${withdrawalCount}</div></div>
       <div class="hero-stat"><div class="hero-label">Withdrawn, in ${state.rules.currency||'USD'}</div><div class="hero-value">${curSym()}${shortMoney(totalWithdrawn)}</div></div>
     </div>
 
     <div class="card tilt">
       <h2>Challenge <span class="accent">Comparison</span></h2>
       <div class="lead-table-wrap"><table class="lead-table">
-        <thead><tr><th>Account</th><th>Phase</th><th>Balance</th><th>Profit</th><th>Drawdown used</th><th>Daily loss used (today)</th><th>Trading days</th><th>Status</th></tr></thead>
+        <thead><tr><th>Account</th><th>Phase</th><th>Balance</th><th>Profit</th><th>Drawdown used</th><th>Daily loss used (today)</th><th>Trading days</th><th>Consistency</th><th>Status</th></tr></thead>
         <tbody>
         ${rows.map(r=>{
           const ddPct = r.m.maxOverallDrawdownDollar ? Math.min(100, r.m.drawdownUsed/r.m.maxOverallDrawdownDollar*100) : null;
           const dlPct = r.m.maxDailyLossDollar ? Math.min(100, r.m.todayLoss/r.m.maxDailyLossDollar*100) : null;
+          const accountStatus = r.pf.accountStatus || 'active';
+          const outcomeClass = accountStatus==='violated' ? 'fail' : (accountStatus==='passed' ? 'pass' : r.m.overallStatus);
+          const outcomeLabel = accountStatus==='violated' ? 'Failed · violated' : (accountStatus==='passed' ? 'Passed evaluation' : (r.m.overallStatus==='pass' ? 'On track' : r.m.overallStatus==='warn' ? 'Watch' : 'Breached'));
+          const consistencyLabel = r.m.phase==='funded' ? '—' : (r.m.consistencyRulePct!=null ? `${r.m.consistencyPct.toFixed(0)}% used · ${r.m.consistencyRulePct}% limit` : 'Not set');
           return `<tr style="cursor:pointer;${r.pf.id===activePfId?'background:rgba(255,255,255,0.03);':''}" onclick="pfOpenRiskFor('${r.pf.id}')">
             <td> ${escapeHtml(r.pf.firmName||'Unnamed account')}</td>
             <td>${PF_PHASE_LABELS[r.m.phase]}</td>
@@ -9582,7 +9623,8 @@ function renderPropFirmPayouts(){
             <td>${ddPct!=null ? ddPct.toFixed(0)+'%' : '—'}</td>
             <td>${dlPct!=null ? dlPct.toFixed(0)+'%' : '—'}</td>
             <td>${r.m.tradingDays}${r.m.minTradingDays?'/'+r.m.minTradingDays:''}</td>
-            <td><span class="pf-badge ${r.m.overallStatus}">${r.m.overallStatus==='pass'?'On track':r.m.overallStatus==='warn'?'Watch':'Breached'}</span></td>
+            <td>${consistencyLabel}</td>
+            <td><span class="pf-badge ${outcomeClass}">${outcomeLabel}</span></td>
           </tr>`;
         }).join('')}
         </tbody>
