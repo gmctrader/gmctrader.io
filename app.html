@@ -2069,6 +2069,37 @@ textarea{resize:vertical;min-height:90px;line-height:1.6;}
 .pf-history-option strong,.pf-history-option small{display:block;}
 .pf-history-option small{margin-top:4px;color:var(--slate);font-size:10px;line-height:1.45;}
 @media(max-width:600px){.pf-outcome-controls{grid-template-columns:1fr;}}
+.pf-archive-section{margin:12px 0 18px;}
+.pf-archive-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 9px;color:var(--slate);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;}
+.pf-archive-heading span:last-child{color:var(--slate-dim);font:9px 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:none;}
+.pf-archive-list{display:grid;gap:9px;}
+.pf-archive-card{overflow:hidden;border:1px solid rgba(244,63,94,.2);border-radius:16px;background:linear-gradient(135deg,rgba(38,20,24,.6),rgba(19,23,22,.92) 54%,rgba(20,25,23,.92));transition:border-color .2s,box-shadow .2s;}
+.pf-archive-card[open]{border-color:rgba(244,63,94,.38);box-shadow:0 18px 44px -34px rgba(244,63,94,.42);}
+.pf-archive-card>summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:15px 17px;list-style:none;cursor:pointer;}
+.pf-archive-card>summary::-webkit-details-marker{display:none;}
+.pf-archive-mark{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(244,63,94,.25);border-radius:11px;background:rgba(244,63,94,.1);color:var(--loss-bright);font:600 15px 'IBM Plex Mono',monospace;}
+.pf-archive-title{min-width:0;display:grid;gap:3px;}
+.pf-archive-title strong{overflow:hidden;color:var(--platinum);font-size:13px;text-overflow:ellipsis;white-space:nowrap;}
+.pf-archive-title small{color:var(--slate);font-size:10px;line-height:1.45;}
+.pf-archive-summary-result{min-width:118px;text-align:right;}
+.pf-archive-summary-result b{display:block;color:var(--platinum);font:500 14px 'IBM Plex Mono',monospace;}
+.pf-archive-summary-result small{display:block;margin-top:3px;color:var(--slate);font-size:9px;}
+.pf-archive-chevron{color:var(--slate);font:18px 'IBM Plex Mono',monospace;transition:transform .2s;}
+.pf-archive-card[open] .pf-archive-chevron{transform:rotate(180deg);}
+.pf-archive-summary-progress{grid-column:2/4;display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 14px;color:var(--slate);font-size:9px;}
+.pf-archive-summary-progress b{color:var(--platinum);font:10px 'IBM Plex Mono',monospace;}
+.pf-archive-track{grid-column:1/-1;height:5px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;}
+.pf-archive-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#9a3e50,var(--loss-bright));}
+.pf-archive-body{padding:15px 17px 17px;border-top:1px solid rgba(255,255,255,.07);}
+.pf-archive-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
+.pf-archive-stat{min-width:0;padding:11px 12px;border:1px solid rgba(255,255,255,.07);border-radius:11px;background:rgba(255,255,255,.025);}
+.pf-archive-stat small{display:block;color:var(--slate);font-size:8px;letter-spacing:.08em;text-transform:uppercase;}
+.pf-archive-stat b{display:block;margin-top:6px;overflow:hidden;color:var(--platinum);font:500 14px 'IBM Plex Mono',monospace;text-overflow:ellipsis;white-space:nowrap;}
+.pf-archive-note{margin:11px 0 0;padding:10px 12px;border-left:2px solid rgba(244,63,94,.42);background:rgba(244,63,94,.045);color:var(--slate);font-size:10px;line-height:1.6;}
+.pf-archive-reasons{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.pf-archive-reasons span{padding:5px 8px;border:1px solid rgba(244,63,94,.18);border-radius:99px;background:rgba(244,63,94,.06);color:var(--loss-bright);font-size:9px;}
+.pf-archive-actions{display:flex;justify-content:flex-end;margin-top:12px;}
+@media(max-width:760px){.pf-archive-card>summary{grid-template-columns:auto minmax(0,1fr) auto auto;}.pf-archive-summary-result{grid-column:2;text-align:left;}.pf-archive-summary-progress{grid-column:2/5;}.pf-archive-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:820px){.pf-risk-hero{grid-template-columns:1fr !important;}}
 </style>
 <style>
@@ -4080,10 +4111,11 @@ setTimeout(function(){
       </div>
 
       <div class="pf-account-switch" id="pfAccountSwitch"></div>
+      <div id="pfArchivedAccounts"></div>
       <div class="hint" style="margin:0 0 14px;">Run more than one prop firm challenge at once — each account keeps its own name, currency, rules and live compliance tracking, and shows up as its own option in the Order Book's Account selector.</div>
 
       <div class="grid">
-        <div class="card tilt">
+        <div class="card tilt" id="pfChallengeSetupCard">
           <h2>Challenge <span class="accent">Setup</span></h2>
           <div class="row2">
             <div class="field"><label>Prop firm name</label><input type="text" id="pf_firmName" placeholder="e.g. FTMO, MFF, Apex"></div>
@@ -4150,6 +4182,13 @@ setTimeout(function(){
 
           <button class="btn btn-primary" onclick="savePropFirm()">Save Challenge Rules</button>
           <div class="hint" id="pfSavedHint" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card tilt pf-empty-onboard" id="pfNoActiveAccount" hidden>
+          <span class="glyph">✓</span>
+          <h3>Every account is safely archived</h3>
+          <p>Your violated accounts are saved below with their progress snapshots. Add a new account when you’re ready for another evaluation.</p>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="addPropFirmAccount()">Add active account</button>
         </div>
 
         <div id="pfComplianceWrap" style="align-self:start;position:sticky;top:20px;"></div>
@@ -4853,7 +4892,7 @@ let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 function blankPropFirmAccount(id){
   return { id: id || ('pf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)), firmName:'', phase:'challenge', currency:null, startingBalance:null,
     maxDailyLossValue:null, maxDailyLossUnit:'pct', maxOverallDrawdownValue:null, maxOverallDrawdownUnit:'pct', drawdownType:'static',
-    accountStatus:'active', clearHistoryOnViolation:false,
+    accountStatus:'active', clearHistoryOnViolation:false, violationSnapshot:null,
     challenge:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
     verification:{ profitTarget:null, minTradingDays:null, consistencyRulePct:null },
     funded:{ profitSplitPct:null, payoutThresholdPct:null, minPayoutDays:null },
@@ -4861,7 +4900,12 @@ function blankPropFirmAccount(id){
 }
 let activePfId = null;
 function getPropFirm(id){ return (state.propFirms||[]).find(pf=>pf.id===id) || null; }
-function activePropFirm(){ return getPropFirm(activePfId) || (state.propFirms && state.propFirms[0]) || null; }
+function isViolatedPropFirm(pf){ return !!pf && pf.accountStatus==='violated'; }
+function activePropFirmAccounts(){ return (state.propFirms||[]).filter(pf=>!isViolatedPropFirm(pf)); }
+function activePropFirm(){
+  const selected = getPropFirm(activePfId);
+  return selected && !isViolatedPropFirm(selected) ? selected : (activePropFirmAccounts()[0] || null);
+}
 // Makes sure there's always at least one (possibly blank/unconfigured) prop
 // firm account to show in the form, matching the old single-account UX where
 // the form was always present and editable even before anything was saved.
@@ -4871,9 +4915,10 @@ function ensureAtLeastOnePfAccount(){
     const acc = blankPropFirmAccount();
     state.propFirms.push(acc);
     activePfId = acc.id;
-  } else if(!getPropFirm(activePfId)){
-    activePfId = state.propFirms[0].id;
+    return;
   }
+  const activeAccounts = activePropFirmAccounts();
+  if(!activeAccounts.some(pf=>pf.id===activePfId)) activePfId = activeAccounts[0] ? activeAccounts[0].id : null;
 }
 // Small badge shown on a trade/order row when it's tagged to a specific prop
 // firm account — falls back gracefully if that account was since removed.
@@ -4960,7 +5005,7 @@ function accountScopeLabel(scope){
 }
 function renderAccountScopeOptions(){
   const opts = ['<option value="personal">Personal</option>','<option value="prop">Prop Accounts</option>']
-    .concat((state.propFirms||[]).filter(pf=>pf.firmName || pf.startingBalance).map(pf=>`<option value="${pf.id}"> ${escapeHtml(pf.firmName||'Unnamed account')}</option>`))
+    .concat((state.propFirms||[]).filter(pf=>!isViolatedPropFirm(pf) && (pf.firmName || pf.startingBalance)).map(pf=>`<option value="${pf.id}"> ${escapeHtml(pf.firmName||'Unnamed account')}</option>`))
     .concat(['<option value="all">All Accounts (combined)</option>']);
   ['globalAccountScope','globalAccountScope2','globalAccountScope3','globalAccountScope4','globalAccountScope5'].forEach(id=>{
     const el = document.getElementById(id);
@@ -9005,6 +9050,11 @@ function renderPropFirmForm(){
   ensureAtLeastOnePfAccount();
   renderPfAccountSwitch();
   const pf = activePropFirm();
+  const setupCard = document.getElementById('pfChallengeSetupCard');
+  const noActiveCard = document.getElementById('pfNoActiveAccount');
+  if(setupCard) setupCard.hidden = !pf;
+  if(noActiveCard) noActiveCard.hidden = !!pf;
+  if(!pf) return;
   const curSel = document.getElementById('pf_currency');
   if(curSel && !curSel.dataset.filled){ curSel.innerHTML = CURRENCY_OPTIONS_HTML; curSel.dataset.filled = '1'; }
   document.getElementById('pf_firmName').value = pf.firmName || '';
@@ -9044,6 +9094,8 @@ async function savePropFirm(){
   const blank = blankPropFirmAccount();
   const accountStatus = document.getElementById('pf_accountStatus').value || 'active';
   const clearHistoryOnViolation = document.getElementById('pf_clearHistoryOnViolation').checked;
+  const isNewViolation = accountStatus==='violated' && (existing.accountStatus || 'active')!=='violated';
+  const violationSnapshot = isNewViolation ? capturePropFirmViolationSnapshot(existing) : (existing.violationSnapshot || null);
   const phaseStart = Object.assign({ challenge:null, verification:null, funded:null }, existing.phaseStart || {});
   const psEl = document.getElementById('pf_phaseStart');
   if(psEl) phaseStart[phase] = psEl.value || null;
@@ -9059,24 +9111,27 @@ async function savePropFirm(){
     maxOverallDrawdownValue: numOrNullFrom('pf_maxOverallDrawdownValue'),
     drawdownType: document.getElementById('pf_drawdownType').value,
     accountStatus, clearHistoryOnViolation,
+    violationSnapshot: accountStatus==='violated' ? violationSnapshot : (existing.violationSnapshot || null),
     challenge: carried.challenge || blank.challenge,
     verification: carried.verification || blank.verification,
     funded: carried.funded || blank.funded,
     phaseStart, payouts: existing.payouts || [],
   };
-  const isNewViolation = accountStatus==='violated' && (existing.accountStatus || 'active')!=='violated';
   const tradesToClear = isNewViolation && clearHistoryOnViolation
     ? (state.trades||[]).filter(t=>t.account===existing.id).length
     : 0;
   if(tradesToClear && !confirm(`Mark “${updated.firmName || 'this account'}” as violated and permanently remove ${tradesToClear} trade${tradesToClear===1?'':'s'} tagged to it from your journal? Personal trades and trades on other prop accounts will stay.`)) return;
+  if(isNewViolation && updated.violationSnapshot) updated.violationSnapshot.historyCleared = tradesToClear>0;
   if(tradesToClear) state.trades = state.trades.filter(t=>t.account!==existing.id);
   const idx = state.propFirms.findIndex(p=>p.id===existing.id);
   if(idx>-1) state.propFirms[idx] = updated; else state.propFirms.push(updated);
+  if(accountStatus==='violated' && activePfId===existing.id) activePfId = null;
   await saveState();
   document.getElementById('pfSavedHint').textContent = 'Saved just now.';
   renderPfAccountSwitch();
   renderPropFirmCompliance();
   renderOrderAccountOptions();
+  renderTradeAccountOptions();
   renderAccountScopeOptions();
   if(document.getElementById('view-propfirmrisk') && document.getElementById('view-propfirmrisk').classList.contains('active')) renderPropFirmRisk();
   if(document.getElementById('view-propfirmpayout') && document.getElementById('view-propfirmpayout').classList.contains('active')) renderPropFirmPayouts();
@@ -9093,10 +9148,11 @@ async function savePropFirm(){
 // account id, so nothing needs to "know" which one is active except this UI.
 function renderPfAccountSwitch(){
   ensureAtLeastOnePfAccount();
-  const html = state.propFirms.map(pf=>`
+  const activeAccounts = activePropFirmAccounts();
+  const html = activeAccounts.map(pf=>`
     <div class="pf-account-chip ${pf.id===activePfId?'active':''}" onclick="selectPropFirmAccount('${pf.id}')">
       <span> ${escapeHtml(pf.firmName || 'Unnamed account')}</span>
-      ${state.propFirms.length>1 ? `<button onclick="event.stopPropagation(); removePropFirmAccount('${pf.id}')" title="Remove account">✕</button>` : ''}
+      ${activeAccounts.length>1 ? `<button onclick="event.stopPropagation(); removePropFirmAccount('${pf.id}')" title="Remove account">✕</button>` : ''}
     </div>`).join('') + `<button class="pf-account-add" onclick="addPropFirmAccount()">+ Add Account</button>`;
   // Same account switcher is shown on Compliance AND the Risk Console — both
   // stay in sync since they share the one activePfId.
@@ -9104,8 +9160,72 @@ function renderPfAccountSwitch(){
     const wrap = document.getElementById(id);
     if(wrap) wrap.innerHTML = html;
   });
+  renderPfArchivedAccounts();
+}
+function renderPfArchivedAccounts(){
+  const wrap = document.getElementById('pfArchivedAccounts');
+  if(!wrap) return;
+  const archived = (state.propFirms||[]).filter(isViolatedPropFirm).slice().sort((a,b)=>{
+    const ad=Date.parse(a.violationSnapshot && a.violationSnapshot.capturedAt || '') || 0;
+    const bd=Date.parse(b.violationSnapshot && b.violationSnapshot.capturedAt || '') || 0;
+    return bd-ad;
+  });
+  if(!archived.length){ wrap.innerHTML=''; return; }
+  const cards = archived.map(pf=>{
+    const snap = pf.violationSnapshot || null;
+    const phase = (snap && snap.phase) || pf.phase || 'challenge';
+    const phaseLabel = PF_PHASE_LABELS[phase] || phase;
+    const symbol = pfCurSym(pf);
+    const money = value=>value==null || !Number.isFinite(Number(value)) ? '—' : `${Number(value)<0?'-':''}${symbol}${Math.abs(Number(value)).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+    const signedMoney = value=>value==null || !Number.isFinite(Number(value)) ? '—' : `${Number(value)>=0?'+':'-'}${symbol}${Math.abs(Number(value)).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+    const goal = snap && Number(snap.goalValue);
+    const progress = snap && Number.isFinite(Number(snap.goalProgressPct)) ? Number(snap.goalProgressPct) : null;
+    const progressWidth = goal>0 && progress!=null ? Math.max(0,Math.min(100,progress)) : 0;
+    const progressName = phase==='funded' ? 'payout threshold' : 'evaluation target';
+    const progressSummary = goal>0 && progress!=null ? `${Math.max(0,progress).toFixed(0)}% of ${progressName}` : `No ${phase==='funded'?'payout threshold':'profit target'} saved`;
+    const captured = snap && snap.capturedAt && !Number.isNaN(Date.parse(snap.capturedAt))
+      ? new Date(snap.capturedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})
+      : 'Date not recorded';
+    const tradeCount = snap && Number.isFinite(Number(snap.tradesCount)) ? Number(snap.tradesCount) : null;
+    const consistency = snap && snap.consistencyRulePct!=null
+      ? `${Number(snap.consistencyPct||0).toFixed(0)}% / ${Number(snap.consistencyRulePct)}% limit`
+      : 'No rule set';
+    const rules = snap && Array.isArray(snap.ruleBreaches) ? snap.ruleBreaches : [];
+    const archiveNote = !snap
+      ? 'This account was marked violated before progress snapshots were added; no failure snapshot is available.'
+      : (snap.historyCleared
+        ? `Trade history cleared after ${tradeCount||0} logged trade${tradeCount===1?'':'s'}. This saved snapshot preserves progress from before the clear.`
+        : `${tradeCount||0} logged trade${tradeCount===1?'':'s'} were on record when this account was marked violated.`);
+    return `<details class="pf-archive-card">
+      <summary aria-label="Expand archived ${escapeHtml(pf.firmName||'prop firm account')} progress">
+        <span class="pf-archive-mark" aria-hidden="true">!</span>
+        <span class="pf-archive-title"><strong>${escapeHtml(pf.firmName||'Unnamed account')} · ${escapeHtml(phaseLabel)}</strong><small>Violated ${captured}${tradeCount!=null?` · ${tradeCount} trades at failure`:''}</small></span>
+        <span class="pf-badge fail">Violated</span>
+        <span class="pf-archive-chevron" aria-hidden="true">⌄</span>
+        <span class="pf-archive-summary-progress"><span><b>${progress!=null && goal>0 ? `${Math.max(0,progress).toFixed(0)}%` : 'Progress'}</b> ${progressSummary}</span><span>${goal>0 ? `${money(goal)} goal` : ''}</span><span class="pf-archive-track"><i style="width:${progressWidth}%"></i></span></span>
+      </summary>
+      <div class="pf-archive-body">
+        <div class="pf-archive-stats">
+          <div class="pf-archive-stat"><small>Balance at failure</small><b>${money(snap && snap.endingBalance)}</b></div>
+          <div class="pf-archive-stat"><small>Net result</small><b>${signedMoney(snap && snap.totalProfit)}</b></div>
+          <div class="pf-archive-stat"><small>Trading days</small><b>${snap && snap.tradingDays!=null ? `${snap.tradingDays}${snap.minTradingDays!=null?` / ${snap.minTradingDays}`:''}` : '—'}</b></div>
+          <div class="pf-archive-stat"><small>Drawdown used</small><b>${snap && snap.drawdownUsed!=null ? `${money(snap.drawdownUsed)}${snap.maxDrawdown!=null?` / ${money(snap.maxDrawdown)}`:''}` : '—'}</b></div>
+          <div class="pf-archive-stat"><small>Consistency</small><b>${escapeHtml(consistency)}</b></div>
+          <div class="pf-archive-stat"><small>Starting balance</small><b>${money(snap && snap.startingBalance!=null ? snap.startingBalance : pf.startingBalance)}</b></div>
+          <div class="pf-archive-stat"><small>Daily loss at failure</small><b>${snap && snap.dailyLoss!=null ? `${money(snap.dailyLoss)}${snap.maxDailyLoss!=null?` / ${money(snap.maxDailyLoss)}`:''}` : '—'}</b></div>
+          <div class="pf-archive-stat"><small>Trades at failure</small><b>${tradeCount==null ? '—' : tradeCount}</b></div>
+        </div>
+        <div class="pf-archive-note">${archiveNote}</div>
+        ${rules.length ? `<div class="pf-archive-reasons">${rules.map(rule=>`<span>${escapeHtml(rule)}</span>`).join('')}</div>` : ''}
+        <div class="pf-archive-actions"><button class="btn btn-quiet btn-sm" onclick="restoreViolatedPropFirm('${pf.id}')">Restore account</button></div>
+      </div>
+    </details>`;
+  }).join('');
+  wrap.innerHTML = `<section class="pf-archive-section" aria-label="Violated account archive"><div class="pf-archive-heading"><span>Archived accounts</span><span>${archived.length} archived account${archived.length===1?'':'s'} · click to review progress</span></div><div class="pf-archive-list">${cards}</div></section>`;
 }
 function selectPropFirmAccount(id){
+  const selected = getPropFirm(id);
+  if(!selected || isViolatedPropFirm(selected)) return;
   activePfId = id;
   renderPfAccountSwitch();
   renderPropFirmForm();
@@ -9130,19 +9250,42 @@ async function addPropFirmAccount(){
   renderPropFirmForm();
   renderPropFirmCompliance();
   renderOrderAccountOptions();
+  renderTradeAccountOptions();
+  renderAccountScopeOptions();
   showToast('New prop firm account added — give it a name and save its rules');
+}
+async function restoreViolatedPropFirm(id){
+  const pf = getPropFirm(id);
+  if(!pf || !isViolatedPropFirm(pf)) return;
+  const historyWasCleared = !!(pf.violationSnapshot && pf.violationSnapshot.historyCleared);
+  if(historyWasCleared && !confirm(`Restore “${pf.firmName||'this account'}”? Its saved failure snapshot will remain, but the trades cleared at violation will not return.`)) return;
+  pf.accountStatus = 'active';
+  activePfId = pf.id;
+  await saveState();
+  renderPfAccountSwitch();
+  renderPropFirmForm();
+  renderPropFirmCompliance();
+  renderPropFirmRisk();
+  renderOrderAccountOptions();
+  renderTradeAccountOptions();
+  renderAccountScopeOptions();
+  populatePropOrderSelectors();
+  if(document.getElementById('view-propfirmpayout') && document.getElementById('view-propfirmpayout').classList.contains('active')) renderPropFirmPayouts();
+  showToast(historyWasCleared ? 'Account restored; cleared trades remain deleted' : 'Prop firm account restored');
 }
 async function removePropFirmAccount(id){
   const pf = getPropFirm(id);
   if(!pf) return;
   if(!confirm(`Remove "${pf.firmName || 'this account'}"? Its saved rules will be deleted — any trades already logged against it stay in your journal, just no longer tracked against a live challenge.`)) return;
   state.propFirms = state.propFirms.filter(p=>p.id!==id);
-  if(activePfId===id) activePfId = state.propFirms[0] ? state.propFirms[0].id : null;
+  if(activePfId===id) activePfId = activePropFirmAccounts().find(p=>p.id!==id)?.id || null;
   await saveState();
   renderPfAccountSwitch();
   renderPropFirmForm();
   renderPropFirmCompliance();
   renderOrderAccountOptions();
+  renderTradeAccountOptions();
+  renderAccountScopeOptions();
   showToast('Prop firm account removed');
 }
 
@@ -9159,7 +9302,7 @@ function pfPhaseWindow(pf, phase){
   return { from: ps[phase] || null, to };
 }
 function pfInWindow(date, w){ return (!w.from || date >= w.from) && (!w.to || date < w.to); }
-function pfDailyPnlSeries(pf){
+function pfDailyPnlSeries(pf, includeAllTraders){
   const byDay = {};
   // Only trades placed against THIS SPECIFIC prop firm account (Order Book ->
   // Account: <that firm's name>) count toward its challenge compliance —
@@ -9171,11 +9314,11 @@ function pfDailyPnlSeries(pf){
   // account's own trades from its own compliance math, even when the rest of
   // the app is currently scoped to "Personal".
   const win = pfPhaseWindow(pf);
-  liveTrades().filter(t=>t.account===pf.id && pfInWindow(t.date, win) && (activeTraderFilter==='all' || t.trader===activeTraderFilter)).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOfRaw(t); });
+  liveTrades().filter(t=>t.account===pf.id && pfInWindow(t.date, win) && (includeAllTraders || activeTraderFilter==='all' || t.trader===activeTraderFilter)).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOfRaw(t); });
   return Object.keys(byDay).sort().map(date=>({date, pnl: byDay[date]}));
 }
 
-function computePropFirmMetrics(pf){
+function computePropFirmMetrics(pf, includeAllTraders){
   pf = pf || activePropFirm();
   if(!pf) return null;
   const start = pf.startingBalance;
@@ -9183,7 +9326,7 @@ function computePropFirmMetrics(pf){
   const phase = pf.phase || 'challenge';
   const pd = pfPhaseSnapshot(pf, phase);
 
-  const series = pfDailyPnlSeries(pf);
+  const series = pfDailyPnlSeries(pf, includeAllTraders);
   let balance = start;
   let peak = start;
   let maxDrawdownHit = 0; // largest $ drawdown observed at any point, from the relevant reference (peak or start)
@@ -9269,6 +9412,38 @@ function computePropFirmMetrics(pf){
   };
 }
 
+function capturePropFirmViolationSnapshot(pf){
+  const m = computePropFirmMetrics(pf, true);
+  const phase = (m && m.phase) || pf.phase || 'challenge';
+  const tradesAtViolation = liveTrades().filter(t=>t.account===pf.id);
+  const ruleBreaches = [];
+  if(m && m.overallDrawdownBreached) ruleBreaches.push('Overall drawdown limit');
+  if(m && m.dailyLossBreached) ruleBreaches.push('Daily loss limit');
+  if(m && m.consistencyBreach) ruleBreaches.push('Consistency rule');
+  const goal = m ? (phase==='funded' ? m.payoutThresholdDollar : m.profitTargetDollar) : null;
+  const achieved = m ? (phase==='funded' ? m.profitAvailable : m.totalProfit) : null;
+  return {
+    capturedAt:new Date().toISOString(),
+    phase,
+    startingBalance:pf.startingBalance!=null ? Number(pf.startingBalance) : null,
+    endingBalance:m ? m.currentBalance : null,
+    totalProfit:m ? m.totalProfit : null,
+    goalValue:goal,
+    goalProgressPct:goal>0 ? (achieved/goal)*100 : null,
+    drawdownUsed:m ? m.drawdownUsed : null,
+    maxDrawdown:m ? m.maxOverallDrawdownDollar : null,
+    dailyLoss:m ? m.todayLoss : null,
+    maxDailyLoss:m ? m.maxDailyLossDollar : null,
+    tradingDays:m ? m.tradingDays : tradesAtViolation.length,
+    minTradingDays:m ? m.minTradingDays : null,
+    consistencyPct:m ? m.consistencyPct : null,
+    consistencyRulePct:m ? m.consistencyRulePct : null,
+    tradesCount:tradesAtViolation.length,
+    ruleBreaches,
+    historyCleared:false,
+  };
+}
+
 // Live prop-firm account balance right now: starting balance plus every
 // prop-firm-tagged trade's P/L logged so far. Falls back to the starting
 // balance alone if no prop-firm trades exist yet, or null if Prop Firm
@@ -9298,11 +9473,11 @@ function renderPropFirmCompliance(){
 
   if(!m){
     headerBadge.className = 'pf-badge off';
-    headerBadge.textContent = 'Not configured';
+    headerBadge.textContent = pf ? 'Not configured' : 'No active account';
     wrap.innerHTML = `<div class="card tilt"><div class="pf-empty-onboard">
       <span class="glyph"></span>
-      <h3>No challenge set up yet</h3>
-      <p>Fill in your prop firm's rules on the left — starting balance, profit target, drawdown and loss limits — then save to turn on live pass/fail tracking here.</p>
+      <h3>${pf ? 'No challenge set up yet' : 'No active challenge'}</h3>
+      <p>${pf ? 'Fill in your prop firm\'s rules on the left — starting balance, profit target, drawdown and loss limits — then save to turn on live pass/fail tracking here.' : 'Violated accounts are saved in the archive above with a snapshot of their progress. Add a new account when you’re ready to start again.'}</p>
     </div></div>`;
     return;
   }
@@ -9554,11 +9729,12 @@ function renderPropFirmRiskChart(pf, m, series, ddFloor, targetLevel){
 function renderPropFirmPayouts(){
   const body = document.getElementById('pfPayoutBody');
   if(!body) return;
-  const accounts = (state.propFirms||[]).filter(pf=>pf.startingBalance);
-  if(accounts.length===0){
+  const allAccounts = (state.propFirms||[]).filter(pf=>pf.startingBalance);
+  if(allAccounts.length===0){
     body.innerHTML = `<div class="card"><div class="empty-state"><span class="glyph"></span>No configured challenges yet — set one up in Prop Firm Compliance and it'll appear here for comparison and payout projection.</div></div>`;
     return;
   }
+  const accounts = allAccounts.filter(pf=>!isViolatedPropFirm(pf));
   const rows = accounts.map(pf=>{
     const m = computePropFirmMetrics(pf);
     if(!m) return null;
@@ -9587,8 +9763,8 @@ function renderPropFirmPayouts(){
 
   const totalCombined = rows.reduce((s,r)=> s + (r.m.totalProfit * (getCachedFxRate(r.pf.currency, state.rules.currency) ?? 1)), 0);
   const totalWithdrawn = (state.propFirms||[]).reduce((s,pf)=> s + (pf.payouts||[]).reduce((a,x)=>a+(parseFloat(x.amount)||0),0) * (getCachedFxRate(pf.currency, state.rules.currency) ?? 1), 0);
-  const failedAccounts = rows.filter(r=>r.pf.accountStatus==='violated' || ((r.pf.accountStatus||'active')==='active' && r.m.overallStatus==='fail')).length;
-  const passedEvaluations = rows.filter(r=>r.pf.accountStatus==='passed').length;
+  const failedAccounts = allAccounts.filter(isViolatedPropFirm).length + rows.filter(r=>(r.pf.accountStatus||'active')==='active' && r.m.overallStatus==='fail').length;
+  const passedEvaluations = allAccounts.filter(pf=>pf.accountStatus==='passed').length;
   const withdrawalCount = (state.propFirms||[]).reduce((sum,pf)=>sum+(pf.payouts||[]).length,0);
 
   body.innerHTML = `
@@ -9608,7 +9784,7 @@ function renderPropFirmPayouts(){
       <div class="lead-table-wrap"><table class="lead-table">
         <thead><tr><th>Account</th><th>Phase</th><th>Balance</th><th>Profit</th><th>Drawdown used</th><th>Daily loss used (today)</th><th>Trading days</th><th>Consistency</th><th>Status</th></tr></thead>
         <tbody>
-        ${rows.map(r=>{
+        ${rows.length ? rows.map(r=>{
           const ddPct = r.m.maxOverallDrawdownDollar ? Math.min(100, r.m.drawdownUsed/r.m.maxOverallDrawdownDollar*100) : null;
           const dlPct = r.m.maxDailyLossDollar ? Math.min(100, r.m.todayLoss/r.m.maxDailyLossDollar*100) : null;
           const accountStatus = r.pf.accountStatus || 'active';
@@ -9626,7 +9802,7 @@ function renderPropFirmPayouts(){
             <td>${consistencyLabel}</td>
             <td><span class="pf-badge ${outcomeClass}">${outcomeLabel}</span></td>
           </tr>`;
-        }).join('')}
+        }).join('') : '<tr><td colspan="9" class="hint">No active accounts to compare. Violated accounts are saved in the Prop Firm archive.</td></tr>'}
         </tbody>
       </table></div>
     </div>
@@ -9634,13 +9810,13 @@ function renderPropFirmPayouts(){
     <div class="card tilt" style="margin-top:16px;">
       <h2>Payout <span class="accent">Projection</span></h2>
       <div class="hint" style="margin:-4px 0 12px;">Straight-line projection from each account's average P/L per active trading day — a rough runway, not a promise.</div>
-      ${rows.map(r=>`
+      ${rows.length ? rows.map(r=>`
         <div class="pf-metric" style="margin-bottom:10px;">
           <div class="pf-metric-head">
             <div><div class="pf-metric-title"> ${escapeHtml(r.pf.firmName||'Unnamed account')}</div><div class="pf-metric-sub">${r.projection}</div></div>
             ${r.m.phase==='funded' ? `<div class="pf-badge off">${r.m.profitSplitPct?r.m.profitSplitPct+'% split':'Split not set'}</div>` : ''}
           </div>
-        </div>`).join('')}
+        </div>`).join('') : '<div class="hint">No active accounts need a payout projection right now.</div>'}
     </div>
   `;
   body.insertAdjacentHTML('beforeend', pfPayoutLogHtml());
@@ -9648,7 +9824,7 @@ function renderPropFirmPayouts(){
 // Payout log: every withdrawal logged against a funded account. Totals feed the
 // funded "Payout Progress" bar (profit earned since the last withdrawal).
 function pfPayoutLogHtml(){
-  const funded = (state.propFirms||[]).filter(pf=>pf.startingBalance && pf.phase==='funded');
+  const funded = (state.propFirms||[]).filter(pf=>pf.startingBalance && pf.phase==='funded' && !isViolatedPropFirm(pf));
   const rows = [];
   (state.propFirms||[]).forEach(pf=>(pf.payouts||[]).forEach(x=>rows.push({pf,x})));
   rows.sort((a,b)=>b.x.date.localeCompare(a.x.date));
@@ -9902,9 +10078,9 @@ function renderTradeAccountOptions(){
   if(!sel) return;
   const prevVal = sel.value || 'personal';
   const opts = ['<option value="personal">Personal</option>']
-    .concat((state.propFirms||[]).map(pf=>`<option value="${pf.id}">Prop Firm — ${escapeHtml(pf.firmName || 'Unnamed account')}</option>`));
+    .concat(activePropFirmAccounts().map(pf=>`<option value="${pf.id}">Prop Firm — ${escapeHtml(pf.firmName || 'Unnamed account')}</option>`));
   sel.innerHTML = opts.join('');
-  const stillValid = !isDemoMode && prevVal!=='personal' && !!getPropFirm(prevVal);
+  const stillValid = !isDemoMode && prevVal!=='personal' && !!getPropFirm(prevVal) && !isViolatedPropFirm(getPropFirm(prevVal));
   sel.value = stillValid ? prevVal : 'personal';
 }
 function onTradeAccountChange(){
@@ -9923,7 +10099,7 @@ function renderOrderAccountOptions(){
   const opts = ['<option value="personal">Personal</option>']
     ; // prop firm orders are placed on the Prop Orders page
   sel.innerHTML = opts.join('');
-  const stillValid = !isDemoMode && prevVal!=='personal' && !!getPropFirm(prevVal);
+  const stillValid = !isDemoMode && prevVal!=='personal' && !!getPropFirm(prevVal) && !isViolatedPropFirm(getPropFirm(prevVal));
   sel.value = stillValid ? prevVal : 'personal';
   updateOrderLotAcctHint();
   populatePropOrderSelectors();
@@ -13212,7 +13388,7 @@ function populatePropOrderSelectors(){
   tSel.value = [...tSel.options].some(o=>o.value===prevT) ? prevT : ((activeTraderFilter!=='all' && state.psychology.traders.some(t=>t.id===activeTraderFilter)) ? activeTraderFilter : tSel.value);
   sSel.innerHTML = ['<option value="">Discretionary / none</option>'].concat(state.psychology.strategies.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`)).join('');
   sSel.value = [...sSel.options].some(o=>o.value===prevS) ? prevS : '';
-  const pfs = state.propFirms||[];
+  const pfs = activePropFirmAccounts();
   aSel.innerHTML = pfs.length ? pfs.map(pf=>`<option value="${pf.id}">${escapeHtml(pf.firmName||'Unnamed account')}</option>`).join('') : '<option value="">No prop accounts yet — add one in Prop Firm</option>';
   aSel.value = [...aSel.options].some(o=>o.value===prevA) ? prevA : (pfs[0] ? pfs[0].id : '');
   scopeSel.innerHTML = '<option value="all">All prop accounts</option>' + pfs.map(pf=>`<option value="${pf.id}"> ${escapeHtml(pf.firmName||'Unnamed account')}</option>`).join('');
