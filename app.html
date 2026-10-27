@@ -4858,7 +4858,7 @@ const DEFAULT_STATE = {
   // blankPropFirmAccount() for the shape of each entry.
   propFirms:[],
   session:{ start:"09:00", end:"11:00", restrict:false },
-  psychology:{ why:"", monk:"", strategies:[], traders:[], orders:[], disciplineHistory:[], lastLossAt:null, preTradeCheckins:[], reviewsSeen:{ weekly:null, monthly:null }, strategyNotes:{ customStrategies:[], checkIns:[], journal:"" }, dailyTradePlan:null, tradeReviews:[] },
+  psychology:{ why:"", monk:"", strategies:[], traders:[], orders:[], disciplineHistory:[], lastLossAt:null, preTradeCheckins:[], reviewsSeen:{ weekly:null, monthly:null }, strategyNotes:{ customStrategies:[], checkIns:[], journal:"" }, dailyTradePlan:null, tradeReviews:[], traderIdentityHistory:{ archivedTrades:0, migrationVersion:0, processedViolationKeys:[] } },
   trades:[],
   streak:{ count:0, lastGoodDate:null },
   day:{ date:null, tradesCount:0, lossUsed:0, ruleBrokenToday:false },
@@ -6574,13 +6574,13 @@ const GD_JOURNEY_RANKS = [
 ];
 function getJourneyRank(){
   const trades = liveTrades();
-  const tradeIds = new Set(trades.map(trade=>String(trade.id)));
-  const reviews = new Set((state.psychology.tradeReviews||[]).map(review=>String(review.tradeId)).filter(id=>tradeIds.has(id)));
+  const identityHistory = migrateClearedPropFirmTradesToIdentity();
+  const reviews = new Set((state.psychology.tradeReviews||[]).filter(review=>review && review.tradeId!=null).map(review=>String(review.tradeId)));
   const history = state.psychology.disciplineHistory||[];
   const today=state.day?.date;
   const cleanDates = new Set(history.filter(day=>day && day.date!==today && day.trades>0 && day.ruleBroken!==true).map(day=>day.date));
   if(state.day && state.day.tradesCount>0 && !state.day.ruleBrokenToday && !cleanDates.has(state.day.date)) cleanDates.add(state.day.date);
-  const stats = { trades:trades.length, sessions:cleanDates.size, reviews:reviews.size };
+  const stats = { trades:trades.length + identityHistory.archivedTrades, sessions:cleanDates.size, reviews:reviews.size };
   let index = 0;
   for(let i=0;i<GD_JOURNEY_RANKS.length-1;i++){
     const next=GD_JOURNEY_RANKS[i];
@@ -6594,6 +6594,35 @@ function getJourneyRank(){
 function journeyRequirements(rank){
   return `${rank.tradeTarget} trades · ${rank.sessionTarget} rule-kept sessions · ${rank.reviewTarget} trade review${rank.reviewTarget===1?'':'s'}`;
 }
+function normalizeTraderIdentityHistory(psych){
+  const history = psych.traderIdentityHistory && typeof psych.traderIdentityHistory==='object'
+    ? psych.traderIdentityHistory
+    : (psych.traderIdentityHistory={ archivedTrades:0, migrationVersion:0, processedViolationKeys:[] });
+  history.archivedTrades = Math.max(0, Math.floor(Number(history.archivedTrades)||0));
+  history.migrationVersion = Math.max(0, Math.floor(Number(history.migrationVersion)||0));
+  if(!Array.isArray(history.processedViolationKeys)) history.processedViolationKeys=[];
+  history.processedViolationKeys = history.processedViolationKeys.map(String);
+  return history;
+}
+function journeyViolationKey(pf, snapshot){
+  return `${pf && pf.id || 'prop'}:${snapshot && snapshot.capturedAt || 'legacy'}`;
+}
+function migrateClearedPropFirmTradesToIdentity(){
+  if(!state.psychology || typeof state.psychology!=='object') state.psychology=normalizePsychology(Object.assign({},DEFAULT_STATE.psychology));
+  const history = normalizeTraderIdentityHistory(state.psychology);
+  // Older violation snapshots retain an aggregate trade count, not the cleared rows.
+  // Roll each snapshot into the lifetime rank once so a later account removal is safe.
+  (state.propFirms||[]).forEach(pf=>{
+    const snapshot=pf && pf.violationSnapshot;
+    if(!snapshot || !snapshot.historyCleared) return;
+    const key=journeyViolationKey(pf,snapshot);
+    if(history.processedViolationKeys.includes(key)) return;
+    history.archivedTrades += Math.max(0,Math.floor(Number(snapshot.tradesCount)||0));
+    history.processedViolationKeys.push(key);
+  });
+  history.migrationVersion=1;
+  return history;
+}
 function renderJourneyRank(){
   const journey=getJourneyRank();
   const nextCopy=journey.next ? journeyRequirements(journey.rank) : 'You have reached the final process rank.';
@@ -6602,7 +6631,7 @@ function renderJourneyRank(){
     <p>${journey.next ? `Next: <b>${journey.next.name}</b> · ${nextCopy}` : nextCopy}</p>
     <div class="journey-rank-progress" role="progressbar" aria-label="Progress to next trader rank" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${journey.progress}"><span style="width:${journey.progress}%"></span></div>
     <div class="journey-rank-stats"><span><b>${journey.stats.trades}</b> trades</span><span><b>${journey.stats.sessions}</b> rule-kept sessions</span><span><b>${journey.stats.reviews}</b> reviews</span></div>
-    <small>Ranks follow journal habits, never profit.</small>
+    <small>Ranks follow journal habits, never profit. Cleared prop trades still count toward lifetime progress.</small>
   </section>`;
 }
 let onboardingCurrentStep=0;
@@ -6932,6 +6961,7 @@ function normalizePsychology(psych){
   if(!Array.isArray(psych.disciplineHistory)) psych.disciplineHistory = [];
   if(!Array.isArray(psych.preTradeCheckins)) psych.preTradeCheckins = [];
   if(!Array.isArray(psych.tradeReviews)) psych.tradeReviews = [];
+  normalizeTraderIdentityHistory(psych);
   psych.reviewsSeen = Object.assign({ weekly:null, monthly:null }, psych.reviewsSeen || {});
   if(!psych.strategyNotes || typeof psych.strategyNotes !== 'object') psych.strategyNotes = { customStrategies:[], checkIns:[], journal:"" };
   if(!Array.isArray(psych.strategyNotes.customStrategies)) psych.strategyNotes.customStrategies = [];
@@ -9074,6 +9104,7 @@ function renderPropFirmForm(){
   setPfPhase(pf.phase || 'challenge');
 }
 async function savePropFirm(){
+  migrateClearedPropFirmTradesToIdentity();
   ensureAtLeastOnePfAccount();
   const existing = activePropFirm();
   const phase = existing.phase || 'challenge';
@@ -9120,8 +9151,20 @@ async function savePropFirm(){
   const tradesToClear = isNewViolation && clearHistoryOnViolation
     ? (state.trades||[]).filter(t=>t.account===existing.id).length
     : 0;
+  // Retain only the count used by Trader Journey; the account's trade rows still clear below.
+  const identityTradesToArchive = tradesToClear
+    ? liveTrades().filter(t=>t.account===existing.id).length
+    : 0;
   if(tradesToClear && !confirm(`Mark “${updated.firmName || 'this account'}” as violated and permanently remove ${tradesToClear} trade${tradesToClear===1?'':'s'} tagged to it from your journal? Personal trades and trades on other prop accounts will stay.`)) return;
   if(isNewViolation && updated.violationSnapshot) updated.violationSnapshot.historyCleared = tradesToClear>0;
+  if(tradesToClear && updated.violationSnapshot){
+    const identityHistory=normalizeTraderIdentityHistory(state.psychology);
+    const violationKey=journeyViolationKey(updated,updated.violationSnapshot);
+    if(!identityHistory.processedViolationKeys.includes(violationKey)){
+      identityHistory.archivedTrades+=identityTradesToArchive;
+      identityHistory.processedViolationKeys.push(violationKey);
+    }
+  }
   if(tradesToClear) state.trades = state.trades.filter(t=>t.account!==existing.id);
   const idx = state.propFirms.findIndex(p=>p.id===existing.id);
   if(idx>-1) state.propFirms[idx] = updated; else state.propFirms.push(updated);
@@ -9255,6 +9298,7 @@ async function addPropFirmAccount(){
   showToast('New prop firm account added — give it a name and save its rules');
 }
 async function restoreViolatedPropFirm(id){
+  migrateClearedPropFirmTradesToIdentity();
   const pf = getPropFirm(id);
   if(!pf || !isViolatedPropFirm(pf)) return;
   const historyWasCleared = !!(pf.violationSnapshot && pf.violationSnapshot.historyCleared);
@@ -9277,6 +9321,7 @@ async function removePropFirmAccount(id){
   const pf = getPropFirm(id);
   if(!pf) return;
   if(!confirm(`Remove "${pf.firmName || 'this account'}"? Its saved rules will be deleted — any trades already logged against it stay in your journal, just no longer tracked against a live challenge.`)) return;
+  migrateClearedPropFirmTradesToIdentity();
   state.propFirms = state.propFirms.filter(p=>p.id!==id);
   if(activePfId===id) activePfId = activePropFirmAccounts().find(p=>p.id!==id)?.id || null;
   await saveState();
