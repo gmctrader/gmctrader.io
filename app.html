@@ -13633,7 +13633,8 @@ function renderTradeLogOverview(){
 /* ============ TRADER IDENTITY (AI-read profile built from real trade history) ============ */
 function computeTraderIdentity(){
   const trades = filteredTrades();
-  if(trades.length < 5) return { ready:false, count: trades.length };
+  const archivedTrades = migrateClearedPropFirmTradesToIdentity().archivedTrades;
+  if(trades.length < 5) return { ready:false, count: trades.length, archivedTrades };
   const wins = trades.filter(t=>t.result==='win');
   const losses = trades.filter(t=>t.result==='loss');
   const winRate = trades.length ? Math.round(wins.length/trades.length*100) : 0;
@@ -13666,6 +13667,7 @@ function computeTraderIdentity(){
     desc = `${trades.length} trades logged, ${winRate}% win rate, ${avgRR.toFixed(1)}R average target. The pattern isn't locked in yet — keep tagging mood and strategy on every trade so this reads sharper over time.`;
   }
   return { ready:true, archetype, desc, winRate, avgRR, disciplineRate, tradeCount: trades.length,
+    archivedTrades,
     topWinMood: topWinMood ? topWinMood[0] : null, topLossMood: topLossMood ? topLossMood[0] : null };
 }
 function renderTraderIdentity(){
@@ -13676,7 +13678,10 @@ function renderTraderIdentity(){
   const journey = renderJourneyRank();
   if(!id.ready){
     const left = 5 - id.count;
-    el.innerHTML = header + journey + `<div class="identity-empty">Log ${left} more trade${left===1?'':'s'} with a mood tag and a real read on how you trade will start forming here.</div>`;
+    const emptyCopy = id.archivedTrades>0
+      ? `${id.archivedTrades} cleared prop trade${id.archivedTrades===1?'':'s'} still count toward lifetime rank. Log ${left} more visible trade${left===1?'':'s'} to rebuild this live profile.`
+      : `Log ${left} more trade${left===1?'':'s'} with a mood tag and a real read on how you trade will start forming here.`;
+    el.innerHTML = header + journey + `<div class="identity-empty">${emptyCopy}</div>`;
     return;
   }
   const stripMoodEmoji = m => MOOD_LABELS[m]||m||'';
