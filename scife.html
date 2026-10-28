@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="SciFe">
-<meta name="theme-color" content="#0a100d">
+<meta name="theme-color" content="#050505">
 <meta name="robots" content="noindex,nofollow">
 <title>SciFe — Ghost Discipline</title>
 <script>(function(){try{var q=new URLSearchParams(location.search);var path=location.pathname;var quick=q.get('quick')==='1';var full=q.get('full')==='1';if(quick)document.documentElement.classList.add('quick-mode');if(location.protocol==='https:'&&/\/scife\.html$/i.test(path)){history.replaceState(null,'',path.replace(/scife\.html$/i,'companion')+location.search+location.hash);}if(!quick&&!full)location.replace(location.protocol==='https:'?new URL('home',location.href).href:new URL('index.html',location.href).href);if(location.protocol==='https:')document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('a[href]').forEach(function(link){try{var target=new URL(link.href,location.href);if(target.origin===location.origin&&/\/app\.html$/i.test(target.pathname)){target.pathname=target.pathname.replace(/app\.html$/i,'workspace');link.href=target.href;}}catch(e){}});});}catch(e){}})();</script>
@@ -1575,7 +1575,7 @@ setTimeout(function(){
   <section class="welcome-hero" aria-labelledby="welcomeTitle">
     <div class="welcome-copy">
       <span class="welcome-eyebrow"><i></i> A CLEARER SPACE TO THINK</span>
-      <h1 id="welcomeTitle">Make your next decision a deliberate one.</h1>
+      <h1 id="welcomeTitle">Think clearly. Trade with intention.</h1>
       <p>Review your journal, reset your mindset, or test a setup against your own rules.</p>
     </div>
     <div class="welcome-aside"><span class="welcome-aside-mark" aria-hidden="true"><svg class="ui-icon ui-icon-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></span><span>Start with one honest question.</span></div>
@@ -7081,7 +7081,7 @@ html[data-theme="dark"] body{
 @media(max-width:760px){#app{display:none;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(280px,1fr) auto;gap:0;padding:0 16px calc(16px + env(safe-area-inset-bottom));min-height:100dvh}#app>.topbar{grid-column:1;grid-row:1}#chatQuotaBanner{grid-column:1;grid-row:2}#stage3dWrap{grid-column:1;grid-row:3;height:145px;margin:0 0 14px}#stage{min-height:145px;height:145px}.neural-core-wrap{width:40%;height:90%;max-width:140px}.stage-hud,.stage-readout,.stage-metrics{display:none}.quick-row-wrap{grid-column:1;grid-row:4;margin:0 0 12px}.quick-row{display:flex;overflow-x:auto;gap:7px}.quick-chip{flex:none;min-height:34px;border-radius:999px;white-space:nowrap;padding:7px 11px}.chat-wrap{grid-column:1;grid-row:5;min-height:280px;border-radius:15px}.chat{padding:16px 13px}.composer{grid-column:1;grid-row:6;padding-top:10px}}
 @media(max-width:440px){#app{padding-inline:12px}.stage-3d-wrap{height:116px}#stage{min-height:116px;height:116px}.neural-core-wrap{width:32%;height:95%}.chat-wrap{min-height:260px}.topbar .back{font-size:11px}.quick-chip{font-size:10px}}
 /* Matching premium controls with short, inexpensive interactions. */
-html[data-theme]{--void:#050505;--void-2:#090909;--graphite:#111;--graphite-hi:#171717;--panel:rgba(17,17,17,.97);--panel-solid:#101010;--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#747b72;--bronze-bright:#b8cda9;--bronze:#91ad80;--gold:#d2bd91}
+html[data-theme]{--void:#050505;--void-2:#090909;--graphite:#111;--graphite-hi:#171717;--panel:rgba(17,17,17,.97);--panel-solid:#101010;--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#747b72}
 html[data-theme] body{background:#050505;color:var(--platinum);font-size:14px;line-height:1.62;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
 #app,#signalPage{color:var(--platinum)}
 .topbar,.chatQuotaBanner{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
@@ -7661,6 +7661,40 @@ html[data-theme] body:has(#app){background:radial-gradient(ellipse 64% 48% at 51
 #bootLoader .boot-bar::before{content:"";position:absolute;inset:0 auto 0 0;width:42%;border-radius:inherit;background:linear-gradient(90deg,transparent,#829f78,#c6ad79);animation:gdWorkspaceLoadProgress 1.25s ease-in-out infinite}
 #bootLoader .boot-bar span{display:none!important;animation:none!important}
 @keyframes gdWorkspaceLoadProgress{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
+/* SciFe shares the journal's graphite shell and lets the brand color carry the accents. */
+html[data-theme]{--void:#050505;--void-2:#090909;--graphite:#101112;--graphite-hi:#181a1b;--panel:rgba(16,17,18,.94);--panel-solid:#101112;--steel:rgba(238,240,237,.1);--steel-hi:rgba(238,240,237,.17);--platinum:#f1f2ef;--slate:#a3a7a2;--slate-dim:#747a75}
+html[data-theme] body:has(#app){background:radial-gradient(ellipse 70% 56% at 50% -8%,rgba(255,255,255,.085),transparent 70%),radial-gradient(ellipse 45% 38% at 84% 90%,color-mix(in srgb,var(--bronze-bright) 6%,transparent),transparent 78%),#050505!important}
+#app>.topbar{background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025)),rgba(9,10,10,.78);border-color:rgba(238,240,237,.16);backdrop-filter:blur(30px) saturate(165%);-webkit-backdrop-filter:blur(30px) saturate(165%)}
+#app>.topbar .title{color:var(--platinum)}
+#app>.topbar .back{background:rgba(255,255,255,.045);border-color:rgba(238,240,237,.15);color:#c5c9c3}
+#app>.topbar .back:hover{background:rgba(255,255,255,.09);border-color:rgba(238,240,237,.24);color:var(--platinum)}
+#app>.topbar .icon-btn{background:rgba(255,255,255,.05);border-color:rgba(238,240,237,.14);color:#c5c9c3}
+#stage{border-color:rgba(238,240,237,.16);background:radial-gradient(ellipse at 78% 12%,color-mix(in srgb,var(--bronze-bright) 12%,transparent),transparent 53%),linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018) 42%),linear-gradient(155deg,#171819,#0e0f10 73%);box-shadow:inset 0 1px rgba(255,255,255,.12),0 28px 64px -48px #000;backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%)}
+#stage .companion-brand h2{color:var(--platinum)}
+#stage .companion-brand p{color:#aaaea8}
+#stage .stage-status{color:var(--bronze-bright)}
+#app .welcome-hero{position:relative;overflow:hidden;padding:24px 25px;border:1px solid rgba(238,240,237,.14);border-radius:21px;background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.018) 46%),rgba(12,13,14,.68);box-shadow:inset 0 1px rgba(255,255,255,.09),0 24px 58px -44px #000;backdrop-filter:blur(25px) saturate(145%);-webkit-backdrop-filter:blur(25px) saturate(145%)}
+#app .welcome-eyebrow{color:var(--bronze-bright)}
+#app .welcome-copy h1{color:#f0f1ee}
+#app .welcome-copy p{color:#a1a6a0}
+#app .welcome-aside{color:#b7bcb4}
+#app .welcome-aside-mark{border-color:color-mix(in srgb,var(--bronze-bright) 32%,transparent);background:color-mix(in srgb,var(--bronze-bright) 11%,transparent);color:var(--bronze-bright)}
+#app .prompt-heading{color:#939992}
+#app .quick-chip.prompt-card{border-color:rgba(238,240,237,.13);background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018)),rgba(12,13,14,.69);box-shadow:inset 0 1px rgba(255,255,255,.07),0 18px 40px -32px #000;backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%)}
+#app .quick-chip.prompt-card:hover{border-color:color-mix(in srgb,var(--bronze-bright) 32%,rgba(238,240,237,.13));background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.03)),rgba(19,20,20,.78);transform:translateY(-2px)}
+#app .prompt-index{color:var(--bronze-bright)}
+#app .prompt-card-copy strong{color:#e8eae6}
+#app .prompt-card-copy small{color:#929891}
+#app .prompt-arrow{color:#c2c7bf}
+#app .chat-wrap{border-color:rgba(238,240,237,.13);background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018) 35%),rgba(10,11,12,.74);box-shadow:inset 0 1px rgba(255,255,255,.09),0 30px 72px -52px #000;backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%)}
+#app .chat:empty::before{color:#eaebe7}
+#app .chat:empty::after{color:#949a93}
+#app .bubble.system{background:rgba(255,255,255,.045);border-color:rgba(238,240,237,.1);color:#d4d7d1}
+#app .bubble.user{background:color-mix(in srgb,var(--bronze-bright) 13%,#161716);border-color:color-mix(in srgb,var(--bronze-bright) 22%,transparent);color:#f0f1ed}
+#app .composer-row{border-color:rgba(238,240,237,.17);background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.025)),rgba(12,13,14,.82);box-shadow:inset 0 1px rgba(255,255,255,.09),0 22px 52px -38px #000;backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%)}
+#app #textInput{color:var(--platinum)!important}
+#app .composer-row .btn,.quick-chip{border-color:rgba(238,240,237,.14)}
+@media(max-width:760px){#app .welcome-hero{padding:18px 17px;border-radius:17px}#app .chat-wrap{border-radius:17px}#app .composer-row{min-height:55px}}
 </style>
 
 </body>

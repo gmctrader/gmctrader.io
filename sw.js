@@ -14,10 +14,11 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v27';
+const CACHE_VERSION = 'gd-shell-v30';
 const APP_SHELL = [
   './index.html',
   './app.html',
+  './glass-interactions.js',
   './home',
   './workspace?signin=1',
   './companion?full=1',

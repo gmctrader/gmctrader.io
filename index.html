@@ -14,6 +14,7 @@
   <meta property="og:image" content="https://ghost-discipline.web.app/ghost-discipline-share-v2.png">
   <meta name="twitter:card" content="summary_large_image">
   <title>Ghost Discipline — Trade with intention</title>
+  <script defer src="glass-interactions.js"></script>
   <link rel="icon" type="image/png" href="ghost-discipline-icon-v3.png">
   <link rel="apple-touch-icon" href="ghost-discipline-icon-v3.png">
   <link rel="manifest" href="manifest.json">
@@ -116,6 +117,113 @@
     @media(max-width:720px){.preview-grid{grid-template-columns:1fr;gap:13px}.preview-card figcaption{padding:14px}.preview-caption-tag{font-size:7px}}
     @media(prefers-reduced-motion:reduce){.preview-card{transition:none}.preview-card:hover{transform:none}}
   </style>
+  <style>
+    /* Glass desk: floating navigation, luminous depth, and tactile product slides. */
+    :root{--glass-line:rgba(239,246,235,.16);--glass-fill:rgba(19,28,22,.48);--glass-hi:rgba(255,255,255,.09)}
+    body{padding-top:94px;background:radial-gradient(ellipse 70% 42% at 78% 4%,rgba(139,180,126,.2),transparent 72%),radial-gradient(ellipse 44% 38% at 7% 45%,rgba(105,145,128,.11),transparent 75%),#080d0a}
+    body::before{opacity:.38;background:radial-gradient(ellipse 70% 72% at 50% 100%,rgba(85,120,83,.19),transparent 76%),linear-gradient(rgba(220,236,214,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(220,236,214,.025) 1px,transparent 1px);background-size:auto,64px 64px,64px 64px;mask-image:linear-gradient(180deg,#000,transparent 84%)}
+    .nav{position:fixed;left:50%;right:auto;top:12px;z-index:100;width:min(calc(100% - 36px),1280px);transform:translateX(-50%);overflow:visible;border:1px solid var(--glass-line);border-radius:999px;background:linear-gradient(145deg,rgba(255,255,255,.095),rgba(255,255,255,.025) 42%,rgba(255,255,255,.045)),rgba(10,16,12,.58);backdrop-filter:blur(30px) saturate(165%);-webkit-backdrop-filter:blur(30px) saturate(165%);box-shadow:0 18px 54px -34px rgba(0,0,0,.9),inset 0 1px rgba(255,255,255,.16)}
+    .nav-inner{height:66px;width:100%;padding-inline:22px;gap:18px}
+    .brand{font-size:13px}.brand img{width:32px;height:32px;border-radius:11px;box-shadow:0 5px 18px rgba(0,0,0,.3)}
+    .nav-links{gap:clamp(14px,2vw,28px);color:rgba(230,237,226,.74);font-size:11px}
+    .nav-links a{padding:9px 0;transition:color .2s ease,text-shadow .2s ease}.nav-links a:hover{color:#fff;text-shadow:0 0 16px rgba(215,237,205,.28)}
+    .btn{border-radius:999px;border-color:rgba(239,246,235,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .btn-quiet{background:rgba(255,255,255,.055);box-shadow:inset 0 1px rgba(255,255,255,.07)}
+    .btn-primary{background:linear-gradient(145deg,#c8dfbd,#91b087);border-color:rgba(231,246,224,.48);box-shadow:0 8px 24px -12px rgba(142,185,129,.62),inset 0 1px rgba(255,255,255,.55)}
+    .hero{padding-top:36px}
+    .hero h1{text-shadow:0 12px 42px rgba(0,0,0,.32)}
+    .visual-stage{perspective:1500px}
+    .visual{border-color:rgba(239,246,235,.2);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.115),rgba(255,255,255,.025) 36%,rgba(255,255,255,.045)),rgba(12,19,14,.48);backdrop-filter:blur(28px) saturate(155%);-webkit-backdrop-filter:blur(28px) saturate(155%);box-shadow:0 48px 120px -54px rgba(0,0,0,.9),inset 0 1px rgba(255,255,255,.2),inset 0 -1px rgba(255,255,255,.035)}
+    .visual::before{background:radial-gradient(ellipse 75% 66% at 88% 0%,rgba(192,224,177,.2),transparent 72%),linear-gradient(125deg,rgba(255,255,255,.04),transparent 44%)}
+    .visual-stat,.visual-chart{border-color:rgba(239,246,235,.13);background:rgba(255,255,255,.045);backdrop-filter:blur(18px) saturate(135%);-webkit-backdrop-filter:blur(18px) saturate(135%)}
+    .visual-stat{box-shadow:inset 0 1px rgba(255,255,255,.075)}
+    .visual-chart{background:rgba(4,9,6,.32);box-shadow:inset 0 1px rgba(255,255,255,.06)}
+    .visual-float{border-color:rgba(239,246,235,.22);background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.035)),rgba(14,22,16,.53);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);box-shadow:0 24px 54px -28px rgba(0,0,0,.88),inset 0 1px rgba(255,255,255,.17)}
+    .visual-orbit{border-color:rgba(201,225,190,.15)}
+    .trust{border-color:rgba(239,246,235,.12);background:linear-gradient(90deg,transparent,rgba(255,255,255,.025),transparent)}
+    .method{background:linear-gradient(180deg,transparent,rgba(161,193,145,.055) 22%,rgba(161,193,145,.055) 78%,transparent)}
+    .method-card,.feature,.plan{border-color:rgba(239,246,235,.13);background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.018) 55%),rgba(15,22,17,.45);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);box-shadow:inset 0 1px rgba(255,255,255,.095),0 24px 64px -48px rgba(0,0,0,.85)}
+    .method-card:hover,.feature:hover,.plan:hover{border-color:rgba(218,237,207,.27);box-shadow:inset 0 1px rgba(255,255,255,.13),0 30px 74px -46px rgba(0,0,0,.88)}
+    .plan.featured{background:linear-gradient(145deg,rgba(184,216,166,.16),rgba(255,255,255,.035) 55%),rgba(13,21,15,.55);backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%)}
+    .market-section{border-color:rgba(239,246,235,.12);background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(8,13,10,.22))}
+    .market-embed,.market-watch-config{border-color:rgba(239,246,235,.16);background:rgba(255,255,255,.045);backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+    .market-watch-group{border-color:rgba(239,246,235,.13);background:rgba(255,255,255,.025)}
+    .preview-gallery{background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 34%)}
+    .preview-grid{perspective:1600px;transform-style:preserve-3d}
+    .preview-card{border-color:rgba(239,246,235,.17);border-radius:21px;background:linear-gradient(145deg,rgba(255,255,255,.095),rgba(255,255,255,.02) 44%),rgba(11,17,13,.54);backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%);box-shadow:0 28px 80px -54px rgba(0,0,0,.95),inset 0 1px rgba(255,255,255,.11);transform-style:preserve-3d}
+    .preview-card:nth-child(1){transform:rotateY(1.4deg) rotateX(-1deg)}.preview-card:nth-child(2){transform:rotateY(-1.4deg) rotateX(-1deg)}.preview-card:nth-child(3){transform:rotateY(1.4deg) rotateX(1deg)}.preview-card:nth-child(4){transform:rotateY(-1.4deg) rotateX(1deg)}
+    .preview-card:hover{transform:translate3d(0,-7px,20px) rotateX(2deg) rotateY(0deg);border-color:rgba(211,235,199,.34)}
+    .preview-card img{filter:saturate(.92) contrast(1.02);transform:translateZ(10px)}.preview-card figcaption{border-color:rgba(239,246,235,.1)}
+    .invite-cta{border-color:rgba(217,237,205,.24);background:radial-gradient(ellipse 70% 120% at 0% 100%,rgba(163,202,146,.18),transparent 80%),linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025)),rgba(13,20,15,.53);backdrop-filter:blur(28px) saturate(145%);-webkit-backdrop-filter:blur(28px) saturate(145%);box-shadow:inset 0 1px rgba(255,255,255,.13),0 36px 90px -62px #000}
+    .pro-offer-banner{border-color:rgba(201,230,190,.27);background:linear-gradient(100deg,rgba(181,215,167,.13),rgba(255,255,255,.025)),rgba(14,21,16,.45);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%)}
+    .faq{border-color:rgba(239,246,235,.12)}.faq details{border-color:rgba(239,246,235,.12)}
+    @media(max-width:720px){
+      body{padding-top:82px}
+      .nav{top:8px;width:calc(100% - 18px);border-radius:22px}
+      .nav-inner{height:60px;padding-inline:13px;gap:7px}
+      .nav-links{top:calc(100% + 8px);left:8px;right:8px;padding:16px;border:1px solid var(--glass-line);border-radius:20px;background:rgba(12,18,14,.78);backdrop-filter:blur(28px) saturate(155%);-webkit-backdrop-filter:blur(28px) saturate(155%);box-shadow:0 24px 60px -32px #000}
+      .nav-links a{width:100%;padding:8px 4px}
+      .hero{padding-top:25px}
+      .visual{background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025)),rgba(12,19,14,.56);backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%)}
+      .preview-card:nth-child(n){transform:none}
+      .preview-card:hover{transform:translateY(-3px)}
+    }
+    @media(prefers-reduced-motion:reduce){.preview-card,.preview-card:hover{transform:none!important}}
+  </style>
+  <style>
+    /* Nocturne glass: an ink-blue palette with an interactive, inertial slide deck. */
+    :root{color-scheme:dark;--bg:#050606;--bg-soft:#0c0e0d;--panel:#111412;--panel-2:#191d1a;--line:rgba(235,239,235,.09);--line-hi:rgba(235,239,235,.17);--text:#f1f3ef;--muted:#a8afa9;--quiet:#747d76;--mint:#a6c99e;--mint-deep:#587b59;--gold:#d3bd8b}
+    body{background:radial-gradient(ellipse 68% 42% at 78% 4%,rgba(255,255,255,.055),transparent 72%),radial-gradient(ellipse 42% 38% at 8% 42%,rgba(166,201,158,.055),transparent 76%),radial-gradient(ellipse 50% 40% at 52% 85%,rgba(255,255,255,.035),transparent 75%),#050606}
+    body::before{background:radial-gradient(ellipse 70% 72% at 50% 100%,rgba(166,201,158,.07),transparent 76%),linear-gradient(rgba(226,232,227,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(226,232,227,.02) 1px,transparent 1px);background-size:auto,68px 68px,68px 68px}
+    .nav{--glass-x:50%;--glass-y:0%;background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025) 42%,rgba(255,255,255,.04)),rgba(8,9,9,.62);box-shadow:0 18px 58px -34px rgba(0,0,0,.96),inset 0 1px rgba(255,255,255,.17)}
+    .nav::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;background:radial-gradient(440px circle at var(--glass-x) var(--glass-y),rgba(255,255,255,.13),transparent 62%);opacity:.68;transition:opacity .35s ease}
+    .nav-inner{position:relative;z-index:1}
+    .btn,.nav-links a,.preview-carousel-arrow,.preview-carousel-dots button{transition-timing-function:cubic-bezier(.22,1,.36,1)}
+    .btn-primary{background:linear-gradient(145deg,#c8ddb9,#8fab7a);border-color:rgba(226,241,216,.48);color:#10150f;box-shadow:0 8px 25px -13px rgba(150,185,126,.52),inset 0 1px rgba(255,255,255,.68)}
+    .visual-stage{perspective:1700px}
+    .visual{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.022) 38%,rgba(255,255,255,.035)),rgba(11,13,12,.62);box-shadow:0 48px 125px -54px rgba(0,0,0,.98),inset 0 1px rgba(255,255,255,.22),inset 0 -1px rgba(255,255,255,.04)}
+    .visual::before{background:radial-gradient(ellipse 74% 68% at 90% 0%,rgba(255,255,255,.12),transparent 72%),linear-gradient(125deg,rgba(255,255,255,.04),transparent 44%)}
+    .visual-stat,.visual-chart{border-color:rgba(230,240,255,.14)}
+    .visual-chart svg text{fill:#8e9cb0}
+    .visual-chart svg .equity-draw{stroke:#a6c99e}
+    .seal,.float-mark,.visual-stat span,.eyebrow{color:var(--mint)}
+    .market-live-dot{background:#79d69a;box-shadow:0 0 14px rgba(121,214,154,.58)}
+    .market-watch-option input{accent-color:#a6c99e}
+    .market-watch-custom button,.market-watch-reset{background:rgba(166,201,158,.1);color:#e2efdc}
+    .market-watch-custom button:hover,.market-watch-reset:hover{border-color:#a6c99e;background:rgba(166,201,158,.18)}
+    .market-foot a{color:#b9d4ad}
+    .feature-icon{color:#d7e7cf;border-color:rgba(166,201,158,.22);background:rgba(166,201,158,.075)}
+    .preview-carousel{position:relative;max-width:1200px;margin:0 auto;perspective:1700px;transform-style:preserve-3d}
+    .preview-grid{display:flex;align-items:stretch;gap:24px;width:100%;max-width:none;margin:0;padding:42px max(8vw,calc((100% - 760px)/2));overflow-x:auto;overflow-y:visible;scroll-snap-type:x mandatory;scroll-behavior:auto;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-y;cursor:grab;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.22,1,.36,1)}
+    .preview-grid::-webkit-scrollbar{display:none}.preview-grid.is-dragging{cursor:grabbing;scroll-snap-type:none;user-select:none;transition:none;transform:translate3d(var(--deck-rubber,0px),0,0)}
+    .preview-card{position:relative;flex:0 0 min(77vw,760px);width:min(77vw,760px);max-width:760px;overflow:hidden;border-color:rgba(235,239,235,.19);background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.022) 48%),rgba(9,11,10,.68);box-shadow:0 36px 96px -55px rgba(0,0,0,.98),inset 0 1px rgba(255,255,255,.14);scroll-snap-align:center;scroll-snap-stop:always;transform:translate3d(0,var(--card-lift,0px),var(--card-depth,-70px)) rotateY(var(--card-yaw,0deg)) scale(var(--card-scale,.91));opacity:var(--card-opacity,.62);transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .38s ease,border-color .38s ease,box-shadow .38s ease;will-change:transform,opacity}
+    .preview-card.is-centered{border-color:rgba(235,239,235,.28);box-shadow:0 42px 105px -56px rgba(0,0,0,.98),inset 0 1px rgba(255,255,255,.2)}
+    .preview-card::before{content:"";position:absolute;z-index:3;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(420px circle at var(--shine-x,50%) var(--shine-y,0%),rgba(255,255,255,.14),transparent 66%);mix-blend-mode:screen;opacity:.75}
+    .preview-grid.is-dragging .preview-card{transition:none}
+    .preview-card img{display:block;pointer-events:none;-webkit-user-drag:none;user-select:none;transform:translateZ(12px);filter:saturate(.9) contrast(1.04)}
+    .preview-card figcaption{position:relative;z-index:1;border-color:rgba(235,239,235,.11);background:rgba(9,11,10,.58);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%)}
+    .preview-carousel-controls{display:flex;align-items:center;justify-content:center;gap:19px;margin:2px auto 0}
+    .preview-carousel-arrow{display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(235,239,235,.16);border-radius:50%;background:rgba(255,255,255,.055);color:#e5e8e5;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.09);backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%);transition:transform .4s cubic-bezier(.22,1,.36,1),background .3s,border-color .3s}
+    .preview-carousel-arrow:hover{transform:scale(1.08);border-color:rgba(235,239,235,.27);background:rgba(255,255,255,.1)}.preview-carousel-arrow:active{transform:scale(.93)}
+    .preview-carousel-arrow svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .preview-carousel-dots{display:flex;align-items:center;gap:7px}
+    .preview-carousel-dots button{width:7px;height:7px;padding:0;border:0;border-radius:999px;background:rgba(235,239,235,.34);cursor:pointer;transition:width .42s cubic-bezier(.22,1,.36,1),background .3s,box-shadow .3s}
+    .preview-carousel-dots button[aria-current="true"]{width:24px;background:#b7d1a8;box-shadow:0 0 16px rgba(166,201,158,.38)}
+    .preview-carousel-hint{display:grid;gap:3px;margin-left:2px;color:#8793a6;font:8px var(--mono);letter-spacing:.1em;text-align:left}
+    .preview-carousel-hint b{color:#e2e5e0;font:500 10px var(--mono);letter-spacing:.08em}
+    .preview-disclaimer{color:#8995a8}
+    .method-card,.feature,.plan{background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.018) 55%),rgba(13,19,29,.5)}
+    .plan.featured{background:linear-gradient(145deg,rgba(153,195,249,.16),rgba(255,255,255,.035) 55%),rgba(10,16,27,.58)}
+    @media(max-width:720px){
+      .preview-grid{gap:13px;padding:28px 5vw 32px;scroll-padding-inline:5vw}
+      .preview-card{flex-basis:90vw;width:90vw;max-width:560px;border-radius:19px}
+      .preview-carousel-controls{gap:12px}.preview-carousel-arrow{width:38px;height:38px}.preview-carousel-hint{font-size:7px}
+    }
+    .preview-card:nth-child(n){transform:perspective(1300px) translate3d(0,var(--card-lift,0px),var(--card-depth,-70px)) rotateY(var(--card-yaw,0deg)) scale(var(--card-scale,.91))}
+    .preview-card:hover{transform:perspective(1300px) translate3d(0,var(--card-lift,0px),var(--card-depth,-70px)) rotateY(var(--card-yaw,0deg)) scale(var(--card-scale,.91))}
+    @media(max-width:720px){.preview-card:nth-child(n),.preview-card:hover{transform:perspective(1300px) translate3d(0,var(--card-lift,0px),var(--card-depth,-70px)) rotateY(var(--card-yaw,0deg)) scale(var(--card-scale,.91))}}
+    @media(prefers-reduced-motion:reduce){.preview-grid{scroll-behavior:auto}.preview-card,.preview-carousel-arrow,.preview-carousel-dots button{transition:none!important}}
+  </style>
 </head>
 <body>
   <header class="nav" id="top">
@@ -194,12 +302,12 @@
       <article class="feature"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/><circle cx="12" cy="12" r="4"/></svg></span><h3>SciFe Scan POV</h3><p>See an independent chart read and review suggested strategy-note refinements before saving.</p></article>
     </div></div></section>
 
-    <section class="section preview-gallery" id="preview-gallery" aria-labelledby="previewTitle"><div class="wrap"><div class="section-head"><div class="eyebrow">Inside the workspace</div><h2 id="previewTitle">A closer look at the process.</h2><p>Browser-free sample screens styled to match the workspace. Trades, figures, and conversation below are fictional demo content—not a live account.</p></div><div class="preview-grid">
+    <section class="section preview-gallery" id="preview-gallery" aria-labelledby="previewTitle"><div class="wrap"><div class="section-head"><div class="eyebrow">Inside the workspace</div><h2 id="previewTitle">A closer look at the process.</h2><p>Drag the glass deck to move between the trading brief, journal, analytics, and SciFe.</p></div><div class="preview-carousel" id="previewCarousel"><div class="preview-grid" id="previewTrack" tabindex="0" role="group" aria-label="Product preview slides">
       <figure class="preview-card"><img src="preview-daily-brief.svg" alt="Daily Brief sample screen with a four-pair watchlist and pre-session checklist; no live quotes" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>Daily Brief &amp; Pair Watch</strong><span>Choose the markets you follow and keep your session plan close.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
       <figure class="preview-card"><img src="preview-trade-journal.svg" alt="Trade Journal sample screen with three fictional trade rows and review tags" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>Trade Journal</strong><span>Keep the setup, decision, result, and chart reference together.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
       <figure class="preview-card"><img src="preview-analytics.svg" alt="Analytics sample screen with fictional statistics and a synthetic equity curve" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>Analytics &amp; review</strong><span>See how a sample record can reveal patterns in a trading process.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
       <figure class="preview-card"><img src="preview-scife.svg" alt="SciFe sample screen with reflective prompts and a fictional conversation" loading="lazy" width="1440" height="810"><figcaption><span class="preview-caption-copy"><strong>SciFe reflection</strong><span>Ask thoughtful questions about your journal and next steps.</span></span><span class="preview-caption-tag">Fictional demo</span></figcaption></figure>
-    </div><p class="preview-disclaimer">All names, dates, trades, charts, and metrics in these previews are fictional examples for illustration only. They are not live market quotes, actual user results, or financial advice.</p></div></section>
+    </div><div class="preview-carousel-controls"><button class="preview-carousel-arrow" id="previewPrev" type="button" aria-label="Previous product slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="preview-carousel-dots" id="previewDots" role="group" aria-label="Choose a product slide"><button type="button" aria-label="Show Daily Brief" aria-current="true"></button><button type="button" aria-label="Show Trade Journal"></button><button type="button" aria-label="Show Analytics"></button><button type="button" aria-label="Show SciFe"></button></div><span class="preview-carousel-hint"><b id="previewSlideCount">01 / 04</b><span>DRAG TO EXPLORE</span></span><button class="preview-carousel-arrow" id="previewNext" type="button" aria-label="Next product slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div></div><p class="preview-disclaimer">All names, dates, trades, charts, and metrics in these previews are fictional examples for illustration only. They are not live market quotes, actual user results, or financial advice.</p></div></section>
 
     <section class="section membership" id="membership"><div class="wrap"><div class="section-head"><div class="eyebrow">Membership</div><h2>Start with the journal.<br>Grow into the full desk.</h2><p>Create a free account to begin. Upgrade to a paid package when you are ready.</p></div><div class="pro-offer-banner"><div class="pro-offer-copy"><span class="pro-offer-label">Pro launch offer</span><div class="pro-offer-price"><strong>R299</strong><del>R499</del><small>/ 30 days</small></div><span class="pro-offer-savings">Save R200</span></div><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1&amp;plan=pro">Get Pro · R299</a></div><div class="plans">
       <article class="plan"><div class="plan-label">A considered start</div><h3>Free</h3><div class="price">R0 <small>/ forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><a class="btn btn-quiet" href="app.html?signin=1&amp;signup=1">Create free account</a></article>

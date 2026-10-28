@@ -16,9 +16,10 @@ try{
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Ghost Discipline">
-<meta name="theme-color" content="#0a100d">
+<meta name="theme-color" content="#050505">
 <meta name="robots" content="noindex,nofollow">
 <title>Ghost Discipline — GMC Traders</title>
+<script defer src="glass-interactions.js"></script>
 <script>document.documentElement.setAttribute('data-theme','slate');</script>
 <script>
 /* Graceful fallback if /ghost-discipline-logo-v2.png is missing/slow: swap the broken-image
@@ -2725,7 +2726,7 @@ setTimeout(function(){
   <div class="auth-vignette"></div>
   <div class="auth-wrap">
     <div class="auth-brand">
-      <p class="auth-kicker">GMC Traders · Trading terminal</p>
+      <p class="auth-kicker">Ghost Discipline · Trading workspace</p>
       <p style="margin:-6px 0 8px 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">
         <a href="index.html" style="color:var(--bronze-bright);text-decoration:none;font-weight:600;">← Back to the front door</a>
       </p>
@@ -2758,8 +2759,17 @@ setTimeout(function(){
       </ul>
     </div>
     <form class="auth-card" onsubmit="event.preventDefault();handleAuthSubmit();" autocomplete="on">
+      <div class="auth-card-head">
+        <span class="auth-card-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6v5c0 4.7-3 8-8 10-5-2-8-5.3-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></svg></span>
+        <span class="auth-card-brand"><small>GHOST DISCIPLINE</small><strong>MEMBER WORKSPACE</strong></span>
+        <span class="auth-card-kicker">ACCOUNT<br>ACCESS</span>
+      </div>
+      <div class="auth-mode-switch" id="authModeSwitch" role="group" aria-label="Choose sign-in or account creation">
+        <button type="button" id="authModeSignIn" aria-pressed="true" onclick="setAuthMode('signin')">Sign in</button>
+        <button type="button" id="authModeSignUp" aria-pressed="false" onclick="setAuthMode('signup')">Create account</button>
+      </div>
       <h2 class="auth-title">Sign in</h2>
-      <div class="auth-sub">Sign in to your account, or create a free account to get started.</div>
+      <div class="auth-sub">Sign in with your email or Google. New here? Create a free account to get started.</div>
       <div class="auth-msg" id="authMsg" role="alert"></div>
       <div class="auth-field">
         <label for="authEmail">Email</label>
@@ -2779,7 +2789,7 @@ setTimeout(function(){
         <label class="remember-me"><input type="checkbox" id="rememberMe"><span class="remember-box" aria-hidden="true"></span><span>Remember me <small>for 2 days</small></span></label>
         <button type="button" class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</button>
       </div>
-      <button type="submit" class="btn-gold" id="authSubmitBtn"><span class="btn-spinner"></span><span class="btn-label" id="authSubmitLabel">Enter the terminal</span></button>
+      <button type="submit" class="btn-gold" id="authSubmitBtn"><span class="btn-spinner"></span><span class="btn-label" id="authSubmitLabel">Continue to workspace</span></button>
       <div class="auth-social-divider" aria-hidden="true"><span>Or continue with</span></div>
       <div class="auth-social-buttons">
         <button type="button" class="auth-social-btn" onclick="handleOAuthSignIn('google',this)">
@@ -3036,6 +3046,9 @@ setTimeout(function(){
         <span>AI Trading Journal</span>
       </div>
       <div class="ai-live-pill" title="AI Copilot is reading your live data"><span class="ai-live-dot"></span>AI</div>
+      <button class="side-close" type="button" onclick="toggleSidebar(false)" aria-label="Close navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
     </div>
     <div class="side-discipline-pill" id="sideDisciplinePill" onclick="document.querySelector('.side-navbtn[data-view=dashboard]').click(); toggleSidebar(false);">
       <div class="sdp-streak" id="sdpStreak">0</div>
@@ -3239,7 +3252,7 @@ setTimeout(function(){
       <span class="pb-dot" id="planBadgeDotMobile"></span>
       <span id="planBadgeLabelMobile">Free</span>
     </div>
-    <button class="hamburger" onclick="toggleSidebar()" aria-label="Open menu"><span></span></button>
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span></span></button>
   </div>
 
   <!-- Persistent top-right badge (desktop): current plan + a green/red
@@ -3266,7 +3279,7 @@ setTimeout(function(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/></svg>
       <span>Orders</span>
     </button>
-    <button class="tab-btn" id="tabMoreBtn" onclick="toggleSidebar(true)">
+    <button class="tab-btn" id="tabMoreBtn" onclick="toggleSidebar(true)" aria-controls="sidebar" aria-expanded="false" aria-label="More navigation">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
       <span>More</span>
     </button>
@@ -3340,9 +3353,23 @@ setTimeout(function(){
           <h2 class="page-title">Overview</h2>
           <div class="page-sub">Trade the plan, not the moment.</div>
         </div>
-        <div class="topbar-actions">
-          <select class="trader-filter" id="globalTraderFilter" onchange="onTraderFilterChange()"></select>
-          <select class="trader-filter" id="globalAccountScope" onchange="onAccountScopeChange()"></select>
+        <div class="topbar-actions overview-topbar-actions">
+          <div class="overview-filter-bar" id="overviewFilterBar" aria-label="Overview filters">
+            <div class="overview-filter" data-overview-filter="trader">
+              <button class="overview-filter-trigger" type="button" id="overviewTraderTrigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="overviewTraderMenu">
+                <span class="overview-filter-glyph" id="overviewTraderGlyph" aria-hidden="true">∑</span><span class="overview-filter-copy"><small>TRADER</small><strong id="overviewTraderValue">All Traders</strong></span><svg class="overview-filter-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+              </button>
+              <div class="overview-filter-menu" id="overviewTraderMenu" role="listbox" aria-label="Choose trader" hidden></div>
+              <select class="overview-source-select" id="globalTraderFilter" onchange="onTraderFilterChange()" aria-label="Trader filter" tabindex="-1" hidden></select>
+            </div>
+            <div class="overview-filter" data-overview-filter="account">
+              <button class="overview-filter-trigger" type="button" id="overviewAccountTrigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="overviewAccountMenu">
+                <span class="overview-filter-glyph account-glyph" id="overviewAccountGlyph" aria-hidden="true">A</span><span class="overview-filter-copy"><small>ACCOUNT</small><strong id="overviewAccountValue">All Accounts</strong></span><svg class="overview-filter-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+              </button>
+              <div class="overview-filter-menu" id="overviewAccountMenu" role="listbox" aria-label="Choose account" hidden></div>
+              <select class="overview-source-select" id="globalAccountScope" onchange="onAccountScopeChange()" aria-label="Account filter" tabindex="-1" hidden></select>
+            </div>
+          </div>
           <button class="btn btn-primary btn-sm" onclick="openPretrade()">+ Log a Trade</button>
         </div>
       </div>
@@ -3459,8 +3486,16 @@ setTimeout(function(){
           <div>
             <h2 style="margin-bottom:4px">Equity <span class="accent">Curve</span></h2>
             <div class="equity-sub" id="equitySubOverview">cumulative P/L, all logged trades</div>
+            <div class="overview-equity-context" id="overviewEquityContext">All traders · All accounts</div>
           </div>
-          <div class="equity-total" id="equityTotalOverview">$0</div>
+          <div class="overview-equity-toolbar">
+            <div class="overview-equity-ranges" id="overviewEquityRanges" role="group" aria-label="Equity curve time range">
+              <button type="button" data-overview-range="30" aria-pressed="false">30D</button>
+              <button type="button" data-overview-range="90" aria-pressed="false">90D</button>
+              <button type="button" data-overview-range="all" aria-pressed="true">ALL</button>
+            </div>
+            <div class="equity-total" id="equityTotalOverview">$0</div>
+          </div>
         </div>
         <div class="equity-wrap"><div class="equity-inner" id="equityChartOverview"></div></div>
       </div>
@@ -4987,6 +5022,7 @@ function resetMoodChoices(preselected){
 }
 let calViewDate = new Date();
 let activeTraderFilter = 'all';
+let activeOverviewEquityRange = 'all';
 // ============ ACCOUNT SCOPE (separates Personal from Prop Firm everywhere) ============
 // 'personal' (default), 'prop' (all prop firms), 'all' (combined), or one firm id.
 // Drives filteredTrades()/renderOrders() so the main Overview/Analytics/
@@ -5017,15 +5053,104 @@ function renderAccountScopeOptions(){
     if(![...el.options].some(o=>o.value===activeAccountScope)) activeAccountScope = 'personal';
     el.value = activeAccountScope;
   });
+  renderOverviewPickers();
 }
-function onAccountScopeChange(){
-  const evtEl = document.activeElement;
+function onAccountScopeChange(sourceEl){
+  const evtEl = sourceEl && sourceEl.target ? sourceEl.target : (sourceEl || document.activeElement);
   activeAccountScope = evtEl && evtEl.value ? evtEl.value : 'personal';
   ['globalAccountScope','globalAccountScope2','globalAccountScope3','globalAccountScope4','globalAccountScope5'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = activeAccountScope;
   });
   renderAll();
+  renderOverviewPickers();
+}
+function overviewScopeMatches(account, scope){
+  const value = account || 'personal';
+  if(scope==='all') return true;
+  if(scope==='personal') return value==='personal';
+  if(scope==='prop') return value!=='personal';
+  return value===scope || value==='propfirm';
+}
+function overviewFilterCount(type, value){
+  const trades = typeof liveTrades==='function' ? liveTrades() : (state.trades||[]);
+  return trades.filter(trade=>{
+    const trader = type==='trader' ? value : activeTraderFilter;
+    const scope = type==='account' ? value : activeAccountScope;
+    if(trader!=='all' && trade.trader!==trader) return false;
+    return overviewScopeMatches(trade.account, scope);
+  }).length;
+}
+function overviewFilterDetail(type, value){
+  if(type==='trader') return value==='all' ? 'Every trader in this workspace' : 'Individual trader activity';
+  if(value==='personal') return 'Personal trading ledger';
+  if(value==='prop') return 'All prop challenge accounts';
+  if(value==='all') return 'Combined account view';
+  return 'Individual challenge account';
+}
+function overviewInitials(label, fallback){
+  const words=String(label||'').trim().split(/\s+/).filter(Boolean);
+  if(words.length>1) return (words[0][0]+words[1][0]).toUpperCase();
+  return words[0] ? words[0].slice(0,2).toUpperCase() : fallback;
+}
+function renderOverviewPickers(){
+  const configs=[
+    {type:'trader',source:'globalTraderFilter',trigger:'overviewTraderTrigger',menu:'overviewTraderMenu',value:'overviewTraderValue',glyph:'overviewTraderGlyph',fallback:'T',label:'trader'},
+    {type:'account',source:'globalAccountScope',trigger:'overviewAccountTrigger',menu:'overviewAccountMenu',value:'overviewAccountValue',glyph:'overviewAccountGlyph',fallback:'A',label:'account'}
+  ];
+  configs.forEach(config=>{
+    const source=document.getElementById(config.source),trigger=document.getElementById(config.trigger),menu=document.getElementById(config.menu);
+    if(!source||!trigger||!menu) return;
+    const selected=source.options[source.selectedIndex]||source.options[0];
+    const selectedLabel=(selected?.textContent||'').trim()||'Choose '+config.label;
+    const valueNode=document.getElementById(config.value),glyphNode=document.getElementById(config.glyph);
+    if(valueNode) valueNode.textContent=selectedLabel;
+    if(glyphNode) glyphNode.textContent=overviewInitials(selectedLabel,config.fallback);
+    trigger.setAttribute('aria-label','Choose '+config.label+': '+selectedLabel);
+    menu.replaceChildren();
+    [...source.options].forEach(option=>{
+      const label=option.textContent.trim(),isSelected=option.value===source.value;
+      const item=document.createElement('button');
+      item.type='button';item.className='overview-filter-option';item.setAttribute('role','option');item.setAttribute('aria-selected',String(isSelected));item.tabIndex=isSelected?0:-1;
+      const glyph=document.createElement('span');glyph.className='overview-filter-option-glyph';glyph.textContent=overviewInitials(label,config.fallback);
+      const copy=document.createElement('span');copy.className='overview-filter-option-copy';
+      const title=document.createElement('strong');title.textContent=label;
+      const detail=document.createElement('small');detail.textContent=overviewFilterDetail(config.type,option.value);
+      copy.append(title,detail);
+      const count=document.createElement('span');count.className='overview-filter-option-count';const tradeCount=overviewFilterCount(config.type,option.value);count.textContent=tradeCount+' '+(tradeCount===1?'trade':'trades');
+      const check=document.createElement('span');check.className='overview-filter-option-check';check.setAttribute('aria-hidden','true');check.textContent='✓';
+      item.append(glyph,copy,count,check);
+      item.addEventListener('click',()=>{
+        source.value=option.value;menu.hidden=true;trigger.setAttribute('aria-expanded','false');
+        if(config.type==='trader') onTraderFilterChange(source); else onAccountScopeChange(source);
+        trigger.focus({preventScroll:true});
+      });
+      menu.append(item);
+    });
+    if(trigger.dataset.overviewPickerReady) return;
+    trigger.dataset.overviewPickerReady='true';
+    trigger.addEventListener('click',()=>{
+      renderOverviewPickers();
+      const opening=menu.hidden;
+      document.querySelectorAll('.overview-filter-menu').forEach(other=>{other.hidden=true;document.querySelector('[aria-controls="'+other.id+'"]')?.setAttribute('aria-expanded','false');});
+      menu.hidden=!opening;trigger.setAttribute('aria-expanded',String(opening));
+      if(opening) menu.querySelector('[aria-selected="true"]')?.focus({preventScroll:true});
+    });
+    menu.addEventListener('keydown',event=>{
+      const options=[...menu.querySelectorAll('[role="option"]')],index=options.indexOf(document.activeElement);let next=-1;
+      if(event.key==='ArrowDown') next=(index+1+options.length)%options.length;
+      else if(event.key==='ArrowUp') next=(index-1+options.length)%options.length;
+      else if(event.key==='Home') next=0;
+      else if(event.key==='End') next=options.length-1;
+      else if(event.key==='Escape'){event.preventDefault();menu.hidden=true;trigger.setAttribute('aria-expanded','false');trigger.focus();return;}
+      if(next>=0){event.preventDefault();options[next]?.focus();}
+    });
+  });
+  if(!document.documentElement.dataset.overviewPickerDismissReady){
+    document.documentElement.dataset.overviewPickerDismissReady='true';
+    document.addEventListener('pointerdown',event=>{if(event.target.closest('.overview-filter')) return;document.querySelectorAll('.overview-filter-menu').forEach(menu=>{menu.hidden=true;document.querySelector('[aria-controls="'+menu.id+'"]')?.setAttribute('aria-expanded','false');});});
+    document.addEventListener('keydown',event=>{if(event.key!=='Escape') return;document.querySelectorAll('.overview-filter-menu').forEach(menu=>{menu.hidden=true;document.querySelector('[aria-controls="'+menu.id+'"]')?.setAttribute('aria-expanded','false');});});
+  }
 }
 // True if a trade/order's account tag belongs to the currently active scope.
 // Treats the legacy generic "propfirm" tag (older SciFe-logged trades, before
@@ -5502,9 +5627,33 @@ document.addEventListener('DOMContentLoaded', initGdMotionUI);
 function toggleSidebar(force){
   const sbEl = document.getElementById('sidebar');
   const scrim = document.getElementById('sidebarScrim');
+  if(!sbEl||!scrim) return;
+  const wasOpen = sbEl.classList.contains('open');
   const open = typeof force === 'boolean' ? force : !sbEl.classList.contains('open');
+  if(open&&!wasOpen) window.gdSidebarReturnFocus=document.activeElement;
   sbEl.classList.toggle('open', open);
-  scrim.classList.toggle('show', open);
+  clearTimeout(window.gdSidebarScrimTimer);
+  if(open){scrim.classList.remove('closing');scrim.classList.add('show');}
+  else if(wasOpen){scrim.classList.add('closing');window.gdSidebarScrimTimer=setTimeout(()=>{if(!sbEl.classList.contains('open'))scrim.classList.remove('show','closing');},380);}
+  else scrim.classList.remove('show','closing');
+  document.body.classList.toggle('gd-sidebar-open',open);
+  document.querySelectorAll('.hamburger[aria-controls="sidebar"],#tabMoreBtn[aria-controls="sidebar"]').forEach(button=>{
+    button.setAttribute('aria-expanded',String(open));
+    if(button.classList.contains('hamburger')) button.setAttribute('aria-label',open?'Close navigation':'Open navigation');
+  });
+  if(!sbEl.dataset.keyboardDismissReady){
+    sbEl.dataset.keyboardDismissReady='1';
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&sbEl.classList.contains('open')){event.preventDefault();toggleSidebar(false);}
+    });
+  }
+  if(open&&!wasOpen){
+    requestAnimationFrame(()=>sbEl.querySelector('.side-close')?.focus({preventScroll:true}));
+  }else if(!open&&wasOpen){
+    const returnFocus=window.gdSidebarReturnFocus;
+    window.gdSidebarReturnFocus=null;
+    if(returnFocus?.isConnected) requestAnimationFrame(()=>returnFocus.focus({preventScroll:true}));
+  }
 }
 
 /* ============ AUTH ============ */
@@ -5642,10 +5791,12 @@ function setAuthMode(mode){
   const requestedTier = query.get('plan');
   const tierLabel = requestedTier ? (TIER_LABELS[requestedTier] || requestedTier) : '';
   document.querySelector('#authScreen .auth-title').textContent = signup ? 'Create your account' : 'Sign in';
+  document.getElementById('authModeSignIn')?.setAttribute('aria-pressed',String(!signup));
+  document.getElementById('authModeSignUp')?.setAttribute('aria-pressed',String(signup));
   document.querySelector('#authScreen .auth-sub').textContent = signup
     ? (tierLabel ? `Create your account for ${tierLabel}. Email signup sends a confirmation link; check Spam or Junk if it’s missing.` : 'Create a free account with email or Google. Email signup sends a confirmation link; check Spam or Junk if it’s missing.')
     : 'Sign in with your email or Google. New here? Create a free account to get started.';
-  document.getElementById('authSubmitLabel').textContent = signup ? 'Create free account' : 'Enter the terminal';
+  document.getElementById('authSubmitLabel').textContent = signup ? 'Create free account' : 'Continue to workspace';
   document.getElementById('authPassword').autocomplete = signup ? 'new-password' : 'current-password';
   document.querySelector('.auth-options-row').style.display = signup ? 'none' : '';
   document.getElementById('authFoot').innerHTML = signup
@@ -8545,15 +8696,17 @@ function renderTraderFilterOptions(){
     el.innerHTML = opts.join('');
     el.value = activeTraderFilter;
   });
+  renderOverviewPickers();
 }
-function onTraderFilterChange(){
-  const evtEl = document.activeElement;
+function onTraderFilterChange(sourceEl){
+  const evtEl = sourceEl && sourceEl.target ? sourceEl.target : (sourceEl || document.activeElement);
   activeTraderFilter = evtEl && evtEl.value ? evtEl.value : 'all';
   ['globalTraderFilter','globalTraderFilter2','globalTraderFilter3','globalTraderFilter4','globalTraderFilter5','globalTraderFilter6'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = activeTraderFilter;
   });
   renderAll();
+  renderOverviewPickers();
 }
 // Every live view (Journal, Analytics, Calendar, Order Book, leaderboards,
 // periodic review, confluence auto-detect) reads trades through here or
@@ -11921,20 +12074,39 @@ function triggerAnalyticsOpenFeel(){
 // { trades, sym, pnl, label, axisOffset, refLines, fitRefs, emptyHtml, sub, onStats, onEmpty }.
 // Charts without an entry behave exactly as before.
 var EQ_OPTS_PROVIDERS = {};
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-overview-range]');
+  if(!button) return;
+  activeOverviewEquityRange=button.dataset.overviewRange||'all';
+  renderEquityChart('equityChartOverview','equityTotalOverview','equitySubOverview');
+});
 function renderEquityChart(containerId, totalId, subId, tallPx){
   const container = document.getElementById(containerId);
   const totalEl = document.getElementById(totalId);
   if(!container) return;
   const eqO = (typeof EQ_OPTS_PROVIDERS!=='undefined' && EQ_OPTS_PROVIDERS[containerId]) ? EQ_OPTS_PROVIDERS[containerId]() : null;
-  const trades = eqO ? eqO.trades : filteredTrades();
+  let trades = eqO ? eqO.trades : filteredTrades();
   const eqLabel = eqO ? eqO.label : accountScopeLabel(activeAccountScope);
   const eqSym = eqO ? eqO.sym : scopeCurSym();
   const eqPnl = eqO ? eqO.pnl : scopePnlOf;
   const eqOff = eqO ? (eqO.axisOffset||0) : 0;
+  if(containerId==='equityChartOverview'&&!eqO&&activeOverviewEquityRange!=='all'){
+    const cutoff=new Date(todayStr()+'T00:00:00');
+    cutoff.setDate(cutoff.getDate()-Number(activeOverviewEquityRange)+1);
+    const from=[cutoff.getFullYear(),String(cutoff.getMonth()+1).padStart(2,'0'),String(cutoff.getDate()).padStart(2,'0')].join('-');
+    trades=trades.filter(trade=>trade.date&&trade.date>=from);
+  }
   const subElEmpty = subId ? document.getElementById(subId) : null;
-  if(subElEmpty) subElEmpty.textContent = 'cumulative P/L · ' + eqLabel;
+  const overviewRangeLabel=activeOverviewEquityRange==='all'?'all time':activeOverviewEquityRange+' days';
+  if(subElEmpty) subElEmpty.textContent = containerId==='equityChartOverview' ? 'cumulative P/L · '+overviewRangeLabel : 'cumulative P/L · '+eqLabel;
+  if(containerId==='equityChartOverview'){
+    const trader=activeTraderFilter==='all'?'All traders':(state.psychology.traders.find(item=>String(item.id)===String(activeTraderFilter))?.name||'Selected trader');
+    const context=document.getElementById('overviewEquityContext');
+    if(context) context.textContent=trader+' · '+eqLabel;
+    document.querySelectorAll('#overviewEquityRanges [data-overview-range]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.overviewRange===activeOverviewEquityRange)));
+  }
   if(trades.length===0){
-    container.innerHTML = eqO ? eqO.emptyHtml : `<div class="empty-state"><span class="glyph"></span>No trades yet on ${escapeHtml(eqLabel)} — your equity curve will build as you log trades.</div>`;
+    container.innerHTML = eqO ? eqO.emptyHtml : `<div class="empty-state"><span class="glyph"></span>${activeOverviewEquityRange==='all'?'No trades yet on '+escapeHtml(eqLabel)+' — your equity curve will build as you log trades.':'No trades in this window for '+escapeHtml(eqLabel)+' — choose a longer range to see more history.'}</div>`;
     if(totalEl){ totalEl.textContent=eqSym+'0'; totalEl.className='equity-total'; }
     if(eqO && eqO.onEmpty) eqO.onEmpty(); else { setEquityStats([]); setEquityFooter([]); }
     return;
@@ -14068,7 +14240,7 @@ async function handleGetApp(){
 /* ============ FIXED BRAND PALETTE ============ */
 // Keep the signature palette consistent across the app and start page.
 const GD_THEMES = ['slate'];
-const GD_THEME_COLOR = { slate:'#0a100d' };
+const GD_THEME_COLOR = { slate:'#050505' };
 function applyGdTheme(){
   document.documentElement.setAttribute('data-theme', 'slate');
   const meta = document.querySelector('meta[name="theme-color"]');
@@ -15954,7 +16126,7 @@ html[data-theme] .card,html[data-theme] .modal,html[data-theme] .auth-card{backg
 @media(max-height:900px){#appShell.show>.sidebar .side-navbtn{min-height:23px;height:23px;padding:2px 6px;font-size:9px}#appShell.show>.sidebar .side-nav-label{padding-top:4px}#appShell.show>.sidebar .side-divider{margin:2px 7px}#appShell.show>.sidebar .side-session{min-height:26px;padding:3px 8px;margin-bottom:3px;font-size:8px}#appShell.show>.sidebar .side-logout{min-height:29px;padding:4px}#appShell.show>.sidebar .side-device{margin-top:4px;padding-top:4px}#appShell.show>.sidebar .side-device-label{margin-bottom:2px}#appShell.show>.sidebar .side-reset-btn{min-height:27px;padding:4px 7px;font-size:9px}#appShell.show>.sidebar .side-device-hint{display:none}}
 @media(max-height:740px){#appShell.show>.sidebar .side-navbtn{min-height:21px;height:21px;padding:1px 5px;font-size:8.5px}#appShell.show>.sidebar .side-nav-label{padding-top:3px}#appShell.show>.sidebar .side-session{min-height:23px;padding:2px 7px;margin-bottom:2px}}
 /* Premium control and type finish, tuned for low-power devices. */
-html[data-theme]{--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#7d857b;--bronze-bright:#b8cda9;--bronze:#91ad80;--gold:#d2bd91;--panel:#111;--panel-solid:#101010}
+html[data-theme]{--steel:rgba(238,240,233,.09);--steel-hi:rgba(238,240,233,.16);--platinum:#f2f1e9;--slate:#a4aaa0;--slate-dim:#7d857b;--panel:#111;--panel-solid:#101010}
 body{font-size:14px;line-height:1.62;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
 .page-title{font-size:clamp(27px,2.5vw,34px);letter-spacing:-.04em;filter:none}
 .page-sub,.hint,.card .hint{line-height:1.7;color:var(--slate)}
@@ -15963,25 +16135,25 @@ body{font-size:14px;line-height:1.62;letter-spacing:.005em;-webkit-font-smoothin
 .card h2{font-size:17px;letter-spacing:-.02em;line-height:1.35}
 .btn,.btn-gold,.btn-primary,.btn-ghost,.btn-danger,.side-logout,.side-reset-btn,.side-navbtn,.tab-btn,.theme-swatch,.card-expand-btn{font-family:'Instrument Sans',system-ui,sans-serif;letter-spacing:.01em;transition:color .14s ease,background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .btn,.btn-gold{min-height:42px;padding:10px 17px;border:1px solid var(--steel-hi);border-radius:10px;font-size:12px;font-weight:600;box-shadow:none}
-.btn-primary,.btn-gold{color:#10120d;background:linear-gradient(145deg,#c4d4b2,#a5bd92);border-color:rgba(215,231,200,.28);box-shadow:0 5px 14px -11px rgba(184,205,169,.8),inset 0 1px rgba(255,255,255,.32)}
+.btn-primary,.btn-gold{color:var(--bronze-ink);background:linear-gradient(145deg,var(--bronze-bright),var(--bronze));border-color:color-mix(in srgb,var(--bronze-bright) 38%,transparent);box-shadow:0 5px 14px -11px color-mix(in srgb,var(--bronze-bright) 80%,transparent),inset 0 1px rgba(255,255,255,.32)}
 .btn-primary::before,.btn::after{display:none!important;animation:none!important}
-.btn-primary:hover,.btn-gold:hover{filter:none;background:linear-gradient(145deg,#d0ddc2,#b1c89e);transform:translateY(-1px);box-shadow:0 7px 16px -12px rgba(184,205,169,.75)}
+.btn-primary:hover,.btn-gold:hover{filter:none;background:linear-gradient(145deg,color-mix(in srgb,var(--bronze-bright) 88%,white),var(--bronze));transform:translateY(-1px);box-shadow:0 7px 16px -12px color-mix(in srgb,var(--bronze-bright) 78%,transparent)}
 .btn:active,.btn-primary:active,.btn-gold:active,.side-navbtn:active{transform:translateY(1px) scale(.99);box-shadow:none}
 .btn-ghost,.side-logout,.side-reset-btn{background:#111;color:var(--platinum);border-color:var(--steel-hi);box-shadow:none}
-.btn-ghost:hover,.side-logout:hover,.side-reset-btn:hover{background:#191919;border-color:rgba(184,205,169,.38);color:var(--platinum)}
+.btn-ghost:hover,.side-logout:hover,.side-reset-btn:hover{background:#191919;border-color:color-mix(in srgb,var(--bronze-bright) 38%,var(--steel-hi));color:var(--platinum)}
 .btn-danger,.btn-loss{border-color:rgba(220,137,132,.38);color:#e5a09b}.btn-danger:hover,.btn-loss:hover{background:rgba(220,137,132,.08)}
 input,select,textarea,.trader-filter{min-height:40px;border-radius:9px!important;border-color:var(--steel-hi)!important;background:#0e0e0e!important;color:var(--platinum)!important;box-shadow:none;transition:border-color .14s ease,box-shadow .14s ease}
-input:focus,select:focus,textarea:focus{border-color:var(--bronze-bright)!important;box-shadow:0 0 0 3px rgba(184,205,169,.12)!important}
+input:focus,select:focus,textarea:focus{border-color:var(--bronze-bright)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--bronze-bright) 13%,transparent)!important}
 label,.field label{color:var(--slate);font-size:10px;letter-spacing:.08em}
 .side-navbtn{min-height:38px;border-radius:9px;color:#aeb2aa}
 .side-navbtn:hover{background:rgba(255,255,255,.045);color:var(--platinum);transform:translateX(1px)}
-.side-navbtn.active{color:var(--platinum);background:rgba(184,205,169,.12);border-color:var(--bronze-bright);box-shadow:inset 0 0 0 1px rgba(184,205,169,.08)}
+.side-navbtn.active{color:var(--platinum);background:color-mix(in srgb,var(--bronze-bright) 12%,transparent);border-color:color-mix(in srgb,var(--bronze-bright) 42%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bronze-bright) 10%,transparent)}
 .tab-btn.active,.theme-swatch.active{color:var(--platinum)}
 .modal{background:#111;border-color:var(--steel-hi);box-shadow:0 22px 58px -34px #000;backdrop-filter:none}
 .theme-toggle-fab{backdrop-filter:none;box-shadow:0 8px 24px -18px #000}
 .bg-video-layer,.grain-overlay,.shell-blob{display:none!important}
 .side-brand .mark,.boot-word,.boot-emblem-plate,.theme-toggle-fab .theme-swatch,.card::after{animation:none!important}
-:focus-visible{outline:2px solid var(--bronze-bright)!important;outline-offset:3px;box-shadow:0 0 0 3px rgba(184,205,169,.13)!important}
+:focus-visible{outline:2px solid var(--bronze-bright)!important;outline-offset:3px;box-shadow:0 0 0 3px color-mix(in srgb,var(--bronze-bright) 14%,transparent)!important}
 @media(max-width:600px){.btn,.btn-gold{min-height:40px;padding:9px 13px}.card{box-shadow:0 10px 24px -22px #000,inset 0 1px rgba(255,255,255,.025)}}
 /* Desktop navigation: grouped top-level destinations replace the fixed rail. */
 .desktop-nav{display:none}
@@ -16559,25 +16731,224 @@ html[data-theme="black"] #bootSplash,html[data-theme="black"] #authScreen{backgr
 @media(max-width:620px){#onboardingOverlay{align-items:flex-end;padding:9px}.onboarding-modal{max-height:94vh;max-height:94dvh;padding:21px 17px calc(18px + env(safe-area-inset-bottom));border-radius:23px 23px 17px 17px}.onboarding-heading{gap:10px}.onboarding-rank-chip{padding:8px 9px}.onboarding-rank-chip small{font-size:7px}.onboarding-stage{min-height:245px}.onboarding-slide{min-height:242px;padding:20px 16px}.onboarding-rank-reveal{gap:14px}.onboarding-rank-medallion{width:72px;height:72px;border-radius:23px}.onboarding-rank-reveal h4{font-size:26px}.onboarding-footer{gap:7px}.onboarding-footer button{min-height:41px;font-size:10px}.onboarding-next,.onboarding-submit{padding:0 11px}.onboarding-back{padding:0 9px}}
 @media(prefers-reduced-motion:reduce){#bootSplash::before,#bootSplash::after,#bootSplash .gd-splash-scene,#bootSplash .gd-splash-scene *,#bootSplash .boot-splash-inner,.onboarding-slide,.onboarding-rank-orbit,.onboarding-progress span,.journey-rank-progress span{animation:none!important;transition:none!important}.gd-section-transition,.gd-section-transition *{animation:none!important;transition:none!important}}
 
+/* GLASS WORKSPACE — a calm, translucent instrument surface with a floating
+   Apple-style navigation capsule and a restrained 3D page transition. */
+:root{--gd-glass-edge:rgba(235,238,235,.17);--gd-glass-sheen:rgba(255,255,255,.09);--gd-glass-shadow:0 28px 72px -50px rgba(0,0,0,.94)}
+html[data-theme]{--void:#050606;--void-2:#0b0d0f;--graphite:#111416;--graphite-hi:#1a1e21;--steel:rgba(235,239,236,.09);--steel-hi:rgba(235,239,236,.16);--panel:rgba(16,19,18,.72);--panel-solid:#101211;--platinum:#f1f3f1;--slate:#abb1ad;--slate-dim:#737b76}
+html{background:#050606;scroll-behavior:smooth}
+body{background:radial-gradient(ellipse 1000px 650px at 18% -8%,rgba(255,255,255,.055),transparent 64%),radial-gradient(ellipse 880px 700px at 100% 95%,rgba(255,255,255,.03),transparent 62%),radial-gradient(ellipse 800px 460px at 52% 44%,rgba(255,255,255,.022),transparent 72%),#050606;background-attachment:fixed}
+#appShell.show{isolation:isolate}
+.desktop-nav{--glass-x:50%;--glass-y:0%;isolation:isolate;border-color:var(--gd-glass-edge);background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035) 42%,rgba(255,255,255,.055)),rgba(9,13,20,.57);backdrop-filter:blur(32px) saturate(175%);-webkit-backdrop-filter:blur(32px) saturate(175%);box-shadow:0 20px 64px -38px rgba(0,0,0,.9),inset 0 1px rgba(255,255,255,.17)}
+.desktop-nav::before{content:"";position:absolute;z-index:0;inset:1px;border-radius:inherit;pointer-events:none;background:radial-gradient(450px circle at var(--glass-x) var(--glass-y),rgba(255,255,255,.14),transparent 62%);opacity:.72;transition:opacity .35s ease}
+.desktop-nav>*{position:relative;z-index:1}
+.desktop-nav-brand img{filter:drop-shadow(0 5px 13px rgba(0,0,0,.36))}
+.desktop-nav-link,.desktop-nav-trigger{border-radius:999px;transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s cubic-bezier(.2,.8,.2,1);}
+.desktop-nav-link:hover,.desktop-nav-trigger:hover,.desktop-nav-group.open>.desktop-nav-trigger{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.08);color:#fff;transform:translateY(-1px)}
+.desktop-nav-link.active,.desktop-nav-group.has-active>.desktop-nav-trigger{background:color-mix(in srgb,var(--bronze-bright) 15%,transparent);border-color:color-mix(in srgb,var(--bronze-bright) 24%,transparent);color:#f3f4f2;box-shadow:inset 0 1px rgba(255,255,255,.1)}
+.desktop-nav-menu{border-color:rgba(235,238,235,.17);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.025)),rgba(12,14,13,.84);backdrop-filter:blur(28px) saturate(165%);-webkit-backdrop-filter:blur(28px) saturate(165%);box-shadow:0 24px 64px -35px rgba(0,0,0,.95),inset 0 1px rgba(255,255,255,.12)}
+.desktop-nav-menu .desktop-nav-link{border-radius:12px}
+.desktop-nav-meta{opacity:.8}
+.plan-badge,.plan-badge-mobile{border-color:rgba(237,244,231,.19);background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.035)),rgba(14,18,15,.56);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);box-shadow:inset 0 1px rgba(255,255,255,.13),0 12px 32px -22px #000}
+.main{position:relative}
+.topbar-row{border-bottom-color:rgba(238,243,232,.12)}
+#appShell.show .card,#appShell.show .hero-stat,#appShell.show .first-session-guide,#appShell.show .package-card,#appShell.show .modal,#appShell.show .tier,#appShell.show .demo-card,#appShell.show .auth-card,#appShell.show .gate-card,#appShell.show .onboarding-modal,#appShell.show .journey-rank-panel,#appShell.show .pf-archive-card,#appShell.show .quick-scife-modal,#appShell.show .sneak-peek-modal{
+  border-color:rgba(238,243,232,.15);background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.022) 48%,rgba(255,255,255,.035)),color-mix(in srgb,var(--panel-solid) 48%,transparent);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);box-shadow:inset 0 1px rgba(255,255,255,.12),var(--gd-glass-shadow)
+}
+#appShell.show .card::after{opacity:.45}
+#appShell.show .card.tilt:hover{transform:perspective(1200px) translateY(-3px) rotateX(1.15deg);border-color:color-mix(in srgb,var(--bronze-bright) 24%,transparent);box-shadow:inset 0 1px rgba(255,255,255,.16),0 34px 78px -50px rgba(0,0,0,.94)}
+#appShell.show .hero-stat{transform-style:preserve-3d;transition:transform .28s cubic-bezier(.2,.8,.2,1),border-color .25s ease,box-shadow .25s ease}
+#appShell.show .hero-stat:hover{transform:perspective(1000px) translateY(-4px) rotateX(2deg);border-color:color-mix(in srgb,var(--bronze-bright) 25%,transparent);box-shadow:inset 0 1px rgba(255,255,255,.16),0 24px 46px -30px rgba(0,0,0,.9)}
+#appShell.show .stat,#appShell.show .jd-chip,#appShell.show .side-session,#appShell.show .profile-readonly,#appShell.show .onboarding-slide,#appShell.show .onboarding-rank-chip,#appShell.show .onboarding-milestone,#appShell.show .pf-archive-stat{
+  border-color:rgba(238,243,232,.13);background:rgba(255,255,255,.045);backdrop-filter:blur(18px) saturate(135%);-webkit-backdrop-filter:blur(18px) saturate(135%);box-shadow:inset 0 1px rgba(255,255,255,.07)
+}
+#appShell.show input,#appShell.show select,#appShell.show textarea,#appShell.show .trader-filter{background:rgba(255,255,255,.045)!important;border-color:rgba(238,243,232,.17)!important;backdrop-filter:blur(16px) saturate(135%);-webkit-backdrop-filter:blur(16px) saturate(135%)}
+#appShell.show input:focus,#appShell.show select:focus,#appShell.show textarea:focus{background:rgba(255,255,255,.07)!important;border-color:color-mix(in srgb,var(--bronze-bright) 60%,white)!important}
+.portal-greeting{border-color:rgba(214,234,204,.2);background:linear-gradient(105deg,rgba(188,218,175,.12),rgba(255,255,255,.025)),rgba(15,20,16,.4);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);box-shadow:inset 0 1px rgba(255,255,255,.1)}
+.trade-row{backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%)}
+.desktop-nav,.desktop-nav-menu,.tab-bar,.mobile-topbar,.sidebar,.plan-badge,.plan-badge-mobile{will-change:backdrop-filter}
+@keyframes gdGlassWorkspaceEnter{from{opacity:.56;transform:perspective(1500px) translate3d(0,12px,-22px) rotateX(-1.5deg) scale(.992)}to{opacity:1;transform:perspective(1500px) translate3d(0,0,0) rotateX(0) scale(1)}}
+.view.active{transform-style:preserve-3d;animation:gdGlassWorkspaceEnter .34s cubic-bezier(.22,1,.36,1) both}
+.view.active.gd-enter-from-next{animation:gdGlassEnterNext .38s cubic-bezier(.22,1,.36,1) both}
+.view.active.gd-enter-from-previous{animation:gdGlassEnterPrevious .38s cubic-bezier(.22,1,.36,1) both}
+@keyframes gdGlassEnterNext{from{opacity:.55;transform:perspective(1400px) translate3d(34px,0,-34px) rotateY(-3deg) scale(.985)}to{opacity:1;transform:perspective(1400px) translate3d(0,0,0) rotateY(0) scale(1)}}
+@keyframes gdGlassEnterPrevious{from{opacity:.55;transform:perspective(1400px) translate3d(-34px,0,-34px) rotateY(3deg) scale(.985)}to{opacity:1;transform:perspective(1400px) translate3d(0,0,0) rotateY(0) scale(1)}}
+#hud{perspective:1500px;transform-style:preserve-3d;touch-action:pan-y}
+#hud.gd-swipe-active{overflow:clip}
+#hud .view.gd-swiping-current{position:relative;z-index:2;display:block;will-change:transform,opacity;transition:none;transform:perspective(1400px) translate3d(var(--gd-current-x,0px),0,0) rotateY(var(--gd-current-yaw,0deg)) scale(var(--gd-current-scale,1));opacity:var(--gd-current-opacity,1)}
+#hud.gd-swipe-settling .view.gd-swiping-current,#hud.gd-swipe-returning .view.gd-swiping-current{transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease}
+#hud .view.gd-swipe-preview{position:absolute;z-index:1;inset:0;display:block;pointer-events:none;opacity:.84;will-change:transform,opacity;transform:perspective(1400px) translate3d(var(--gd-preview-x,36%),0,-44px) rotateY(var(--gd-preview-yaw,-4deg)) scale(.965);transform-origin:center;transition:none}
+#hud.gd-swipe-settling .view.gd-swipe-preview,#hud.gd-swipe-returning .view.gd-swipe-preview{transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease}
+.onboarding-stage{touch-action:pan-y;cursor:grab}
+.onboarding-stage.is-dragging{cursor:grabbing;user-select:none}
+.onboarding-stage.is-dragging .onboarding-slide.is-active{animation:none!important;transform:translate3d(var(--onboard-drag-x,0px),0,30px) rotateY(var(--onboard-drag-yaw,0deg)) scale(var(--onboard-drag-scale,1));transition:none}
+.onboarding-stage.is-settling .onboarding-slide.is-active{transition:transform .36s cubic-bezier(.22,1,.36,1)}
+.onboarding-slide{border-color:rgba(226,239,216,.18);background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025)),rgba(14,21,16,.38);backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%)}
+#authScreen .auth-card,#gateScreen .gate-card{border-color:rgba(238,243,232,.19)!important;background:linear-gradient(145deg,rgba(255,255,255,.115),rgba(255,255,255,.025) 48%),rgba(11,17,13,.68)!important;backdrop-filter:blur(30px) saturate(155%);-webkit-backdrop-filter:blur(30px) saturate(155%);box-shadow:inset 0 1px rgba(255,255,255,.14),0 38px 94px -48px rgba(0,0,0,.94)}
+#authScreen .auth-card{--auth-drag-x:0px;--auth-drag-yaw:0deg;--auth-drag-pitch:0deg;--auth-drag-scale:1;transform:perspective(1450px) translate3d(var(--auth-drag-x),0,0) rotateX(var(--auth-drag-pitch)) rotateY(var(--auth-drag-yaw)) scale(var(--auth-drag-scale))!important;transform-style:preserve-3d;touch-action:pan-y;transition:transform .48s cubic-bezier(.22,1,.36,1),box-shadow .38s ease;will-change:transform}
+#authScreen .auth-card.is-auth-dragging{transition:none!important;cursor:grabbing}
+#authScreen .auth-card.is-auth-settling{transition:transform .34s cubic-bezier(.22,1,.36,1)!important}
+#authScreen .auth-card.gd-auth-mode-change{animation:gdAuthModeReveal .42s cubic-bezier(.22,1,.36,1) both}
+@keyframes gdAuthModeReveal{0%{opacity:.82;filter:brightness(1.12)}55%{opacity:.94;filter:brightness(1.04)}100%{opacity:1;filter:brightness(1)}}
+.gd-auth-drag-hint{display:flex;align-items:center;justify-content:center;gap:7px;margin:17px auto -4px;color:#8190a5;font:8px 'IBM Plex Mono',monospace;letter-spacing:.13em;text-transform:uppercase;user-select:none}
+.gd-auth-drag-hint svg{width:17px;height:11px;overflow:visible;fill:none;stroke:#aecff4;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.82}
+#authScreen{background:radial-gradient(ellipse at 50% 22%,rgba(255,255,255,.065),transparent 48%),radial-gradient(ellipse at 84% 82%,color-mix(in srgb,var(--bronze-bright) 8%,transparent),transparent 54%),#050606}
+.onboarding-modal{border-color:rgba(235,245,226,.24)!important;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.025)),rgba(12,18,14,.7)!important;backdrop-filter:blur(30px) saturate(155%);-webkit-backdrop-filter:blur(30px) saturate(155%)}
+@media(min-width:961px){
+  .desktop-nav{inset:12px auto auto 50%;width:min(calc(100% - 32px),1500px);height:64px;transform:translateX(-50%);gap:clamp(12px,1.7vw,28px);padding:0 clamp(18px,2.2vw,38px);border:1px solid var(--gd-glass-edge);border-radius:22px}
+  #appShell.show>.main{width:min(100%,1480px);max-width:1480px;min-height:calc(100vh - 88px);min-height:calc(100dvh - 88px);margin:88px auto 0;padding-top:28px}
+  .desktop-nav-meta{padding-right:112px}
+  #planBadge{top:24px;right:25px}
+}
+@media(min-width:961px) and (max-width:1160px){.desktop-nav{width:calc(100% - 24px);gap:10px;padding-inline:14px}.desktop-nav-link,.desktop-nav-trigger{padding-inline:8px;font-size:10px}.desktop-nav-meta{padding-right:108px}}
+@media(max-width:960px){
+  .mobile-topbar{position:sticky;top:8px;z-index:80;width:calc(100% - 20px);margin:8px auto 0;border:1px solid var(--gd-glass-edge);border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035)),rgba(10,15,12,.67);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px rgba(255,255,255,.15),0 16px 44px -30px #000}
+  .sidebar{border-color:rgba(238,243,232,.16);background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.025)),rgba(10,15,12,.79);backdrop-filter:blur(32px) saturate(155%);-webkit-backdrop-filter:blur(32px) saturate(155%);box-shadow:26px 0 72px -32px rgba(0,0,0,.92),inset -1px 0 rgba(255,255,255,.08)}
+  .sidebar-scrim{background:rgba(4,7,5,.48);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+  .tab-bar{left:50%;right:auto;bottom:9px;width:min(calc(100% - 20px),520px);transform:translateX(-50%);justify-content:space-around;gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));border:1px solid rgba(238,243,232,.18);border-radius:22px;background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.04)),rgba(10,14,12,.68);backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);box-shadow:0 18px 52px -28px rgba(0,0,0,.9),inset 0 1px rgba(255,255,255,.17)}
+  .tab-btn{border-radius:15px;transition:transform .22s cubic-bezier(.2,.8,.2,1),background .22s ease,color .22s ease}
+  .tab-btn.active{background:rgba(190,215,175,.13);box-shadow:inset 0 1px rgba(255,255,255,.1);transform:translateY(-2px)}
+  #appShell.show>.main{padding-top:23px}
+}
+@media(max-width:600px){#appShell.show .card,#appShell.show .hero-stat{backdrop-filter:blur(17px) saturate(140%);-webkit-backdrop-filter:blur(17px) saturate(140%)}.mobile-topbar{min-height:58px;padding-inline:13px}.tab-btn{min-width:56px}.view.active{animation-duration:.34s}}
+@media(prefers-reduced-motion:reduce){.view.active,.view.active.gd-enter-from-next,.view.active.gd-enter-from-previous{animation:none!important}#hud.gd-swipe-settling .view.gd-swiping-current,#hud.gd-swipe-returning .view.gd-swiping-current,#hud.gd-swipe-settling .view.gd-swipe-preview,#hud.gd-swipe-returning .view.gd-swipe-preview{transition:none!important}.desktop-nav-link,.desktop-nav-trigger,.desktop-nav-menu,.tab-btn,.card,.hero-stat,.onboarding-slide{transition:none!important}.card.tilt:hover,.hero-stat:hover{transform:none!important}}
+
+/* Keep the glass surfaces neutral and let each original theme own its accents. */
+:root{--gd-glass-edge:rgba(235,238,235,.17);--gd-glass-sheen:rgba(255,255,255,.1);--gd-glass-shadow:0 28px 72px -50px rgba(0,0,0,.94)}
+html[data-theme] .desktop-nav-link.active,html[data-theme] .desktop-nav-group.has-active>.desktop-nav-trigger{background:color-mix(in srgb,var(--bronze-bright) 15%,transparent);border-color:color-mix(in srgb,var(--bronze-bright) 24%,transparent);color:#f2f3f1}
+html[data-theme] .desktop-nav-menu{background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.025)),rgba(12,14,13,.86);border-color:rgba(235,238,235,.18)}
+html[data-theme] .mobile-topbar,html[data-theme] .sidebar,html[data-theme] .tab-bar{border-color:rgba(235,238,235,.17)}
+html[data-theme] .mobile-topbar{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035)),rgba(9,10,10,.72)}
+html[data-theme] .sidebar{background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.025)),rgba(9,10,10,.84)}
+html[data-theme] .tab-bar{background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.04)),rgba(9,10,10,.74)}
+html[data-theme] .tab-btn.active{background:color-mix(in srgb,var(--bronze-bright) 15%,transparent);box-shadow:inset 0 1px rgba(255,255,255,.14)}
+html[data-theme] .onboarding-slide{border-color:rgba(235,238,235,.18);background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.025)),rgba(13,15,14,.55);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)}
+html[data-theme] .onboarding-next,html[data-theme] .onboarding-submit{background:linear-gradient(135deg,var(--bronze-bright),color-mix(in srgb,var(--bronze-bright) 58%,#8e918d));color:var(--bronze-ink);box-shadow:0 8px 24px color-mix(in srgb,var(--bronze-bright) 24%,transparent)}
+html[data-theme] .onboarding-progress span{background:linear-gradient(90deg,var(--bronze-bright),var(--gold-bright))}
+html[data-theme] .onboarding-rank-dot{background:var(--bronze-bright);box-shadow:0 0 12px color-mix(in srgb,var(--bronze-bright) 68%,transparent)}
+html[data-theme] #authScreen .auth-card,html[data-theme] #gateScreen .gate-card{border-color:rgba(235,238,235,.2)!important;background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.025) 48%),rgba(9,11,10,.76)!important}
+html[data-theme] #appShell select,html[data-theme] #appShell select option{color-scheme:dark}
+html[data-theme] #appShell select option{background-color:#111311;color:#eef1ee}
+html[data-theme] #appShell select option:checked{background-color:var(--bronze-dim);color:#fff}
+html[data-theme] #appShell select option:hover{background-color:color-mix(in srgb,var(--bronze-bright) 18%,#111311);color:#fff}
+html[data-theme="light"] .desktop-nav,html[data-theme="light"] .mobile-topbar,html[data-theme="black"] .desktop-nav,html[data-theme="black"] .mobile-topbar{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035)),rgba(9,10,10,.72)!important;border-color:rgba(235,238,235,.18)!important;backdrop-filter:blur(32px) saturate(175%);-webkit-backdrop-filter:blur(32px) saturate(175%)}
+/* Overview controls: compact, searchable-in-spirit picker menus, with clear
+   current scope and the same trader/account lens carried into the curve. */
+#view-dashboard .overview-topbar-actions{align-items:flex-end;gap:10px;flex-wrap:wrap}
+.overview-filter-bar{display:flex;align-items:center;gap:8px;min-width:0}
+.overview-filter{position:relative;min-width:160px}
+.overview-filter-trigger{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:7px 12px;border:1px solid rgba(235,238,235,.16);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.095),rgba(255,255,255,.025) 48%),rgba(12,14,13,.68);color:var(--platinum);text-align:left;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.1),0 14px 38px -28px rgba(0,0,0,.85);backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%);transition:transform .24s cubic-bezier(.22,1,.36,1),border-color .24s ease,background .24s ease}
+.overview-filter-trigger:hover,.overview-filter-trigger[aria-expanded="true"]{transform:translateY(-1px);border-color:color-mix(in srgb,var(--bronze-bright) 36%,transparent);background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035) 48%),rgba(15,16,15,.8)}
+.overview-filter-glyph{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border:1px solid color-mix(in srgb,var(--bronze-bright) 32%,transparent);border-radius:11px;background:color-mix(in srgb,var(--bronze-bright) 12%,transparent);color:var(--bronze-bright);font:600 11px 'IBM Plex Mono',monospace}
+.overview-filter-copy{display:grid;gap:3px;min-width:0;flex:1}
+.overview-filter-copy small{color:var(--slate-dim);font:500 8px/1 'IBM Plex Mono',monospace;letter-spacing:.13em}
+.overview-filter-copy strong{display:block;overflow:hidden;color:var(--platinum);font-size:11px;font-weight:600;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+.overview-filter-chevron{width:15px;height:15px;flex:0 0 15px;fill:none;stroke:var(--slate);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .24s cubic-bezier(.22,1,.36,1)}
+.overview-filter-trigger[aria-expanded="true"] .overview-filter-chevron{transform:rotate(180deg)}
+.overview-filter-menu{position:absolute;z-index:180;top:calc(100% + 9px);left:0;width:max(100%,260px);max-width:min(360px,calc(100vw - 32px));max-height:min(360px,62vh);overflow:auto;padding:7px;border:1px solid rgba(235,238,235,.16);border-radius:19px;background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 42%),rgba(10,12,11,.94);color:var(--platinum);box-shadow:0 28px 72px -34px rgba(0,0,0,.96),inset 0 1px rgba(255,255,255,.1);backdrop-filter:blur(30px) saturate(165%);-webkit-backdrop-filter:blur(30px) saturate(165%);transform-origin:top center;animation:overviewPickerOpen .2s cubic-bezier(.22,1,.36,1) both}
+.overview-filter-menu[hidden]{display:none}
+@keyframes overviewPickerOpen{from{opacity:0;transform:translateY(-5px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.overview-filter-option{display:grid;grid-template-columns:34px minmax(0,1fr) auto 16px;align-items:center;gap:9px;width:100%;min-height:51px;padding:7px 9px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--platinum);text-align:left;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.overview-filter-option:hover,.overview-filter-option:focus-visible{background:rgba(255,255,255,.07);border-color:rgba(235,238,235,.1);transform:translateX(2px);outline:none}
+.overview-filter-option[aria-selected="true"]{background:color-mix(in srgb,var(--bronze-bright) 12%,transparent);border-color:color-mix(in srgb,var(--bronze-bright) 22%,transparent)}
+.overview-filter-option-glyph{display:grid;place-items:center;width:31px;height:31px;border:1px solid rgba(235,238,235,.1);border-radius:10px;background:rgba(255,255,255,.05);color:var(--slate);font:600 9px 'IBM Plex Mono',monospace}
+.overview-filter-option[aria-selected="true"] .overview-filter-option-glyph{color:var(--bronze-bright);border-color:color-mix(in srgb,var(--bronze-bright) 30%,transparent);background:color-mix(in srgb,var(--bronze-bright) 12%,transparent)}
+.overview-filter-option-copy{display:grid;gap:3px;min-width:0}
+.overview-filter-option-copy strong{overflow:hidden;color:var(--platinum);font-size:11px;font-weight:550;text-overflow:ellipsis;white-space:nowrap}
+.overview-filter-option-copy small{color:var(--slate-dim);font:8px/1.35 'IBM Plex Mono',monospace;letter-spacing:.015em}
+.overview-filter-option-count{color:var(--slate-dim);font:8px 'IBM Plex Mono',monospace;white-space:nowrap}
+.overview-filter-option-check{color:var(--bronze-bright);font-size:13px;opacity:0;transform:scale(.7);transition:opacity .16s ease,transform .16s ease}
+.overview-filter-option[aria-selected="true"] .overview-filter-option-check{opacity:1;transform:scale(1)}
+.overview-source-select{display:none!important}
+.overview-equity-context{margin-top:5px;color:var(--slate-dim);font:8px 'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase}
+.overview-equity-toolbar{display:grid;justify-items:end;gap:8px}
+.overview-equity-ranges{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid rgba(235,238,235,.12);border-radius:999px;background:rgba(255,255,255,.035)}
+.overview-equity-ranges button{min-width:37px;padding:6px 8px;border:1px solid transparent;border-radius:999px;background:transparent;color:var(--slate-dim);font:8px 'IBM Plex Mono',monospace;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
+.overview-equity-ranges button:hover{color:var(--platinum);transform:translateY(-1px)}
+.overview-equity-ranges button[aria-pressed="true"]{border-color:color-mix(in srgb,var(--bronze-bright) 24%,transparent);background:color-mix(in srgb,var(--bronze-bright) 14%,transparent);color:var(--platinum);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+@media(max-width:760px){#view-dashboard .overview-topbar-actions{display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto;align-items:center}.overview-filter-bar{grid-column:1/-1;width:100%}.overview-filter{flex:1;min-width:0}.overview-filter-trigger{min-height:48px;padding-inline:9px}.overview-filter-menu{max-width:min(360px,calc(100vw - 28px))}#dashboardEquityCard .equity-head{align-items:flex-start;gap:12px}.overview-equity-toolbar{justify-items:end;gap:7px}.overview-equity-context{max-width:55vw;line-height:1.5}}
+@media(max-width:420px){.overview-filter-bar{gap:6px}.overview-filter-trigger{gap:7px;padding-inline:7px}.overview-filter-glyph{width:28px;height:28px;flex-basis:28px}.overview-filter-copy strong{font-size:10px}.overview-equity-toolbar{gap:6px}.overview-equity-ranges button{min-width:33px;padding:6px 6px}.overview-equity-context{font-size:7px}}
+@media(prefers-reduced-motion:reduce){#authScreen .auth-card.is-auth-settling,.onboarding-stage.is-settling .onboarding-slide.is-active{transition:none!important}}
+
+/* Sign-in form: a compact workspace panel with an explicit mode switch. */
+#authScreen .auth-card{border-radius:26px;padding:clamp(24px,3.5vw,38px);background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.025) 38%),rgba(9,10,10,.78)!important;box-shadow:inset 0 1px rgba(255,255,255,.15),0 36px 100px -54px rgba(0,0,0,.96);}
+.auth-card-head{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;margin-bottom:22px!important;padding-bottom:18px;border-bottom:1px solid rgba(235,238,235,.12)}
+.auth-card-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid color-mix(in srgb,var(--bronze-bright) 38%,transparent);border-radius:14px;background:color-mix(in srgb,var(--bronze-bright) 13%,rgba(255,255,255,.04));color:var(--bronze-bright);box-shadow:inset 0 1px rgba(255,255,255,.11),0 9px 25px -18px color-mix(in srgb,var(--bronze-bright) 80%,transparent)}
+.auth-card-mark svg{width:21px;height:21px}
+.auth-card-brand{display:grid;gap:5px;min-width:0}
+.auth-card-brand small,.auth-card-kicker{color:var(--slate-dim);font:600 8px/1.2 'IBM Plex Mono',monospace;letter-spacing:.13em}
+.auth-card-brand strong{color:var(--platinum);font-size:11px;font-weight:650;letter-spacing:.045em}
+.auth-card-kicker{text-align:right;line-height:1.55}
+.auth-mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 0 22px!important;padding:4px;border:1px solid rgba(235,238,235,.12);border-radius:13px;background:rgba(0,0,0,.26)}
+.auth-mode-switch button{min-height:38px;padding:8px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--slate);font:550 11px 'Instrument Sans',system-ui,sans-serif;cursor:pointer;transition:background .2s cubic-bezier(.22,1,.36,1),color .2s ease,border-color .2s ease,transform .2s ease}
+.auth-mode-switch button:hover{color:var(--platinum)}
+.auth-mode-switch button[aria-pressed="true"]{color:var(--platinum);border-color:rgba(235,238,235,.13);background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.05)),rgba(26,28,26,.9);box-shadow:inset 0 1px rgba(255,255,255,.1),0 6px 20px -16px #000}
+#authScreen .auth-card .auth-title{margin-bottom:6px;font-size:clamp(26px,3vw,32px);letter-spacing:-.04em}
+#authScreen .auth-card .auth-sub{margin-bottom:20px;color:#a2a69f;font-size:12px;line-height:1.65}
+#authScreen .auth-card .auth-field{margin-bottom:15px}
+#authScreen .auth-card .btn-gold{min-height:48px;border-radius:12px;font-size:12px;letter-spacing:.01em}
+#authScreen .auth-card .auth-foot{color:#969b93;font-size:10px;line-height:1.65}
+#authScreen .auth-card .auth-social-divider{margin:18px 0 13px;color:#737970}
+#authScreen .auth-card .auth-social-btn{min-height:42px;border-radius:11px;background:rgba(255,255,255,.04);border-color:rgba(235,238,235,.14);color:var(--platinum)}
+#authScreen .auth-card .auth-social-btn:hover{background:rgba(255,255,255,.075);border-color:rgba(235,238,235,.24)}
+
+/* Mobile rail becomes a full-height, scrollable glass drawer. */
+.side-close{display:none}
+@media(max-width:960px){
+  body.gd-sidebar-open{overflow:hidden}
+  #appShell.show>.sidebar{z-index:130;display:flex;flex-direction:column;inset:0 auto 0 0;width:min(380px,91vw);max-width:420px;height:100vh;height:100dvh;min-height:0;max-height:100dvh;padding:calc(14px + env(safe-area-inset-top)) 15px calc(12px + env(safe-area-inset-bottom));overflow:hidden;border:1px solid rgba(239,242,237,.2);border-left:0;border-radius:0 29px 29px 0;background:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.045) 35%,rgba(255,255,255,.018) 76%),rgba(8,9,9,.83);box-shadow:24px 0 90px -32px rgba(0,0,0,.92),inset -1px 0 rgba(255,255,255,.1),inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(38px) saturate(175%);-webkit-backdrop-filter:blur(38px) saturate(175%);transform:translate3d(var(--gd-sidebar-x,-105%),0,0) scale(var(--gd-sidebar-scale,.985));transform-origin:left center;transition:transform .52s cubic-bezier(.2,.85,.24,1);will-change:transform;touch-action:pan-y}
+  #appShell.show>.sidebar.open{--gd-sidebar-x:0%;--gd-sidebar-scale:1;transform:translate3d(var(--gd-sidebar-x),0,0) scale(var(--gd-sidebar-scale))}
+  #appShell.show>.sidebar.is-dragging{transition:none!important;user-select:none}
+  #appShell.show>.sidebar.is-settling{transition:transform .34s cubic-bezier(.22,1,.36,1)!important}
+  #appShell.show>.sidebar-scrim{z-index:120;background:rgba(0,0,0,.48);backdrop-filter:blur(10px) saturate(115%);-webkit-backdrop-filter:blur(10px) saturate(115%);opacity:0;transition:opacity .38s ease}
+  #appShell.show>.sidebar-scrim.show{display:block;opacity:var(--gd-sidebar-scrim-opacity,1)}
+  #appShell.show>.sidebar-scrim.closing{opacity:0;pointer-events:none}
+  #appShell.show>.sidebar .side-brand{display:flex;align-items:center;gap:11px;flex:none;margin:0 0 15px;padding:2px 2px 16px;border-bottom:1px solid rgba(239,242,237,.13)}
+  #appShell.show>.sidebar .side-brand .mark{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(239,242,237,.17);border-radius:14px;box-shadow:inset 0 1px rgba(255,255,255,.16),0 9px 26px -17px #000}
+  #appShell.show>.sidebar .side-brand>div:nth-child(2){min-width:0;flex:1}
+  #appShell.show>.sidebar .side-brand h1{font-size:15px;letter-spacing:-.025em}
+  #appShell.show>.sidebar .side-brand>div:nth-child(2) span{font-size:8px;letter-spacing:.12em}
+  #appShell.show>.sidebar .ai-live-pill{display:flex;align-items:center;justify-content:center;min-width:34px;height:25px;margin-left:0;padding:0 8px;border:1px solid color-mix(in srgb,var(--bronze-bright) 22%,transparent);border-radius:999px;background:color-mix(in srgb,var(--bronze-bright) 9%,transparent);color:var(--bronze-bright);font:600 8px 'IBM Plex Mono',monospace}
+  .side-close{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;border:1px solid rgba(239,242,237,.16);border-radius:13px;background:rgba(255,255,255,.055);color:#d9ddd6;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .side-close svg{width:17px;height:17px}
+  .side-close:hover{background:rgba(255,255,255,.1);border-color:rgba(239,242,237,.26)}
+  #appShell.show>.sidebar .side-discipline-pill{flex:none;min-height:66px;margin:0 0 14px;padding:11px 14px;border:1px solid rgba(239,242,237,.13);border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.025)),rgba(255,255,255,.025);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+  #appShell.show>.sidebar .sdp-streak{font-size:23px}
+  #appShell.show>.sidebar .side-nav{display:flex;flex:1 1 auto;flex-direction:column;align-items:stretch;align-content:normal;grid-template-columns:none;grid-auto-rows:auto;gap:3px;min-height:0;padding:0 2px 8px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+  #appShell.show>.sidebar .side-nav::-webkit-scrollbar{display:none;width:0}
+  #appShell.show>.sidebar .side-nav-label,#appShell.show>.sidebar .side-divider{grid-column:auto;flex:none}
+  #appShell.show>.sidebar .side-nav-label{padding:13px 11px 5px;color:#7d837b;font:600 8px/1.2 'IBM Plex Mono',monospace;letter-spacing:.13em;text-transform:uppercase}
+  #appShell.show>.sidebar .side-divider{height:1px;margin:9px 9px;border:0;background:rgba(239,242,237,.1)}
+  #appShell.show>.sidebar .side-navbtn{display:flex;align-items:center;gap:12px;flex:none;width:100%;min-width:0;min-height:47px;height:auto;padding:9px 12px;border:1px solid transparent;border-left:2px solid transparent;border-radius:13px;background:transparent;color:#aeb3aa;font-size:12px;font-weight:500;line-height:1.25;letter-spacing:0;white-space:normal;overflow:visible;text-overflow:clip;text-align:left}
+  #appShell.show>.sidebar .side-navbtn svg{width:19px;height:19px;flex:0 0 19px;color:#929a8e}
+  #appShell.show>.sidebar .side-navbtn:hover{background:rgba(255,255,255,.055);color:var(--platinum);transform:translateX(2px)}
+  #appShell.show>.sidebar .side-navbtn.active{border-color:color-mix(in srgb,var(--bronze-bright) 18%,transparent);border-left-color:var(--bronze-bright);background:linear-gradient(100deg,color-mix(in srgb,var(--bronze-bright) 13%,transparent),rgba(255,255,255,.025));color:var(--platinum);box-shadow:inset 0 1px rgba(255,255,255,.06)}
+  #appShell.show>.sidebar .side-navbtn.active svg{color:var(--bronze-bright)}
+  #appShell.show>.sidebar .side-foot{flex:0 0 auto;margin:8px 0 0;padding:10px 2px calc(4px + env(safe-area-inset-bottom));border-top:1px solid rgba(239,242,237,.12);background:linear-gradient(180deg,transparent,rgba(8,9,9,.26))}
+  #appShell.show>.sidebar .side-session{min-height:38px;padding:8px 11px;margin-bottom:7px;border-radius:11px;font-size:10px}
+  #appShell.show>.sidebar .side-logout{min-height:42px;padding:9px 12px;border-radius:11px;font-size:11px}
+  #appShell.show>.sidebar .side-device{margin-top:10px;padding-top:10px}
+  #appShell.show>.sidebar .side-device-label{margin-bottom:6px;font-size:8px}
+  #appShell.show>.sidebar .side-reset-btn{min-height:38px;padding:8px 10px;font-size:10px}
+}
+@media(max-width:400px){#authScreen .auth-card{padding:24px 19px;border-radius:22px}.auth-card-head{grid-template-columns:38px minmax(0,1fr) auto;gap:9px}.auth-card-mark{width:38px;height:38px}}
+@media(max-height:680px) and (max-width:960px){#appShell.show>.sidebar .side-brand{margin-bottom:9px;padding-bottom:10px}#appShell.show>.sidebar .side-discipline-pill{min-height:55px;margin-bottom:8px;padding:8px 11px}#appShell.show>.sidebar .side-navbtn{min-height:43px;padding-block:7px}#appShell.show>.sidebar .side-nav-label{padding-top:9px}#appShell.show>.sidebar .side-device-hint{display:none}}
+@media(prefers-reduced-motion:reduce){#appShell.show>.sidebar,#appShell.show>.sidebar-scrim,.auth-mode-switch button{transition:none!important}}
+
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   const overlay = document.getElementById('gdSectionTransition');
-  const original = window.playSectionTransition;
-  if(!overlay || typeof original!=='function') return;
+  const live = document.getElementById('gdSectionLive');
+  if(!overlay) return;
   window.playSectionTransition = function(view){
-    original(view);
     clearTimeout(overlay._sectionCloseTimer);
     clearTimeout(overlay._sectionHideTimer);
-    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    overlay._sectionCloseTimer = window.setTimeout(function(){
-      overlay.classList.add('is-leaving');
-      overlay._sectionHideTimer = window.setTimeout(function(){
-        overlay.hidden = true;
-        overlay.classList.remove('is-running','is-leaving');
-      }, 240);
-    }, reduced ? 0 : 1040);
+    overlay.hidden = true;
+    overlay.classList.remove('is-running','is-leaving');
+    const source = document.querySelector('.side-navbtn[data-view="'+view+'"]');
+    const label = source ? source.textContent.replace(/\s+/g,' ').trim() : 'Workspace';
+    if(live) live.textContent = label + ' opened. Swipe the page to move between sections.';
   };
 });
 </script>
