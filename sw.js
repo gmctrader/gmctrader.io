@@ -14,11 +14,12 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v31';
+const CACHE_VERSION = 'gd-shell-v32';
 const APP_SHELL = [
   './index.html',
   './app.html',
   './glass-interactions.js',
+  './space-background.js',
   './home',
   './workspace?signin=1',
   './companion?full=1',
@@ -82,3 +83,4 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
