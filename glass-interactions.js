@@ -345,6 +345,8 @@
   }
 
   function initWorkspaceSwipe() {
+    // Keep mobile scrolling and chart gestures native; navigation remains available in the tabs and sidebar.
+    if (window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 760px)').matches)) return;
     const hud = document.getElementById('hud');
     const appShell = document.getElementById('appShell');
     const sideNav = document.getElementById('sideNav');

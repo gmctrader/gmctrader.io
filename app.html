@@ -2662,7 +2662,16 @@ html #gdSectionTransition .gd-section-copy>span:last-of-type{color:#62675b!impor
 html #gdSectionTransition .gd-section-progress{background:rgba(49,63,43,.17)!important}
 html #gdSectionTransition .gd-section-progress i{background:linear-gradient(90deg,transparent,#7c8561,transparent)!important}
 @media(max-width:680px){html #gdSectionTransition .gd-section-transition-inner{padding:20px!important}}
-</style></head>
+</style><style id="gd-mobile-stability-fixes">
+/* Keep phone navigation and fixed overlays in a flat compositing layer. */
+@media (max-width:760px), (pointer:coarse){
+  #hud{perspective:none!important;transform-style:flat!important;touch-action:pan-y pinch-zoom!important}
+  #hud .view.active,#hud .view.active.gd-enter-from-next,#hud .view.active.gd-enter-from-previous{transform:none!important;transform-style:flat!important;animation:gdStableWorkspaceEnter .14s ease-out both!important}
+}
+@keyframes gdStableWorkspaceEnter{from{opacity:.96}to{opacity:1}}
+.chart-tooltip{max-width:min(320px,calc(100vw - 24px));white-space:normal;overflow-wrap:anywhere}
+</style>
+</head>
 <body>
 <script>
 /* ============ SHARED MOTION PREFERENCE (Display & Motion toggle) ============
@@ -8656,6 +8665,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
       return;
     }
     const previousView=document.querySelector('.side-navbtn.active')?.dataset.view||'';
+    hideTip();
   document.querySelectorAll('.side-navbtn').forEach(b=>{ b.classList.remove('active'); b.removeAttribute('aria-current'); });
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     btn.classList.add('active');
@@ -11759,8 +11769,56 @@ function renderStrategyNotes(){
 
 /* ============ TOOLTIP HELPER ============ */
 const tooltipEl = ()=>document.getElementById('chartTooltip');
-function showTip(x,y,html){ const t=tooltipEl(); t.innerHTML=html; t.style.left=x+'px'; t.style.top=y+'px'; t.classList.add('show'); }
-function hideTip(){ tooltipEl().classList.remove('show'); }
+let chartTooltipHideTimer = null;
+function showTip(x,y,html){
+  const t=tooltipEl(); if(!t) return;
+  if(chartTooltipHideTimer){ clearTimeout(chartTooltipHideTimer); chartTooltipHideTimer=null; }
+  t.innerHTML=html;
+  t.style.transform='translate(-50%,-115%)';
+  t.style.left=x+'px'; t.style.top=y+'px';
+  t.classList.add('show');
+  const box=t.getBoundingClientRect(), margin=10;
+  const minX=box.width/2+margin;
+  const maxX=Math.max(minX,window.innerWidth-box.width/2-margin);
+  t.style.left=Math.min(maxX,Math.max(minX,x))+'px';
+  if(y-box.height*1.15<margin){
+    t.style.transform='translate(-50%,0)';
+    t.style.top=Math.max(margin,Math.min(y+margin,window.innerHeight-box.height-margin))+'px';
+  }
+}
+function hideTip(){
+  if(chartTooltipHideTimer){ clearTimeout(chartTooltipHideTimer); chartTooltipHideTimer=null; }
+  const t=tooltipEl(); if(t) t.classList.remove('show');
+}
+function bindChartTooltip(target, htmlForEvent){
+  if(!target || typeof htmlForEvent!=='function') return;
+  target.style.touchAction='pan-y pinch-zoom';
+  const show=(event)=>{
+    const html=htmlForEvent(event);
+    if(html) showTip(event.clientX,event.clientY,html);
+  };
+  const pin=(event)=>{
+    show(event);
+    if(chartTooltipHideTimer) clearTimeout(chartTooltipHideTimer);
+    chartTooltipHideTimer=window.setTimeout(()=>{
+      chartTooltipHideTimer=null;
+      const t=tooltipEl(); if(t) t.classList.remove('show');
+    },2800);
+  };
+  if(window.PointerEvent){
+    target.addEventListener('pointermove',event=>{ if(event.pointerType!=='touch') show(event); });
+    target.addEventListener('pointerdown',event=>{ if(event.pointerType==='touch') pin(event); });
+    target.addEventListener('pointerleave',event=>{ if(event.pointerType!=='touch') hideTip(); });
+    target.addEventListener('pointercancel',hideTip);
+  } else {
+    target.addEventListener('mousemove',show);
+    target.addEventListener('mouseleave',hideTip);
+    target.addEventListener('touchstart',event=>{
+      const touch=event.changedTouches && event.changedTouches[0];
+      if(touch) pin(touch);
+    },{passive:true});
+  }
+}
 
 /* ============ DISCIPLINE TREND (weekly, 3D bars) ============ */
 function isoWeekKey(dateStr){
@@ -11801,8 +11859,7 @@ function renderDisciplineTrend(){
     avgs.forEach((score,i)=>{ bars[i].style.height = Math.max(6, Math.round(score/100*150))+'px'; bars[i].style.background = 'var(--bar-color)'; });
   });
   el.querySelectorAll('.bar3d').forEach(bar=>{
-    bar.addEventListener('mousemove', (e)=>{ showTip(e.clientX, e.clientY, `<b>${bar.dataset.tip}</b>`); });
-    bar.addEventListener('mouseleave', hideTip);
+    bindChartTooltip(bar, ()=>'<b>'+escapeHtml(bar.dataset.tip||'')+'</b>');
   });
   const first = avgs[0], last = avgs[avgs.length-1];
   const hintEl = document.getElementById('disciplineTrendHint');
@@ -12006,8 +12063,7 @@ function renderDashChart(){
     });
   });
   el.querySelectorAll('.bar3d').forEach(bar=>{
-    bar.addEventListener('mousemove', (e)=>{ showTip(e.clientX, e.clientY, `<b>${bar.dataset.tip}</b>`); });
-    bar.addEventListener('mouseleave', hideTip);
+    bindChartTooltip(bar, ()=>'<b>'+escapeHtml(bar.dataset.tip||'')+'</b>');
   });
   const totalWins = trades.filter(t=>t.result==='win').length;
   const totalLosses = trades.filter(t=>t.result==='loss').length;
@@ -12251,7 +12307,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   const reflY = 2*baseY;
 
   container.innerHTML = `
-    <svg width="100%" viewBox="0 0 ${W} ${H+6}" style="overflow:visible" role="img" aria-label="Cumulative profit and loss across ${trades.length} trades">
+    <svg width="100%" viewBox="0 0 ${W} ${H+6}" style="overflow:visible" role="group" aria-label="Interactive equity curve across ${trades.length} trades. Move, tap, or use the arrow keys to inspect each point.">
       <defs>
         <linearGradient id="areaGradUp-${containerId}" gradientUnits="userSpaceOnUse" x1="0" y1="${padT-18}" x2="0" y2="${baseY}">
           <stop offset="0%" stop-color="${NEON_UP}" stop-opacity="0.25"/>
@@ -12325,7 +12381,7 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
       </g>
       <line id="eqCross-${containerId}" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="var(--slate)" stroke-opacity="0" stroke-width="0.8" stroke-dasharray="3,4" pointer-events="none"/>
       <circle id="eqFocus-${containerId}" cx="${lastPt[0]}" cy="${lastPt[1]}" r="4.2" fill="${lastColor}" stroke="var(--panel-solid)" stroke-width="2" opacity="0" pointer-events="none"/>
-      <rect id="eqhit-${containerId}" x="${padL}" y="0" width="${plotW}" height="${H+6}" fill="transparent" style="cursor:crosshair"/>
+      <rect id="eqhit-${containerId}" x="${padL}" y="0" width="${plotW}" height="${H+6}" fill="transparent" tabindex="0" focusable="true" role="slider" aria-label="Equity curve point" aria-valuemin="0" aria-valuemax="${points.length-1}" style="cursor:crosshair;touch-action:pan-y pinch-zoom"/>
     </svg>`;
 
   // left-to-right neon reveal ("rise") animation
@@ -12343,28 +12399,75 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
   container.classList.remove('rising');
   void container.offsetWidth;
   container.classList.add('rising');
-  // hover tooltip
+  // Pointer, touch and keyboard selection for each point on the equity curve.
   const hitRect = document.getElementById('eqhit-'+containerId);
   if(hitRect){
-    hitRect.addEventListener('mousemove', (e)=>{
-      const svg = hitRect.ownerSVGElement;
-      const ptm = svg.createSVGPoint(); ptm.x = e.clientX; ptm.y = e.clientY;
-      const loc = ptm.matrixTransform(svg.getScreenCTM().inverse());
-      let nearest = 0, best = Infinity;
-      topPts.forEach((p,i)=>{ const d = Math.abs(p[0]-loc.x); if(d<best){best=d; nearest=i;} });
-      const val = points[nearest].y;
-      const cross = document.getElementById('eqCross-'+containerId);
-      const focus = document.getElementById('eqFocus-'+containerId);
-      if(cross){cross.setAttribute('x1',topPts[nearest][0]);cross.setAttribute('x2',topPts[nearest][0]);cross.setAttribute('stroke-opacity','0.48');}
-      if(focus){focus.setAttribute('cx',topPts[nearest][0]);focus.setAttribute('cy',topPts[nearest][1]);focus.setAttribute('opacity','1');}
-      const plTxt = `${val>=0?'+':'-'}${eqSym}${shortMoney(val)}`;
-      showTip(e.clientX, e.clientY, eqOff ? `<b>${points[nearest].label}</b><br>Balance ${eqSym}${shortMoney(val+eqOff)}<br>${plTxt}` : `<b>${points[nearest].label}</b><br>${plTxt}`);
-    });
-    hitRect.addEventListener('mouseleave', ()=>{
-      hideTip();
+    const svg = hitRect.ownerSVGElement;
+    let selectedIndex = points.length-1;
+    const pointText = index=>{
+      const val=points[index].y;
+      const pnlTxt=(val>=0?'+':'-')+eqSym+shortMoney(val);
+      const label=String(points[index].label||'');
+      return eqOff ? label+'. Balance '+eqSym+shortMoney(val+eqOff)+'. '+pnlTxt : label+'. '+pnlTxt;
+    };
+    const pointHtml = index=>{
+      const val=points[index].y;
+      const pnlTxt=(val>=0?'+':'-')+eqSym+shortMoney(val);
+      const label=escapeHtml(String(points[index].label||''));
+      return eqOff ? '<b>'+label+'</b><br>Balance '+eqSym+shortMoney(val+eqOff)+'<br>'+pnlTxt : '<b>'+label+'</b><br>'+pnlTxt;
+    };
+    const updatePoint = index=>{
+      selectedIndex=Math.max(0,Math.min(points.length-1,index));
+      const cross=document.getElementById('eqCross-'+containerId);
+      const focus=document.getElementById('eqFocus-'+containerId);
+      if(cross){cross.setAttribute('x1',topPts[selectedIndex][0]);cross.setAttribute('x2',topPts[selectedIndex][0]);cross.setAttribute('stroke-opacity','0.48');}
+      if(focus){focus.setAttribute('cx',topPts[selectedIndex][0]);focus.setAttribute('cy',topPts[selectedIndex][1]);focus.setAttribute('opacity','1');}
+      hitRect.setAttribute('aria-valuenow',String(selectedIndex));
+      hitRect.setAttribute('aria-valuetext',pointText(selectedIndex));
+      return pointHtml(selectedIndex);
+    };
+    const showSelectedPoint = ()=>{
+      const matrix=svg && svg.getScreenCTM();
+      if(!matrix) return;
+      const point=svg.createSVGPoint();
+      point.x=topPts[selectedIndex][0]; point.y=topPts[selectedIndex][1];
+      const screenPoint=point.matrixTransform(matrix);
+      showTip(screenPoint.x,screenPoint.y,updatePoint(selectedIndex));
+    };
+    const clearPointFocus = ()=>{
+      if(document.activeElement===hitRect) return;
       const cross=document.getElementById('eqCross-'+containerId), focus=document.getElementById('eqFocus-'+containerId);
       if(cross) cross.setAttribute('stroke-opacity','0');
       if(focus) focus.setAttribute('opacity','0');
+    };
+    hitRect.setAttribute('aria-valuenow',String(selectedIndex));
+    hitRect.setAttribute('aria-valuetext',pointText(selectedIndex));
+    bindChartTooltip(hitRect,event=>{
+      const matrix=svg && svg.getScreenCTM();
+      if(!matrix) return '';
+      const ptm=svg.createSVGPoint(); ptm.x=event.clientX; ptm.y=event.clientY;
+      const loc=ptm.matrixTransform(matrix.inverse());
+      let nearest=0,best=Infinity;
+      topPts.forEach((p,i)=>{ const d=Math.abs(p[0]-loc.x); if(d<best){best=d;nearest=i;} });
+      return updatePoint(nearest);
+    });
+    hitRect.addEventListener('pointerleave',event=>{ if(event.pointerType!=='touch') clearPointFocus(); });
+    hitRect.addEventListener('mouseleave',clearPointFocus);
+    hitRect.addEventListener('focus',showSelectedPoint);
+    hitRect.addEventListener('blur',()=>{
+      hideTip();
+      clearPointFocus();
+    });
+    hitRect.addEventListener('keydown',event=>{
+      let next=selectedIndex;
+      if(event.key==='ArrowLeft'||event.key==='ArrowDown') next=Math.max(0,selectedIndex-1);
+      else if(event.key==='ArrowRight'||event.key==='ArrowUp') next=Math.min(points.length-1,selectedIndex+1);
+      else if(event.key==='Home') next=0;
+      else if(event.key==='End') next=points.length-1;
+      else return;
+      event.preventDefault();
+      selectedIndex=next;
+      showSelectedPoint();
     });
   }
 
@@ -12436,6 +12539,7 @@ function eqChartIdsForCard(card){
   return null;
 }
 function openCardFullscreen(btn){
+  hideTip();
   const card = btn.closest('.card');
   if(!card || fsCardEl) return;
   fsCardEl = card;
@@ -12470,6 +12574,7 @@ function openCardFullscreen(btn){
 }
 function closeCardFullscreen(){
   if(!fsCardEl) return;
+  hideTip();
   const card = fsCardEl;
   card.classList.remove('fs-active');
   document.body.classList.remove('card-fs-open');
