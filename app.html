@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="slate">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,7 +8,7 @@
 // Set the real theme (from a prior visit) before first paint, so there's
 // no flash of the light "portal" look while the rest of the page loads.
 try{
-  var savedTheme = 'slate';
+  var savedTheme = 'dark';
   localStorage.setItem('gd_theme', savedTheme);
   document.documentElement.setAttribute('data-theme', savedTheme);
 }catch(e){}
@@ -20,7 +20,7 @@ try{
 <meta name="robots" content="noindex,nofollow">
 <title>Ghost Discipline — GMC Traders</title>
 <script defer src="glass-interactions.js"></script>
-<script>document.documentElement.setAttribute('data-theme','slate');</script>
+<script>document.documentElement.setAttribute('data-theme','dark');</script>
 <script>
 /* Graceful fallback if /ghost-discipline-logo-v2.png is missing/slow: swap the broken-image
    icon for a styled monogram badge instead of leaving a broken img box. */
@@ -2671,6 +2671,63 @@ html #gdSectionTransition .gd-section-progress i{background:linear-gradient(90de
 @keyframes gdStableWorkspaceEnter{from{opacity:.96}to{opacity:1}}
 .chart-tooltip{max-width:min(320px,calc(100vw - 24px));white-space:normal;overflow-wrap:anywhere}
 </style>
+<style id="gd-workspace-design-system">
+/* Workspace design direction: editorial hierarchy, calmer surfaces, clearer mobile actions. */
+#appShell.show .card{
+  border-color:var(--steel)!important;
+  border-radius:18px!important;
+  background:var(--panel-solid)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 12px 30px -26px rgba(0,0,0,.62)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+#appShell.show .hero-stat{
+  border:1px solid var(--steel)!important;
+  border-radius:15px!important;
+  background:var(--panel-solid)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+}
+#appShell.show .page-title{font:500 clamp(27px,4vw,34px)/1.05 'Fraunces',Georgia,serif!important;letter-spacing:-.035em!important}
+#appShell.show .page-sub{max-width:58ch;color:var(--slate)!important;font-size:12px!important;line-height:1.58!important}
+#appShell.show .card h2{letter-spacing:-.015em}
+#appShell.show #dashboardEquityCard .equity-head h2{font:500 20px/1.1 'Fraunces',Georgia,serif!important;text-transform:none;letter-spacing:-.02em}
+#appShell.show #dashboardEquityCard .equity-sub{font-size:11px;line-height:1.45;color:var(--slate)}
+#appShell.show #dashboardEquityCard .overview-equity-context{margin-top:5px;color:var(--slate-dim);font-size:10px;line-height:1.4}
+#appShell.show .equity-wrap{
+  border:1px solid var(--steel)!important;border-radius:15px!important;
+  background:radial-gradient(ellipse 80% 90% at 50% 0%,color-mix(in srgb,var(--bronze-bright) 7%,transparent),transparent 72%),var(--panel-solid)!important;
+  box-shadow:none!important;
+}
+#appShell.show .equity-wrap::before,#appShell.show .equity-wrap::after{background:none!important;mix-blend-mode:normal!important}
+#appShell.show .eq-chart-empty{min-height:154px;display:grid;place-items:center;padding:16px}
+#appShell.show .eq-empty-state{width:100%;display:grid;justify-items:center;gap:7px;text-align:center}
+#appShell.show .eq-empty-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--bronze-bright) 25%,var(--steel));border-radius:11px;background:color-mix(in srgb,var(--bronze-bright) 8%,transparent);color:var(--bronze-bright)}
+#appShell.show .eq-empty-mark svg{width:17px;height:17px}
+#appShell.show .eq-empty-state strong{color:var(--platinum);font:500 16px/1.2 'Fraunces',Georgia,serif}
+#appShell.show .eq-empty-copy{max-width:290px;color:var(--slate);font:400 11px/1.5 'Instrument Sans',system-ui,sans-serif}
+#appShell.show .eq-empty-action{min-height:36px;margin-top:3px;padding:0 12px;border:1px solid color-mix(in srgb,var(--bronze-bright) 35%,var(--steel));border-radius:10px;background:color-mix(in srgb,var(--bronze-bright) 11%,var(--panel-solid));color:var(--platinum);font:600 10px 'Instrument Sans',system-ui,sans-serif}
+#appShell.show .eq-empty-action:hover{background:color-mix(in srgb,var(--bronze-bright) 17%,var(--panel-solid))}
+#appShell.show .eq-empty-action span{margin-left:5px;color:var(--bronze-bright)}
+@media(max-width:760px){
+  #appShell.show .card{border-radius:16px!important}
+  #appShell.show .main{padding-bottom:calc(106px + env(safe-area-inset-bottom))!important}
+  #appShell.show #dashboardEquityCard{padding:18px 15px!important}
+  #appShell.show #dashboardEquityCard .equity-wrap{min-height:0!important}
+  #appShell.show #dashboardEquityCard .equity-wrap:has(.eq-chart-empty){min-height:174px!important}
+  #appShell.show #dashboardEquityCard .equity-inner:has(.eq-chart-empty){min-height:154px}
+  #appShell.show .tab-bar{
+    gap:3px!important;padding:5px 6px calc(5px + env(safe-area-inset-bottom))!important;
+    border-color:var(--steel-hi)!important;border-radius:18px!important;
+    background:color-mix(in srgb,var(--panel-solid) 94%,transparent)!important;
+    box-shadow:0 12px 30px -22px rgba(0,0,0,.78),inset 0 1px rgba(255,255,255,.06)!important;
+    backdrop-filter:blur(16px) saturate(130%)!important;-webkit-backdrop-filter:blur(16px) saturate(130%)!important;
+  }
+  #appShell.show .tab-btn{min-width:0!important;min-height:46px;padding:5px 4px!important;border-radius:12px!important;gap:4px!important;font-size:9px!important;transform:none!important}
+  #appShell.show .tab-btn svg{width:18px;height:18px}
+  #appShell.show .tab-btn.active{background:color-mix(in srgb,var(--bronze-bright) 12%,transparent)!important;color:var(--platinum)!important;box-shadow:inset 0 1px rgba(255,255,255,.07)!important}
+}
+</style>
+
+
 </head>
 <body>
 <script>
@@ -12162,11 +12219,24 @@ function renderEquityChart(containerId, totalId, subId, tallPx){
     document.querySelectorAll('#overviewEquityRanges [data-overview-range]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.overviewRange===activeOverviewEquityRange)));
   }
   if(trades.length===0){
-    container.innerHTML = eqO ? eqO.emptyHtml : `<div class="empty-state"><span class="glyph"></span>${activeOverviewEquityRange==='all'?'No trades yet on '+escapeHtml(eqLabel)+' — your equity curve will build as you log trades.':'No trades in this window for '+escapeHtml(eqLabel)+' — choose a longer range to see more history.'}</div>`;
+    container.classList.add('eq-chart-empty');
+    const emptyWindow = containerId==='equityChartOverview' && activeOverviewEquityRange!=='all';
+    const emptyTitle = emptyWindow ? 'No trades in this range' : 'Your curve starts with a trade';
+    const emptyCopy = emptyWindow
+      ? 'Choose a longer window or log a trade to begin building your curve.'
+      : 'No trades yet on '+escapeHtml(eqLabel)+'. Log your first trade and your curve will take shape here.';
+    const emptyAction = containerId==='equityChartOverview' && !isDemoMode
+      ? '<button type="button" class="eq-empty-action" onclick="openPretrade()">Log a trade <span aria-hidden="true">→</span></button>'
+      : '';
+    container.innerHTML = eqO ? eqO.emptyHtml : `<div class="eq-empty-state" role="status">
+      <span class="eq-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17h4l3-6 3 4 3-8 3 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <strong>${emptyTitle}</strong><span class="eq-empty-copy">${emptyCopy}</span>${emptyAction}
+    </div>`;
     if(totalEl){ totalEl.textContent=eqSym+'0'; totalEl.className='equity-total'; }
     if(eqO && eqO.onEmpty) eqO.onEmpty(); else { setEquityStats([]); setEquityFooter([]); }
     return;
   }
+  container.classList.remove('eq-chart-empty');
   let cum = 0;
   const points = [{x:0,y:0,label:'Start'}];
   let peak = 0, maxDD = 0;
@@ -17057,5 +17127,197 @@ document.addEventListener('DOMContentLoaded', function(){
   };
 });
 </script>
-<div id="gdSectionTransition" class="gd-section-transition" hidden role="status" aria-live="polite" aria-atomic="true"><span id="gdSectionLive" class="gd-section-sr">Opening workspace section</span><div class="gd-section-transition-inner"><div class="journal-load-scene" aria-hidden="true"><div class="journal-load-aura"></div><div class="journal-load-orbit journal-load-orbit--one"></div><div class="journal-load-orbit journal-load-orbit--two"></div><div class="journal-load-book"><div class="journal-load-pages"><div class="journal-load-page"><span class="journal-load-page-label">SESSION NOTES</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9" fill="none" stroke="#6e956a" stroke-width="2"/><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9 120 40 0 40Z" fill="#7eaa72" fill-opacity=".12"/></svg></div></div><div class="journal-load-page journal-load-page--right"><span class="journal-load-page-label">TRADE REVIEW</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4" fill="none" stroke="#b69855" stroke-width="2"/><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4 120 40 0 40Z" fill="#b69855" fill-opacity=".13"/></svg></div></div><div class="journal-load-spine"></div><div class="journal-load-cover"><div class="journal-load-cover-face journal-load-cover-front"><div class="journal-load-emblem"><span></span></div><span class="journal-load-cover-brand">GHOST DISCIPLINE</span><strong class="journal-load-cover-title">TRADE<br>JOURNAL</strong><span class="journal-load-cover-foot">RECORD · REVIEW · REFINE</span></div><div class="journal-load-cover-face journal-load-cover-back"></div></div></div></div><div class="gd-section-copy" aria-hidden="true"><span class="gd-section-kicker">GHOST DISCIPLINE / WORKSPACE</span><strong id="gdSectionTitle">Preparing your workspace</strong><span id="gdSectionSubtitle">Opening the selected workspace section</span><div class="gd-section-progress"><i></i></div></div></div></div><script>(function(){var overlay=document.getElementById('gdSectionTransition');var title=document.getElementById('gdSectionTitle');var subtitle=document.getElementById('gdSectionSubtitle');var live=document.getElementById('gdSectionLive');var labels={dashboard:['Trading floor','Opening your account overview'],brief:['Market brief','Opening selected markets and session context'],analytics:['Performance lab','Opening recorded performance statistics'],calendar:['Economic calendar','Opening upcoming economic events'],journal:['Your journal','Opening recorded trades and journal notes'],tradeplan:['Daily trade plan','Opening the plan and risk limits for today'],reviewroom:['Review room','Opening closed trades for review'],orders:['Order book','Opening order history'],playbook:['Strategy playbook','Opening saved setups and rules'],stratnotes:['Strategy notes','Opening saved strategy notes'],backtest:['Backtest lab','Opening saved backtest sessions'],psychology:['Mindset check-in','Opening your mindset check-in'],rules:['Risk rules','Opening your risk limits and session rules'],propfirm:['Prop firm settings','Opening your funded-account rules'],proporders:['Prop firm orders','Opening challenge order history'],propequity:['Prop firm equity','Opening challenge progress and equity'],propfirmrisk:['Risk monitor','Opening challenge risk limits'],propfirmpayout:['Payout planner','Opening payout details'],session:['Session workspace','Opening the current session plan'],team:['Team workspace','Opening team notes and weekly summaries'],edgelab:['Edge lab','Opening performance and challenge analysis'],profile:['Trader profile','Opening your profile and preferences'],packages:['Membership','Opening membership options'],about:['About Ghost Discipline','Opening product information']};window.playSectionTransition=function(view){if(!overlay)return;var copy=labels[view]||['Opening workspace','Opening the selected workspace section'];if(title)title.textContent=copy[0];if(subtitle)subtitle.textContent=copy[1];if(live)live.textContent='Opening '+copy[0]+'. '+copy[1]+'.';clearTimeout(overlay._sectionCloseTimer);clearTimeout(overlay._sectionHideTimer);overlay.hidden=false;overlay.classList.remove('is-leaving','is-running');void overlay.offsetWidth;overlay.classList.add('is-running');var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;overlay._sectionCloseTimer=window.setTimeout(function(){overlay.classList.add('is-leaving');overlay._sectionHideTimer=window.setTimeout(function(){overlay.hidden=true;overlay.classList.remove('is-running','is-leaving');},300);},reduce?140:1640);};})();</script></body>
+<div id="gdSectionTransition" class="gd-section-transition" hidden role="status" aria-live="polite" aria-atomic="true"><span id="gdSectionLive" class="gd-section-sr">Opening workspace section</span><div class="gd-section-transition-inner"><div class="journal-load-scene" aria-hidden="true"><div class="journal-load-aura"></div><div class="journal-load-orbit journal-load-orbit--one"></div><div class="journal-load-orbit journal-load-orbit--two"></div><div class="journal-load-book"><div class="journal-load-pages"><div class="journal-load-page"><span class="journal-load-page-label">SESSION NOTES</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9" fill="none" stroke="#6e956a" stroke-width="2"/><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9 120 40 0 40Z" fill="#7eaa72" fill-opacity=".12"/></svg></div></div><div class="journal-load-page journal-load-page--right"><span class="journal-load-page-label">TRADE REVIEW</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4" fill="none" stroke="#b69855" stroke-width="2"/><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4 120 40 0 40Z" fill="#b69855" fill-opacity=".13"/></svg></div></div><div class="journal-load-spine"></div><div class="journal-load-cover"><div class="journal-load-cover-face journal-load-cover-front"><div class="journal-load-emblem"><span></span></div><span class="journal-load-cover-brand">GHOST DISCIPLINE</span><strong class="journal-load-cover-title">TRADE<br>JOURNAL</strong><span class="journal-load-cover-foot">RECORD · REVIEW · REFINE</span></div><div class="journal-load-cover-face journal-load-cover-back"></div></div></div></div><div class="gd-section-copy" aria-hidden="true"><span class="gd-section-kicker">GHOST DISCIPLINE / WORKSPACE</span><strong id="gdSectionTitle">Preparing your workspace</strong><span id="gdSectionSubtitle">Opening the selected workspace section</span><div class="gd-section-progress"><i></i></div></div></div></div><script>(function(){var overlay=document.getElementById('gdSectionTransition');var title=document.getElementById('gdSectionTitle');var subtitle=document.getElementById('gdSectionSubtitle');var live=document.getElementById('gdSectionLive');var labels={dashboard:['Trading floor','Opening your account overview'],brief:['Market brief','Opening selected markets and session context'],analytics:['Performance lab','Opening recorded performance statistics'],calendar:['Economic calendar','Opening upcoming economic events'],journal:['Your journal','Opening recorded trades and journal notes'],tradeplan:['Daily trade plan','Opening the plan and risk limits for today'],reviewroom:['Review room','Opening closed trades for review'],orders:['Order book','Opening order history'],playbook:['Strategy playbook','Opening saved setups and rules'],stratnotes:['Strategy notes','Opening saved strategy notes'],backtest:['Backtest lab','Opening saved backtest sessions'],psychology:['Mindset check-in','Opening your mindset check-in'],rules:['Risk rules','Opening your risk limits and session rules'],propfirm:['Prop firm settings','Opening your funded-account rules'],proporders:['Prop firm orders','Opening challenge order history'],propequity:['Prop firm equity','Opening challenge progress and equity'],propfirmrisk:['Risk monitor','Opening challenge risk limits'],propfirmpayout:['Payout planner','Opening payout details'],session:['Session workspace','Opening the current session plan'],team:['Team workspace','Opening team notes and weekly summaries'],edgelab:['Edge lab','Opening performance and challenge analysis'],profile:['Trader profile','Opening your profile and preferences'],packages:['Membership','Opening membership options'],about:['About Ghost Discipline','Opening product information']};window.playSectionTransition=function(view){if(!overlay)return;var copy=labels[view]||['Opening workspace','Opening the selected workspace section'];if(title)title.textContent=copy[0];if(subtitle)subtitle.textContent=copy[1];if(live)live.textContent='Opening '+copy[0]+'. '+copy[1]+'.';clearTimeout(overlay._sectionCloseTimer);clearTimeout(overlay._sectionHideTimer);overlay.hidden=false;overlay.classList.remove('is-leaving','is-running');void overlay.offsetWidth;overlay.classList.add('is-running');var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;overlay._sectionCloseTimer=window.setTimeout(function(){overlay.classList.add('is-leaving');overlay._sectionHideTimer=window.setTimeout(function(){overlay.hidden=true;overlay.classList.remove('is-running','is-leaving');},300);},reduce?140:1640);};})();</script>
+<style id="gd-auth-entry-design-system">
+  /* Sign-in and account creation use the same quiet forest surfaces as the public home page. */
+  #authScreen{
+    min-height:100vh;min-height:100svh;min-height:100dvh;
+    padding:clamp(24px,5vw,68px);
+    background:radial-gradient(ellipse 68% 52% at 17% 15%,rgba(101,133,91,.12),transparent 72%),#0a100b!important;
+  }
+  #authScreen::before{opacity:.035!important;background-image:linear-gradient(rgba(232,239,229,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(232,239,229,.14) 1px,transparent 1px)!important;background-size:56px 56px!important;mask-image:radial-gradient(ellipse 900px 680px at 50% 28%,black,transparent 78%)!important}
+  #authScreen .auth-video-bg,#authScreen .auth-video-vignette,#authScreen .auth-scan,#authScreen .auth-vignette,#authScreen .auth-blob{display:none!important}
+  #authScreen .auth-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,456px);align-items:center;gap:clamp(32px,7vw,88px);width:min(1100px,100%);max-width:none;margin:auto}
+  #authScreen .auth-brand{max-width:520px}
+  #authScreen .auth-kicker{color:#bdcdaa;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase}
+  #authScreen .auth-brand>p a{color:#bdcdaa!important;text-decoration:none!important}
+  #authScreen .auth-headline{max-width:12ch;margin:0 0 16px;color:#eef1e8;font:500 clamp(38px,4.5vw,56px)/1.03 'Fraunces',Georgia,serif;letter-spacing:-.045em;text-shadow:none!important;filter:none!important}
+  #authScreen .auth-lede{max-width:48ch;margin-bottom:20px;color:#adb5a7;font-size:14px;line-height:1.75}
+  #authScreen .auth-pillars{gap:0}
+  #authScreen .auth-pillars li{padding:13px 0;border-top:1px solid rgba(234,240,229,.1);border-radius:0}
+  #authScreen .auth-pillars li:last-child{border-bottom:1px solid rgba(234,240,229,.1)}
+  #authScreen .auth-pillars li:hover{background:transparent}
+  #authScreen .auth-pillars strong{color:#eef1e8;font-size:13px}
+  #authScreen .auth-pillars span{color:#9da799;font-size:11px;line-height:1.55}
+  #authScreen .auth-emblem{perspective:none}
+  #authScreen .medallion{width:112px;height:112px;margin:0 0 14px;transform:none!important;transform-style:flat;animation:none!important}
+  #authScreen .medallion::before{display:none!important}
+  #authScreen .medallion-plate{border:1px solid rgba(234,240,229,.14);border-radius:24px;background:#141c15;box-shadow:0 14px 36px -26px rgba(0,0,0,.9);transform:none!important;transform-style:flat;animation:none!important}
+  #authScreen .medallion-logo,#authScreen .medallion-fallback{width:86%;height:86%;border-radius:18px;filter:none;box-shadow:none}
+  #authScreen .medallion-caption{display:none}
+  #authScreen .auth-card{
+    width:100%;max-width:456px;padding:clamp(23px,3vw,34px);
+    border:1px solid rgba(234,240,229,.14)!important;border-radius:20px!important;
+    background:#141c15!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+    box-shadow:0 24px 64px -48px rgba(0,0,0,.92),inset 0 1px rgba(255,255,255,.04)!important;
+    transform:none!important;transform-style:flat!important;touch-action:auto!important;transition:none!important;will-change:auto!important;cursor:auto!important;
+  }
+  #authScreen .auth-card::before{display:none!important}
+  #authScreen .auth-card:hover,#authScreen .auth-card.is-auth-dragging,#authScreen .auth-card.is-auth-settling{transform:none!important;box-shadow:0 24px 64px -48px rgba(0,0,0,.92),inset 0 1px rgba(255,255,255,.04)!important;cursor:auto!important}
+  #authScreen .auth-card-head{border-color:rgba(234,240,229,.1)}
+  #authScreen .auth-card-mark{border-color:rgba(189,205,170,.24);background:rgba(189,205,170,.08);color:#bdcdaa;box-shadow:none}
+  #authScreen .auth-card-brand strong{color:#eef1e8}
+  #authScreen .auth-card-brand small,#authScreen .auth-card-kicker{color:#858e80}
+  #authScreen .auth-mode-switch{border-color:rgba(234,240,229,.1);background:#0e150f}
+  #authScreen .auth-mode-switch button{color:#9da799}
+  #authScreen .auth-mode-switch button[aria-pressed="true"]{border-color:rgba(189,205,170,.2);background:#1b261c;color:#eef1e8;box-shadow:none}
+  #authScreen .auth-card .auth-title{margin:0 0 7px;color:#eef1e8;font:500 28px/1.1 'Fraunces',Georgia,serif;letter-spacing:-.03em;background:none;-webkit-text-fill-color:#eef1e8;text-shadow:none;filter:none}
+  #authScreen .auth-card .auth-sub{margin-bottom:20px;color:#a7b0a2;font-size:12px;line-height:1.65}
+  #authScreen .auth-card .auth-field{margin-bottom:15px}
+  #authScreen .auth-card .auth-field label{color:#adb5a7}
+  #authScreen .auth-card .auth-field input{min-height:46px;border:1px solid rgba(234,240,229,.14);border-radius:10px;background:#0c130d;color:#eef1e8;box-shadow:none}
+  #authScreen .auth-card .auth-field input:focus{border-color:#bdcdaa;box-shadow:0 0 0 3px rgba(189,205,170,.13)}
+  #authScreen .auth-options-row{color:#adb5a7}
+  #authScreen .auth-forgot{color:#bdcdaa}
+  #authScreen .auth-card .btn-gold{min-height:46px;border:1px solid #bdcdaa;border-radius:10px;background:#bdcdaa!important;color:#152016!important;box-shadow:none!important;font-size:12px;font-weight:700}
+  #authScreen .auth-card .btn-gold:hover{background:#cbd8bb!important;border-color:#cbd8bb;transform:translateY(-1px)}
+  #authScreen .auth-card .auth-social-divider{color:#858e80}
+  #authScreen .auth-card .auth-social-btn{border-color:rgba(234,240,229,.12);background:#19231a;color:#eef1e8}
+  #authScreen .auth-card .auth-social-btn:hover{border-color:rgba(189,205,170,.32);background:#1d291f;transform:none}
+  #authScreen .auth-card .auth-foot,#authScreen .auth-card .auth-demo-hint{color:#858e80}
+  #authScreen .auth-card #startDemoBtn{border-color:rgba(234,240,229,.14);border-radius:10px;background:transparent;color:#eef1e8}
+  #authScreen .auth-card #startDemoBtn:hover{border-color:rgba(189,205,170,.32);background:rgba(189,205,170,.06);color:#bdcdaa}
+  #authScreen :focus-visible{outline:2px solid #bdcdaa;outline-offset:3px}
+  @media(max-width:960px){#authScreen .auth-wrap{grid-template-columns:minmax(0,1fr) minmax(340px,456px);gap:28px}#authScreen .auth-pillars{display:none}}
+  @media(max-width:760px){
+    #authScreen{align-items:flex-start;padding:max(22px,env(safe-area-inset-top)) 18px max(30px,env(safe-area-inset-bottom))}
+    #authScreen .auth-wrap{grid-template-columns:1fr;gap:18px;max-width:480px}
+    #authScreen .auth-brand{text-align:left;max-width:none}
+    #authScreen .auth-brand .auth-emblem{display:none}
+    #authScreen .auth-headline{max-width:15ch;margin:4px 0 9px;font-size:34px}
+    #authScreen .auth-lede{max-width:54ch;margin:0;font-size:12px;line-height:1.6}
+    #authScreen .auth-card{max-width:none;padding:22px 19px}
+  }
+  @media(max-width:400px){#authScreen .auth-headline{font-size:31px}#authScreen .auth-card{padding:20px 16px}}
+</style>
+<style id="gd-workspace-redesign-v2">
+  /* A more visible workspace redesign: strong forest palette, editorial hierarchy, and page-specific layouts. */
+  html[data-theme="dark"] #appShell.show{
+    --void:#080d09;--void-2:#0e1610;--graphite:#121c14;--graphite-hi:#1a271b;
+    --panel:rgba(17,27,19,.96);--panel-solid:#111b13;
+    --steel:rgba(226,238,219,.11);--steel-hi:rgba(226,238,219,.19);
+    --bronze-bright:#bfd1ad;--bronze:#91aa7c;--bronze-dim:#455b3c;--bronze-ink:#142014;
+    --gold:#d1ba84;--gold-bright:#e2d09e;--platinum:#eff2e7;--slate:#a8b19f;--slate-dim:#74806f;
+  }
+  #appShell.show .main{width:min(100%,1500px)!important;max-width:1500px!important;padding:34px clamp(18px,3.2vw,52px) 128px!important}
+  #appShell.show .view.active{animation:none!important}
+  #appShell.show .topbar-row{align-items:flex-end!important;gap:18px!important;margin-bottom:23px!important;padding:0 0 18px!important;border-bottom:1px solid var(--steel-hi)!important}
+  #appShell.show .page-title{font:500 clamp(32px,3.2vw,43px)/1 'Fraunces',Georgia,serif!important;letter-spacing:-.045em!important;color:var(--platinum)!important}
+  #appShell.show .page-sub{max-width:60ch;margin-top:8px!important;color:var(--slate)!important;font:400 12px/1.55 'Instrument Sans',system-ui,sans-serif!important;font-style:normal!important;opacity:1!important}
+  #appShell.show .card{
+    border:1px solid var(--steel-hi)!important;border-radius:20px!important;padding:24px!important;
+    background:linear-gradient(155deg,rgba(255,255,255,.035),transparent 42%),var(--panel-solid)!important;
+    box-shadow:0 18px 46px -38px rgba(0,0,0,.88),inset 0 1px rgba(255,255,255,.04)!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+    transform:none!important;transition:border-color .18s ease,box-shadow .18s ease!important;
+  }
+  #appShell.show .card:hover,#appShell.show .card.tilt:hover{transform:none!important;border-color:color-mix(in srgb,var(--bronze-bright) 42%,var(--steel-hi))!important;box-shadow:0 20px 46px -36px rgba(0,0,0,.92),inset 0 1px rgba(255,255,255,.05)!important}
+  #appShell.show .card h2{margin-bottom:16px;color:var(--platinum);font:500 21px/1.15 'Fraunces',Georgia,serif!important;letter-spacing:-.025em!important}
+  #appShell.show .card h2 .accent{color:var(--bronze-bright)!important}
+  #appShell.show .card .eyebrow{color:var(--slate-dim)!important;font:500 8px/1.4 'IBM Plex Mono',monospace!important;letter-spacing:.1em!important}
+  #appShell.show .btn,#appShell.show .btn-primary,#appShell.show .btn-gold{border-radius:11px!important;box-shadow:none!important;font-weight:650!important}
+  #appShell.show .btn-primary,#appShell.show .btn-gold{border:1px solid var(--bronze-bright)!important;background:var(--bronze-bright)!important;color:var(--bronze-ink)!important}
+  #appShell.show .btn-primary:hover,#appShell.show .btn-gold:hover{background:#cfddc0!important;border-color:#cfddc0!important;transform:translateY(-1px)}
+  #appShell.show input,#appShell.show select,#appShell.show textarea{border-color:var(--steel-hi)!important;border-radius:10px!important;background:var(--void-2)!important;color:var(--platinum)!important;box-shadow:none!important}
+  #appShell.show input:focus,#appShell.show select:focus,#appShell.show textarea:focus{border-color:var(--bronze-bright)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--bronze-bright) 16%,transparent)!important}
+  #appShell.show .sidebar{border-color:var(--steel)!important;background:var(--void-2)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:16px 0 44px -34px rgba(0,0,0,.85)!important}
+  #appShell.show .side-brand{padding:22px 17px 25px!important}
+  #appShell.show .side-nav-label{padding:19px 16px 7px!important;color:var(--slate-dim)!important;font:600 8px/1.2 'IBM Plex Mono',monospace!important;letter-spacing:.13em!important;text-transform:uppercase}
+  #appShell.show .side-navbtn{min-height:42px;margin:2px 9px!important;padding:0 12px!important;border:1px solid transparent!important;border-radius:12px!important;color:var(--slate)!important}
+  #appShell.show .side-navbtn:hover{background:rgba(255,255,255,.04)!important;color:var(--platinum)!important}
+  #appShell.show .side-navbtn.active{border-color:color-mix(in srgb,var(--bronze-bright) 28%,var(--steel-hi))!important;border-left:1px solid color-mix(in srgb,var(--bronze-bright) 28%,var(--steel-hi))!important;background:color-mix(in srgb,var(--bronze-bright) 12%,transparent)!important;color:var(--platinum)!important;box-shadow:none!important}
+  #appShell.show .side-navbtn.active svg path,#appShell.show .side-navbtn.active svg circle,#appShell.show .side-navbtn.active svg rect{stroke:var(--bronze-bright)!important}
+  #view-dashboard.active{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px!important;align-content:start}
+  #view-dashboard>.topbar-row,#view-dashboard>#firstSessionGuide,#view-dashboard>#momentumBanner,#view-dashboard>#heroStatsRow,#view-dashboard>#dashboardEquityCard,#view-dashboard>#dashboardDisciplineGrid,#view-dashboard>#dashboardFocusGrid,#view-dashboard>#dashboardActivityGrid{grid-column:1/-1}
+  #view-dashboard>.topbar-row{order:0}
+  #view-dashboard>#heroStatsRow{order:2}
+  #view-dashboard>#momentumBanner{order:1}
+  #view-dashboard>#dashboardEquityCard{order:3}
+  #view-dashboard>#aiCoachCard{grid-column:1/7;order:4;margin:0!important}
+  #view-dashboard>#traderIdentityCard{grid-column:7/-1;order:5;margin:0!important}
+  #view-dashboard>#dashboardDisciplineGrid{order:6;margin:0!important}
+  #view-dashboard>#dashboardFocusGrid{order:7;margin:0!important}
+  #view-dashboard>#dashboardActivityGrid{order:8;margin:0!important}
+  #view-dashboard>#heroStatsRow.hero-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;padding:0!important;border:0!important;background:transparent!important;overflow:visible!important}
+  #view-dashboard #heroStatsRow .hero-stat{position:relative;min-height:140px;padding:20px!important;overflow:hidden;border:1px solid var(--steel-hi)!important;border-radius:18px!important;background:linear-gradient(150deg,color-mix(in srgb,var(--bronze-bright) 9%,transparent),transparent 68%),var(--panel-solid)!important;box-shadow:inset 0 1px rgba(255,255,255,.045)!important}
+  #view-dashboard #heroStatsRow .hero-stat::after{display:none!important}
+  #view-dashboard #heroStatsRow .hero-icon{width:34px!important;height:34px!important;margin-bottom:15px!important;border:1px solid color-mix(in srgb,var(--bronze-bright) 30%,var(--steel))!important;border-radius:11px!important;background:color-mix(in srgb,var(--bronze-bright) 10%,transparent)!important;color:var(--bronze-bright)!important}
+  #view-dashboard #heroStatsRow .hero-icon svg{width:16px!important;height:16px!important}
+  #view-dashboard #heroStatsRow .hero-label{color:var(--slate)!important;font:600 9px/1.2 'IBM Plex Mono',monospace!important;letter-spacing:.1em!important;text-transform:uppercase}
+  #view-dashboard #heroStatsRow .hero-value{margin-top:6px;color:var(--platinum)!important;font:500 clamp(24px,2.3vw,32px)/1 'IBM Plex Mono',monospace!important;letter-spacing:-.04em}
+  #view-dashboard #heroStatsRow .hero-sub{margin-top:7px;color:var(--slate-dim)!important;font-size:10px!important}
+  #view-dashboard #dashboardEquityCard{padding:26px!important;border-radius:23px!important;background:linear-gradient(145deg,rgba(191,209,173,.07),transparent 56%),var(--panel-solid)!important}
+  #view-dashboard #dashboardEquityCard .equity-wrap,#view-analytics .equity-wrap{min-height:300px!important;border:1px solid var(--steel)!important;border-radius:17px!important;background-color:var(--void-2)!important;background-image:linear-gradient(color-mix(in srgb,var(--steel) 70%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--steel) 70%,transparent) 1px,transparent 1px)!important;background-size:100% 48px,74px 100%!important}
+  #view-dashboard #dashboardEquityCard .equity-total{color:var(--bronze-bright)!important;font:500 29px/1 'IBM Plex Mono',monospace!important}
+  #view-dashboard #dashboardEquityCard .equity-head{align-items:center!important;margin-bottom:18px!important}
+  #view-dashboard #dashboardDisciplineGrid,#view-dashboard #dashboardFocusGrid,#view-dashboard #dashboardActivityGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+  #view-dashboard #aiCoachCard{background:linear-gradient(150deg,color-mix(in srgb,var(--bronze-bright) 8%,transparent),transparent 72%),var(--panel-solid)!important}
+  #view-dashboard #aiCoachCard .ai-insight{font:italic 18px/1.55 'Fraunces',Georgia,serif!important}
+  #view-analytics.active{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px!important;align-content:start}
+  #view-analytics>.topbar-row,#view-analytics>.card.card-ai,#view-analytics>.eq-dark-card{grid-column:1/-1}
+  #view-analytics>.topbar-row{order:0}
+  #view-analytics>.card.card-ai{order:1;margin:0!important}
+  #view-analytics>.eq-dark-card{order:2;background:var(--panel-solid)!important}
+  #view-analytics>.card{min-width:0;margin:0!important}
+  #view-analytics>.card:has(.lead-table-wrap),#view-analytics>.card:has(#dowTable){grid-column:1/-1}
+  #view-analytics .eq-stat-row{gap:10px!important;margin:18px 0!important}
+  #view-analytics .eq-stat{border:1px solid var(--steel)!important;border-radius:14px!important;background:var(--void-2)!important;padding:13px!important}
+  #view-journal.active{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px!important;align-content:start}
+  #view-journal>.topbar-row,#view-journal>.grid{grid-column:1/-1}
+  #view-journal>.topbar-row{order:0}
+  #view-journal>.grid{display:grid!important;grid-template-columns:minmax(240px,.7fr) minmax(0,1.6fr)!important;gap:16px!important;margin:0!important}
+  #view-journal>.grid>.card:first-child{background:linear-gradient(160deg,color-mix(in srgb,var(--bronze-bright) 8%,transparent),transparent 70%),var(--panel-solid)!important}
+  #view-journal .stat-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px!important}
+  #view-journal .stat{padding:13px!important;border:1px solid var(--steel)!important;border-radius:13px!important;background:var(--void-2)!important}
+  #view-journal .journal-toolbar{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(120px,.8fr));gap:9px!important;margin-bottom:14px!important}
+  #view-journal .trade-item,#view-journal .journal-row{border-color:var(--steel)!important;background:#0d150e!important}
+  #view-calendar .cal-head{margin-bottom:18px!important;padding-bottom:15px!important;border-bottom:1px solid var(--steel)!important}
+  #view-calendar .cal-summary .stat{padding:13px!important;border:1px solid var(--steel)!important;border-radius:13px!important;background:var(--void-2)!important}
+  #view-calendar .cal-grid{gap:7px!important}
+  #appShell.show .tab-bar{bottom:calc(12px + env(safe-area-inset-bottom))!important;width:min(calc(100% - 24px),560px)!important;min-height:72px!important;padding:8px!important;border:1px solid var(--steel-hi)!important;border-radius:22px!important;background:var(--panel-solid)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:0 16px 42px -26px rgba(0,0,0,.92),inset 0 1px rgba(255,255,255,.05)!important}
+  #appShell.show .tab-btn{flex:1;min-width:0!important;min-height:54px!important;gap:4px!important;padding:6px 3px!important;border-radius:15px!important;color:#9da899!important;font-size:9px!important;transform:none!important}
+  #appShell.show .tab-btn svg{width:19px!important;height:19px!important}
+  #appShell.show .tab-btn.active{background:var(--bronze-bright)!important;color:var(--bronze-ink)!important;box-shadow:none!important}
+  #appShell.show .tab-btn.active svg{color:var(--bronze-ink)!important}
+  #appShell.show .mobile-topbar{background:var(--panel-solid)!important;border:1px solid var(--steel)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:0 12px 32px -28px #000!important}
+  #appShell.show :focus-visible{outline:2px solid var(--bronze-bright)!important;outline-offset:3px}
+  @media(max-width:980px){
+    #view-dashboard>#aiCoachCard,#view-dashboard>#traderIdentityCard{grid-column:1/-1}
+    #view-analytics.active{grid-template-columns:repeat(2,minmax(0,1fr))}
+    #view-analytics>.topbar-row,#view-analytics>.card.card-ai,#view-analytics>.eq-dark-card,#view-analytics>.card:has(.lead-table-wrap),#view-analytics>.card:has(#dowTable){grid-column:1/-1}
+  }
+  @media(max-width:760px){
+    #appShell.show .main{padding:24px 15px calc(126px + env(safe-area-inset-bottom))!important}
+    #appShell.show .topbar-row{align-items:flex-start!important;margin-bottom:15px!important;padding-bottom:15px!important}
+    #appShell.show .page-title{font-size:31px!important}
+    #appShell.show .card{padding:18px!important;border-radius:17px!important}
+    #view-dashboard.active{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+    #view-dashboard>#aiCoachCard,#view-dashboard>#traderIdentityCard{grid-column:1/-1}
+    #view-dashboard>#heroStatsRow.hero-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+    #view-dashboard #heroStatsRow .hero-stat{min-height:126px;padding:15px!important;border-radius:15px!important}
+    #view-dashboard #dashboardEquityCard .equity-wrap,#view-analytics .equity-wrap{min-height:230px!important}
+    #view-dashboard #dashboardDisciplineGrid,#view-dashboard #dashboardFocusGrid,#view-dashboard #dashboardActivityGrid{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+    #view-analytics.active{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+    #view-analytics>.card{grid-column:1/-1}
+    #view-analytics .eq-stat-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    #view-journal.active{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+    #view-journal>.grid{grid-template-columns:minmax(0,1fr)!important}
+    #view-journal .journal-toolbar{grid-template-columns:1fr 1fr}
+    #view-journal .journal-search{grid-column:1/-1}
+    #view-calendar .cal-grid{gap:4px!important}
+    #appShell.show .tab-bar{min-height:68px!important}
+    #appShell.show .tab-btn{min-height:50px!important;font-size:8px!important}
+  }
+</style>
+</body>
 </html>
