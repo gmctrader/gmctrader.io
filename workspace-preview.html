@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ghost Discipline — Workspace design concept</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#070b08;--panel:#0e1510;--panel-2:#121a14;--panel-3:#17211a;
+  --line:rgba(222,235,221,.11);--line-strong:rgba(222,235,221,.18);
+  --text:#edf0e8;--muted:#9aa396;--dim:#697466;
+  --sage:#b9d1ac;--sage-soft:rgba(185,209,172,.12);--sage-ink:#172319;
+  --gold:#c8ad7a;--red:#ce8276;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:Inter,"Segoe UI",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Consolas,monospace;
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{display:grid;place-items:center;padding:22px;background:
+ radial-gradient(ellipse at 50% 0%,rgba(110,139,99,.12),transparent 44%),
+ #050806}
+button{font:inherit}
+.preview-label{position:fixed;left:24px;top:24px;color:#899586;font:10px var(--mono);letter-spacing:.16em;text-transform:uppercase}
+.device{position:relative;width:min(100%,430px);height:min(930px,calc(100dvh - 44px));min-height:660px;border:1px solid rgba(228,238,226,.17);border-radius:30px;overflow:hidden;background:var(--bg);box-shadow:0 36px 100px -48px rgba(0,0,0,.94),inset 0 1px rgba(255,255,255,.06);display:flex;flex-direction:column}
+.topbar{height:64px;flex:0 0 64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);background:rgba(8,12,9,.88)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:32px;height:32px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--sage) 34%,transparent);border-radius:11px;background:var(--sage-soft);color:var(--sage);font:600 10px var(--mono);letter-spacing:.04em}
+.brand-name{font:600 12px var(--sans);letter-spacing:.005em}
+.top-actions{display:flex;align-items:center;gap:8px}
+.account-pill{height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.025);color:var(--muted);font-size:10px}
+.account-dot{width:6px;height:6px;border-radius:50%;background:var(--sage)}
+.avatar{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:50%;background:var(--panel-2);color:var(--text);font:600 10px var(--mono)}
+.scroll-area{flex:1;min-height:0;overflow:auto;padding:20px 18px 118px;scrollbar-width:thin;scrollbar-color:#334034 transparent}
+.eyebrow{color:var(--sage);font:600 9px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.page-head{margin:0 0 17px}
+.page-head-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:7px}
+h1{margin:0;font:500 32px/1.05 var(--serif);letter-spacing:-.035em}
+.page-copy{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55;max-width:310px}
+.quiet-action{height:36px;padding:0 12px;border:1px solid var(--line-strong);border-radius:11px;background:transparent;color:var(--text);font-size:10px;white-space:nowrap}
+.quiet-action:hover{border-color:color-mix(in srgb,var(--sage) 42%,var(--line));background:var(--sage-soft)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0 12px}
+.stat{min-width:0;padding:12px 11px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),var(--panel)}
+.stat-label{display:block;color:var(--dim);font:600 8px var(--mono);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.stat-value{display:block;margin-top:8px;color:var(--text);font:500 20px/1 var(--serif);font-variant-numeric:tabular-nums}
+.stat-note{display:block;margin-top:6px;color:var(--muted);font-size:9px;white-space:nowrap}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:inset 0 1px rgba(255,255,255,.025)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 15px 0}
+.card-title{margin:0;font:500 18px/1.15 var(--serif);letter-spacing:-.015em}
+.card-sub{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
+.range-group{display:flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:10px;background:#0a100c}
+.range{height:27px;min-width:31px;padding:0 7px;border:0;border-radius:7px;background:transparent;color:var(--dim);font:600 8px var(--mono)}
+.range[aria-pressed="true"]{background:var(--sage-soft);color:var(--sage)}
+.equity-card{overflow:hidden}
+.plot{position:relative;height:164px;margin:13px 13px 0;border:1px solid rgba(224,237,222,.075);border-radius:13px;overflow:hidden;background:
+ linear-gradient(to bottom,transparent 24%,rgba(212,229,210,.055) 24.5%,transparent 25%),
+ linear-gradient(to bottom,transparent 49%,rgba(212,229,210,.055) 49.5%,transparent 50%),
+ linear-gradient(to bottom,transparent 74%,rgba(212,229,210,.055) 74.5%,transparent 75%),
+ radial-gradient(ellipse at 50% 0%,rgba(149,186,134,.07),transparent 70%),#0b110d}
+.plot svg{position:absolute;inset:0;width:100%;height:100%}
+.plot-grid line{stroke:rgba(223,235,219,.11);stroke-width:1;stroke-dasharray:2 6}
+.ghost-line{fill:none;stroke:rgba(185,209,172,.32);stroke-width:2;stroke-dasharray:4 7;stroke-linecap:round}
+.empty-overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:12px}
+.empty-content{display:grid;justify-items:center;max-width:250px}
+.empty-mark{width:33px;height:33px;display:grid;place-items:center;margin-bottom:8px;border:1px solid rgba(185,209,172,.25);border-radius:11px;background:rgba(185,209,172,.08);color:var(--sage)}
+.empty-title{font:500 15px var(--serif)}
+.empty-copy{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 15px 14px}
+.footnote{color:var(--dim);font:8px var(--mono);letter-spacing:.05em}
+.primary{min-height:37px;padding:0 13px;border:0;border-radius:11px;background:var(--sage);color:var(--sage-ink);font-size:10px;font-weight:700;box-shadow:0 5px 16px -10px rgba(185,209,172,.7)}
+.primary:hover{filter:brightness(1.06)}
+.section-row{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 10px}
+.section-title{margin:0;font:500 18px var(--serif)}
+.text-link{border:0;background:none;color:var(--sage);font-size:10px}
+.rule-card{padding:15px}
+.rule-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rule-name{font-size:12px;font-weight:600}
+.status{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid rgba(185,209,172,.2);border-radius:999px;background:rgba(185,209,172,.07);color:var(--sage);font:600 8px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.status i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.rule-copy{margin:8px 0 12px;color:var(--muted);font-size:10px;line-height:1.5}
+.rule-bottom{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px}
+.rule-stat{display:grid;gap:4px}
+.rule-stat b{font:500 15px var(--serif)}
+.rule-stat span{color:var(--dim);font:8px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.pages{display:none}
+.pages.active{display:block}
+.empty-list{display:grid;justify-items:center;padding:34px 20px;border:1px dashed var(--line-strong);border-radius:15px;text-align:center;background:rgba(255,255,255,.012)}
+.empty-list .empty-mark{width:40px;height:40px;margin-bottom:12px}
+.empty-list h2{margin:0;font:500 18px var(--serif)}
+.empty-list p{max-width:255px;margin:7px 0 14px;color:var(--muted);font-size:11px;line-height:1.55}
+.filter-row{display:flex;gap:7px;margin:16px 0 12px;overflow:auto;padding-bottom:2px}
+.filter-chip{height:32px;padding:0 11px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:10px;white-space:nowrap}
+.filter-chip.selected{border-color:rgba(185,209,172,.28);background:var(--sage-soft);color:var(--sage)}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0}
+.analytics-stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.analytics-stat span{display:block;color:var(--dim);font:600 8px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.analytics-stat b{display:block;margin-top:8px;font:500 22px var(--serif)}
+.menu-list{display:grid;gap:7px;margin-top:18px}
+.menu-item{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text);text-align:left;font-size:11px}
+.menu-item span:last-child{color:var(--dim);font-size:17px}
+.assistant{position:absolute;right:16px;bottom:86px;width:43px;height:43px;display:grid;place-items:center;border:1px solid rgba(185,209,172,.35);border-radius:50%;background:linear-gradient(145deg,#d7e5ce,#afc9a2);color:#172319;box-shadow:0 12px 30px -18px #000}
+.bottom-nav{position:absolute;z-index:5;left:10px;right:10px;bottom:9px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom));border:1px solid var(--line-strong);border-radius:20px;background:rgba(12,17,13,.94);box-shadow:0 13px 36px -25px #000}
+.nav-item{min-width:0;min-height:49px;display:grid;place-items:center;align-content:center;gap:4px;border:0;border-radius:13px;background:transparent;color:var(--dim);font-size:8px}
+.nav-item svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav-item[aria-current="page"]{background:var(--sage-soft);color:var(--sage)}
+.nav-item span{white-space:nowrap}
+.toast{position:absolute;left:50%;bottom:151px;transform:translateX(-50%);padding:9px 12px;border:1px solid var(--line-strong);border-radius:999px;background:#17211a;color:var(--text);font-size:10px;opacity:0;pointer-events:none;transition:opacity .18s ease}
+.toast.show{opacity:1}
+.preview-note{position:absolute;z-index:6;right:14px;top:74px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:rgba(12,17,13,.8);color:var(--dim);font:7px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+@media(max-width:480px){
+ body{display:block;padding:0;background:var(--bg)}
+ .preview-label{display:none}
+ .device{width:100%;height:100dvh;min-height:0;border:0;border-radius:0;box-shadow:none}
+ .topbar{padding-inline:16px}
+ .scroll-area{padding:18px 15px 118px}
+}
+@media(max-height:720px) and (min-width:481px){.device{height:calc(100dvh - 28px);min-height:0}}
+</style>
+</head>
+<body>
+<div class="preview-label">WORKSPACE DESIGN / CONCEPT 01</div>
+<div class="device" id="device">
+<header class="topbar">
+  <div class="brand"><div class="brand-mark">GD</div><div class="brand-name">Ghost Discipline</div></div>
+  <div class="top-actions"><div class="account-pill"><i class="account-dot"></i> Personal · All accounts</div><div class="avatar" aria-label="Profile">S</div></div>
+</header>
+<div class="preview-note">Design preview</div>
+<main class="scroll-area">
+  <section class="pages active" data-page="today">
+    <div class="page-head">
+      <div class="eyebrow">Trading workspace / Today</div>
+      <div class="page-head-row"><h1>Today</h1><button class="quiet-action">Review plan <span aria-hidden="true">↗</span></button></div>
+      <p class="page-copy">A clear read on your plan, your risk, and the work ahead.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="stat-label">Trades</span><b class="stat-value">0</b><span class="stat-note">this session</span></div>
+      <div class="stat"><span class="stat-label">Net P/L</span><b class="stat-value">—</b><span class="stat-note">no trades yet</span></div>
+      <div class="stat"><span class="stat-label">Discipline</span><b class="stat-value">—</b><span class="stat-note">plan not scored</span></div>
+    </div>
+    <section class="card equity-card">
+      <div class="card-head"><div><h2 class="card-title">Equity curve</h2><p class="card-sub">Your progress, one logged trade at a time</p></div>
+        <div class="range-group" role="group" aria-label="Equity curve range"><button class="range" aria-pressed="true">All</button><button class="range" aria-pressed="false">30D</button><button class="range" aria-pressed="false">90D</button></div>
+      </div>
+      <div class="plot" aria-label="Equity curve empty state">
+        <svg viewBox="0 0 360 164" preserveAspectRatio="none" aria-hidden="true">
+          <g class="plot-grid"><line x1="0" y1="40" x2="360" y2="40"/><line x1="0" y1="82" x2="360" y2="82"/><line x1="0" y1="123" x2="360" y2="123"/></g>
+          <path class="ghost-line" d="M14 123 C52 121 63 118 91 116 S134 108 159 107 S201 96 226 95 S265 81 286 80 S328 66 347 62" opacity=".45"/>
+          <circle cx="347" cy="62" r="4" fill="#b9d1ac" opacity=".55"/>
+        </svg>
+        <div class="empty-overlay"><div class="empty-content">
+          <div class="empty-mark" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M4 17h4l3-6 3 4 3-8 3 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="empty-title">Your curve starts with a log</div><p class="empty-copy">There are no trades in this account yet. Your results will appear here as you journal.</p>
+        </div></div>
+      </div>
+      <div class="card-foot"><span class="footnote">NO TRADES LOGGED</span><button class="primary" data-go="journal">Log first trade <span aria-hidden="true">→</span></button></div>
+    </section>
+    <div class="section-row"><h2 class="section-title">Session readiness</h2><button class="text-link" data-go="more">View rules</button></div>
+    <section class="card rule-card">
+      <div class="rule-top"><div class="rule-name">Daily risk plan</div><span class="status"><i></i>Not set</span></div>
+      <p class="rule-copy">Set your limits before the session, then keep them visible while you trade.</p>
+      <div class="rule-bottom"><div class="rule-stat"><b>—</b><span>Daily loss cap</span></div><div class="rule-stat"><b>—</b><span>Trade limit</span></div><button class="text-link" data-go="more">Set up →</button></div>
+    </section>
+    <div class="section-row"><h2 class="section-title">Recent activity</h2><button class="text-link" data-go="journal">Open journal</button></div>
+    <div class="empty-list"><div class="empty-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM15 4v5h4M8 13h8M8 16h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2>A clean start</h2><p>When you log a trade, it will appear here beside the decisions that shaped it.</p><button class="text-link" data-go="journal">Go to journal →</button></div>
+  </section>
+
+  <section class="pages" data-page="journal">
+    <div class="page-head"><div class="eyebrow">Record / Review</div><div class="page-head-row"><h1>Journal</h1><button class="primary" data-preview-action>+ New trade</button></div><p class="page-copy">Keep the setup, decision, and outcome in one honest record.</p></div>
+    <div class="filter-row" role="group" aria-label="Journal filters"><button class="filter-chip selected">All entries</button><button class="filter-chip">Needs review</button><button class="filter-chip">Favorites</button></div>
+    <div class="empty-list" style="margin-top:18px"><div class="empty-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2>Your journal is ready</h2><p>Start with one trade. Add the context while it is still fresh, then review it when the session closes.</p><button class="primary" data-preview-action>Log a trade</button></div>
+    <div class="section-row"><h2 class="section-title">A useful record includes</h2></div>
+    <section class="card rule-card"><div class="rule-top"><div class="rule-name">Setup · execution · review</div><span class="status"><i></i>Three parts</span></div><p class="rule-copy">Capture why you entered, how you managed risk, and what you learned from the result.</p></section>
+  </section>
+
+  <section class="pages" data-page="analytics">
+    <div class="page-head"><div class="eyebrow">Evidence / Performance</div><div class="page-head-row"><h1>Analytics</h1></div><p class="page-copy">Read your decisions and outcomes together. Patterns appear as the journal grows.</p></div>
+    <div class="analytics-grid"><div class="analytics-stat"><span>Win rate</span><b>—</b><small class="card-sub">needs closed trades</small></div><div class="analytics-stat"><span>Expectancy</span><b>—</b><small class="card-sub">needs a sample</small></div><div class="analytics-stat"><span>Profit factor</span><b>—</b><small class="card-sub">needs wins and losses</small></div><div class="analytics-stat"><span>Max drawdown</span><b>—</b><small class="card-sub">builds from results</small></div></div>
+    <section class="card equity-card"><div class="card-head"><div><h2 class="card-title">Performance over time</h2><p class="card-sub">A clear sample matters more than a single result.</p></div></div><div class="empty-list" style="margin:14px 13px 13px"><div class="empty-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 18h16M6 15l4-5 3 3 5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2>Insights will build from your record</h2><p>Log and review trades to see consistency, drawdown, and setup performance in context.</p><button class="text-link" data-go="journal">Open journal →</button></div></section>
+    <div class="section-row"><h2 class="section-title">Start with the process</h2></div>
+    <section class="card rule-card"><div class="rule-top"><div class="rule-name">Track the plan alongside P/L</div><span class="status"><i></i>Process first</span></div><p class="rule-copy">A useful review connects execution quality to the result, not just the final number.</p></section>
+  </section>
+
+  <section class="pages" data-page="orders">
+    <div class="page-head"><div class="eyebrow">Execution / History</div><div class="page-head-row"><h1>Orders</h1></div><p class="page-copy">Review orders alongside the rules and notes that informed them.</p></div>
+    <div class="filter-row" role="group" aria-label="Order filters"><button class="filter-chip selected">Recent</button><button class="filter-chip">Open</button><button class="filter-chip">Closed</button></div>
+    <div class="empty-list" style="margin-top:18px"><div class="empty-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 7h14M7 7l1 13h8l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2>No orders recorded</h2><p>Orders you log will be organized here with the account, session, and trade context.</p></div>
+  </section>
+
+  <section class="pages" data-page="more">
+    <div class="page-head"><div class="eyebrow">Workspace / Preferences</div><div class="page-head-row"><h1>More</h1></div><p class="page-copy">Keep your tools and rules close at hand.</p></div>
+    <div class="menu-list"><button class="menu-item"><span>Daily trade plan</span><span>›</span></button><button class="menu-item"><span>Risk rules</span><span>›</span></button><button class="menu-item"><span>Strategy playbook</span><span>›</span></button><button class="menu-item"><span>Calendar</span><span>›</span></button><button class="menu-item"><span>Profile &amp; preferences</span><span>›</span></button></div>
+    <div class="section-row"><h2 class="section-title">Your process, your rules</h2></div>
+    <section class="card rule-card"><div class="rule-top"><div class="rule-name">Make the next session count.</div><span class="status"><i></i>Ready when you are</span></div><p class="rule-copy">A calm workspace should make the important choice obvious and keep the rest out of your way.</p></section>
+  </section>
+</main>
+<button class="assistant" aria-label="Open SciFe preview"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8 14.55 9.4 21.2 12l-6.65 2.55L12 21.2 9.45 14.55 2.8 12 9.45 9.4z"/></svg></button>
+<nav class="bottom-nav" aria-label="Workspace pages">
+  <button class="nav-item" data-nav="today" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 9h8M8 13h5"/></svg><span>Today</span></button>
+  <button class="nav-item" data-nav="journal"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h3"/></svg><span>Journal</span></button>
+  <button class="nav-item" data-nav="analytics"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h17M7 15l4-5 3 3 6-8"/></svg><span>Analytics</span></button>
+  <button class="nav-item" data-nav="orders"><svg viewBox="0 0 24 24"><path d="M5 7h14M7 7l1 13h8l1-13M9 7V4h6v3"/></svg><span>Orders</span></button>
+  <button class="nav-item" data-nav="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>More</span></button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script>
+(function(){
+  var pages=document.querySelectorAll('.pages'),nav=document.querySelectorAll('[data-nav]'),toast=document.getElementById('toast'),timer;
+  function showPage(name){
+    pages.forEach(function(page){page.classList.toggle('active',page.dataset.page===name);});
+    nav.forEach(function(button){if(button.dataset.nav===name)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+    document.querySelector('.scroll-area').scrollTop=0;
+  }
+  nav.forEach(function(button){button.addEventListener('click',function(){showPage(button.dataset.nav);});});
+  document.querySelectorAll('[data-go]').forEach(function(button){button.addEventListener('click',function(){showPage(button.dataset.go);});});
+  document.querySelectorAll('.range').forEach(function(button){button.addEventListener('click',function(){document.querySelectorAll('.range').forEach(function(b){b.setAttribute('aria-pressed',String(b===button));});});});
+  document.querySelectorAll('.filter-chip').forEach(function(button){button.addEventListener('click',function(){var parent=button.parentElement;parent.querySelectorAll('.filter-chip').forEach(function(b){b.classList.toggle('selected',b===button);});});});
+  document.querySelectorAll('[data-preview-action]').forEach(function(button){button.addEventListener('click',function(){toast.textContent='Design preview only · no journal data is saved';toast.classList.add('show');clearTimeout(timer);timer=setTimeout(function(){toast.classList.remove('show');},2100);});});
+})();
+</script>
+</body>
+</html>
