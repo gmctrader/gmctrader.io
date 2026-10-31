@@ -14,7 +14,7 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v32';
+const CACHE_VERSION = 'gd-shell-v33';
 const APP_SHELL = [
   './index.html',
   './app.html',
@@ -29,6 +29,7 @@ const APP_SHELL = [
   './scife-manifest.json',
   './ghost-discipline-icon-v3.png',
   './ghost-discipline-logo-v2.png',
+  './ghost-discipline-logo-sm.png',
   './ghost-discipline-share-v2.png',
   './preview-daily-brief.svg',
   './preview-trade-journal.svg',

@@ -25,8 +25,10 @@
 <link rel="apple-touch-icon" href="ghost-discipline-icon-v3.png">
 <link rel="manifest" href="scife-manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,650;0,9..144,750&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,650;0,9..144,750&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,650;0,9..144,750&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+<script defer src="space-background.js"></script>
 <style>
 :root{
   --void:#03050a; --void-2:#0a1119; --graphite:#0e1720; --graphite-hi:#152029;
@@ -1435,6 +1437,7 @@ html.quick-mode .chat-wrap .scroll-latest{bottom:7px}
 </style>
 </head>
 <body>
+<canvas class="space-field" id="spaceField" aria-hidden="true"></canvas>
 <a class="skip-link" href="#app">Skip to main content</a>
 <div class="grain-overlay" aria-hidden="true"></div>
 
@@ -1444,7 +1447,7 @@ html.quick-mode .chat-wrap .scroll-latest{bottom:7px}
   <div class="boot-splash-inner">
     <div class="boot-emblem">
       <span class="halo"></span>
-      <div class="boot-emblem-plate"><img src="ghost-discipline-logo-v2.png" alt=""></div>
+      <div class="boot-emblem-plate"><img src="ghost-discipline-logo-sm.png" alt=""></div>
     </div>
     <div>
       <p class="boot-word">SciFe</p>
@@ -1899,6 +1902,7 @@ setTimeout(function(){
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 /* ============ SUPABASE (same project as Ghost Discipline) ============ */
 const SUPABASE_URL = "https://euvfoyxntkqxoydgpqjq.supabase.co";
@@ -7697,5 +7701,21 @@ html[data-theme] body:has(#app){background:radial-gradient(ellipse 70% 56% at 50
 @media(max-width:760px){#app .welcome-hero{padding:18px 17px;border-radius:17px}#app .chat-wrap{border-radius:17px}#app .composer-row{min-height:55px}}
 </style>
 
+<style id="gd-space-bg">
+/* ===== Space background (shared canvas: space-background.js) =====
+   html is transparent here, so the body colour already sits beneath the canvas. Only the full-screen
+   boot / sign-in / setup overlays paint a solid colour; they keep their glow but let the sky through. */
+.space-field{position:fixed;inset:0;z-index:-1;display:block;width:100%;height:100%;pointer-events:none;contain:strict;
+  background:radial-gradient(ellipse 78% 44% at 84% -6%,rgba(96,134,176,.24),transparent 70%),
+             radial-gradient(ellipse 62% 40% at 4% 50%,rgba(98,142,128,.12),transparent 72%),
+             radial-gradient(ellipse 84% 40% at 58% 112%,rgba(150,128,92,.09),transparent 70%)}
+html[data-theme="light"] .space-field{display:none}
+html:not([data-theme="light"]) .center-screen{background-color:transparent!important}
+
+/* ===== Speed on phones/tablets: no backdrop blur over the live canvas ===== */
+@media(max-width:960px),(hover:none){
+  *,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+</style>
 </body>
 </html>

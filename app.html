@@ -20,6 +20,7 @@ try{
 <meta name="robots" content="noindex,nofollow">
 <title>Ghost Discipline — GMC Traders</title>
 <script defer src="glass-interactions.js"></script>
+<script defer src="space-background.js"></script>
 <script>document.documentElement.setAttribute('data-theme','slate');</script>
 <script>
 /* Graceful fallback if /ghost-discipline-logo-v2.png is missing/slow: swap the broken-image
@@ -43,8 +44,9 @@ function gdLogoFallback(img){
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://ghost-discipline.web.app/ghost-discipline-share-v2.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,380;0,9..144,450;0,9..144,560;0,9..144,650;0,9..144,750;0,9..144,850;1,9..144,420;1,9..144,500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,380;0,9..144,450;0,9..144,560;0,9..144,650;0,9..144,750;0,9..144,850;1,9..144,420;1,9..144,500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,380;0,9..144,450;0,9..144,560;0,9..144,650;0,9..144,750;0,9..144,850;1,9..144,420;1,9..144,500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"></noscript>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
 <style>
 :root{
   --void:#ffffff;
@@ -2624,7 +2626,7 @@ html #gdSectionTransition.is-running .gd-section-progress i{animation:gdEditoria
 html #bootSplash{background:#0d1410!important;color:#282d24!important}
 html #bootSplash .boot-splash-inner{border-color:rgba(255,255,255,.42)!important;background:linear-gradient(135deg,#efecdf,#e8e4d7 68%,#dfdbcd)!important;box-shadow:0 34px 110px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.8)!important}
 html #bootSplash .boot-kicker{color:#52584b!important}
-html #bootSplash .boot-kicker::before{border-color:rgba(255,255,255,.25);background:#34422f url('/ghost-discipline-logo-v2.png') center/cover no-repeat}
+html #bootSplash .boot-kicker::before{border-color:rgba(255,255,255,.25);background:#34422f url('/ghost-discipline-logo-sm.png') center/cover no-repeat}
 html #bootSplash .gd-loading-kicker-context{color:#737668!important}
 html #bootSplash .boot-word{color:#252a21!important;-webkit-text-fill-color:#252a21!important}
 html #bootSplash .boot-sub-line{color:#62675b!important}
@@ -2673,6 +2675,7 @@ html #gdSectionTransition .gd-section-progress i{background:linear-gradient(90de
 </style>
 </head>
 <body>
+<canvas class="space-field" id="spaceField" aria-hidden="true"></canvas>
 <script>
 /* ============ SHARED MOTION PREFERENCE (Display & Motion toggle) ============
    Local-device-only (localStorage, not synced) preference layered on top of
@@ -3049,7 +3052,7 @@ setTimeout(function(){
 
   <aside class="sidebar" id="sidebar">
     <div class="side-brand">
-      <div class="mark"><img src="/ghost-discipline-logo-v2.png" alt="GMC Traders"></div>
+      <div class="mark"><img src="/ghost-discipline-logo-sm.png" alt="GMC Traders" width="40" height="40" decoding="async"></div>
       <div>
         <h1>Ghost Discipline</h1>
         <span>AI Trading Journal</span>
@@ -3207,7 +3210,7 @@ setTimeout(function(){
 
   <header class="desktop-nav" id="desktopNav" aria-label="Main navigation">
     <a class="desktop-nav-brand" href="#" onclick="document.querySelector('.side-navbtn[data-view=dashboard]').click();return false;">
-      <img src="/ghost-discipline-logo-v2.png" alt=""><span>Ghost <b>Discipline</b></span>
+      <img src="/ghost-discipline-logo-sm.png" alt="" width="32" height="32" decoding="async"><span>Ghost <b>Discipline</b></span>
     </a>
     <nav class="desktop-nav-links" id="desktopNavLinks" aria-label="Pages"></nav>
     <div class="desktop-nav-meta"><span class="desktop-nav-kicker">TRADING JOURNAL</span></div>
@@ -3254,7 +3257,7 @@ setTimeout(function(){
 
   <div class="mobile-topbar">
     <div class="mbrand">
-      <div class="mark" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><img src="/ghost-discipline-logo-v2.png" style="width:96%;height:96%;object-fit:contain;border-radius:8px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.18));"></div>
+      <div class="mark" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><img src="/ghost-discipline-logo-sm.png" style="width:96%;height:96%;object-fit:contain;border-radius:8px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.18));"></div>
       <h1>Ghost Discipline</h1>
     </div>
     <div class="plan-badge-mobile" id="planBadgeMobile" onclick="handlePlanBadgeClick()" title="">
@@ -4841,6 +4844,7 @@ setTimeout(function(){
 <div id="confettiLayer"></div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 /* ============ SUPABASE CONFIG ============ */
 const SUPABASE_URL = "https://euvfoyxntkqxoydgpqjq.supabase.co";
@@ -17057,5 +17061,32 @@ document.addEventListener('DOMContentLoaded', function(){
   };
 });
 </script>
-<div id="gdSectionTransition" class="gd-section-transition" hidden role="status" aria-live="polite" aria-atomic="true"><span id="gdSectionLive" class="gd-section-sr">Opening workspace section</span><div class="gd-section-transition-inner"><div class="journal-load-scene" aria-hidden="true"><div class="journal-load-aura"></div><div class="journal-load-orbit journal-load-orbit--one"></div><div class="journal-load-orbit journal-load-orbit--two"></div><div class="journal-load-book"><div class="journal-load-pages"><div class="journal-load-page"><span class="journal-load-page-label">SESSION NOTES</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9" fill="none" stroke="#6e956a" stroke-width="2"/><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9 120 40 0 40Z" fill="#7eaa72" fill-opacity=".12"/></svg></div></div><div class="journal-load-page journal-load-page--right"><span class="journal-load-page-label">TRADE REVIEW</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4" fill="none" stroke="#b69855" stroke-width="2"/><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4 120 40 0 40Z" fill="#b69855" fill-opacity=".13"/></svg></div></div><div class="journal-load-spine"></div><div class="journal-load-cover"><div class="journal-load-cover-face journal-load-cover-front"><div class="journal-load-emblem"><span></span></div><span class="journal-load-cover-brand">GHOST DISCIPLINE</span><strong class="journal-load-cover-title">TRADE<br>JOURNAL</strong><span class="journal-load-cover-foot">RECORD · REVIEW · REFINE</span></div><div class="journal-load-cover-face journal-load-cover-back"></div></div></div></div><div class="gd-section-copy" aria-hidden="true"><span class="gd-section-kicker">GHOST DISCIPLINE / WORKSPACE</span><strong id="gdSectionTitle">Preparing your workspace</strong><span id="gdSectionSubtitle">Opening the selected workspace section</span><div class="gd-section-progress"><i></i></div></div></div></div><script>(function(){var overlay=document.getElementById('gdSectionTransition');var title=document.getElementById('gdSectionTitle');var subtitle=document.getElementById('gdSectionSubtitle');var live=document.getElementById('gdSectionLive');var labels={dashboard:['Trading floor','Opening your account overview'],brief:['Market brief','Opening selected markets and session context'],analytics:['Performance lab','Opening recorded performance statistics'],calendar:['Economic calendar','Opening upcoming economic events'],journal:['Your journal','Opening recorded trades and journal notes'],tradeplan:['Daily trade plan','Opening the plan and risk limits for today'],reviewroom:['Review room','Opening closed trades for review'],orders:['Order book','Opening order history'],playbook:['Strategy playbook','Opening saved setups and rules'],stratnotes:['Strategy notes','Opening saved strategy notes'],backtest:['Backtest lab','Opening saved backtest sessions'],psychology:['Mindset check-in','Opening your mindset check-in'],rules:['Risk rules','Opening your risk limits and session rules'],propfirm:['Prop firm settings','Opening your funded-account rules'],proporders:['Prop firm orders','Opening challenge order history'],propequity:['Prop firm equity','Opening challenge progress and equity'],propfirmrisk:['Risk monitor','Opening challenge risk limits'],propfirmpayout:['Payout planner','Opening payout details'],session:['Session workspace','Opening the current session plan'],team:['Team workspace','Opening team notes and weekly summaries'],edgelab:['Edge lab','Opening performance and challenge analysis'],profile:['Trader profile','Opening your profile and preferences'],packages:['Membership','Opening membership options'],about:['About Ghost Discipline','Opening product information']};window.playSectionTransition=function(view){if(!overlay)return;var copy=labels[view]||['Opening workspace','Opening the selected workspace section'];if(title)title.textContent=copy[0];if(subtitle)subtitle.textContent=copy[1];if(live)live.textContent='Opening '+copy[0]+'. '+copy[1]+'.';clearTimeout(overlay._sectionCloseTimer);clearTimeout(overlay._sectionHideTimer);overlay.hidden=false;overlay.classList.remove('is-leaving','is-running');void overlay.offsetWidth;overlay.classList.add('is-running');var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;overlay._sectionCloseTimer=window.setTimeout(function(){overlay.classList.add('is-leaving');overlay._sectionHideTimer=window.setTimeout(function(){overlay.hidden=true;overlay.classList.remove('is-running','is-leaving');},300);},reduce?140:1640);};})();</script></body>
+<div id="gdSectionTransition" class="gd-section-transition" hidden role="status" aria-live="polite" aria-atomic="true"><span id="gdSectionLive" class="gd-section-sr">Opening workspace section</span><div class="gd-section-transition-inner"><div class="journal-load-scene" aria-hidden="true"><div class="journal-load-aura"></div><div class="journal-load-orbit journal-load-orbit--one"></div><div class="journal-load-orbit journal-load-orbit--two"></div><div class="journal-load-book"><div class="journal-load-pages"><div class="journal-load-page"><span class="journal-load-page-label">SESSION NOTES</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9" fill="none" stroke="#6e956a" stroke-width="2"/><path d="M0 32 18 27 32 30 46 17 60 23 74 10 88 16 101 5 120 9 120 40 0 40Z" fill="#7eaa72" fill-opacity=".12"/></svg></div></div><div class="journal-load-page journal-load-page--right"><span class="journal-load-page-label">TRADE REVIEW</span><span class="journal-load-page-rule"></span><span class="journal-load-page-line mid"></span><span class="journal-load-page-line"></span><span class="journal-load-page-line short"></span><div class="journal-load-chart"><svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4" fill="none" stroke="#b69855" stroke-width="2"/><path d="M0 25 16 29 30 18 44 22 58 12 72 18 88 8 103 13 120 4 120 40 0 40Z" fill="#b69855" fill-opacity=".13"/></svg></div></div><div class="journal-load-spine"></div><div class="journal-load-cover"><div class="journal-load-cover-face journal-load-cover-front"><div class="journal-load-emblem"><span></span></div><span class="journal-load-cover-brand">GHOST DISCIPLINE</span><strong class="journal-load-cover-title">TRADE<br>JOURNAL</strong><span class="journal-load-cover-foot">RECORD · REVIEW · REFINE</span></div><div class="journal-load-cover-face journal-load-cover-back"></div></div></div></div><div class="gd-section-copy" aria-hidden="true"><span class="gd-section-kicker">GHOST DISCIPLINE / WORKSPACE</span><strong id="gdSectionTitle">Preparing your workspace</strong><span id="gdSectionSubtitle">Opening the selected workspace section</span><div class="gd-section-progress"><i></i></div></div></div></div><script>(function(){var overlay=document.getElementById('gdSectionTransition');var title=document.getElementById('gdSectionTitle');var subtitle=document.getElementById('gdSectionSubtitle');var live=document.getElementById('gdSectionLive');var labels={dashboard:['Trading floor','Opening your account overview'],brief:['Market brief','Opening selected markets and session context'],analytics:['Performance lab','Opening recorded performance statistics'],calendar:['Economic calendar','Opening upcoming economic events'],journal:['Your journal','Opening recorded trades and journal notes'],tradeplan:['Daily trade plan','Opening the plan and risk limits for today'],reviewroom:['Review room','Opening closed trades for review'],orders:['Order book','Opening order history'],playbook:['Strategy playbook','Opening saved setups and rules'],stratnotes:['Strategy notes','Opening saved strategy notes'],backtest:['Backtest lab','Opening saved backtest sessions'],psychology:['Mindset check-in','Opening your mindset check-in'],rules:['Risk rules','Opening your risk limits and session rules'],propfirm:['Prop firm settings','Opening your funded-account rules'],proporders:['Prop firm orders','Opening challenge order history'],propequity:['Prop firm equity','Opening challenge progress and equity'],propfirmrisk:['Risk monitor','Opening challenge risk limits'],propfirmpayout:['Payout planner','Opening payout details'],session:['Session workspace','Opening the current session plan'],team:['Team workspace','Opening team notes and weekly summaries'],edgelab:['Edge lab','Opening performance and challenge analysis'],profile:['Trader profile','Opening your profile and preferences'],packages:['Membership','Opening membership options'],about:['About Ghost Discipline','Opening product information']};window.playSectionTransition=function(view){if(!overlay)return;var copy=labels[view]||['Opening workspace','Opening the selected workspace section'];if(title)title.textContent=copy[0];if(subtitle)subtitle.textContent=copy[1];if(live)live.textContent='Opening '+copy[0]+'. '+copy[1]+'.';clearTimeout(overlay._sectionCloseTimer);clearTimeout(overlay._sectionHideTimer);overlay.hidden=false;overlay.classList.remove('is-leaving','is-running');void overlay.offsetWidth;overlay.classList.add('is-running');var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;overlay._sectionCloseTimer=window.setTimeout(function(){overlay.classList.add('is-leaving');overlay._sectionHideTimer=window.setTimeout(function(){overlay.hidden=true;overlay.classList.remove('is-running','is-leaving');},300);},reduce?140:1640);};})();</script><style id="gd-space-bg">
+/* ===== Space background (shared canvas: space-background.js) =====
+   The workspace painted solid near-black on html, body, #authScreen, #appShell, #hud and .main,
+   which would hide the canvas. Those surfaces become transparent; html keeps the base colour. */
+html{background-color:var(--void)}
+.space-field{position:fixed;inset:0;z-index:-1;display:block;width:100%;height:100%;pointer-events:none;contain:strict;
+  background:radial-gradient(ellipse 78% 44% at 84% -6%,rgba(96,134,176,.24),transparent 70%),
+             radial-gradient(ellipse 62% 40% at 4% 50%,rgba(98,142,128,.12),transparent 72%),
+             radial-gradient(ellipse 84% 40% at 58% 112%,rgba(150,128,92,.09),transparent 70%)}
+html[data-theme="light"] .space-field{display:none}
+html:not([data-theme="light"]) body,
+html:not([data-theme="light"]) #authScreen,
+html:not([data-theme="light"]) #appShell,
+html:not([data-theme="light"]) #hud,
+html:not([data-theme="light"]) .main,
+html:not([data-theme="light"]) #hud .view:not(.gd-swiping-current):not(.gd-swipe-preview){background-color:transparent!important}
+/* Cards keep their glass fill but no longer sit on a solid layer, so the sky shows through softly */
+html:not([data-theme="light"]) .card{background-color:transparent!important}
+
+/* ===== Speed on phones/tablets =====
+   backdrop-filter over a live canvas is re-rendered every frame; the workspace has ~80 of them.
+   Surfaces keep their translucent fills, they just stop blurring what is behind them. */
+@media(max-width:960px),(hover:none){
+  *,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .sidebar{background-color:#0a0d10!important}
+}
+</style>
+</body>
 </html>

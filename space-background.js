@@ -5,7 +5,25 @@
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-  const frameInterval = 1000 / 30;
+  const coarsePointer = window.matchMedia('(pointer: coarse)');
+  // Touch devices render at 24fps: indistinguishable for slow drifting stars, noticeably lighter on battery.
+  const frameInterval = 1000 / (coarsePointer.matches ? 24 : 30);
+
+  // Static (no animation loop) when the person or device asks for it:
+  //  - the workspace's Display & Motion switch (gd_motion / html.motion-reduced) wins first
+  //  - otherwise the OS reduced-motion setting, Data Saver, or a low-memory / low-core device
+  function isStatic() {
+    let pref = null;
+    try { pref = localStorage.getItem('gd_motion'); } catch (error) {}
+    if (pref === 'reduced' || document.documentElement.classList.contains('motion-reduced')) return true;
+    if (pref === 'full') return false;
+    if (reducedMotion.matches) return true;
+    const connection = navigator.connection;
+    if (connection && connection.saveData) return true;
+    if (navigator.deviceMemory && navigator.deviceMemory <= 2) return true;
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) return true;
+    return false;
+  }
   const maxCanvasPixels = 3500000;
   const colors = ['226,237,246', '170,210,222', '199,218,198', '222,207,170'];
   const cursor = { x: 0, y: 0, targetX: 0, targetY: 0 };
@@ -128,7 +146,7 @@
       }
 
       const depth = 1 - star.z / 1900;
-      const twinkle = reducedMotion.matches ? 0.92 : 0.8 + Math.sin(time * 0.0011 + star.phase) * 0.2;
+      const twinkle = isStatic() ? 0.92 : 0.8 + Math.sin(time * 0.0011 + star.phase) * 0.2;
       const radius = (0.45 + perspective * 1.15) * star.size;
       const alpha = (0.2 + depth * 0.55) * twinkle;
 
@@ -188,10 +206,10 @@
 
     cursor.x += (cursor.targetX - cursor.x) * 0.035;
     cursor.y += (cursor.targetY - cursor.y) * 0.035;
-    render(time, !reducedMotion.matches);
+    render(time, !isStatic());
     lastFrame = time;
 
-    if (reducedMotion.matches) {
+    if (isStatic()) {
       running = false;
       return;
     }
@@ -223,7 +241,7 @@
     shootingStars.length = 0;
     nextShootingStarAt = performance.now() + random(7000, 15000);
     lastFrame = 0;
-    if (reducedMotion.matches) render(performance.now(), false);
+    if (isStatic()) render(performance.now(), false);
     else start();
   }
 
@@ -271,12 +289,21 @@
       start();
     }
   });
-  reducedMotion.addEventListener?.('change', () => {
+  let wasStatic = isStatic();
+  function applyMotionPreference() {
+    const nowStatic = isStatic();
+    if (nowStatic === wasStatic) return; // unrelated class change on <html>
+    wasStatic = nowStatic;
     lastFrame = 0;
     stop();
-    if (reducedMotion.matches) render(performance.now(), false);
+    if (nowStatic) render(performance.now(), false);
     else start();
-  });
+  }
+  reducedMotion.addEventListener?.('change', applyMotionPreference);
+  // The workspace Display & Motion switch toggles html.motion-reduced; follow it live.
+  if (window.MutationObserver) {
+    new MutationObserver(applyMotionPreference).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
   window.addEventListener('resize', resize, { passive: true });
   resize();
 })();

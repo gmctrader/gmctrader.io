@@ -21,7 +21,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
   
   <style>
     :root{color-scheme:dark;--bg:#0a100d;--bg-soft:#101814;--panel:#121b16;--panel-2:#17221b;--line:rgba(232,239,229,.1);--line-hi:rgba(232,239,229,.17);--text:#f0f2e9;--muted:#a1ac9e;--quiet:#788477;--mint:#a6c99e;--mint-deep:#587b59;--gold:#d3bd8b;--danger:#d89491;--serif:'Fraunces',Georgia,serif;--sans:'Instrument Sans',Arial,sans-serif;--mono:'IBM Plex Mono',monospace;--radius:20px;}
@@ -272,14 +273,96 @@
     @media(max-width:720px){.space-field{opacity:.78}.hero-celestial{top:67%;right:-24%;width:min(112vw,620px);opacity:.58}.hero-celestial::before{opacity:.7}.statement-copy{padding:18px 18px}.method-card,.feature,.plan,.market-embed,.market-watch-config,.invite-cta{backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%)}.method-card,.feature,.plan,.method-card:hover,.feature:hover,.plan:hover{transform:none}}
     @media(prefers-reduced-motion:reduce){.space-field{opacity:.62}.hero::before,.hero-celestial{animation:none!important}.method-card,.feature,.plan,.market-watch-config,.invite-cta{transition:none!important}}
   </style>
+
+  <style id="gd-mobile-polish">
+    /* ---- Overflow containment: decorative layers (planet, aura) must never widen the page.
+       Without this, iOS zooms the layout out to the widest element and the fixed header
+       inherits that inflated width. ---- */
+    html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{overflow-x:clip}
+    main{overflow-x:clip}
+
+    /* ---- Header: single-line brand and buttons at every width ---- */
+    .nav .brand{min-width:0;white-space:nowrap}
+    .nav .brand img{flex:none}
+    .nav .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nav-actions{flex:none;white-space:nowrap}
+    .nav .btn{white-space:nowrap;flex:none}
+    .nav .btn:active,.nav-sheet-actions .btn:active{transform:scale(.97)}
+    .nav-actions .cta-short,.nav-sheet-actions{display:none}
+    .mobile-menu .i-close{display:none}
+    .mobile-menu[aria-expanded="true"] .i-open{display:none}
+    .mobile-menu[aria-expanded="true"] .i-close{display:block}
+    @keyframes gd-sheet-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+    @media(max-width:900px){
+      body{padding-top:calc(78px + env(safe-area-inset-top,0px))}
+      .nav{top:calc(10px + env(safe-area-inset-top,0px));width:calc(100% - 20px);border-radius:999px;background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.02) 46%),rgba(9,14,11,.76);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
+      .nav-inner{height:56px;padding:0 8px 0 14px;gap:8px}
+      .nav .brand{flex:1 1 auto;gap:9px;font-size:14px;font-weight:650;letter-spacing:.005em}
+      .nav .brand img{width:32px;height:32px;border-radius:10px}
+      .nav-actions{gap:8px}
+      .nav-actions .btn{min-height:38px;padding:0 15px;font-size:13px;letter-spacing:0}
+      .nav-actions .btn-quiet{padding:0 14px}
+      .nav-actions .cta-arrow{font-size:14px;line-height:1}
+      .mobile-menu{display:grid;place-items:center;flex:none;width:40px;height:40px;border-color:rgba(239,246,235,.16);background:rgba(255,255,255,.05);transition:background .2s,border-color .2s}
+      .mobile-menu:active,.mobile-menu[aria-expanded="true"]{background:rgba(255,255,255,.1);border-color:rgba(239,246,235,.28)}
+      .mobile-menu svg{width:20px;height:20px}
+
+      /* Dropdown sheet */
+      .nav-links{display:none;position:absolute;flex-direction:column;top:calc(100% + 8px);left:0;right:0;gap:0;padding:8px;max-height:calc(100dvh - 104px);overflow-y:auto;border:1px solid var(--glass-line);border-radius:24px;background:rgba(8,13,10,.99);box-shadow:0 30px 70px -30px #000;backdrop-filter:none;-webkit-backdrop-filter:none;font-size:15px;color:#e6ece2;align-items:stretch}
+      .nav.nav-open .nav-links{display:flex;animation:gd-sheet-in .18s ease-out}
+      .nav-links a{display:flex;align-items:center;width:100%;min-height:48px;padding:0 16px;border-radius:14px;font-size:15px;font-weight:500;letter-spacing:.005em}
+      .nav-links a:hover,.nav-links a:active{background:rgba(255,255,255,.06)}
+      .nav-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding:12px 6px 6px;border-top:1px solid rgba(239,246,235,.1)}
+      .nav-sheet-actions .btn{width:100%;min-height:46px;padding:0 12px;font-size:14px}
+      .nav-sheet-actions .btn-primary:hover,.nav-sheet-actions .btn-primary:active{color:#10150f;text-shadow:none;background:linear-gradient(145deg,#c8dfbd,#91b087)}
+    }
+    @media(min-width:541px) and (max-width:900px){
+      .nav-links{left:auto;width:min(380px,100%)}
+      .nav-sheet-actions{display:none}
+    }
+    /* Phones: one clear call to action + menu; Sign in lives in the sheet */
+    @media(max-width:540px){
+      .nav-actions .btn.nav-signin,.nav-actions .cta-long{display:none}
+      .nav-actions .cta-short{display:inline}
+      .nav-actions .btn-primary{padding:0 14px}
+    }
+    @media(max-width:400px){
+      .nav-actions .cta-arrow{display:none}
+      .nav-actions .btn-primary{padding:0 14px}
+    }
+    @media(max-width:350px){
+      .nav-inner{padding-left:10px;gap:6px}
+      .nav .brand{gap:6px;font-size:13px;letter-spacing:0}
+      .nav .brand img{width:26px;height:26px;border-radius:8px}
+      .nav-actions{gap:6px}
+      .nav-actions .btn-primary{padding:0 11px;font-size:12px}
+      .mobile-menu{width:38px;height:38px}
+    }
+
+    /* Hero + plan buttons: never split a label across two lines; stack on phones */
+    .btn{white-space:nowrap}
+    @media(max-width:480px){
+      .hero-actions{flex-direction:column;align-items:stretch}
+      .hero-actions .btn{width:100%;flex:none}
+    }
+
+    /* ---- Speed on phones/tablets: backdrop blur over a live canvas is re-rendered
+       every frame. Keep it on the header only; cards keep their translucent glass fill. ---- */
+    @media(max-width:900px),(hover:none){
+      *:not(.nav):not(.nav *),*:not(.nav):not(.nav *)::before,*:not(.nav):not(.nav *)::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+      .hero::before,.hero-celestial{animation:none!important}
+    }
+  </style>
 </head>
 <body>
   <canvas class="space-field" id="spaceField" aria-hidden="true"></canvas>
   <header class="nav" id="top">
     <div class="wrap nav-inner">
-      <a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a>
-      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#markets">Markets</a><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#preview-gallery">Product tour</a><a href="#membership">Membership</a><a href="#faq">FAQ</a></nav>
-      <div class="nav-actions"><a class="btn btn-quiet" href="app.html?signin=1">Sign in</a><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1">Create account <span aria-hidden="true">→</span></a><button class="mobile-menu" type="button" id="menuToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+      <a class="brand" href="#top" aria-label="Ghost Discipline, back to top"><img src="ghost-discipline-logo-sm.png" alt="" width="32" height="32" decoding="async"><span>Ghost Discipline</span></a>
+      <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#markets">Markets</a><a href="#approach">Approach</a><a href="#platform">Platform</a><a href="#preview-gallery">Product tour</a><a href="#membership">Membership</a><a href="#faq">FAQ</a><div class="nav-sheet-actions"><a class="btn btn-quiet" href="app.html?signin=1">Sign in</a><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1">Create account <span aria-hidden="true">→</span></a></div></nav>
+      <div class="nav-actions"><a class="btn btn-quiet nav-signin" href="app.html?signin=1">Sign in</a><a class="btn btn-primary nav-cta" href="app.html?signin=1&amp;signup=1" aria-label="Create account"><span class="cta-long">Create account</span><span class="cta-short">Get started</span><span class="cta-arrow" aria-hidden="true">→</span></a><button class="mobile-menu" type="button" id="menuToggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path class="i-open" d="M4 7h16M4 12h16M4 17h16"/><path class="i-close" d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     </div>
   </header>
 
@@ -377,7 +460,7 @@
     <section class="wrap" style="padding-bottom:94px"><div class="invite-cta"><div><div class="eyebrow">A workspace for your process</div><h2>Make the next session count.</h2><p>Create your free account, or sign in to continue.</p></div><a class="btn btn-primary" href="app.html?signin=1&amp;signup=1">Create your account <span aria-hidden="true">→</span></a></div></section>
   </main>
 
-  <footer class="footer"><div class="wrap"><div class="footer-main"><a class="brand" href="#top"><img src="ghost-discipline-logo-v2.png" alt=""><span>Ghost Discipline</span></a><div class="footer-links"><a href="app.html?signin=1">Member sign in</a><a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Contact the team</a></div></div><p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past performance and process discipline do not guarantee future results.</p></div></footer>
+  <footer class="footer"><div class="wrap"><div class="footer-main"><a class="brand" href="#top"><img src="ghost-discipline-logo-sm.png" alt="" width="32" height="32" loading="lazy" decoding="async"><span>Ghost Discipline</span></a><div class="footer-links"><a href="app.html?signin=1">Member sign in</a><a href="https://t.me/GhostTradersEmpire" target="_blank" rel="noopener">Contact the team</a></div></div><p class="legal">Ghost Discipline is a journaling and risk-discipline tool, not a broker, signal service, or source of financial advice. Trading involves risk of loss; past performance and process discipline do not guarantee future results.</p></div></footer>
   <script>
     if(location.protocol==='https:'){
       document.querySelectorAll('a[href]').forEach(function(link){
@@ -397,7 +480,11 @@
     const menuButton=document.getElementById('menuToggle');
     const nav=document.querySelector('.nav');
     menuButton?.addEventListener('click',()=>{const open=nav.classList.toggle('nav-open');menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');});
-    document.querySelectorAll('.nav-links a').forEach(link=>link.addEventListener('click',()=>{nav.classList.remove('nav-open');menuButton?.setAttribute('aria-expanded','false');}));
+    const closeNav=()=>{nav.classList.remove('nav-open');menuButton?.setAttribute('aria-expanded','false');menuButton?.setAttribute('aria-label','Open navigation');};
+    document.querySelectorAll('.nav-links a').forEach(link=>link.addEventListener('click',closeNav));
+    document.addEventListener('click',event=>{if(nav.classList.contains('nav-open')&&!nav.contains(event.target))closeNav();});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&nav.classList.contains('nav-open')){closeNav();menuButton?.focus();}});
+    window.matchMedia('(min-width:721px)').addEventListener?.('change',event=>{if(event.matches)closeNav();});
     const marketSection=document.getElementById('markets');
     const marketHost=document.getElementById('marketWidgetHost');
     const marketLoading=document.getElementById('marketLoading');
