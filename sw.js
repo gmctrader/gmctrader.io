@@ -14,7 +14,7 @@
  *    never linger and serve stale code.
  */
 
-const CACHE_VERSION = 'gd-shell-v36';
+const CACHE_VERSION = 'gd-shell-v37';
 const APP_SHELL = [
   './index.html',
   './app.html',
@@ -26,6 +26,7 @@ const APP_SHELL = [
   './gd-elite-portal.js',
   './gd-studio.js',
   './gd-additional-features.js',
+  './gd-polish.js',
   './home',
   './workspace?signin=1',
   './companion?full=1',
