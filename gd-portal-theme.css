@@ -1,58 +1,121 @@
-/* Ghost Discipline — shared portal theme: cinematic 3D background + glass surfaces.
+/* Ghost Discipline — shared portal theme.
+   Default look: near-black base + teal glow (top-right) + indigo glow (bottom-left), INK surfaces (solid, matte, no blur).
+   3D workspace is opt-in (Elite and up) and only adds html[data-gd3d="on"] rules at the bottom.
    Loaded by index, app, scife, welcome and admin. Safe to remove: delete the <link> and <script> tags. */
-:root{--gdx-teal:94,234,212;--gdx-indigo:124,140,255;--gdx-face:rgba(8,12,19,.42);--gdx-edge:rgba(221,232,238,.2)}
+:root{--gdx-teal:94,234,212;--gdx-indigo:124,140,255;
+  --ink-bg:#05070a;--ink-rgb:11,14,19;--ink-a:1;--ink-card-rgb:16,20,26;--ink-tile-rgb:24,28,34;
+  --ink-line:rgba(255,255,255,.075);--ink-line-hi:rgba(255,255,255,.14)}
 
-/* ---------- Background: base glow + 3D perspective floor + vignette (starfield canvas sits above) ---------- */
-#gdxBg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;background:#05070a;contain:strict}
-#gdxBg .gdx-glow{position:absolute;border-radius:50%;filter:blur(70px);will-change:transform;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-#gdxBg .a{width:62vmax;height:62vmax;right:-18vmax;top:-26vmax;background:radial-gradient(closest-side,rgba(var(--gdx-teal),.30),transparent 70%);transform:translate3d(calc(var(--px,0)*-26px),calc(var(--py,0)*-18px),0);animation:gdxDriftA 26s ease-in-out infinite alternate}
-#gdxBg .b{width:66vmax;height:66vmax;left:-24vmax;bottom:-30vmax;background:radial-gradient(closest-side,rgba(var(--gdx-indigo),.34),transparent 70%);transform:translate3d(calc(var(--px,0)*30px),calc(var(--py,0)*22px),0);animation:gdxDriftB 32s ease-in-out infinite alternate}
-#gdxBg .gdx-grid{position:absolute;left:-50%;right:-50%;bottom:-8%;height:62%;opacity:.5;transform-origin:50% 100%;transform:perspective(620px) rotateX(64deg) translate3d(calc(var(--px,0)*18px),0,0);
-  background-image:linear-gradient(rgba(var(--gdx-teal),.16) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--gdx-teal),.12) 1px,transparent 1px);background-size:64px 64px;
-  -webkit-mask-image:linear-gradient(to top,#000 0%,transparent 78%);mask-image:linear-gradient(to top,#000 0%,transparent 78%);animation:gdxFloor 14s linear infinite}
-#gdxBg .gdx-vig{position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 50%,transparent 52%,rgba(0,0,0,.72)),repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 4px)}
-@keyframes gdxDriftA{to{margin:6vmax 0 0 -5vmax}}
-@keyframes gdxDriftB{to{margin:-5vmax 0 0 6vmax}}
-@keyframes gdxFloor{to{background-position:0 64px,0 0}}
-.space-field{position:fixed;inset:0;z-index:-1;display:block;width:100%;height:100%;pointer-events:none}
-/* let the background show through pages that paint their own body backdrop */
+/* ---------- Background (matches the reference frame) ---------- */
+#gdxBg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;contain:strict;background-color:var(--ink-bg);
+  background-image:
+    radial-gradient(120% 120% at 50% 50%,transparent 55%,rgba(0,0,0,.65)),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.013) 0 1px,transparent 1px 4px),
+    radial-gradient(60vmax 52vmax at 100% 0%,rgba(var(--gdx-teal),.22),transparent 70%),
+    radial-gradient(64vmax 56vmax at 0% 100%,rgba(var(--gdx-indigo),.25),transparent 70%)}
+#gdxBg i{display:none}
+/* the old drifting starfield is part of the 3D feature now, never shown by default */
+.space-field{display:none!important}
 html[data-gdx]:not([data-theme="light"]),html[data-gdx]:not([data-theme="light"]) body{background:transparent!important}
 html[data-gdx]:not([data-theme="light"]) #authScreen{background:transparent!important}
 html[data-gdx]:not([data-theme="light"]) :is(.auth-video-vignette,.auth-vignette,.auth-video){opacity:0!important}
-html[data-gdx]:not([data-theme="light"]) :is(.bg-video,.bg-video-tint,[class*="bg-video"]){opacity:.0!important}
+html[data-gdx]:not([data-theme="light"]) :is(.bg-video,.bg-video-tint,[class*="bg-video"]){opacity:0!important}
 
-/* ---------- Glass: pages / cards / modals / menus ---------- */
-html:not([data-theme="light"]) :is(.card,.auth-card,.package-card,.eq-dark-card,.quick-scife-modal,.onboarding-modal,.sneak-peek-modal,.pf-archive-card,.gd-load-data-card,.gate-card,.journey-rank-panel,.hero-stat,.empty-state,.team-card-row,.sneak-peek-chart-card,.overview-filter-menu,.desktop-nav-menu,.pe-card,.pe-tile,.eq-stat,.rc-stat,.remember-box,.watch-custom-box,.sig-card,.provider-card,.sig-console-card,.sig-result-card,.sig-error-card,.prompt-card,.settings-pane,.chart-lightbox-modal,.method-card,.feature,.plan){
-  background-color:var(--gdx-face)!important;
-  background-image:linear-gradient(148deg,rgba(255,255,255,.13),rgba(255,255,255,.03) 42%,rgba(var(--gdx-indigo),.07)),radial-gradient(420px circle at var(--gx,50%) var(--gy,0%),rgba(var(--gdx-teal),.13),transparent 62%)!important;
-  border-color:var(--gdx-edge)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(150%)!important;backdrop-filter:blur(18px) saturate(150%)!important;
-  box-shadow:inset 0 1px rgba(255,255,255,.2),inset 0 -1px rgba(255,255,255,.045),0 30px 80px -50px rgba(0,0,0,.96)!important}
+/* ---------- Ink, not glass: no blur anywhere in dark themes ---------- */
+html:not([data-theme="light"]) *,html:not([data-theme="light"]) *::before,html:not([data-theme="light"]) *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 
-/* ---------- Glass: buttons (secondary/ghost get full glass, primary keeps its colour + gets a gloss edge) ---------- */
-html:not([data-theme="light"]) :is(.btn-ghost,.icon-btn,.tab-btn,.side-navbtn,.auth-social-btn,.side-reset-btn,.card-expand-btn,.ai-refresh-btn,.mic-btn,.quick-chip,.sig-copy-btn,.sig-overlay-toggle):not(.active):not(.on):not([aria-selected="true"]){
-  background-color:rgba(255,255,255,.07)!important;
-  background-image:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.02))!important;
-  border-color:rgba(255,255,255,.2)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(160%)!important;backdrop-filter:blur(14px) saturate(160%)!important;
-  box-shadow:inset 0 1px rgba(255,255,255,.3),0 10px 30px -18px rgba(0,0,0,.9)!important}
-html:not([data-theme="light"]) :is(.tab-btn,.side-navbtn,.quick-chip).active,
+/* ink pages / cards / modals / menus */
+html:not([data-theme="light"]) :is(.card,.auth-card,.package-card,.eq-dark-card,.quick-scife-modal,.onboarding-modal,.sneak-peek-modal,.pf-archive-card,.gd-load-data-card,.gate-card,.journey-rank-panel,.hero-stat,.empty-state,.team-card-row,.sneak-peek-chart-card,.overview-filter-menu,.desktop-nav-menu,.pe-card,.eq-stat,.rc-stat,.remember-box,.watch-custom-box,.sig-card,.provider-card,.sig-console-card,.sig-result-card,.sig-error-card,.prompt-card,.settings-pane,.chart-lightbox-modal,.method-card,.feature,.plan,.modal,.visual,.visual-stat,.visual-chart,.visual-float,.preview-card,.invite-cta,.pro-offer-banner,.market-embed,.market-watch-config,.market-watch-group,.faq details,.statement-copy){
+  background-color:rgba(var(--ink-card-rgb),var(--ink-a))!important;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.028),transparent 46%)!important;
+  border-color:var(--ink-line)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 28px 70px -44px rgba(0,0,0,.95)!important}
+/* inner tiles sit one step lighter, like the stat tiles in the reference */
+html:not([data-theme="light"]) :is(.pe-tile,.hero-stat .tile,.eq-stat,.rc-stat,.visual-stat){
+  background-color:rgba(var(--ink-tile-rgb),var(--ink-a))!important;border-color:var(--ink-line-hi)!important}
+/* ink chrome: top bars, sidebar, tab bar */
+html:not([data-theme="light"]) :is(.desktop-nav,.mobile-topbar,.sidebar,.tab-bar,.nav,.plan-badge,.plan-badge-mobile,#app>.topbar,.topbar,.composer-row,.chat-wrap){
+  background-color:rgba(var(--ink-rgb),var(--ink-a))!important;background-image:none!important;border-color:var(--ink-line)!important;box-shadow:none!important}
+
+/* ---------- Ink buttons ---------- */
+html:not([data-theme="light"]) :is(.btn-ghost,.btn-quiet,.icon-btn,.tab-btn,.side-navbtn,.auth-social-btn,.side-reset-btn,.card-expand-btn,.ai-refresh-btn,.mic-btn,.quick-chip,.sig-copy-btn,.sig-overlay-toggle,.preview-carousel-arrow,.desktop-nav-link,.desktop-nav-trigger):not(.active):not(.on):not([aria-selected="true"]){
+  background-color:rgba(var(--ink-tile-rgb),1)!important;background-image:none!important;border:1px solid var(--ink-line-hi)!important;box-shadow:none!important;color:#e6ecf0}
+html:not([data-theme="light"]) :is(.btn-ghost,.btn-quiet,.icon-btn,.tab-btn,.quick-chip,.sig-copy-btn,.desktop-nav-link):not(.active):not(.on):hover{border-color:rgba(var(--gdx-teal),.45)!important}
+html:not([data-theme="light"]) :is(.tab-btn,.side-navbtn,.quick-chip,.desktop-nav-link).active,
 html:not([data-theme="light"]) :is(.tab-btn,.side-navbtn,.quick-chip).on,
 html:not([data-theme="light"]) :is(.tab-btn,.side-navbtn)[aria-selected="true"]{
-  background-color:rgba(var(--gdx-teal),.16)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.02))!important;
-  border-color:rgba(var(--gdx-teal),.5)!important;-webkit-backdrop-filter:blur(14px) saturate(160%)!important;backdrop-filter:blur(14px) saturate(160%)!important;
-  box-shadow:inset 0 1px rgba(255,255,255,.34),0 0 24px -6px rgba(var(--gdx-teal),.45)!important}
-:is(.btn,.send-btn,.boot-enter-btn,.btn-primary,button[type="submit"]){box-shadow:inset 0 1px rgba(255,255,255,.38),inset 0 -1px rgba(0,0,0,.18),0 12px 34px -14px rgba(var(--gdx-teal),.55)}
+  background-color:rgba(var(--gdx-teal),.10)!important;background-image:none!important;border:1px solid rgba(var(--gdx-teal),.45)!important;box-shadow:none!important}
+/* primary = the teal→indigo pill from the reference, flat, dark ink label */
+html:not([data-theme="light"]) :is(.btn-primary,.send-btn,.boot-enter-btn,button[type="submit"].btn){
+  background:linear-gradient(90deg,rgb(var(--gdx-teal)),rgb(var(--gdx-indigo)))!important;color:#06080c!important;border:0!important;
+  box-shadow:0 10px 30px -14px rgba(var(--gdx-teal),.55)!important;text-shadow:none!important}
+:is(.btn-primary,.btn-gold,.btn){text-shadow:none}
+.btn-primary::before,.btn-gold::before{display:none!important}
+html:not([data-theme="light"]) .btn-gold{box-shadow:none!important}
 html:not([data-theme="light"]) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea){
-  background-color:rgba(255,255,255,.055)!important;border-color:rgba(255,255,255,.18)!important;
-  -webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);box-shadow:inset 0 1px rgba(255,255,255,.12)}
+  background-color:rgb(var(--ink-card-rgb))!important;border-color:var(--ink-line-hi)!important;box-shadow:none!important}
+html:not([data-theme="light"]) input:focus,html:not([data-theme="light"]) select:focus,html:not([data-theme="light"]) textarea:focus{border-color:rgba(var(--gdx-teal),.6)!important;outline:none}
 
-/* ---------- 3D tilt on hover (mouse devices only) ---------- */
+@media (max-width:720px){:root{--ink-a:1}}
+
+/* ============ Elite Portal view ============ */
+.ep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.ep-card{padding:24px!important}
+.ep-card h3{margin:0 0 4px;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.ep-card .ep-sub{font-size:12.5px;opacity:.7;margin:0 0 16px;line-height:1.5}
+.ep-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--ink-line)}
+.ep-row:first-of-type{border-top:0}
+.ep-row b{display:block;font-size:13.5px;font-weight:600}
+.ep-row small{display:block;font-size:12px;opacity:.65;margin-top:2px}
+.ep-kicker{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgb(var(--gdx-teal));margin-bottom:8px}
+.ep-seg{display:inline-flex;border:1px solid var(--ink-line-hi);border-radius:999px;padding:3px;gap:2px;background:rgb(var(--ink-bg-rgb,5,7,10))}
+.ep-seg button{border:0;background:transparent;color:inherit;font:inherit;font-size:12px;padding:6px 12px;border-radius:999px;cursor:pointer;opacity:.7}
+.ep-seg button.on{background:rgba(var(--gdx-teal),.16);opacity:1;box-shadow:inset 0 0 0 1px rgba(var(--gdx-teal),.45)}
+.ep-swatches{display:flex;gap:10px}
+.ep-swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.ep-swatch.on{border-color:#fff}
+.ep-pill{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid rgba(var(--gdx-teal),.4);color:rgb(var(--gdx-teal));margin-left:8px;vertical-align:middle}
+.ep-clock{font-variant-numeric:tabular-nums;font-size:30px;font-weight:600;letter-spacing:-.02em;margin:2px 0 14px}
+.ep-sess{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:12px;padding:8px 0;font-size:13px}
+.ep-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.ep-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,rgb(var(--gdx-teal)),rgb(var(--gdx-indigo)));transition:width .6s}
+.ep-sess .st{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.ep-sess.open .st{color:rgb(var(--gdx-teal));opacity:1}
+.ep-lock{text-align:center;padding:48px 20px}
+
+/* ============ 3D workspace (Elite and up, opt-in) ============ */
+#gd3dScene{position:fixed;inset:0;z-index:-1;width:100%;height:100%;display:block;pointer-events:none}
+#gd3dIntro{position:fixed;inset:0;z-index:2147483000;background:#05070a;opacity:1;transition:opacity 2.6s cubic-bezier(.3,.6,.2,1),transform 2.6s cubic-bezier(.3,.6,.2,1),filter 2.6s ease}
+#gd3dIntro.out{opacity:0;transform:scale(1.18);filter:blur(8px);pointer-events:none}
+#gd3dIntro canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#gd3dHud{position:absolute;left:0;right:0;bottom:9vh;text-align:center;color:#e6ecf0;font-family:'Instrument Sans',system-ui,sans-serif;pointer-events:none;transition:opacity .6s}
+#gd3dHud .k{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:rgb(var(--gdx-teal));opacity:.9}
+#gd3dHud .m{font-size:clamp(18px,2.6vw,28px);font-weight:600;letter-spacing:-.01em;margin:10px 0 18px;min-height:1.3em}
+#gd3dHud .p{width:min(420px,70vw);height:3px;margin:0 auto;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+#gd3dHud .p i{display:block;height:100%;width:0;background:linear-gradient(90deg,rgb(var(--gdx-teal)),rgb(var(--gdx-indigo)))}
+#gd3dHud .t{margin-top:10px;font-size:11px;letter-spacing:.2em;opacity:.55;font-variant-numeric:tabular-nums}
+#gd3dSkip{position:absolute;right:24px;bottom:24px;pointer-events:auto;background:#10141a;color:#e6ecf0;border:1px solid var(--ink-line-hi);border-radius:999px;padding:9px 16px;font:600 12px 'Instrument Sans',system-ui,sans-serif;letter-spacing:.06em;cursor:pointer;opacity:0;transition:opacity .5s}
+#gd3dSkip.show{opacity:1}
+html[data-gd3d="on"]{--ink-a:.9}
+html[data-gd3d="on"] :is(.desktop-nav,.mobile-topbar,.sidebar,.tab-bar,.nav){--ink-a:.94}
 @media (hover:hover) and (pointer:fine){
-  :is(.package-card,.hero-stat,.prompt-card,.provider-card,.sig-card,.pe-tile,.eq-dark-card,.pf-archive-card,.method-card,.feature,.plan):hover{
-    transform:perspective(1100px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg)) translateY(-3px) translateZ(6px)!important;transition:transform .18s ease-out,box-shadow .3s}
+  html[data-gd3d="on"][data-gd-tilt] :is(.package-card,.hero-stat,.prompt-card,.provider-card,.sig-card,.pe-tile,.eq-dark-card,.pf-archive-card,.method-card,.feature,.plan,.ep-card):hover{
+    transform:perspective(1100px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg)) translateY(-3px) translateZ(6px)!important;
+    border-color:rgba(var(--gdx-teal),.35)!important;transition:transform .18s ease-out,border-color .3s}
 }
-@media (max-width:720px){#gdxBg .gdx-glow{filter:blur(50px)}#gdxBg .gdx-grid{opacity:.35}
-  html:not([data-theme="light"]) :is(.card,.auth-card,.package-card,.sig-card,.prompt-card){-webkit-backdrop-filter:blur(12px)!important;backdrop-filter:blur(12px)!important}}
-@media (prefers-reduced-motion:reduce){#gdxBg .gdx-glow,#gdxBg .gdx-grid{animation:none!important;transition:none!important}}
-html.motion-reduced #gdxBg .gdx-glow,html.motion-reduced #gdxBg .gdx-grid{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){#gd3dIntro{display:none!important}}
+html.motion-reduced #gd3dIntro{display:none!important}
+
+/* ============ Flat by default: the old 3D set pieces are retired unless the Elite 3D workspace is on ============ */
+/* retired set pieces, in every mode (the 3D workspace has its own redesigned scene) */
+:is(.hero-celestial,.visual-orbit,.visual-stage::before,.visual-stage::after,#bootSplash::before,#bootSplash::after){display:none!important}
+html:not([data-gd3d]) :is(.visual-stage,.preview-grid,.preview-carousel,.preview-card,.method-card,.feature,.plan,.auth-card,.visual,.visual-float){perspective:none!important;transform-style:flat!important}
+html:not([data-gd3d]) :is(.method-card,.feature,.plan,.visual,.auth-card){transform:none!important}
+html:not([data-gd3d]) :is(.method-card,.feature,.plan):hover{transform:translateY(-2px)!important}
+html:not([data-gd3d]) .preview-card:nth-child(n),html:not([data-gd3d]) .preview-card:hover{transform:scale(var(--card-scale,1))!important}
+html:not([data-gd3d]) .preview-card img{transform:none!important}
+#heroTitle em{background:linear-gradient(90deg,rgb(var(--gdx-teal)),rgb(var(--gdx-indigo)));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+/* landing page: swap the sage green for the reference teal */
+:root{--mint:#5eead4;--mint-deep:#2f8f82}
+
+button.switch{padding:0;-webkit-appearance:none;appearance:none}

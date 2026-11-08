@@ -1,44 +1,37 @@
-/* Ghost Discipline — shared portal theme runtime: injects the 3D background layers, ensures the starfield
-   exists on every page, and drives pointer parallax + glass glint/tilt. No dependencies. */
+/* Ghost Discipline — shared portal theme runtime.
+   1) Injects the static background layer (base + teal/indigo glows, see gd-portal-theme.css).
+   2) Loads the opt-in 3D workspace (gd-3d.js) ONLY when an Elite-and-up account has switched it on.
+   No dependencies. */
 (() => {
   const d = document, root = d.documentElement;
+  const KEY = 'gd_elite_portal', OK = 'gd_elite_ok';
+  const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } };
+  const eliteOk = () => { try { return localStorage.getItem(OK) === '1'; } catch (e) { return false; } };
+
+  // One loader shared by the portal page and by every other page.
+  let loading = null;
+  window.gdLoad3D = () => {
+    if (window.GD3D) return Promise.resolve(window.GD3D);
+    if (loading) return loading;
+    loading = new Promise((res, rej) => {
+      const s = d.createElement('script');
+      s.src = 'gd-3d.js'; s.async = true;
+      s.onload = () => res(window.GD3D); s.onerror = () => { loading = null; rej(new Error('3D engine failed to load')); };
+      d.head.appendChild(s);
+    });
+    return loading;
+  };
+
   const start = () => {
-    if (d.getElementById('gdxBg')) return;
-    root.setAttribute('data-gdx', '');
-    const bg = d.createElement('div');
-    bg.id = 'gdxBg'; bg.setAttribute('aria-hidden', 'true');
-    bg.innerHTML = '<i class="gdx-glow a"></i><i class="gdx-glow b"></i><i class="gdx-grid"></i><i class="gdx-vig"></i>';
-    d.body.prepend(bg);
-    // pages without the shared starfield (admin, welcome) get one
-    if (!d.getElementById('spaceField')) {
-      const c = d.createElement('canvas');
-      c.id = 'spaceField'; c.className = 'space-field'; c.setAttribute('aria-hidden', 'true');
-      bg.after(c);
-      if (!d.querySelector('script[src*="space-background"]')) {
-        const s = d.createElement('script'); s.src = 'space-background.js'; s.defer = true; d.head.appendChild(s);
-      }
+    if (!d.getElementById('gdxBg')) {
+      root.setAttribute('data-gdx', '');
+      const bg = d.createElement('div');
+      bg.id = 'gdxBg'; bg.setAttribute('aria-hidden', 'true');
+      d.body.prepend(bg);
     }
-    let still = false;
-    try { still = localStorage.getItem('gd_motion') === 'reduced'; } catch (e) {}
-    if (still || matchMedia('(prefers-reduced-motion: reduce)').matches || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const SURF = '.card,.auth-card,.package-card,.eq-dark-card,.pf-archive-card,.hero-stat,.pe-tile,.sig-card,.provider-card,.prompt-card,.gate-card,.method-card,.feature,.plan,.quick-scife-modal,.onboarding-modal';
-    const TILT = '.package-card,.hero-stat,.prompt-card,.provider-card,.sig-card,.pe-tile,.eq-dark-card,.pf-archive-card,.method-card,.feature,.plan';
-    let raf = 0, ev = null;
-    const run = () => {
-      raf = 0; const e = ev; if (!e) return;
-      root.style.setProperty('--px', (e.clientX / innerWidth - .5).toFixed(3));
-      root.style.setProperty('--py', (e.clientY / innerHeight - .5).toFixed(3));
-      const t = e.target.closest && e.target.closest(SURF);
-      if (!t) return;
-      const r = t.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      t.style.setProperty('--gx', (x * 100).toFixed(1) + '%'); t.style.setProperty('--gy', (y * 100).toFixed(1) + '%');
-      if (t.matches(TILT)) { t.style.setProperty('--ty', ((x - .5) * 7).toFixed(2) + 'deg'); t.style.setProperty('--tx', ((.5 - y) * 7).toFixed(2) + 'deg'); }
-    };
-    d.addEventListener('pointermove', e => { ev = e; if (!raf) raf = requestAnimationFrame(run); }, { passive: true });
-    d.addEventListener('pointerout', e => {
-      const t = e.target.closest && e.target.closest(TILT);
-      if (t && !t.contains(e.relatedTarget)) { t.style.setProperty('--tx', '0deg'); t.style.setProperty('--ty', '0deg'); }
-    }, { passive: true });
+    const onAdmin = /(^|\/)admin(\.html)?$/.test(location.pathname);
+    const s = read();
+    if (!onAdmin && s.threeD && eliteOk()) window.gdLoad3D().then(g => g && g.boot()).catch(() => {});
   };
   d.body ? start() : d.addEventListener('DOMContentLoaded', start);
 })();
