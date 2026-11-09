@@ -1,13 +1,13 @@
 /* Ghost Discipline - floating "liquid glass" navigator (desktop, top of the screen).
    Standalone: one file, one <script> line. Replaces gd-dock.js (remove that script line).
    - Frosted-glass capsule that floats ~1cm below the top edge (--gdl-top: 19px on short screens, 38px max) and replaces the flat header links.
-   - It spans the page between two equal side insets (--gdl-inset: 15% of the width, never closer than the brand / plan badge) with the tabs spread evenly.
+   - It spans the page between two equal side insets (--gdl-inset: 14% of the width, never closer than the brand / plan badge) with the tabs spread evenly.
    - Open a topic (Markets, Trading, Prop) and its pages drop out of the active tab like a tray; it lingers (TRAY_IDLE ms), then lifts away. Click or hover the active tab to bring it back.
    - The brand and plan badge stay, aligned to the capsule; page content is pushed clear of it.
    - A liquid-glass lens sits over the active tab, taller than the bar, with refraction, a bright rim,
      and spring physics: it stretches as it travels and squashes when it lands.
    - Press and drag across the bar to scrub between tabs; release to go. Tap works too.
-   - "More" opens a glass sheet under the capsule with every page (drag the grabber up, tap outside, or Esc to close).
+   - "More" drops a wide glass panel under the capsule with every page in topic columns (tap outside, the close button, or Esc to close).
    - Every button drives the existing sidebar buttons, so tier locks and demo locks still apply.
    - All class/id names use the gdl prefix so nothing can clash with the rest of the app. */
 (function(){
@@ -34,30 +34,30 @@
   var pressState = null;
 
   var css = '\
-:root{--gdl-top:clamp(19px,3.4vh,38px);--gdl-inset:max(15vw,250px)}\
-#gdlNav,#gdlScrim,#gdlSheet{font-family:"IBM Plex Sans","Inter",-apple-system,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased}\
+:root{--gdl-top:clamp(19px,3.4vh,38px);--gdl-inset:max(14vw,256px)}\
+#gdlNav,#gdlScrim,#gdlSheet{font-family:"IBM Plex Sans","Inter",-apple-system,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}\
 #gdlNav{position:fixed;left:var(--gdl-inset);right:var(--gdl-inset);top:calc(var(--gdl-top) + env(safe-area-inset-top,0px));z-index:120;display:flex;align-items:center;gap:10px;transition:opacity .25s ease,transform .5s cubic-bezier(.32,1.3,.5,1)}\
 #gdlNav.off{opacity:0;pointer-events:none;transform:translateY(-28px) scale(.97)}\
 body:has(.overlay.show) #gdlNav{opacity:0;pointer-events:none}\
-#gdlBar{position:relative;z-index:2;flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 24px 50px -20px rgba(0,0,0,.85),0 8px 18px -10px rgba(0,0,0,.55)}\
+#gdlBar{position:relative;z-index:2;flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 14px 26px -16px rgba(0,0,0,.8),0 2px 6px -2px rgba(0,0,0,.5)}\
 #gdlGlass{position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;\
  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.035) 46%,rgba(255,255,255,.06)),rgba(12,16,22,.44);\
- -webkit-backdrop-filter:blur(26px) saturate(1.9) brightness(1.06);backdrop-filter:blur(26px) saturate(1.9) brightness(1.06);\
- box-shadow:inset 0 1px 0 rgba(255,255,255,.36),inset 0 -1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.1),inset 0 16px 24px -18px rgba(255,255,255,.22);transition:background .3s ease}\
+ -webkit-backdrop-filter:blur(18px) saturate(1.6) brightness(1.05);backdrop-filter:blur(18px) saturate(1.6) brightness(1.05);\
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(255,255,255,.1),inset 0 0 0 1px rgba(255,255,255,.16);transition:background .3s ease}\
 #gdlGlass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;\
- background:linear-gradient(135deg,rgba(255,255,255,.6),rgba(255,255,255,.1) 36%,rgba(255,255,255,.04) 64%,rgba(255,255,255,.3));\
+ background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(255,255,255,.16) 36%,rgba(255,255,255,.06) 64%,rgba(255,255,255,.45));\
  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}\
-html #gdlNav #gdlGlass{-webkit-backdrop-filter:blur(26px) saturate(1.9) brightness(1.06)!important;backdrop-filter:blur(26px) saturate(1.9) brightness(1.06)!important}\
+html #gdlNav #gdlGlass{-webkit-backdrop-filter:blur(18px) saturate(1.6) brightness(1.05)!important;backdrop-filter:blur(18px) saturate(1.6) brightness(1.05)!important}\
 #gdlNav.scrolled #gdlGlass{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.035) 46%,rgba(255,255,255,.06)),rgba(10,13,19,.6)}\
 #gdlLens{position:absolute;left:0;top:-5px;bottom:-5px;width:0;border-radius:30px;pointer-events:none;z-index:1;will-change:transform,width;opacity:0;\
  background:radial-gradient(130% 100% at 28% 0%,rgba(255,255,255,.26),rgba(255,255,255,.05) 52%,rgba(94,234,212,.07)),rgba(14,18,25,.5);\
- border:1px solid rgba(255,255,255,.3);\
- -webkit-backdrop-filter:blur(2px) saturate(1.9) brightness(1.18);backdrop-filter:blur(2px) saturate(1.9) brightness(1.18);\
- box-shadow:inset 0 2px 1px rgba(255,255,255,.55),inset 0 -2px 2px rgba(255,255,255,.1),inset 8px 10px 16px -10px rgba(255,255,255,.4),inset -8px -10px 16px -10px rgba(94,234,212,.28),\
- 0 16px 36px -12px rgba(0,0,0,.7),0 0 26px -8px rgba(94,234,212,.22)}\
-html:not([data-theme="light"]) #gdlNav #gdlLens{-webkit-backdrop-filter:blur(2px) saturate(1.9) brightness(1.18)!important;backdrop-filter:blur(2px) saturate(1.9) brightness(1.18)!important}\
-@supports (backdrop-filter:url(#x)){html:not([data-theme="light"]) #gdlNav #gdlLens{backdrop-filter:blur(2px) saturate(1.9) brightness(1.18) url(#gdlLiquid)!important}}\
-.gdl-item{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px;flex:1 1 0;min-width:44px;height:44px;padding:0;border:0;border-radius:999px;background:transparent!important;box-shadow:none!important;\
+ border:1px solid rgba(255,255,255,.45);\
+ -webkit-backdrop-filter:blur(1px) saturate(1.9) brightness(1.18);backdrop-filter:blur(1px) saturate(1.9) brightness(1.18);\
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(255,255,255,.14),inset 6px 8px 12px -10px rgba(255,255,255,.35),inset -6px -8px 12px -10px rgba(94,234,212,.24),\
+ 0 10px 22px -12px rgba(0,0,0,.7),0 0 14px -8px rgba(94,234,212,.2)}\
+html:not([data-theme="light"]) #gdlNav #gdlLens{-webkit-backdrop-filter:blur(1px) saturate(1.9) brightness(1.18)!important;backdrop-filter:blur(1px) saturate(1.9) brightness(1.18)!important}\
+@supports (backdrop-filter:url(#x)){html:not([data-theme="light"]) #gdlNav #gdlLens{backdrop-filter:blur(1px) saturate(1.9) brightness(1.18) url(#gdlLiquid)!important}}\
+.gdl-item{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px;flex:1 1 0;min-width:44px;height:43px;padding:0;border:0;border-radius:999px;background:transparent!important;box-shadow:none!important;\
  color:rgba(236,241,247,.74);cursor:pointer;overflow:hidden;white-space:nowrap;-webkit-tap-highlight-color:transparent;\
  transition:min-width .5s cubic-bezier(.32,1.15,.5,1),color .2s ease,transform .3s cubic-bezier(.32,1.6,.5,1)}\
 html:not([data-theme="light"]) .gdl-item{border:0!important;background-color:transparent!important}\
@@ -66,11 +66,11 @@ html:not([data-theme="light"]) .gdl-item{border:0!important;background-color:tra
 .gdl-item span{max-width:0;opacity:0;overflow:hidden;font-size:12.5px;font-weight:600;letter-spacing:.005em;transition:max-width .5s cubic-bezier(.32,1.15,.5,1),opacity .25s ease}\
 .gdl-item:hover{color:#fff}\
 .gdl-item.on{min-width:var(--gdl-w,104px);color:#fff}\
-.gdl-item.on svg{color:#5eead4;filter:drop-shadow(0 0 8px rgba(94,234,212,.55))}\
+.gdl-item.on svg{color:#5eead4;filter:drop-shadow(0 0 4px rgba(94,234,212,.4))}\
 .gdl-item.on span{max-width:var(--gdl-sw,70px);opacity:1}\
 .gdl-item.locked{opacity:.55}\
 .gdl-item:focus-visible,.gdl-log:focus-visible{outline:2px solid #5eead4;outline-offset:3px}\
-.gdl-log{width:46px;height:46px;border-radius:50%;border:0!important;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#06121a;\
+.gdl-log{width:45px;height:45px;border-radius:50%;border:0!important;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#06121a;\
  background:linear-gradient(145deg,#5eead4,#7c8cff)!important;\
  box-shadow:0 18px 32px -12px rgba(94,234,212,.5),0 1px 0 rgba(255,255,255,.55) inset!important;\
  transition:transform .3s cubic-bezier(.32,1.6,.5,1)}\
@@ -82,13 +82,13 @@ html:not([data-theme="light"]) .gdl-item{border:0!important;background-color:tra
  transform:translate(-50%,-14px) scale(.94);transform-origin:50% 0;opacity:0;visibility:hidden;pointer-events:none;\
  transition:transform .5s cubic-bezier(.32,1.4,.5,1),opacity .22s ease,visibility 0s linear .5s,left .45s cubic-bezier(.32,1.15,.5,1);\
  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 50%,rgba(255,255,255,.05)),rgba(12,16,22,.5);\
- -webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);\
- box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.1),0 26px 48px -22px rgba(0,0,0,.85),0 8px 16px -10px rgba(0,0,0,.5)}\
-html #gdlNav #gdlTray{-webkit-backdrop-filter:blur(24px) saturate(1.8)!important;backdrop-filter:blur(24px) saturate(1.8)!important}\
+ -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);\
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.16),0 16px 30px -18px rgba(0,0,0,.85),0 2px 6px -2px rgba(0,0,0,.45)}\
+html #gdlNav #gdlTray{-webkit-backdrop-filter:blur(18px) saturate(1.6)!important;backdrop-filter:blur(18px) saturate(1.6)!important}\
 #gdlTray.show{transform:translate(-50%,0) scale(1);opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}\
 #gdlTray.snap{transition:transform .5s cubic-bezier(.32,1.4,.5,1),opacity .22s ease,visibility 0s linear .5s}\
 .gdl-chip{display:flex;align-items:center;gap:8px;height:38px;padding:0 15px 0 12px;border:0!important;border-radius:999px;background:transparent!important;box-shadow:none!important;\
- color:rgba(236,241,247,.78);font:600 12.5px/1 inherit;letter-spacing:.005em;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .2s ease,color .2s ease}\
+ color:rgba(236,241,247,.78);font-family:inherit;font-size:12.5px;font-weight:600;line-height:1;letter-spacing:.005em;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .2s ease,color .2s ease}\
 .gdl-chip svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}\
 .gdl-chip svg circle{fill:currentColor;stroke:none}\
 .gdl-chip:hover{background:rgba(255,255,255,.1)!important;color:#fff}\
@@ -103,44 +103,45 @@ html #gdlNav #gdlTray{-webkit-backdrop-filter:blur(24px) saturate(1.8)!important
 \
 #gdlScrim{position:fixed;inset:0;z-index:9100;background:rgba(2,4,8,.5);opacity:0;pointer-events:none;transition:opacity .3s ease}\
 #gdlScrim.show{opacity:1;pointer-events:auto}\
-#gdlSheet{position:fixed;left:50%;top:calc(var(--gdl-top) + env(safe-area-inset-top,0px) + 68px);z-index:9101;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - var(--gdl-top) - 96px - env(safe-area-inset-top,0px));display:flex;flex-direction:column;\
- transform:translate(-50%,-16px) scale(.96);transform-origin:50% 0;opacity:0;visibility:hidden;pointer-events:none;\
- transition:transform .45s cubic-bezier(.32,1.2,.5,1),opacity .25s ease,visibility 0s linear .45s;border-radius:30px;overflow:hidden;\
- background:linear-gradient(180deg,rgba(30,36,46,.8),rgba(12,16,22,.9));-webkit-backdrop-filter:blur(30px) saturate(1.7);backdrop-filter:blur(30px) saturate(1.7);\
- border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -20px rgba(0,0,0,.75),0 1px 0 rgba(255,255,255,.12) inset;color:#e8edf3}\
-html #gdlSheet{-webkit-backdrop-filter:blur(30px) saturate(1.7)!important;backdrop-filter:blur(30px) saturate(1.7)!important}\
-#gdlSheet.show{transform:translate(-50%,0) scale(1);opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}\
-#gdlSheet.drag{transition:none}\
-.gdl-grab{flex:none;display:flex;justify-content:center;padding:6px 0 10px;cursor:grab;touch-action:none}\
-.gdl-grab i{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.24)}\
-.gdl-head{flex:none;display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;touch-action:none}\
-.gdl-head h3{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em}\
-.gdl-head button{border:0!important;background:rgba(255,255,255,.09)!important;color:rgba(255,255,255,.75);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer}\
-.gdl-body{overflow:auto;padding:0 14px 8px;overscroll-behavior:contain}\
-.gdl-sec{margin:14px 0 0}\
-.gdl-sec h4{margin:0 0 7px 8px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.42)}\
-.gdl-list{border-radius:18px;overflow:hidden;background:rgba(255,255,255,.06)}\
-.gdl-row{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:0!important;background:transparent!important;box-shadow:none!important;color:inherit;font:500 14px/1.2 inherit;text-align:left;cursor:pointer;position:relative}\
-.gdl-row+.gdl-row::before{content:"";position:absolute;top:0;left:56px;right:0;height:1px;background:rgba(255,255,255,.07)}\
-.gdl-row:hover{background:rgba(255,255,255,.07)!important}\
-.gdl-row:active{background:rgba(255,255,255,.13)!important}\
-.gdl-ico{flex:none;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08)}\
-.gdl-ico svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}\
-.gdl-row.on{color:#5eead4}.gdl-row.on .gdl-ico{background:rgba(94,234,212,.18)}\
-.gdl-lbl{flex:1}\
-.gdl-tag{font-size:9px;font-weight:700;letter-spacing:.08em;color:#f5a623;border:1px solid rgba(245,166,35,.4);border-radius:6px;padding:2px 6px}\
-.gdl-chev{width:14px;height:14px;fill:none;stroke:rgba(255,255,255,.28);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}\
+#gdlSheet{position:fixed;left:var(--gdl-inset);right:var(--gdl-inset);top:calc(var(--gdl-top) + env(safe-area-inset-top,0px) + 67px);z-index:9101;box-sizing:border-box;max-height:calc(100vh - var(--gdl-top) - 91px - env(safe-area-inset-top,0px));display:flex;flex-direction:column;border-radius:28px;overflow:hidden;\
+ transform:translateY(-14px) scale(.97);transform-origin:50% 0;opacity:0;visibility:hidden;pointer-events:none;\
+ transition:transform .5s cubic-bezier(.32,1.35,.5,1),opacity .22s ease,visibility 0s linear .5s;\
+ background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 40%),rgba(12,16,22,.78);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);\
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.16),0 30px 60px -24px rgba(0,0,0,.85),0 2px 8px -2px rgba(0,0,0,.5);color:#e8edf3}\
+html #gdlSheet{-webkit-backdrop-filter:blur(22px) saturate(1.6)!important;backdrop-filter:blur(22px) saturate(1.6)!important}\
+#gdlSheet.show{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}\
+.gdl-head{flex:none;display:flex;align-items:center;justify-content:space-between;padding:16px 20px 2px 26px}\
+.gdl-head h3{margin:0;font-size:15px;font-weight:650;letter-spacing:-.005em;color:rgba(255,255,255,.94)}\
+.gdl-head button{border:0!important;background:rgba(255,255,255,.08)!important;color:rgba(255,255,255,.78);width:30px;height:30px;border-radius:50%;font-size:13px;line-height:1;cursor:pointer;transition:background-color .2s ease}\
+.gdl-head button:hover{background:rgba(255,255,255,.16)!important}\
+.gdl-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:10px 16px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 14px;align-items:start}\
+.gdl-sec{min-width:0}\
+.gdl-sec h4{margin:0 0 6px 10px;padding:0 0 7px;font-size:12px;font-weight:600;letter-spacing:.01em;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.1)}\
+.gdl-list{display:flex;flex-direction:column;gap:2px}\
+.gdl-row{display:flex;align-items:center;gap:10px;width:100%;height:38px;padding:0 10px 0 8px;border:0!important;border-radius:12px;background:transparent!important;box-shadow:none!important;color:rgba(236,241,247,.84);font-family:inherit;font-size:13px;font-weight:600;line-height:1;text-align:left;cursor:pointer;transition:background-color .2s ease,color .2s ease}\
+.gdl-row:hover{background:rgba(255,255,255,.09)!important;color:#fff}\
+.gdl-row:active{background:rgba(255,255,255,.15)!important}\
+.gdl-row:focus-visible,.gdl-head button:focus-visible{outline:2px solid #5eead4;outline-offset:2px}\
+.gdl-ico{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,.07)}\
+.gdl-ico svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}\
+.gdl-ico svg circle{fill:currentColor;stroke:none}\
+.gdl-row.on{background:rgba(94,234,212,.14)!important;color:#fff;box-shadow:inset 0 0 0 1px rgba(94,234,212,.3)!important}\
+.gdl-row.on .gdl-ico{background:rgba(94,234,212,.2);color:#5eead4}\
+.gdl-lbl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}\
+.gdl-tag{font-size:8.5px;font-weight:700;letter-spacing:.08em;color:#f5a623;border:1px solid rgba(245,166,35,.4);border-radius:5px;padding:2px 4px}\
+@keyframes gdlDrop{0%{opacity:0;transform:translateY(-28px);animation-timing-function:cubic-bezier(.55,0,.9,.5)}30%{opacity:1}55%{transform:translateY(5px);animation-timing-function:cubic-bezier(.2,.6,.4,1)}75%{transform:translateY(-2px);animation-timing-function:ease-in-out}100%{opacity:1;transform:none}}\
+#gdlSheet.show .gdl-row{animation:gdlDrop .62s both;animation-delay:calc(var(--d,0)*1ms + 50ms)}\
 \
-html.gdl-on #desktopNav#desktopNav{top:calc(var(--gdl-top) + env(safe-area-inset-top,0px))!important;height:56px!important;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;pointer-events:none}\
+html.gdl-on #desktopNav#desktopNav{top:calc(var(--gdl-top) + env(safe-area-inset-top,0px))!important;height:55px!important;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;pointer-events:none}\
 html.gdl-on #desktopNav#desktopNav::before,html.gdl-on #desktopNav#desktopNav::after{display:none!important}\
 html.gdl-on #desktopNav#desktopNav .desktop-nav-links,html.gdl-on #desktopNav#desktopNav .desktop-nav-meta{display:none!important}\
 html.gdl-on #desktopNav#desktopNav .desktop-nav-brand{pointer-events:auto;position:relative;padding:5px 16px 5px 6px;border-radius:999px;\
  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03)),rgba(12,16,22,.5);\
  -webkit-backdrop-filter:blur(22px) saturate(1.8)!important;backdrop-filter:blur(22px) saturate(1.8)!important;\
- box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.1),0 16px 34px -16px rgba(0,0,0,.75)}\
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.16),0 12px 24px -14px rgba(0,0,0,.75),0 2px 6px -2px rgba(0,0,0,.45)}\
 html.gdl-on #planBadge{top:calc(var(--gdl-top) + env(safe-area-inset-top,0px) + 13px)!important}\
-html.gdl-on #appShell.show>.main{margin-top:calc(var(--gdl-top) + 66px)!important;min-height:0!important}\
-html.gdl-on #pfComplianceWrap{top:calc(var(--gdl-top) + 80px)!important}\
+html.gdl-on #appShell.show>.main{margin-top:calc(var(--gdl-top) + 65px)!important;min-height:0!important}\
+html.gdl-on #pfComplianceWrap{top:calc(var(--gdl-top) + 79px)!important}\
 \
 html[data-theme="light"] #gdlGlass{background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.42)),rgba(238,242,247,.5);box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px rgba(0,0,0,.08)}\
 html[data-theme="light"] #gdlGlass::before{background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,255,255,.2) 40%,rgba(0,0,0,.04) 70%,rgba(255,255,255,.7))}\
@@ -149,8 +150,15 @@ html[data-theme="light"] .gdl-item{color:rgba(20,28,40,.6)}\
 html[data-theme="light"] .gdl-item.on{color:#0b1220}\
 html[data-theme="light"] .gdl-item.on svg{color:#0f766e;filter:none}\
 html[data-theme="light"] #gdlLens{background:rgba(15,118,110,.1);border-color:rgba(15,118,110,.3);box-shadow:0 8px 20px -10px rgba(15,118,110,.4),inset 0 1px 1px rgba(255,255,255,.8)}\
-html[data-theme="light"] #gdlSheet{background:linear-gradient(180deg,rgba(250,252,255,.9),rgba(238,242,247,.92));color:#0b1220;border-color:rgba(0,0,0,.08)}\
-html[data-theme="light"] .gdl-list{background:#fff}\
+html[data-theme="light"] #gdlSheet{background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(238,242,247,.7)),rgba(238,242,247,.7);color:#0b1220;box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px rgba(0,0,0,.08),0 26px 54px -26px rgba(20,30,50,.45)}\
+html[data-theme="light"] .gdl-head h3{color:#0b1220}\
+html[data-theme="light"] .gdl-head button{background:rgba(15,23,42,.07)!important;color:#0b1220}\
+html[data-theme="light"] .gdl-sec h4{color:rgba(20,28,40,.55);border-bottom-color:rgba(0,0,0,.09)}\
+html[data-theme="light"] .gdl-row{color:rgba(20,28,40,.78)}\
+html[data-theme="light"] .gdl-row:hover{background:rgba(15,23,42,.06)!important;color:#0b1220}\
+html[data-theme="light"] .gdl-ico{background:rgba(15,23,42,.06)}\
+html[data-theme="light"] .gdl-row.on{background:rgba(15,118,110,.12)!important;color:#0b1220;box-shadow:inset 0 0 0 1px rgba(15,118,110,.3)!important}\
+html[data-theme="light"] .gdl-row.on .gdl-ico{background:rgba(15,118,110,.16);color:#0f766e}\
 html[data-theme="light"] #gdlTray{background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.42)),rgba(238,242,247,.5);box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px rgba(0,0,0,.08),0 22px 44px -22px rgba(20,30,50,.4)}\
 html[data-theme="light"] .gdl-chip{color:rgba(20,28,40,.68)}\
 html[data-theme="light"] .gdl-chip:hover{background:rgba(15,23,42,.07)!important;color:#0b1220}\
@@ -159,13 +167,13 @@ html[data-theme="light"] .gdl-chip.on svg{color:#0f766e;filter:none}\
 html[data-theme="light"] #desktopNav#desktopNav .desktop-nav-brand{background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.42)),rgba(238,242,247,.5);box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px rgba(0,0,0,.08),0 16px 34px -18px rgba(20,30,50,.4)}\
 @media (prefers-reduced-transparency:reduce){html #gdlNav #gdlGlass,html #gdlNav #gdlTray,html #gdlSheet,html.gdl-on #desktopNav#desktopNav .desktop-nav-brand{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(14,18,25,.96)!important}}\
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#gdlGlass,#gdlTray,#gdlSheet,html.gdl-on #desktopNav#desktopNav .desktop-nav-brand{background:rgba(14,18,25,.94)}}\
-@media (prefers-reduced-motion:reduce){#gdlNav,.gdl-item,.gdl-item span,#gdlSheet,#gdlScrim,.gdl-log,.gdl-log svg,#gdlGlass,#gdlTray,.gdl-chip{transition:none!important}#gdlTray.show .gdl-chip{animation:none!important}}';
+@media (prefers-reduced-motion:reduce){#gdlNav,.gdl-item,.gdl-item span,#gdlSheet,#gdlScrim,.gdl-log,.gdl-log svg,#gdlGlass,#gdlTray,.gdl-chip{transition:none!important}#gdlTray.show .gdl-chip,#gdlSheet.show .gdl-row{animation:none!important}}';
 
   var FILTER = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>\
 <filter id="gdlLiquid" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">\
 <feTurbulence type="fractalNoise" baseFrequency="0.006 0.016" numOctaves="2" seed="7" result="n"/>\
 <feGaussianBlur in="n" stdDeviation="1.2" result="nb"/>\
-<feDisplacementMap in="SourceGraphic" in2="nb" scale="26" xChannelSelector="R" yChannelSelector="G"/>\
+<feDisplacementMap in="SourceGraphic" in2="nb" scale="8" xChannelSelector="R" yChannelSelector="G"/>\
 </filter></defs></svg>';
 
   /* ---------- sidebar helpers ---------- */
@@ -384,26 +392,22 @@ html[data-theme="light"] #desktopNav#desktopNav .desktop-nav-brand{background:li
 
   /* ---------- bottom sheet ---------- */
   function buildSheet(){
-    var v = activeView(), seen = {}, out = '';
+    var v = activeView(), seen = {}, out = '', ci = 0;
     GROUPS.forEach(function(g){
-      var rows = '';
+      var rows = '', ri = 0;
       g[1].forEach(function(key){
         var b = src(key); if(!b || seen[key]) return; seen[key] = 1;
         var tag = tagOf(b);
-        rows += '<button type="button" class="gdl-row'+(key===v?' on':'')+'" data-v="'+key+'"><span class="gdl-ico">'+iconOf(key)+'</span><span class="gdl-lbl">'+labelOf(b)+'</span>'+(tag?'<span class="gdl-tag">'+tag+'</span>':'')+'<svg class="gdl-chev" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg></button>';
+        rows += '<button type="button" class="gdl-row'+(key===v?' on':'')+'" data-v="'+key+'" style="--d:'+(ci*70 + ri*24)+'"><span class="gdl-ico">'+iconOf(key)+'</span><span class="gdl-lbl">'+labelOf(b)+'</span>'+(tag?'<span class="gdl-tag">'+tag+'</span>':'')+'</button>';
+        ri++;
       });
-      if(rows) out += '<section class="gdl-sec"><h4>'+g[0]+'</h4><div class="gdl-list">'+rows+'</div></section>';
+      if(rows){ out += '<section class="gdl-sec"><h4>'+g[0]+'</h4><div class="gdl-list">'+rows+'</div></section>'; ci++; }
     });
-    sheet.innerHTML = '<div class="gdl-head"><h3>All pages</h3><button type="button" data-close="1" aria-label="Close">✕</button></div><div class="gdl-body">'+out+'</div><div class="gdl-grab" aria-hidden="true"><i></i></div>';
+    sheet.innerHTML = '<div class="gdl-head"><h3>All pages</h3><button type="button" data-close="1" aria-label="Close">\u2715</button></div><div class="gdl-body">'+out+'</div>';
     sheet.onclick = function(e){ if(e.target.closest('[data-close]')) return closeSheet(); var r = e.target.closest('.gdl-row'); if(r) go(r.dataset.v); };
-    var drag = null;
-    function down(e){ if(e.target.closest('button')) return; drag = { y:e.clientY, dy:0 }; sheet.classList.add('drag'); e.currentTarget.setPointerCapture(e.pointerId); }
-    function move(e){ if(!drag) return; drag.dy = Math.max(0, drag.y - e.clientY); sheet.style.transform = 'translate(-50%,'+(-drag.dy)+'px)'; scrim.style.opacity = String(Math.max(0, 1 - drag.dy/360)); }
-    function up(){ if(!drag) return; var d = drag.dy; drag = null; sheet.classList.remove('drag'); sheet.style.transform = ''; scrim.style.opacity = ''; if(d > 110) closeSheet(); }
-    [sheet.querySelector('.gdl-grab'), sheet.querySelector('.gdl-head')].forEach(function(h){ h.addEventListener('pointerdown', down); h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up); });
   }
   function toggleSheet(){ if(sheet.classList.contains('show')) closeSheet(); else openSheet(); }
-  function openSheet(){ buildSheet(); scrim.classList.add('show'); sheet.classList.add('show'); var f = sheet.querySelector('.gdl-row.on, .gdl-row'); if(f) setTimeout(function(){ f.focus({ preventScroll:true }); }, 260); }
+  function openSheet(){ closeTray(); buildSheet(); scrim.classList.add('show'); sheet.classList.add('show'); var f = sheet.querySelector('.gdl-row.on, .gdl-row'); if(f) setTimeout(function(){ f.focus({ preventScroll:true }); }, 260); }
   function closeSheet(){ if(!sheet) return; sheet.classList.remove('show'); scrim.classList.remove('show'); sync(); }
 
   /* ---------- show / hide ---------- */
