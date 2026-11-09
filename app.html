@@ -3087,6 +3087,10 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
         Analytics
       </button>
+      <button class="side-navbtn" data-view="rulebreaks">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
+        Rule Breaks
+      </button>
       <button class="side-navbtn" data-view="calendar">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
         Calendar
@@ -4340,6 +4344,17 @@ setTimeout(function(){
       <div id="pfPayoutBody"></div>
     </div>
 
+    <!-- RULE BREAKS (Pro and above) -->
+    <div class="view" id="view-rulebreaks">
+      <div class="topbar-row">
+        <div>
+          <h2 class="page-title">Rule Breaks</h2>
+          <div class="page-sub">Exactly which rules you broke, when it happened, and what each break cost you.</div>
+        </div>
+      </div>
+      <div id="rbBody"></div>
+    </div>
+
     <!-- SESSION -->
     <div class="view" id="view-session">
       <div class="topbar-row">
@@ -5037,7 +5052,7 @@ let userPaidUntil = null;
 let userBillingCycle = null;
 // Rooms held back on the Free tier. Keep these visible with tier badges and
 // an upgrade preview so people can discover what each package adds.
-const FREE_LOCKED_VIEWS = ['analytics','playbook','backtest','stratnotes','propfirm','proporders','propequity','propfirmrisk','propfirmpayout'];
+const FREE_LOCKED_VIEWS = ['rulebreaks','analytics','playbook','backtest','stratnotes','propfirm','proporders','propequity','propfirmrisk','propfirmpayout'];
 // Rooms held back until Elite specifically (blocks Free AND Pro). Premium
 // passes this too — see isElite() below.
 const ELITE_LOCKED_VIEWS = ['team','elite'];
@@ -6149,7 +6164,7 @@ const DEMO_EMAIL_KEY = 'ghostDiscipline_demoEmail';
 const DEMO_STATE_KEY = 'ghostDiscipline_demoState';
 const DEMO_FP_KEY = 'ghostDiscipline_deviceFp';
 // Rooms that stay locked during the trial — full arsenal is reserved for real access.
-const DEMO_LOCKED_VIEWS = ['edgelab','analytics','playbook','propfirm','proporders','propequity','propfirmrisk','propfirmpayout','journal','about','brief','stratnotes','backtest'];
+const DEMO_LOCKED_VIEWS = ['rulebreaks','edgelab','analytics','playbook','propfirm','proporders','propequity','propfirmrisk','propfirmpayout','journal','about','brief','stratnotes','backtest'];
 
 // Lightweight, dependency-free device fingerprint (canvas + WebGL + hardware
 // signals hashed together). This raises the bar against casual repeat-trial
@@ -6513,7 +6528,7 @@ async function checkSubscriptionExpiry(){
 setInterval(checkSubscriptionExpiry, 3600000); // re-check hourly for sessions left open
 
 function showTierLockedFeatureTease(view){
-  const labels = { analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', proporders:'Prop Orders', propequity:'Prop Equity', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team', elite:'Elite Portal', edgelab:'Edge Lab' };
+  const labels = { rulebreaks:'Rule Breaks', analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', proporders:'Prop Orders', propequity:'Prop Equity', backtest:'Backtest', stratnotes:'Strategy Notes', team:'Team', elite:'Elite Portal', edgelab:'Edge Lab' };
   const label = labels[view] || 'This room';
   const premiumOnly = PREMIUM_LOCKED_VIEWS.includes(view);
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
@@ -7004,7 +7019,7 @@ function openDemoTease(title, copy){
   document.getElementById('demoLockedFeatureOverlay').classList.add('show');
 }
 function showLockedFeatureTease(view){
-  const labels = { edgelab:'Edge Lab', analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', proporders:'Prop Orders', propequity:'Prop Equity', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
+  const labels = { rulebreaks:'Rule Breaks', edgelab:'Edge Lab', analytics:'Analytics', playbook:'Playbook', propfirm:'Prop Firm', propfirmrisk:'Prop Risk', propfirmpayout:'Prop Payouts', proporders:'Prop Orders', propequity:'Prop Equity', journal:'Journal', about:'About & Reset', brief:'Daily Brief' };
   const label = labels[view] || 'This room';
   openDemoTease(`${label} is for real accounts`, `The Proving Ground tests discipline, not the full arsenal — ${label} unlocks the moment you're in for real.`);
 }
@@ -7270,7 +7285,7 @@ function renderPortalGreeting(){
     'A calm start is a good start. The market can supply enough drama on its own.',
     'Your desk is ready. The charts may be unpredictable; your process does not have to be.'
   ];
-  let localDay=new Date().toISOString().slice(0,10);
+  let localDay=localIso(new Date());
   try{localDay=new Intl.DateTimeFormat('en-CA',{timeZone:profile.timezone||undefined,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}catch(e){}
   const key=`${localDay}:${first.toLowerCase()}`;
   const seed=[...key].reduce((n,ch)=>n+ch.charCodeAt(0),0);
@@ -7437,7 +7452,8 @@ async function resolveConflictUseServer(){
   btns.forEach(b=>b.disabled = false);
 }
 
-function todayStr(d){ return (d||new Date()).toISOString().slice(0,10); }
+function localIso(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(d){ return localIso(d||new Date()); }
 
 /* ============ DISCIPLINE SCORE ============ */
 function isInCooldown(){
@@ -7507,47 +7523,101 @@ function mondayOf(date){
   d.setHours(0,0,0,0);
   return d;
 }
-function toIso(d){ return d.toISOString().slice(0,10); }
+function toIso(d){ return localIso(d); }
 function weekKeyFor(date){ return toIso(mondayOf(date)); }
 function monthKeyFor(date){ return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0'); }
 function monthLabel(date){ return date.toLocaleDateString(undefined,{month:'long', year:'numeric'}); }
 
-function computePeriodStats(startIso, endIso){
-  const trades = liveTrades().filter(t => t.date >= startIso && t.date <= endIso);
+const RULE_CODE_LABELS = { minRR:'Minimum R:R', maxRiskPerTrade:'Max risk per trade', maxTrades:'Daily trade limit', maxDailyLoss:'Daily loss limit', maxConsecLosses:'Consecutive-loss limit', session:'Trading session window', coolingOff:'Cooling-off period', mood:'High-risk emotional state' };
+function ruleLabelFor(code){ return RULE_CODE_LABELS[code] || String(code); }
+function reviewAccountKey(t){ return t.account || 'personal'; }
+function reviewAccountInfo(key){
+  if(key==='personal') return { key, name:'Personal', ccy: state.rules.currency||'USD', base: Number(state.rules.accountBalance)||null };
+  const pf = getPropFirm(key);
+  if(!pf) return { key, name:'Prop account', ccy: state.rules.currency||'USD', base:null };
+  return { key, name: pf.firmName || 'Prop account', ccy: pf.currency || state.rules.currency || 'USD', base: Number(pf.startingBalance)||null, pf };
+}
+function reviewToPersonal(amount, ccy){
+  const to = state.rules.currency||'USD';
+  if(ccy===to) return amount;
+  const r = getCachedFxRate(ccy, to);
+  if(r==null){ ensureFxRatesLoaded(); return amount; }
+  return amount*r;
+}
+function reviewSymFor(ccy){ return (CURRENCIES[ccy]||CURRENCIES.USD).symbol; }
+function fmtSigned(v, sym){ return (v>=0?'+':'-')+sym+Math.abs(v).toFixed(0); }
+
+/* acct: 'all' (every account, converted to your personal currency), 'personal', or a prop firm id.
+   Each account is measured against ITS OWN balance, so a $497 prop win is never divided by the
+   personal account's balance. */
+function computePeriodStats(startIso, endIso, acct){
+  acct = acct || 'all';
+  const inRange = liveTrades().filter(t => t.date >= startIso && t.date <= endIso);
+  const accKeys = [...new Set(inRange.map(reviewAccountKey))];
+  const single = acct !== 'all';
+  const trades = (single ? inRange.filter(t=>reviewAccountKey(t)===acct) : inRange)
+    .slice().sort((a,b)=> a.date===b.date ? ((Number(a.id)||0)-(Number(b.id)||0)) : (a.date<b.date?-1:1));
+  const info = single ? reviewAccountInfo(acct) : null;
+  const sym = single ? reviewSymFor(info.ccy) : curSym();
+  const amt = t => single ? pnlOfRaw(t) : pnlOf(t);
+
   const tradeCount = trades.length;
   const wins = trades.filter(t=>t.result==='win').length;
-  const pnl = trades.reduce((s,t)=>s+pnlOf(t),0);
+  const losses = trades.filter(t=>t.result==='loss').length;
+  const pnl = trades.reduce((s,t)=>s+amt(t),0);
   const rrVals = trades.map(t=>parseFloat(t.rr)).filter(v=>!isNaN(v));
   const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length) : null;
-
-  // Gross win/loss, profit factor, and the single biggest win/loss in R —
-  // the headline numbers a clean equity report card leads with.
-  const grossWin = trades.reduce((s,t)=>s + (t.result==='win' ? pnlOf(t) : 0), 0);
-  const grossLoss = trades.reduce((s,t)=>s + (t.result==='loss' ? Math.abs(pnlOf(t)) : 0), 0);
+  const grossWin = trades.reduce((s,t)=>s + (t.result==='win' ? amt(t) : 0), 0);
+  const grossLoss = trades.reduce((s,t)=>s + (t.result==='loss' ? Math.abs(amt(t)) : 0), 0);
   const profitFactor = grossLoss>0 ? (grossWin/grossLoss) : (grossWin>0 ? Infinity : null);
+  const avgWin = wins ? grossWin/wins : null;
+  const avgLoss = losses ? grossLoss/losses : null;
   const winRRs = trades.filter(t=>t.result==='win').map(t=>parseFloat(t.rr)).filter(v=>!isNaN(v));
   const lossRRs = trades.filter(t=>t.result==='loss').map(t=>parseFloat(t.rr)).filter(v=>!isNaN(v));
   const biggestWinnerR = winRRs.length ? Math.max(...winRRs) : null;
   const biggestLoserR = lossRRs.length ? -Math.max(...lossRRs) : null;
 
-  // Max drawdown within the period — same running peak-to-trough logic the
-  // main equity chart uses, walked over just this period's trades.
   let cumRun = 0, peakRun = 0, maxDD = 0;
-  trades.forEach(t=>{ cumRun += pnlOf(t); peakRun = Math.max(peakRun, cumRun); maxDD = Math.max(maxDD, peakRun-cumRun); });
-  const bal = state.rules.accountBalance;
-  const netReturnPct = bal ? (pnl/bal*100) : null;
-  const maxDrawdownPct = bal ? (maxDD/bal*100) : null;
+  trades.forEach(t=>{ cumRun += amt(t); peakRun = Math.max(peakRun, cumRun); maxDD = Math.max(maxDD, peakRun-cumRun); });
+
+  // Return is measured against the right balance: the account's own balance, or - for "all
+  // accounts" - the combined balance of every account that traded (each converted once).
+  let base = null;
+  if(single){ base = info.base; }
+  else {
+    const infos = accKeys.map(reviewAccountInfo);
+    if(infos.length && infos.every(i=>i.base>0)) base = infos.reduce((s,i)=>s+reviewToPersonal(i.base,i.ccy),0);
+  }
+  const netReturnPct = base ? (pnl/base*100) : null;
+  const maxDrawdownPct = base ? (maxDD/base*100) : null;
 
   const byDay = {};
-  trades.forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOf(t); });
+  trades.forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + amt(t); });
   let bestDay=null, worstDay=null;
   Object.entries(byDay).forEach(([d,p])=>{
     if(!bestDay || p>bestDay.pnl) bestDay = {date:d, pnl:p};
     if(!worstDay || p<worstDay.pnl) worstDay = {date:d, pnl:p};
   });
+  const days = Object.keys(byDay);
 
+  // Rule breaks: read straight off each trade's recorded violations (so it is exact), and
+  // also count days the discipline history flagged.
+  const brokeTrades = trades.filter(t=>Array.isArray(t.ruleViolations) && t.ruleViolations.length);
+  const ruleMap = {};
+  brokeTrades.forEach(t=>t.ruleViolations.forEach(code=>{
+    if(!ruleMap[code]) ruleMap[code] = { code, label: ruleLabelFor(code), count:0, pnl:0 };
+    ruleMap[code].count++; ruleMap[code].pnl += amt(t);
+  }));
+  const ruleCounts = Object.values(ruleMap).sort((a,b)=>b.count-a.count);
+  const brokenDaySet = new Set(brokeTrades.map(t=>t.date));
   const histInRange = (state.psychology.disciplineHistory||[]).filter(h=>h.date>=startIso && h.date<=endIso);
-  const ruleBrokenDays = histInRange.filter(h=>h.ruleBroken).length;
+  if(!single) histInRange.forEach(h=>{ if(h.ruleBroken) brokenDaySet.add(h.date); });
+  const ruleBrokenDays = [...brokenDaySet].filter(d=>days.includes(d) || !single).length;
+  const activeDays = Math.max(days.length, ruleBrokenDays);
+  const ruleBreakTrades = brokeTrades.length;
+  const brokePnl = brokeTrades.reduce((s,t)=>s+amt(t),0);
+  const cleanTrades = trades.filter(t=>!(Array.isArray(t.ruleViolations) && t.ruleViolations.length));
+  const cleanPnl = cleanTrades.reduce((s,t)=>s+amt(t),0);
   const scoreVals = histInRange.map(h=>h.score).filter(v=>typeof v==='number');
   const avgDiscipline = scoreVals.length ? Math.round(scoreVals.reduce((a,b)=>a+b,0)/scoreVals.length) : null;
 
@@ -7555,14 +7625,22 @@ function computePeriodStats(startIso, endIso){
   trades.forEach(t=>{
     if(!t.mood) return;
     if(!moodMap[t.mood]) moodMap[t.mood] = { trades:0, pnl:0 };
-    moodMap[t.mood].trades++; moodMap[t.mood].pnl += pnlOf(t);
+    moodMap[t.mood].trades++; moodMap[t.mood].pnl += amt(t);
   });
-  const moodRows = Object.entries(moodMap).map(([mood,v])=>({ mood, label: MOOD_LABELS[mood]||mood, ...v }))
-    .sort((a,b)=>a.pnl-b.pnl);
+  const moodRows = Object.entries(moodMap).map(([mood,v])=>({ mood, label: MOOD_LABELS[mood]||mood, ...v })).sort((a,b)=>a.pnl-b.pnl);
 
-  return { tradeCount, wins, losses: tradeCount-wins, winRate: tradeCount ? capDemoWinRate(Math.round(wins/tradeCount*100)) : 0,
-    pnl, avgRR, bestDay, worstDay, ruleBrokenDays, activeDays: histInRange.length, avgDiscipline, moodRows,
-    trades, grossWin, grossLoss, profitFactor, biggestWinnerR, biggestLoserR, maxDD, maxDrawdownPct, netReturnPct };
+  const accounts = accKeys.map(k=>{
+    const i = reviewAccountInfo(k);
+    const ts = inRange.filter(t=>reviewAccountKey(t)===k);
+    const p = ts.reduce((s,t)=>s+pnlOfRaw(t),0);
+    return { key:k, name:i.name, sym:reviewSymFor(i.ccy), trades:ts.length, pnl:p, returnPct: i.base ? p/i.base*100 : null, isProp:k!=='personal' };
+  });
+
+  return { acct, startIso, endIso, sym, base, accounts,
+    tradeCount, wins, losses, winRate: tradeCount ? capDemoWinRate(Math.round(wins/tradeCount*100)) : 0,
+    pnl, avgRR, bestDay, worstDay, ruleBrokenDays, activeDays, avgDiscipline, moodRows,
+    trades, grossWin, grossLoss, profitFactor, avgWin, avgLoss, biggestWinnerR, biggestLoserR,
+    maxDD, maxDrawdownPct, netReturnPct, ruleCounts, ruleBreakTrades, brokePnl, cleanPnl, cleanCount: cleanTrades.length };
 }
 
 /* Turns raw period stats into plain-language coaching feedback — what's working, what to fix. */
@@ -7601,13 +7679,18 @@ function buildCoachingInsights(data){
     fixes.push(`Average discipline score was ${data.avgDiscipline}/100. Worth checking whether pre-trade checks are being rushed or skipped when a setup "feels" obvious.`);
   }
 
+  if(tierAtLeast('pro') && data.ruleCounts && data.ruleCounts.length){
+    const top = data.ruleCounts[0];
+    fixes.push(`Most-broken rule: ${top.label} (${top.count}x, ${fmtSigned(top.pnl, data.sym||curSym())} on those trades). Fix this one first.`);
+  }
+
   // Mood-driven losses
   if(data.moodRows && data.moodRows.length){
     const losingMoods = data.moodRows.filter(m=>m.pnl<0);
     if(losingMoods.length){
       const worst = losingMoods[0];
       const label = (worst.label||'').replace(/^\S+\s/,'');
-      fixes.push(`Trades placed while feeling "${label}" lost money this period (${worst.trades} trade${worst.trades===1?'':'s'}, ${worst.pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(worst.pnl).toFixed(0)}). Consider a hard rule: no entries while in that state.`);
+      fixes.push(`Trades placed while feeling "${label}" lost money this period (${worst.trades} trade${worst.trades===1?'':'s'}, ${worst.pnl>=0?('+'+(data.sym||curSym())):('-'+(data.sym||curSym()))}${Math.abs(worst.pnl).toFixed(0)}). Consider a hard rule: no entries while in that state.`);
     }
     const bestMood = data.moodRows[data.moodRows.length-1];
     if(bestMood && bestMood.pnl>0){
@@ -7620,7 +7703,7 @@ function buildCoachingInsights(data){
   if(data.bestDay && data.worstDay && data.tradeCount>=3){
     const swing = data.bestDay.pnl - data.worstDay.pnl;
     if(data.worstDay.pnl < 0 && swing > Math.abs(data.worstDay.pnl)*1.5){
-      fixes.push(`The gap between your best day (+${curSym()}${Math.abs(data.bestDay.pnl).toFixed(0)}) and worst day (-${curSym()}${Math.abs(data.worstDay.pnl).toFixed(0)}) is wide. Worth checking whether the worst day involved sizing up or chasing after an earlier loss.`);
+      fixes.push(`The gap between your best day (+${(data.sym||curSym())}${Math.abs(data.bestDay.pnl).toFixed(0)}) and worst day (-${(data.sym||curSym())}${Math.abs(data.worstDay.pnl).toFixed(0)}) is wide. Worth checking whether the worst day involved sizing up or chasing after an earlier loss.`);
     }
   }
 
@@ -7705,11 +7788,12 @@ function showNextPeriodReview(){
 
 // Small equity sparkline for the report-card view — a lighter-weight cousin
 // of the main renderEquityChart, scoped to one week/month's trades.
-function buildMiniEquitySparkline(trades){
+function buildMiniEquitySparkline(trades, acct){
   if(!trades || !trades.length) return '<div class="rc-chart-empty">No trades this period</div>';
   let cum = 0;
   const pts = [{x:0,y:0}];
-  trades.forEach(t=>{ cum += pnlOf(t); pts.push({x:pts.length,y:cum}); });
+  const amtOf = (acct && acct!=='all') ? pnlOfRaw : pnlOf;
+  trades.forEach(t=>{ cum += amtOf(t); pts.push({x:pts.length,y:cum}); });
   const W = 240, H = 96, pad = 8;
   const minY = Math.min(0, ...pts.map(p=>p.y)), maxY = Math.max(0, ...pts.map(p=>p.y));
   const spanY = (maxY-minY) || 1;
@@ -7733,66 +7817,350 @@ function buildMiniEquitySparkline(trades){
   </svg>`;
 }
 
+let periodReviewCtx = null;
+function reviewPrevRange(kind, startIso){
+  const s = new Date(startIso+'T00:00:00');
+  if(kind==='monthly'){
+    return [localIso(new Date(s.getFullYear(), s.getMonth()-1, 1)), localIso(new Date(s.getFullYear(), s.getMonth(), 0))];
+  }
+  const ps = new Date(s); ps.setDate(ps.getDate()-7);
+  const pe = new Date(s); pe.setDate(pe.getDate()-1);
+  return [localIso(ps), localIso(pe)];
+}
+function reviewIcon(tone){ return tone==='pass' ? '✓' : (tone==='warn' ? '!' : '✕'); }
+
+/* Prop-firm health for every prop account that traded in the period. */
+function reviewPropBlocks(data){
+  const pfs = (state.propFirms||[]).filter(pf => data.acct==='all' ? data.accounts.some(a=>a.key===pf.id) : data.acct===pf.id);
+  if(!pfs.length) return '';
+  const rows = pfs.map(pf=>{
+    const m = computePropFirmMetrics(pf, true);
+    if(!m) return '';
+    const sym = pfCurSym(pf);
+    const f = n => (n<0?'-':'') + sym + Math.abs(n).toFixed(0);
+    const ts = liveTrades().filter(t=>t.account===pf.id && t.date>=data.startIso && t.date<=data.endIso);
+    const byDay = {}; ts.forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + pnlOfRaw(t); });
+    const dayVals = Object.values(byDay);
+    const p = ts.reduce((s,t)=>s+pnlOfRaw(t),0);
+    const worst = dayVals.length ? Math.min(...dayVals) : 0;
+    const status = pf.accountStatus==='violated' ? 'fail' : m.overallStatus;
+    const statusWord = pf.accountStatus==='violated' ? 'Violated' : (m.overallStatus==='pass' ? 'On track' : (m.overallStatus==='warn' ? 'At risk' : 'Rule breached'));
+    let h = `<div class="rc-prop"><div class="check-item ${status}"><span>${reviewIcon(status)}</span><div><b>${escapeHtml(pf.firmName||'Prop account')}</b> · ${PF_PHASE_LABELS[m.phase]||m.phase} · ${statusWord}<div class="rc-subline">${ts.length} trade${ts.length===1?'':'s'} · ${f(p)} (${(p/m.start*100).toFixed(2)}% of ${f(m.start)}) · balance now ${f(m.currentBalance)}</div></div></div>`;
+    if(m.maxDailyLossDollar){
+      const pc = worst<0 ? (-worst/m.maxDailyLossDollar*100) : 0;
+      const tone = pc>=100?'fail':(pc>=70?'warn':'pass');
+      h += `<div class="check-item ${tone}"><span>${reviewIcon(tone)}</span>Worst day used ${pc.toFixed(0)}% of the daily loss limit (${f(worst<0?worst:0)} of ${f(-m.maxDailyLossDollar)})</div>`;
+    }
+    if(m.maxOverallDrawdownDollar){
+      const pc = m.drawdownUsed/m.maxOverallDrawdownDollar*100;
+      const tone = m.overallDrawdownBreached?'fail':(pc>=70?'warn':'pass');
+      h += `<div class="check-item ${tone}"><span>${reviewIcon(tone)}</span>Overall drawdown ${pc.toFixed(0)}% used (${f(m.drawdownUsed)} of ${f(m.maxOverallDrawdownDollar)})</div>`;
+    }
+    if(m.consistencyRulePct && m.totalProfit>0){
+      const tone = m.consistencyBreach?'fail':(m.consistencyPct>=m.consistencyRulePct*0.85?'warn':'pass');
+      h += `<div class="check-item ${tone}"><span>${reviewIcon(tone)}</span>Consistency: best day is ${m.consistencyPct.toFixed(0)}% of profit (limit ${m.consistencyRulePct}%)</div>`;
+    }
+    if(m.minTradingDays!=null){
+      const tone = m.tradingDaysMet?'pass':'warn';
+      h += `<div class="check-item ${tone}"><span>${reviewIcon(tone)}</span>Trading days: ${m.tradingDays} of ${m.minTradingDays}${m.tradingDaysMet?' — met':' — still needed'}</div>`;
+    }
+    const goal = m.phase==='funded' ? m.payoutThresholdDollar : m.profitTargetDollar;
+    const got = m.phase==='funded' ? m.profitAvailable : m.totalProfit;
+    if(goal){
+      h += `<div class="check-item ${got>=goal?'pass':'warn'}"><span>${got>=goal?'✓':'•'}</span>${m.phase==='funded'?'Payout progress':'Profit target'}: ${Math.min(100,Math.max(0,got/goal*100)).toFixed(0)}% (${f(got)} of ${f(goal)})</div>`;
+    }
+    return h + `</div>`;
+  }).join('');
+  return rows ? `<div class="review-block"><div class="rc-section">Prop accounts</div>${rows}</div>` : '';
+}
+
+function reviewRuleBlock(data){
+  if(!data.tradeCount) return '';
+  const n = data.ruleBreakTrades;
+  const unlocked = tierAtLeast('pro');
+  let h = `<div class="review-block"><div class="rc-section">Rule breaks</div>`;
+  if(n===0){
+    h += `<div class="check-item pass"><span>✓</span>No rule broken on any of ${data.tradeCount} trade${data.tradeCount===1?'':'s'}</div>`;
+  } else {
+    h += `<div class="check-item fail"><span>✕</span>${n} of ${data.tradeCount} trade${data.tradeCount===1?'':'s'} broke at least one rule (${fmtSigned(data.brokePnl, data.sym)} on those trades vs ${fmtSigned(data.cleanPnl, data.sym)} on clean ones)</div>`;
+    if(unlocked){
+      h += data.ruleCounts.slice(0,3).map(r=>`<div class="check-item warn"><span>•</span>${escapeHtml(r.label)} — ${r.count}×</div>`).join('');
+      h += `<button class="rc-link" onclick="openRuleBreaksFromReview()">See which rule, when, and what it cost →</button>`;
+    } else {
+      h += `<div class="check-item warn"><span>🔒</span>Which rules you broke is a Pro feature</div><button class="rc-link" onclick="openRuleBreaksFromReview()">Unlock rule-break detail · Pro →</button>`;
+    }
+  }
+  return h + `</div>`;
+}
+function openRuleBreaksFromReview(){
+  if(periodReviewCtx){ rbFilter.range = { start: periodReviewCtx.startIso, end: periodReviewCtx.endIso, label: periodReviewCtx.label }; }
+  closePeriodReview();
+  const b = document.querySelector('.side-navbtn[data-view="rulebreaks"]');
+  if(b) b.click();
+}
+
+function switchReviewAccount(key){
+  if(!periodReviewCtx) return;
+  const d = computePeriodStats(periodReviewCtx.startIso, periodReviewCtx.endIso, key);
+  renderPeriodReview(periodReviewCtx.kind, periodReviewCtx.label, d);
+}
 function showPeriodReview(kind, label, data){
+  periodReviewCtx = { kind, label, startIso:data.startIso, endIso:data.endIso, accounts:data.accounts };
+  renderPeriodReview(kind, label, data);
+  document.getElementById('periodReviewOverlay').classList.add('show');
+}
+function renderPeriodReview(kind, label, data){
+  const word = kind==='monthly' ? 'month' : 'week';
   document.getElementById('periodReviewTitle').textContent = kind==='monthly' ? 'Monthly performance review' : 'Weekly performance review';
   document.getElementById('periodReviewSub').textContent = label;
-  const netReturnDisplay = data.netReturnPct!=null
-    ? `${data.netReturnPct>=0?'+':''}${data.netReturnPct.toFixed(2)}%`
-    : `${data.pnl>=0?'+':'-'}${curSym()}${Math.abs(data.pnl).toFixed(0)}`;
-  const netReturnCls = data.pnl>=0 ? 'pos' : 'neg';
+  const sym = data.sym;
+  const accs = (periodReviewCtx && periodReviewCtx.accounts) || [];
+  const chipsEl = document.getElementById('periodReviewChips');
+  if(chipsEl){
+    chipsEl.innerHTML = accs.length>1
+      ? [`<button class="rc-chip ${data.acct==='all'?'on':''}" onclick="switchReviewAccount('all')">All accounts</button>`]
+          .concat(accs.map(a=>`<button class="rc-chip ${data.acct===a.key?'on':''}" onclick="switchReviewAccount('${a.key}')">${escapeHtml(a.name)}</button>`)).join('')
+      : '';
+  }
+  const ccyNote = data.acct==='all' && accs.length>1 && new Set(accs.map(a=>a.sym)).size>1 ? `<div class="rc-subline" style="margin-bottom:8px">Combined view — everything converted to ${escapeHtml(state.rules.currency||'USD')}. Pick one account to see it in its own currency and balance.</div>` : '';
+
+  const hasPct = data.netReturnPct!=null;
+  const netMain = hasPct ? `${data.netReturnPct>=0?'+':''}${data.netReturnPct.toFixed(2)}%` : fmtSigned(data.pnl, sym);
+  const netSub = hasPct ? `${fmtSigned(data.pnl, sym)} on ${sym}${Math.round(data.base).toLocaleString()}` : 'Set an account balance to see % return';
+  const netCls = data.pnl>0 ? 'pos' : (data.pnl<0 ? 'neg' : '');
   const pfDisplay = data.profitFactor==null ? '—' : (data.profitFactor===Infinity ? '∞' : data.profitFactor.toFixed(2));
-  const ddDisplay = data.maxDrawdownPct!=null ? `${data.maxDrawdownPct.toFixed(2)}%` : `${curSym()}${data.maxDD.toFixed(0)}`;
+  const ddVal = data.maxDD>0 ? (data.maxDrawdownPct!=null ? `${data.maxDrawdownPct.toFixed(2)}%` : `${sym}${data.maxDD.toFixed(0)}`) : '0.00%';
+  const ddCls = data.maxDD>0 ? 'neg' : '';
   const winnerDisplay = data.biggestWinnerR!=null ? data.biggestWinnerR.toFixed(2)+'R' : '—';
   const loserDisplay = data.biggestLoserR!=null ? data.biggestLoserR.toFixed(2)+'R' : '—';
+  const loserCls = data.biggestLoserR!=null ? 'neg' : 'dim';
   const avgRRDisplay = data.avgRR!=null ? data.avgRR.toFixed(2)+'R' : '—';
-  let html = `
+
+  // Compare with the period before it
+  let compare = '';
+  const [ps, pe] = reviewPrevRange(kind, data.startIso);
+  const prev = computePeriodStats(ps, pe, data.acct);
+  if(prev.tradeCount>0){
+    const dP = data.pnl - prev.pnl, dW = data.winRate - prev.winRate;
+    compare = `<div class="rc-compare"><span>vs last ${word}</span><b class="${dP>=0?'pos':'neg'}">${dP>=0?'▲':'▼'} ${fmtSigned(dP, sym)} P/L</b><b class="${dW>=0?'pos':'neg'}">${dW>=0?'▲':'▼'} ${Math.abs(dW)} pts win rate</b><b class="dim">${prev.tradeCount} → ${data.tradeCount} trades</b></div>`;
+  }
+
+  let html = ccyNote + `
     <div class="report-card">
       <div class="report-card-chart">
-        ${buildMiniEquitySparkline(data.trades)}
-        <div class="rc-chart-sub">${data.tradeCount} trade${data.tradeCount===1?'':'s'} this ${kind==='monthly'?'month':'week'}</div>
+        ${buildMiniEquitySparkline(data.trades, data.acct)}
+        <div class="rc-chart-sub">${data.tradeCount} trade${data.tradeCount===1?'':'s'} this ${word}</div>
       </div>
       <div class="report-card-stats">
-        <div class="rc-stat"><span class="rc-label">Net Return</span><span class="rc-val ${netReturnCls}">${netReturnDisplay}</span></div>
-        <div class="rc-stat"><span class="rc-label">Profit Factor</span><span class="rc-val">${pfDisplay}</span></div>
-        <div class="rc-stat"><span class="rc-label">Max Drawdown</span><span class="rc-val neg">${ddDisplay}</span></div>
-        <div class="rc-stat"><span class="rc-label">Biggest Winner</span><span class="rc-val pos">${winnerDisplay}</span></div>
-        <div class="rc-stat"><span class="rc-label">Win Rate</span><span class="rc-val">${data.winRate}%</span></div>
-        <div class="rc-stat"><span class="rc-label">Biggest Loser</span><span class="rc-val neg">${loserDisplay}</span></div>
+        <div class="rc-stat"><span class="rc-label">Net Return</span><span class="rc-val ${netCls}">${netMain}</span><span class="rc-sub">${netSub}</span></div>
+        <div class="rc-stat"><span class="rc-label">Profit Factor</span><span class="rc-val ${data.profitFactor===Infinity||data.profitFactor>1?'pos':''}">${pfDisplay}</span><span class="rc-sub">${data.avgWin!=null?`avg win ${sym}${data.avgWin.toFixed(0)}`:'no wins yet'}${data.avgLoss!=null?` · avg loss ${sym}${data.avgLoss.toFixed(0)}`:''}</span></div>
+        <div class="rc-stat"><span class="rc-label">Max Drawdown</span><span class="rc-val ${ddCls}">${ddVal}</span></div>
+        <div class="rc-stat"><span class="rc-label">Biggest Winner</span><span class="rc-val ${data.biggestWinnerR!=null?'pos':'dim'}">${winnerDisplay}</span></div>
+        <div class="rc-stat"><span class="rc-label">Win Rate</span><span class="rc-val">${data.winRate}%</span><span class="rc-sub">${data.wins}W · ${data.losses}L</span></div>
+        <div class="rc-stat"><span class="rc-label">Biggest Loser</span><span class="rc-val ${loserCls}">${loserDisplay}</span></div>
         <div class="rc-stat wide"><span class="rc-label">Avg R:R</span><span class="rc-val">${avgRRDisplay}</span></div>
       </div>
+      ${compare}
     </div>`;
-  if(data.bestDay || data.worstDay){
-    html += `<div class="review-block">`;
-    if(data.bestDay) html += `<div class="check-item pass"><span>↑</span>Best day: ${data.bestDay.date} (${data.bestDay.pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(data.bestDay.pnl).toFixed(0)})</div>`;
-    if(data.worstDay) html += `<div class="check-item fail"><span>↓</span>Worst day: ${data.worstDay.date} (${data.worstDay.pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(data.worstDay.pnl).toFixed(0)})</div>`;
-    html += `</div>`;
-  }
+
+  // Best / worst day — only claim a "worst day" if there genuinely was a losing one.
+  const rows = [];
+  if(data.bestDay && data.bestDay.pnl>0) rows.push(`<div class="check-item pass"><span>↑</span>Best day: ${data.bestDay.date} (${fmtSigned(data.bestDay.pnl, sym)})</div>`);
+  if(data.worstDay && data.worstDay.pnl<0) rows.push(`<div class="check-item fail"><span>↓</span>Worst day: ${data.worstDay.date} (${fmtSigned(data.worstDay.pnl, sym)})</div>`);
+  else if(data.bestDay) rows.push(`<div class="check-item pass"><span>✓</span>No losing days this ${word}</div>`);
+  if(rows.length) html += `<div class="review-block">${rows.join('')}</div>`;
+
+  const brokenTone = data.ruleBrokenDays>0 ? 'fail' : 'pass';
   html += `<div class="review-block">
-    <div class="check-item ${data.ruleBrokenDays>0?'fail':'pass'}"><span>${data.ruleBrokenDays>0?'✕':'✓'}</span>Rules broken on ${data.ruleBrokenDays} of ${data.activeDays||0} trading day${data.activeDays===1?'':'s'}</div>
+    <div class="check-item ${brokenTone}"><span>${data.ruleBrokenDays>0?'✕':'✓'}</span>Rules broken on ${data.ruleBrokenDays} of ${data.activeDays||0} trading day${data.activeDays===1?'':'s'}</div>
     ${data.avgDiscipline!=null ? `<div class="check-item ${data.avgDiscipline>=70?'pass':'fail'}"><span>${data.avgDiscipline>=70?'✓':'✕'}</span>Average discipline score: ${data.avgDiscipline}/100</div>` : ''}
   </div>`;
+
+  html += reviewRuleBlock(data);
+  html += reviewPropBlocks(data);
+
   if(data.moodRows.length){
     const worstMood = data.moodRows[0];
     html += `<div class="review-block">
-      <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">How you traded, by emotional state</div>
-      ${data.moodRows.map(m=>`<div class="check-item ${m.pnl>=0?'pass':'fail'}"><span>${m.pnl>=0?'✓':'✕'}</span>${m.label}: ${m.trades} trade${m.trades===1?'':'s'}, ${m.pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(m.pnl).toFixed(0)}</div>`).join('')}
-      ${worstMood.pnl<0 ? `<div class="ok-banner" style="border-color:rgba(244,63,94,0.3);background:rgba(244,63,94,0.08);margin-top:10px;">Trades logged as "${worstMood.label.replace(/^\S+\s/,'')}" cost you ${worstMood.pnl>=0?('+'+curSym()):('-'+curSym())}${Math.abs(worstMood.pnl).toFixed(0)} this period. Worth watching.</div>` : ''}
+      <div class="rc-section">How you traded, by emotional state</div>
+      ${data.moodRows.map(m=>`<div class="check-item ${m.pnl>=0?'pass':'fail'}"><span>${m.pnl>=0?'✓':'✕'}</span>${m.label}: ${m.trades} trade${m.trades===1?'':'s'}, ${fmtSigned(m.pnl, sym)}</div>`).join('')}
+      ${worstMood.pnl<0 ? `<div class="ok-banner" style="border-color:rgba(244,63,94,0.3);background:rgba(244,63,94,0.08);margin-top:10px;">Trades logged as "${worstMood.label.replace(/^\S+\s/,'')}" cost you ${fmtSigned(worstMood.pnl, sym)} this period. Worth watching.</div>` : ''}
     </div>`;
   }
   const coaching = buildCoachingInsights(data);
   if(coaching.wins.length || coaching.fixes.length){
     html += `<div class="review-block">
-      <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">Coach's Note — how you traded, and what to fix</div>
+      <div class="rc-section">Coach's Note — how you traded, and what to fix</div>
       ${coaching.wins.map(w=>`<div class="check-item pass"><span>✓</span>${w}</div>`).join('')}
       ${coaching.fixes.map(f=>`<div class="check-item fail"><span>✕</span>${f}</div>`).join('')}
     </div>`;
   }
   document.getElementById('periodReviewBody').innerHTML = html;
-  document.getElementById('periodReviewOverlay').classList.add('show');
 }
 function closePeriodReview(){
   document.getElementById('periodReviewOverlay').classList.remove('show');
   if(periodReviewQueue.length>0) setTimeout(showNextPeriodReview, 350);
+}
+
+/* ============ RULE BREAKS (Pro and above) ============
+   One page that answers "which rule did I break, when, and what did it cost?"
+   Personal rule breaks come from the violations recorded on each trade at the moment it was
+   logged. Prop-firm limit breaches (daily loss, overall drawdown, consistency) are re-derived
+   from each account's daily P/L so they show the exact day they happened. */
+let rbFilter = { period:'30', account:'all', range:null };
+function rbSet(k, v){ rbFilter[k] = v; if(k==='period') rbFilter.range = null; renderRuleBreaks(); }
+function rbClearRange(){ rbFilter.range = null; renderRuleBreaks(); }
+
+function pfBreachEvents(pf){
+  const m = computePropFirmMetrics(pf, true);
+  if(!m) return [];
+  const sym = pfCurSym(pf);
+  const f = n => sym + Math.abs(n).toFixed(0);
+  const name = pf.firmName || 'Prop account';
+  const out = [];
+  let bal = m.start, peak = m.start, ddLogged = false;
+  pfDailyPnlSeries(pf, true).forEach(d=>{
+    if(m.maxDailyLossDollar!=null && d.pnl<0 && -d.pnl>=m.maxDailyLossDollar){
+      out.push({ date:d.date, rule:'Daily loss limit', pfId:pf.id, pfName:name, detail:`Lost ${f(d.pnl)} in one day — limit is ${f(m.maxDailyLossDollar)}` });
+    }
+    bal += d.pnl; if(bal>peak) peak = bal;
+    const dd = (pf.drawdownType==='trailing' ? peak : m.start) - bal;
+    if(!ddLogged && m.maxOverallDrawdownDollar!=null && dd>=m.maxOverallDrawdownDollar){
+      ddLogged = true;
+      out.push({ date:d.date, rule:'Overall drawdown limit', pfId:pf.id, pfName:name, detail:`Drawdown reached ${f(dd)} — limit is ${f(m.maxOverallDrawdownDollar)} (${pf.drawdownType||'static'})` });
+    }
+  });
+  if(m.consistencyRulePct && m.consistencyBreach){
+    out.push({ date:null, rule:'Consistency rule', pfId:pf.id, pfName:name, detail:`Best day is ${m.consistencyPct.toFixed(0)}% of total profit — limit is ${m.consistencyRulePct}%` });
+  }
+  return out;
+}
+
+function renderRuleBreaks(){
+  const body = document.getElementById('rbBody');
+  if(!body) return;
+  const pfs = state.propFirms || [];
+  // filters
+  const accOpts = [`<option value="all">All accounts</option>`, `<option value="personal">Personal</option>`]
+    .concat(pfs.map(pf=>`<option value="${pf.id}">${escapeHtml(pf.firmName||'Prop account')}</option>`)).join('');
+  const periodOpts = [['7','Last 7 days'],['30','Last 30 days'],['90','Last 90 days'],['all','All time']]
+    .map(([v,l])=>`<option value="${v}" ${rbFilter.period===v&&!rbFilter.range?'selected':''}>${l}</option>`).join('');
+  const filters = `<div class="rb-filters">
+      <select onchange="rbSet('period',this.value)" aria-label="Period">${rbFilter.range?`<option selected>${escapeHtml(rbFilter.range.label)}</option>`:''}${periodOpts}</select>
+      <select onchange="rbSet('account',this.value)" aria-label="Account">${accOpts.replace(`value="${rbFilter.account}"`, `value="${rbFilter.account}" selected`)}</select>
+      ${rbFilter.range?`<button class="rc-chip" onclick="rbClearRange()">Clear review filter ✕</button>`:''}
+    </div>`;
+
+  let start = '0000-01-01', end = '9999-12-31';
+  if(rbFilter.range){ start = rbFilter.range.start; end = rbFilter.range.end; }
+  else if(rbFilter.period!=='all'){ const d = new Date(); d.setDate(d.getDate()-(Number(rbFilter.period)-1)); start = localIso(d); }
+
+  const single = rbFilter.account!=='all';
+  const amt = t => single ? pnlOfRaw(t) : pnlOf(t);
+  const sym = single ? (rbFilter.account==='personal' ? curSym() : pfCurSym(getPropFirm(rbFilter.account))) : curSym();
+  const trades = liveTrades().filter(t=>t.date>=start && t.date<=end && (!single || reviewAccountKey(t)===rbFilter.account));
+  const broke = trades.filter(t=>Array.isArray(t.ruleViolations) && t.ruleViolations.length)
+    .sort((a,b)=> a.date===b.date ? ((Number(b.id)||0)-(Number(a.id)||0)) : (a.date<b.date?1:-1));
+  const clean = trades.filter(t=>!(Array.isArray(t.ruleViolations) && t.ruleViolations.length));
+  const brokePnl = broke.reduce((s,t)=>s+amt(t),0), cleanPnl = clean.reduce((s,t)=>s+amt(t),0);
+  const brokeAvg = broke.length ? brokePnl/broke.length : null, cleanAvg = clean.length ? cleanPnl/clean.length : null;
+  const rate = trades.length ? Math.round(broke.length/trades.length*100) : 0;
+
+  const ruleMap = {};
+  broke.forEach(t=>t.ruleViolations.forEach(code=>{
+    const r = ruleMap[code] || (ruleMap[code] = { code, label:ruleLabelFor(code), count:0, pnl:0, last:t.date });
+    r.count++; r.pnl += amt(t);
+  }));
+  const byRule = Object.values(ruleMap).sort((a,b)=>b.count-a.count);
+  const maxCount = byRule.length ? byRule[0].count : 1;
+
+  let events = [];
+  pfs.forEach(pf=>{
+    if(single && rbFilter.account!==pf.id) return;
+    events = events.concat(pfBreachEvents(pf));
+  });
+  events = events.filter(e=>!e.date || (e.date>=start && e.date<=end)).sort((a,b)=>(b.date||'9999')>(a.date||'9999')?1:-1);
+
+  const overrides = (state.psychology.preTradeCheckins||[]).filter(c=>c.overridden && c.date>=start && c.date<=end).length;
+
+  const money = v => `<b class="${v>0?'pos':(v<0?'neg':'')}">${fmtSigned(v, sym)}</b>`;
+  let insight = '';
+  if(brokeAvg!=null && cleanAvg!=null){
+    const diff = cleanAvg - brokeAvg;
+    insight = diff>0
+      ? `<div class="ok-banner rb-insight">When you broke a rule, a trade averaged <b>${fmtSigned(brokeAvg,sym)}</b>. When you followed them it averaged <b>${fmtSigned(cleanAvg,sym)}</b> — about <b>${sym}${diff.toFixed(0)}</b> better per trade.</div>`
+      : `<div class="ok-banner rb-insight">Rule-breaking trades did not cost you more than clean ones this period — but they still reset your streak and put prop accounts at risk. Process first, P/L second.</div>`;
+  }
+
+  const tiles = `<div class="rb-tiles">
+      <div class="rb-tile"><span>Rule-breaking trades</span><b class="${broke.length?'neg':'pos'}">${broke.length}</b><small>of ${trades.length} trade${trades.length===1?'':'s'}</small></div>
+      <div class="rb-tile"><span>Break rate</span><b class="${rate>=25?'neg':(rate>0?'warn':'pos')}">${rate}%</b><small>of trades</small></div>
+      <div class="rb-tile"><span>P/L on rule breaks</span>${money(brokePnl)}<small>${broke.length} trade${broke.length===1?'':'s'}</small></div>
+      <div class="rb-tile"><span>P/L on clean trades</span>${money(cleanPnl)}<small>${clean.length} trade${clean.length===1?'':'s'}</small></div>
+    </div>`;
+
+  const ruleRows = byRule.length ? byRule.map(r=>`
+      <div class="rb-rule">
+        <div class="rb-rule-head"><b>${escapeHtml(r.label)}</b><span>${r.count}× · ${fmtSigned(r.pnl,sym)} · last ${r.last}</span></div>
+        <div class="pf-track"><div class="pf-fill fail" style="width:${Math.max(6,r.count/maxCount*100)}%"></div></div>
+      </div>`).join('') : `<div class="empty-state"><span class="glyph"></span>No rules broken in this period. Clean record.</div>`;
+
+  const eventRows = events.length ? events.map(e=>`
+      <div class="check-item fail"><span>✕</span><div><b>${escapeHtml(e.rule)}</b> · ${escapeHtml(e.pfName)}<div class="rc-subline">${e.date?e.date+' — ':''}${escapeHtml(e.detail)}</div></div></div>`).join('')
+    : `<div class="check-item pass"><span>✓</span>No prop-firm limit breached in this period</div>`;
+
+  const logRows = broke.length ? broke.slice(0,100).map(t=>{
+    const labels = (t.ruleViolationLabels && t.ruleViolationLabels.length) ? t.ruleViolationLabels : t.ruleViolations.map(ruleLabelFor);
+    const acc = reviewAccountInfo(reviewAccountKey(t)).name;
+    const p = amt(t);
+    return `<div class="rb-log">
+        <div class="rb-log-head"><b>${t.date}${t.time?` · ${escapeHtml(String(t.time))}`:''}</b><span>${escapeHtml(acc)}${t.pair?` · ${escapeHtml(String(t.pair))}`:''}</span><b class="${p>=0?'pos':'neg'}">${fmtSigned(p, single?sym:curSym())}</b></div>
+        <div class="rb-chips">${labels.map(l=>`<span class="rb-chip">${escapeHtml(l)}</span>`).join('')}</div>
+      </div>`;
+  }).join('') + (broke.length>100 ? `<div class="hint">Showing the 100 most recent of ${broke.length}.</div>` : '')
+    : `<div class="empty-state"><span class="glyph"></span>Nothing to show.</div>`;
+
+  body.innerHTML = filters + tiles + insight + `
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card"><h2>Rules <span class="accent">broken</span></h2>${ruleRows}
+        ${overrides?`<div class="check-item warn" style="margin-top:10px"><span>!</span>You overrode the pre-trade warning ${overrides} time${overrides===1?'':'s'} in this period</div>`:''}</div>
+      <div class="card"><h2>Prop firm <span class="accent">limit breaches</span></h2>${eventRows}</div>
+    </div>
+    <div class="card" style="margin-top:16px"><h2>Every rule-breaking <span class="accent">trade</span></h2>${logRows}
+      <div class="hint" style="margin-top:10px">Trades logged before rule tracking was added don't carry a record of which rule they broke.</div></div>`;
+}
+
+/* ===== Prop compliance: account snapshot + breach summary ===== */
+function pfAccountTrades(pf, includeAll){
+  const win = pfPhaseWindow(pf);
+  return liveTrades().filter(t=>t.account===pf.id && pfInWindow(t.date, win) && (includeAll || activeTraderFilter==='all' || t.trader===activeTraderFilter));
+}
+function pfSnapshotHtml(pf, m){
+  const sym = pfCurSym(pf);
+  const f = n => (n<0?'-':'') + sym + Math.abs(n).toFixed(0);
+  const ts = pfAccountTrades(pf);
+  const series = pfDailyPnlSeries(pf);
+  const wins = ts.filter(t=>t.result==='win').length;
+  const gw = ts.reduce((s,t)=>s+(t.result==='win'?pnlOfRaw(t):0),0);
+  const gl = ts.reduce((s,t)=>s+(t.result==='loss'?Math.abs(pnlOfRaw(t)):0),0);
+  const pfac = gl>0 ? (gw/gl).toFixed(2) : (gw>0 ? '∞' : '—');
+  const todayPnl = series.find(d=>d.date===todayStr()); const tp = todayPnl ? todayPnl.pnl : 0;
+  const ddFloor = m.maxOverallDrawdownDollar!=null ? ((pf.drawdownType==='trailing' ? m.peak : m.start) - m.maxOverallDrawdownDollar) : null;
+  const roomFloor = ddFloor!=null ? Math.max(0, m.currentBalance - ddFloor) : null;
+  const roomDay = m.maxDailyLossDollar!=null ? Math.max(0, m.maxDailyLossDollar - m.todayLoss) : null;
+  const tile = (label, val, cls, sub) => `<div class="pf-snap-tile"><span>${label}</span><b class="${cls||''}">${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const events = pfBreachEvents(pf);
+  const link = `<button class="rc-link" onclick="rbFilter.account='${pf.id}';rbFilter.range=null;document.querySelector('.side-navbtn[data-view=&quot;rulebreaks&quot;]').click()">${events.length?`${events.length} limit breach${events.length===1?'':'es'} on this account — see which →`:'Rule-break log for this account →'}</button>`;
+  return `<div class="pf-group-label">Account Snapshot</div>
+    <div class="pf-snap">
+      ${tile('Trades', ts.length, '', series.length+' day'+(series.length===1?'':'s'))}
+      ${tile('Win rate', ts.length?Math.round(wins/ts.length*100)+'%':'—', '', wins+'W · '+(ts.length-wins)+'L')}
+      ${tile('Profit factor', pfac, gl===0&&gw>0?'pos':'')}
+      ${tile("Today's P/L", f(tp), tp>0?'pos':(tp<0?'neg':''))}
+      ${tile('Room today', roomDay!=null?f(roomDay):'—', roomDay!=null&&m.maxDailyLossDollar&&roomDay<m.maxDailyLossDollar*0.3?'warn':'', 'before daily limit')}
+      ${tile('Room to floor', roomFloor!=null?f(roomFloor):'—', roomFloor!=null&&m.maxOverallDrawdownDollar&&roomFloor<m.maxOverallDrawdownDollar*0.3?'warn':'', ddFloor!=null?'floor '+f(ddFloor):'')}
+    </div>
+    ${link}`;
 }
 
 /* ============ RISK % HELPERS ============ */
@@ -8159,7 +8527,7 @@ function mondayOf(d){
   dt.setDate(dt.getDate()+diff);
   return dt;
 }
-function teamDateStr(d){ return d.toISOString().slice(0,10); }
+function teamDateStr(d){ return localIso(d); }
 function teamWeekDateList(monday){
   const arr=[]; for(let i=0;i<7;i++){ const d=new Date(monday); d.setDate(d.getDate()+i); arr.push(teamDateStr(d)); }
   return arr;
@@ -8713,6 +9081,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='calendar') renderCalendar();
     if(btn.dataset.view==='brief') renderBrief();
     if(btn.dataset.view==='analytics') { triggerAnalyticsOpenFeel(); renderDashChart(); renderLeaderboards(); renderEquityChart('equityChart','equityTotal','equitySub'); renderConfluence(); renderMoodBreakdown(); renderTimingBreakdown(); }
+    if(btn.dataset.view==='rulebreaks') renderRuleBreaks();
     if(btn.dataset.view==='playbook') renderPlaybook();
     if(btn.dataset.view==='edgelab') renderEdgeLab();
     if(btn.dataset.view==='journal') renderJournal();
@@ -8918,7 +9287,7 @@ function renderMomentumBanner(){
   if(trades.length===0){ el.classList.remove('show'); return; }
 
   const today = new Date(todayStr()+'T00:00:00');
-  const isoDaysAgo = n => { const d = new Date(today); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
+  const isoDaysAgo = n => { const d = new Date(today); d.setDate(d.getDate()-n); return localIso(d); };
   const weekStart = isoDaysAgo(6), prevWeekStart = isoDaysAgo(13), prevWeekEnd = isoDaysAgo(7);
   const thisWeekTrades = trades.filter(t=>t.date>=weekStart);
   const lastWeekTrades = trades.filter(t=>t.date>=prevWeekStart && t.date<=prevWeekEnd);
@@ -8992,7 +9361,7 @@ function renderHeroStats(){
   // Week-over-week trend deltas for Net P/L and Win Rate — gives the hero
   // row a sense of direction, not just a static snapshot.
   const today = new Date(todayStr()+'T00:00:00');
-  const isoDaysAgo = n => { const d = new Date(today); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
+  const isoDaysAgo = n => { const d = new Date(today); d.setDate(d.getDate()-n); return localIso(d); };
   const weekStart = isoDaysAgo(6), prevWeekStart = isoDaysAgo(13), prevWeekEnd = isoDaysAgo(7);
   const thisWeekTrades = trades.filter(t=>t.date>=weekStart);
   const lastWeekTrades = trades.filter(t=>t.date>=prevWeekStart && t.date<=prevWeekEnd);
@@ -9772,13 +10141,15 @@ function renderPropFirmCompliance(){
         <div><b>${breaches.length} rule${breaches.length>1?'s':''} breached</b>${breaches.join(', ')} — this account would currently fail the challenge.</div>
       </div>` : ''}
 
+      ${pfSnapshotHtml(pf, m)}
+
       <div class="pf-group-label">Financial Rules</div>
 
       ${isFunded ? `
       <div class="pf-metric">
         <div class="pf-metric-head">
-          <div><div class="pf-metric-title">Payout Progress</div><div class="pf-metric-sub">${fmt(m.profitAvailable)} of ${m.payoutThresholdDollar!=null?fmt(m.payoutThresholdDollar):'—'} threshold${m.totalPaidOut>0?` · ${fmt(m.totalPaidOut)} already withdrawn`:''}${m.profitSplitPct?` · ${m.profitSplitPct}% split`:''}</div></div>
-          <div class="pf-badge ${m.payoutThresholdHit?'pass':'off'}">${m.payoutThresholdHit?'Hit':payoutPct.toFixed(0)+'%'}</div>
+          <div><div class="pf-metric-title">Payout Progress</div><div class="pf-metric-sub">${m.payoutThresholdDollar!=null ? `${fmt(m.profitAvailable)} of ${fmt(m.payoutThresholdDollar)} threshold` : `${fmt(m.profitAvailable)} available · no payout threshold set`}${m.totalPaidOut>0?` · ${fmt(m.totalPaidOut)} already withdrawn`:''}${m.profitSplitPct?` · ${m.profitSplitPct}% split`:''}</div></div>
+          <div class="pf-badge ${m.payoutThresholdHit?'pass':'off'}">${m.payoutThresholdHit?'Hit':(m.payoutThresholdDollar==null?'Not set':payoutPct.toFixed(0)+'%')}</div>
         </div>
         ${pfBar(payoutPct, '')}
       </div>` : `
@@ -9810,8 +10181,8 @@ function renderPropFirmCompliance(){
 
       <div class="pf-metric" ${isFunded ? 'style="margin-bottom:0;"' : ''}>
         <div class="pf-metric-head">
-          <div><div class="pf-metric-title">${isFunded?'Minimum Days Before Payout':'Minimum Trading Days'}</div><div class="pf-metric-sub">${m.tradingDays} of ${m.minTradingDays ?? '—'} days logged</div></div>
-          <div class="pf-badge ${m.tradingDaysMet?'pass':'off'}">${m.tradingDaysMet?'Met':daysPct.toFixed(0)+'%'}</div>
+          <div><div class="pf-metric-title">${isFunded?'Minimum Days Before Payout':'Minimum Trading Days'}</div><div class="pf-metric-sub">${m.minTradingDays!=null ? `${m.tradingDays} of ${m.minTradingDays} days logged` : `${m.tradingDays} day${m.tradingDays===1?'':'s'} logged · no minimum set`}</div></div>
+          <div class="pf-badge ${m.minTradingDays==null?'off':(m.tradingDaysMet?'pass':'off')}">${m.minTradingDays==null?'Not set':(m.tradingDaysMet?'Met':daysPct.toFixed(0)+'%')}</div>
         </div>
         ${pfBar(daysPct, '')}
       </div>
@@ -10774,7 +11145,7 @@ async function fetchEconomicCalendar(key){
     const today = new Date();
     const from = todayStr();
     const toDate = new Date(today); toDate.setDate(toDate.getDate()+2);
-    const to = toDate.toISOString().slice(0,10);
+    const to = localIso(toDate);
     const res = await fetch(`https://finnhub.io/api/v1/calendar/economic?from=${from}&to=${to}&token=${encodeURIComponent(key)}`);
     if(!res.ok) return [];
     const data = await res.json();
@@ -14647,6 +15018,7 @@ applyGdTheme();
   <div class="modal" style="max-width:440px;">
     <h3 id="periodReviewTitle">Weekly performance review</h3>
     <div class="sub" id="periodReviewSub"></div>
+    <div class="rc-chips" id="periodReviewChips"></div>
     <div id="periodReviewBody"></div>
     <div class="btn-row" style="margin-top:6px;gap:10px;display:flex;">
       <button class="side-logout" style="flex:1;" onclick="closePeriodReview()">Close review</button>
@@ -17123,6 +17495,57 @@ html:not([data-theme="light"]) .card{background-color:transparent!important}
   *,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   .sidebar{background-color:#0a0d10!important}
 }
+/* ===== Fixes + additions (Today tiles, review card, prop snapshot, Rule Breaks) ===== */
+.stat-row{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
+.stat-row .stat{min-width:0!important;padding:12px 6px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stat-row .stat b{font-size:clamp(14px,4.3vw,18px);white-space:nowrap;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.stat-row .stat span{white-space:normal;text-align:center;line-height:1.25;font-size:9px;word-break:normal;overflow-wrap:normal;hyphens:none}
+@media(max-width:560px){
+  .stat-row{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .stat-row .stat:nth-child(-n+3){grid-column:span 2}
+  .stat-row .stat:nth-child(n+4){grid-column:span 3}
+}
+#periodReviewOverlay .modal{max-width:520px!important}
+.rc-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 12px}
+.rc-chip{border:1px solid var(--steel);background:transparent;color:var(--slate);border-radius:999px;padding:5px 12px;font:600 11px 'IBM Plex Mono',monospace;cursor:pointer}
+.rc-chip.on{border-color:var(--win-bright);color:var(--platinum);background:rgba(16,185,129,.12)}
+.rc-val.dim,.rc-compare b.dim{color:var(--slate)}
+.rc-sub,.rc-subline{font-size:10.5px;color:var(--slate);font-weight:400;line-height:1.35;margin-top:2px}
+.rc-section{font-size:12px;color:var(--slate);margin-bottom:6px}
+.rc-compare{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;border-top:1px solid var(--steel);margin-top:12px;padding-top:10px;font-size:11px}
+.rc-compare span{color:var(--slate);text-transform:uppercase;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;font-size:10px}
+.rc-compare b{font-family:'IBM Plex Mono',monospace}
+.rc-compare b.pos,.rb-tile b.pos{color:var(--win-bright)}
+.rc-compare b.neg,.rb-tile b.neg{color:var(--loss-bright)}
+.rb-tile b.warn,.pf-snap-tile b.warn{color:var(--amber)}
+.rc-link{display:block;width:100%;text-align:left;margin:8px 0 2px;padding:9px 12px;border:1px dashed var(--steel-hi,var(--steel));border-radius:10px;background:transparent;color:var(--platinum);font-size:12px;cursor:pointer}
+.rc-prop{border-top:1px solid var(--steel);padding-top:4px;margin-top:6px}
+.rc-prop:first-of-type{border-top:none;margin-top:0}
+.pf-snap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.pf-snap-tile{border:1px solid var(--steel);border-radius:12px;padding:10px 8px;text-align:center;min-width:0}
+.pf-snap-tile span{display:block;font-size:9px;color:var(--slate);text-transform:uppercase;letter-spacing:.06em}
+.pf-snap-tile b{display:block;font:600 16px 'IBM Plex Mono',monospace;color:var(--platinum);margin-top:3px;white-space:nowrap}
+.pf-snap-tile b.pos{color:var(--win-bright)}.pf-snap-tile b.neg{color:var(--loss-bright)}
+.pf-snap-tile small{display:block;font-size:9.5px;color:var(--slate);margin-top:2px}
+.rb-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.rb-filters select{min-width:150px}
+.rb-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.rb-tile{border:1px solid var(--steel);border-radius:14px;padding:12px 10px;text-align:center;min-width:0}
+.rb-tile span{display:block;font-size:9.5px;color:var(--slate);text-transform:uppercase;letter-spacing:.06em}
+.rb-tile b{display:block;font:600 20px 'IBM Plex Mono',monospace;color:var(--platinum);margin-top:4px;white-space:nowrap}
+.rb-tile small{display:block;font-size:10px;color:var(--slate);margin-top:2px}
+.rb-insight{margin-bottom:14px}
+.rb-rule{margin-bottom:12px}
+.rb-rule-head{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:5px;flex-wrap:wrap}
+.rb-rule-head span{color:var(--slate);font-size:11px}
+.rb-log{padding:10px 0;border-bottom:1px solid var(--steel)}
+.rb-log:last-of-type{border-bottom:none}
+.rb-log-head{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;flex-wrap:wrap}
+.rb-log-head span{color:var(--slate);flex:1;min-width:0}
+.rb-log-head b.pos{color:var(--win-bright)}.rb-log-head b.neg{color:var(--loss-bright)}
+.rb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rb-chip{font-size:10.5px;padding:3px 9px;border-radius:999px;border:1px solid rgba(244,63,94,.35);background:rgba(244,63,94,.08);color:var(--loss-bright)}
+@media(max-width:720px){.rb-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}#view-rulebreaks .grid{grid-template-columns:1fr!important}}
 </style>
 </body>
 </html>
