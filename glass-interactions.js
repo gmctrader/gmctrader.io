@@ -404,16 +404,31 @@
       pendingDirection = null;
     });
 
+    // Anything that reacts to a plain click/tap must never start (or be hijacked by) a swipe.
+    // Logic chips, mood chips, order cards, switches and tag pills are <div>s with inline onclick,
+    // so a tag-name check alone is not enough.
+    const NO_SWIPE = 'button, a, input, textarea, select, label, summary, iframe, canvas, video, [contenteditable="true"], [onclick], [role="button"], [role="checkbox"], [role="switch"], [role="tab"], [tabindex], .logic-chip, .mood-chip, .tag-chip, .switch, .order-row, .trade-row, .journal-trade-row, .overlay, .market-embed, .equity-wrap, .table-wrap, [data-no-swipe]';
+    let suppressClickUntil = 0;
+
     hud.addEventListener('pointerdown', event => {
       if (!appShell.classList.contains('show')) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      if (event.target.closest('button, a, input, textarea, select, iframe, canvas, [contenteditable="true"], .market-embed, .equity-wrap, .table-wrap, [data-no-swipe]')) return;
+      const blocker = event.target.closest(NO_SWIPE);
+      if (blocker && blocker !== hud && hud.contains(blocker)) return;
       const active = hud.querySelector('.view.active');
       const fromIndex = entries.findIndex(button => button.dataset.view === lastView);
       if (!active || fromIndex < 0 || entries.length < 2) return;
+      // NOTE: the pointer is deliberately NOT captured here. Capturing on press retargets the
+      // pointerup, so the browser fires "click" on #hud instead of the element under the cursor
+      // and every div-based control (logic chips, order cards...) silently stops responding.
+      // Capture is taken only once the gesture becomes a real horizontal swipe (see pointermove).
       gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, lastX: event.clientX, lastTime: performance.now(), velocity: 0, active, preview: null, direction: 0, moved: false, fromIndex };
-      try { hud.setPointerCapture(event.pointerId); } catch {}
     });
+
+    // A real swipe must not also "click" whatever the pointer was released over.
+    hud.addEventListener('click', event => {
+      if (performance.now() < suppressClickUntil) { event.preventDefault(); event.stopPropagation(); }
+    }, true);
 
     hud.addEventListener('pointermove', event => {
       if (!gesture || gesture.id !== event.pointerId) return;
@@ -426,6 +441,7 @@
         if (!setPreview(gesture, gesture.direction)) { gesture = null; return; }
         gesture.active.classList.add('gd-swiping-current');
         hud.classList.add('gd-swipe-active');
+        try { hud.setPointerCapture(gesture.id); } catch {}
       }
       if (!gesture.moved) return;
       const direction = dx < 0 ? 1 : -1;
@@ -450,6 +466,8 @@
       if (!gesture || (event && gesture.id !== event.pointerId)) return;
       const current = gesture;
       if (!current.moved) { gesture = null; return; }
+      suppressClickUntil = performance.now() + 350;
+      try { hud.releasePointerCapture(current.id); } catch {}
       const dx = event ? event.clientX - current.x : 0;
       const width = Math.max(1, hud.clientWidth);
       const commit = !cancelled && (Math.abs(dx) > Math.max(90, width * .19) || (Math.abs(current.velocity) > .55 && Math.abs(dx) > 34));

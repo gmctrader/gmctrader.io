@@ -60,10 +60,15 @@
   }, true);
 
   // First gesture of the session enters full screen; any later gesture restores it if Esc left it.
+  // IMPORTANT: listen for "click", not "pointerdown". Entering/leaving full screen resizes the viewport;
+  // doing that between mouse-down and mouse-up makes the browser drop the click, so the very click that
+  // triggered full screen (and every click right after Esc) did nothing - chips, cards, buttons.
+  // A click still counts as a user gesture for requestFullscreen(), and because this listener runs in the
+  // capture phase the click then carries on to the element that was actually clicked.
   function gesture(e){
-    if(e.type === 'keydown' && e.key === 'Escape') return;
+    if(e.type === 'keydown' && (e.key === 'Escape' || e.key === 'Tab' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta')) return;
     if(!entered){ entered = true; goFull(); return; }
     if(wantBack && !isFull()) goFull();
   }
-  ['pointerdown','keydown'].forEach(function(t){ document.addEventListener(t, gesture, true); });
+  ['click','keydown'].forEach(function(t){ document.addEventListener(t, gesture, true); });
 })();
