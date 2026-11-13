@@ -1,4 +1,4 @@
-/* Ghost Discipline: Order Screenshots page.
+/* Ghost Discipline: Order Import page.
  *
  * A dedicated page (#view-orderscans) for reading orders from broker screenshots.
  * It replaces the cramped dashboard card: drop zone, how the import works, plan
@@ -260,8 +260,8 @@ function ensureView(){
   var v = $(VIEW_ID); if(!v) return null;
   if(!built){
     built = true;
-    v.innerHTML = '<div class="topbar-row"><div><h2 class="page-title">Order Screenshots</h2>' +
-      '<div class="page-sub">Read orders straight from your broker. You review everything before it is saved.</div></div></div>' +
+    v.innerHTML = '<div class="topbar-row"><div><h2 class="page-title">Order Import</h2>' +
+      '<div class="page-sub">Bring orders in from your broker statement or platform. Every row is reviewed before it posts.</div></div></div>' +
       '<div class="os-wrap" id="osBody"></div>';
   }
   return v;
@@ -320,8 +320,8 @@ function renderStrip(){
   if(card.getAttribute('data-os')===sig && card.innerHTML){ card.style.display = ''; return; }
   card.setAttribute('data-os', sig);
   card.innerHTML = '<div class="os-strip"><div class="os-strip-ic">' + ICON_SCAN + '</div>' +
-    '<div class="os-strip-tx"><b>Order screenshots</b><span>' + (lim ? 'Drop a broker screenshot and we read the orders for you. Up to ' + lim + ' per upload.' : 'Upload a screenshot instead of typing. Available on Pro and above.') + '</span></div>' +
-    '<button type="button" class="btn btn-primary btn-sm" id="osStripGo">' + (lim ? 'Add screenshots' : 'See how it works') + '</button></div>';
+    '<div class="os-strip-tx"><b>Order import</b><span>' + (lim ? 'Import orders from a broker screenshot. Up to ' + lim + ' per upload.' : 'Import orders from a broker screenshot. Available on Pro and above.') + '</span></div>' +
+    '<button type="button" class="btn btn-primary btn-sm" id="osStripGo">' + (lim ? 'Import orders' : 'See how it works') + '</button></div>';
   var go = $('osStripGo'); if(go) go.addEventListener('click', function(){ var b = document.querySelector('.side-navbtn[data-view="orderscans"]'); if(b) b.click(); });
   card.style.display = '';
 }
