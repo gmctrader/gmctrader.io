@@ -13,7 +13,16 @@
 'use strict';
 
 var gdStatus = 'executed';
-var MAX_IMAGES = 6;
+/* Screenshots allowed per upload (one screenshot can hold many trades).
+   Pro = 2, Elite and above = 10, Free = no image import. */
+function imageLimit(){
+  if(isDemoMode) return 0;
+  if(typeof tierAtLeast==='function' && tierAtLeast('elite')) return 10;
+  if(typeof tierAtLeast==='function' && tierAtLeast('pro')) return 2;
+  return 0;
+}
+function tierName(){ return userTier==='premium' ? 'Premium' : (userTier==='elite' ? 'Elite' : (userTier==='pro' ? 'Pro' : 'Free')); }
+window.gdUpgrade = function(){ if(typeof packageUpgradeUrl==='function') window.location.assign(packageUpgradeUrl('pro')); };
 var FREE_IMPORTS_PER_DAY = 3;
 var imp = { images:[], rows:[], tab:'photos', text:'', fileName:'', keepShots:true, busy:false };
 
@@ -45,10 +54,18 @@ function normDir(d){
 function fmt(n){ return n==null ? '' : String(+(+n).toFixed(5)); }
 function utcKey(){ var d=new Date(); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
 function validDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s||'') && s <= todayStr(); }
-function sideError(dir, entry, sl, tp){
-  if(entry==null || sl==null || tp==null) return null;
-  if(dir==='buy'){ if(!(sl<entry)) return 'Buy: SL must be below entry'; if(!(tp>entry)) return 'Buy: TP must be above entry'; }
-  if(dir==='sell'){ if(!(sl>entry)) return 'Sell: SL must be above entry'; if(!(tp<entry)) return 'Sell: TP must be below entry'; }
+function sideError(dir, entry, sl, tp, strictSL){
+  // Checks each level on its own, so a half-filled order is still validated.
+  // A closed trade's SL may have been trailed past entry, so only live / pending orders get the SL side check.
+  if(entry==null) return null;
+  if(dir==='buy'){
+    if(strictSL && sl!=null && !(sl<entry)) return 'Buy: SL must be below entry';
+    if(tp!=null && !(tp>entry)) return 'Buy: TP must be above entry';
+  }
+  if(dir==='sell'){
+    if(strictSL && sl!=null && !(sl>entry)) return 'Sell: SL must be above entry';
+    if(tp!=null && !(tp<entry)) return 'Sell: TP must be below entry';
+  }
   return null;
 }
 function plannedRR(entry, sl, tp){
@@ -101,6 +118,16 @@ function injectCss(){
   '.gd-src{font-size:10px;color:var(--slate);margin-top:2px;text-transform:none;letter-spacing:0}',
   '.gd-row[data-status="live"] .gd-exec,.gd-row[data-status="pending"] .gd-exec{display:none}',
   '.gd-note{font-size:12px;color:var(--slate);margin:6px 0}',
+  '.gd-penalty{font-size:11.5px;color:var(--gold-bright,#e6c36a);margin:-2px 0 10px}',
+  '.gd-penalty:empty{display:none}',
+  '.gd-row.warn{border-color:rgba(230,195,106,.5)}',
+  '.gd-meta .warn{color:var(--gold-bright,#e6c36a)}',
+  '.gd-lock{border:1px solid var(--steel);border-radius:14px;padding:18px 14px;text-align:center;color:var(--slate);font-size:13px;line-height:1.5}',
+  '.gd-lock b{display:block;color:var(--platinum);margin-bottom:6px;font-size:14px}',
+  '#gdDashOrders .gd-dash-drop{margin-top:12px}',
+  '#gdDashOrders .gd-dash-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--slate)}',
+  '#gdDashOrders .gd-pill{border:1px solid var(--steel);border-radius:999px;padding:3px 10px}',
+  '#gdDashOrders .gd-pill.hot{color:var(--gold-bright,#e6c36a);border-color:rgba(230,195,106,.45)}',
   '@media(max-width:560px){.gd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}'
   ].join('\n');
   document.head.appendChild(st);
@@ -132,10 +159,11 @@ function gdMoreLabel(){
 function resetModalFields(){
   ['gd_pair','gd_entry','gd_sl','gd_tp','gd_lot','gd_exit'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
   var d=$('gd_dir'); if(d) d.value='buy'; var ot=$('gd_orderType'); if(ot) ot.value='limit';
+  penaltyHintFor('gd_entry','gd_sl','gd_tp','gd_penalty');
 }
 function modalValidate(x, needLevels){
   if(needLevels && (!x.pair || x.entry==null)) return 'Add the pair and entry price';
-  var se = sideError(x.direction, x.entry, x.sl, x.tp);
+  var se = sideError(x.direction, x.entry, x.sl, x.tp, !!needLevels);
   return se;
 }
 
@@ -147,6 +175,7 @@ async function submitOrderFromModal(st){
   var stratObj = (state.psychology.strategies||[]).find(function(s){ return s.id===strategy; });
   var now = new Date();
   var rr = plannedRR(x.entry, x.sl, x.tp);
+  var miss = gdMissingLevelViolations(x.sl, x.tp);
   state.psychology.orders.push({
     id:'ord_'+Date.now(), date:todayStr(), time:now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
     trader: $('t_trader').value, strategy: strategy, strategyType: stratObj ? stratObj.type : null,
@@ -154,12 +183,14 @@ async function submitOrderFromModal(st){
     pair:x.pair, direction:x.direction, entry:x.entry, sl:x.sl, tp:x.tp, lot:x.lot,
     rrPlanned: rr!=null ? rr.toFixed(2) : null, notes: ($('t_notes')||{}).value || '',
     status: st, orderType: st==='pending' ? ($('gd_orderType').value||'limit') : 'market',
-    account: ($('t_account') && $('t_account').value) || 'personal'
+    account: ($('t_account') && $('t_account').value) || 'personal',
+    ruleViolations: miss.codes, ruleViolationLabels: miss.labels
   });
+  if(miss.codes.length) gdApplyRuleBreak();
   closeModal('tradeOverlay');
   resetModalFields();
   await saveState(); renderAll();
-  showToast(st==='live' ? 'Live trade saved. Close it out when it finishes.' : 'Order placed.');
+  showToast((st==='live' ? 'Live trade saved. Close it out when it finishes.' : 'Order placed.') + (miss.codes.length ? ' No ' + miss.codes.map(function(c){ return c==='noSL' ? 'SL' : 'TP'; }).join(' or ') + ' logged: discipline score ' + computeDisciplineScore() + '.' : ''));
 }
 
 window.gdMarkFilled = async function(id){
@@ -240,6 +271,7 @@ function injectModalFields(){
       '<div class="field"><label>Lot size</label><input type="number" step="0.01" min="0" id="gd_lot" placeholder="e.g. 0.10"></div></div>' +
       '<div class="row2"><div class="field"><label>Stop loss</label><input type="number" step="any" id="gd_sl" placeholder="SL"></div>' +
       '<div class="field"><label>Take profit</label><input type="number" step="any" id="gd_tp" placeholder="TP"></div></div>' +
+      '<div class="gd-penalty" id="gd_penalty"></div>' +
       '<div class="row2"><div class="field gd-exec-field"><label>Exit price <span class="hint-inline">optional</span></label><input type="number" step="any" id="gd_exit" placeholder="Close price"></div>' +
       '<div class="field gd-pending-field"><label>Order type</label><select id="gd_orderType"><option value="limit">Limit</option><option value="stop">Stop</option></select></div></div>' +
     '</div>' +
@@ -273,9 +305,12 @@ function buildOverlay(){
           '<button type="button" data-tab="file" onclick="gdImpTab(\'file\')">CSV / MT report</button>' +
         '</div>' +
         '<div id="gdTabPhotos">' +
-          '<div class="gd-drop" id="gdDrop" onclick="$gdPick()">Tap to add screenshots of today\u2019s trade history<br><small>or drop / paste images. Up to ' + MAX_IMAGES + '. Works with MT4, MT5, cTrader, TradingView and broker apps.</small></div>' +
-          '<input type="file" id="gdImgInput" accept="image/*" multiple style="display:none">' +
-          '<div class="gd-thumbs" id="gdThumbs"></div>' +
+          '<div id="gdPhotoLock" class="gd-lock" style="display:none"><b>Screenshot import is on Pro and above</b>Upload screenshots of your orders and we read the trades for you. Pro: 2 screenshots per upload. Elite and above: 10.<div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" style="flex:1" onclick="gdUpgrade()">See plans</button></div></div>' +
+          '<div id="gdPhotoBody">' +
+            '<div class="gd-drop" id="gdDrop" onclick="$gdPick()">Tap to add screenshots of your orders or trade history<br><small id="gdDropHint"></small></div>' +
+            '<input type="file" id="gdImgInput" accept="image/*" multiple style="display:none">' +
+            '<div class="gd-thumbs" id="gdThumbs"></div>' +
+          '</div>' +
         '</div>' +
         '<div id="gdTabText" style="display:none">' +
           '<div class="field"><textarea id="gdPasteText" rows="7" placeholder="Paste broker history, a Telegram/email trade message, or a signal. e.g. BUY XAUUSD @ 2650.5 SL 2645 TP 2662 0.10 lots"></textarea></div>' +
@@ -307,15 +342,21 @@ function buildOverlay(){
     if(items.length){ addFiles(items); e.preventDefault(); }
   });
 }
-window.gdOpenImport = function(){
+window.gdOpenImport = function(files){
   if(isDemoMode){ showToast('Import is not available in demo mode'); return; }
   buildOverlay();
   imp = { images:[], rows:[], tab:'photos', busy:false, date: todayStr() };
   $('gdImpInput').style.display=''; $('gdImpReview').style.display='none'; $('gdImpMsg').textContent='';
-  $('gdPasteText').value=''; $('gdFileName').textContent=''; renderThumbs(); window.gdImpTab('photos');
+  $('gdPasteText').value=''; $('gdFileName').textContent='';
+  var lim = imageLimit();
+  $('gdPhotoLock').style.display = lim ? 'none' : '';
+  $('gdPhotoBody').style.display = lim ? '' : 'none';
+  $('gdDropHint').textContent = 'or drop / paste images. Up to ' + lim + ' per upload on ' + tierName() + (lim<10 ? ' (Elite and above: 10)' : '') + '. Each screenshot can show lots of trades. MT4, MT5, cTrader, TradingView and broker apps work.';
+  renderThumbs(); window.gdImpTab('photos');
   closingOrderId = null;
   closeModal('tradeOverlay');
   $('gdImportOverlay').classList.add('show');
+  if(files && files.length && lim) addFiles(files);
 };
 window.gdCloseImport = function(){ var o=$('gdImportOverlay'); if(o) o.classList.remove('show'); };
 window.gdImpTab = function(t){
@@ -348,10 +389,15 @@ function normalizeImage(file){
   });
 }
 async function addFiles(list){
+  var lim = imageLimit();
+  if(!lim){ showToast('Screenshot import is available on Pro and above'); return; }
   for(var i=0;i<list.length;i++){
     var f = list[i];
     if(!f.type || f.type.indexOf('image/')!==0) continue;
-    if(imp.images.length>=MAX_IMAGES){ showToast('Maximum '+MAX_IMAGES+' images'); break; }
+    if(imp.images.length>=lim){
+      showToast(lim<10 ? 'Your plan allows ' + lim + ' screenshots per upload. Elite and above allow 10.' : 'Maximum ' + lim + ' screenshots per upload');
+      break;
+    }
     if(f.size > 12*1024*1024){ showToast('Image too large (max 12MB)'); continue; }
     try{ imp.images.push(await normalizeImage(f)); }catch(e){ showToast(e.message); }
   }
@@ -589,6 +635,7 @@ window.gdRunExtract = async function(){
     imp.busy = true; $('gdReadBtn').disabled = true; $('gdReadBtn').textContent = 'Reading\u2026';
     imp.keepShots = $('gdKeepShots').checked;
     if(imp.tab==='photos'){
+      if(!imageLimit()){ msg.textContent = 'Screenshot import is available on Pro and above.'; return; }
       if(!imp.images.length){ msg.textContent = 'Add at least one screenshot.'; return; }
       if(!(await claimImport())){ msg.textContent = 'Daily import limit reached (resets 00:00 UTC). Paste text or upload a CSV instead, or upgrade.'; return; }
       var obj = await aiExtract('Extract all trades from these ' + imp.images.length + ' screenshot(s).', imp.images);
@@ -598,6 +645,7 @@ window.gdRunExtract = async function(){
       if(!txt){ msg.textContent = 'Paste some text first.'; return; }
       found = parseTextTrades(txt);
       if(!found.length){
+        if(!imageLimit()){ msg.textContent = 'Could not read that text locally. AI reading is available on Pro and above, or upload a CSV / MT report.'; return; }
         if(!(await claimImport())){ msg.textContent = 'Could not parse it locally and the daily AI limit is used up.'; return; }
         var o2 = await aiExtract('Extract all trades from this text:\n\n' + txt, []); found = o2.trades; date = o2.date;
       }
@@ -622,11 +670,16 @@ function rowCheck(r){
   if(r.skip) return { ok:true, skipped:true };
   if(!r.pair) return { ok:false, msg:'Add the pair' };
   if(r.entry==null) return { ok:false, msg:'Add the entry price' };
-  if(r.sl==null) return { ok:false, msg:'Add your stop loss' };
-  if(r.tp==null) return { ok:false, msg:'Add your take profit' };
-  var se = sideError(r.dir, r.entry, r.sl, r.tp); if(se) return { ok:false, msg:se, badSide:true };
+  var se = sideError(r.dir, r.entry, r.sl, r.tp, r.status!=='executed'); if(se) return { ok:false, msg:se, badSide:true };
   if(r.status==='executed' && r.profit==null && r.exit==null) return { ok:false, msg:'Add profit or exit price' };
-  return { ok:true, rr:plannedRR(r.entry, r.sl, r.tp) };
+  // SL / TP are no longer blockers: the trader can skip them, but it costs discipline points.
+  var miss = gdMissingLevelViolations(r.sl, r.tp);
+  return { ok:true, rr:plannedRR(r.entry, r.sl, r.tp), miss:miss.codes };
+}
+function penaltyText(codes){
+  if(!codes || !codes.length) return '';
+  var pts = codes.reduce(function(s,c){ return s + ruleWeightFor(c); }, 0);
+  return 'No ' + codes.map(function(c){ return c==='noSL' ? 'SL' : 'TP'; }).join(' + ') + ': \u2212' + pts + ' discipline points';
 }
 function rowHtml(r, i){
   var low = function(k){ return r.conf < 0.6 ? ' gd-low' : ''; };
@@ -644,8 +697,8 @@ function rowHtml(r, i){
       '<div class="gd-exec"><label>Profit</label><input type="number" step="any" class="'+low()+'" value="'+v(r.profit)+'" oninput="gdRowSet('+i+',\'profit\',this.value)"></div>' +
     '</div>' +
     '<div class="gd-sltp">' +
-      '<div><label>Stop loss</label><input type="number" step="any" id="gdSL'+i+'" value="'+v(r.sl)+'" placeholder="Required" oninput="gdRowSet('+i+',\'sl\',this.value)"><div class="gd-src" id="gdSLs'+i+'">'+escapeHtml(r.src.sl||'')+'</div></div>' +
-      '<div><label>Take profit</label><input type="number" step="any" id="gdTP'+i+'" value="'+v(r.tp)+'" placeholder="Required" oninput="gdRowSet('+i+',\'tp\',this.value)"><div class="gd-src" id="gdTPs'+i+'">'+escapeHtml(r.src.tp||'')+'</div></div>' +
+      '<div><label>Stop loss</label><input type="number" step="any" id="gdSL'+i+'" value="'+v(r.sl)+'" placeholder="Add SL" oninput="gdRowSet('+i+',\'sl\',this.value)"><div class="gd-src" id="gdSLs'+i+'">'+escapeHtml(r.src.sl||'')+'</div></div>' +
+      '<div><label>Take profit</label><input type="number" step="any" id="gdTP'+i+'" value="'+v(r.tp)+'" placeholder="Add TP" oninput="gdRowSet('+i+',\'tp\',this.value)"><div class="gd-src" id="gdTPs'+i+'">'+escapeHtml(r.src.tp||'')+'</div></div>' +
     '</div>' +
     '<div class="gd-meta" id="gdMeta'+i+'"></div></div>';
 }
@@ -654,7 +707,7 @@ function showReview(){
   var el = $('gdImpReview'); el.style.display='';
   var n = imp.rows.length;
   el.innerHTML =
-    '<div class="gd-note" style="margin-top:10px">Found <b>'+n+'</b> trade'+(n===1?'':'s')+'. Everything else is filled in. <b>Add SL and TP</b> where highlighted. Amber fields were hard to read, so double-check them.</div>' +
+    '<div class="gd-note" style="margin-top:10px">Found <b>'+n+'</b> trade'+(n===1?'':'s')+'. Everything else is filled in. Add <b>SL and TP</b> where highlighted. You can skip them, but that lowers your discipline score. Amber fields were hard to read, so double-check them.</div>' +
     '<div class="field" style="max-width:220px"><label>Trading day</label><input type="date" id="gdImpDate" max="'+todayStr()+'" value="'+imp.date+'" onchange="gdSetDate(this.value)"></div>' +
     '<div id="gdRows">'+imp.rows.map(rowHtml).join('')+'</div>' +
     '<div class="btn-row" style="margin-top:12px"><button class="btn btn-ghost" style="flex:1" onclick="gdBackToInput()">Back</button>' +
@@ -678,17 +731,24 @@ window.gdRowSet = function(i, k, val){
 function refreshRow(i){
   var r = imp.rows[i], c = rowCheck(r);
   var row = $('gdRow'+i); if(!row) return;
-  row.classList.toggle('ok', !!c.ok && !c.skipped);
+  var warn = !!(c.ok && !c.skipped && c.miss && c.miss.length);
+  row.classList.toggle('ok', !!c.ok && !c.skipped && !warn);
+  row.classList.toggle('warn', warn);
   var sl = $('gdSL'+i), tp = $('gdTP'+i);
   if(sl && tp){
-    var badSide = c.badSide;
-    sl.className = r.sl==null ? 'gd-need' : (badSide ? 'gd-bad' : '');
-    tp.className = r.tp==null ? 'gd-need' : (badSide ? 'gd-bad' : '');
+    sl.className = c.badSide ? 'gd-bad' : (r.sl==null ? 'gd-need' : '');
+    tp.className = c.badSide ? 'gd-bad' : (r.tp==null ? 'gd-need' : '');
   }
   var meta = $('gdMeta'+i); if(!meta) return;
   if(c.skipped) meta.textContent = r.note || 'Skipped';
   else if(!c.ok) meta.innerHTML = '<span class="err">'+escapeHtml(c.msg)+'</span>';
-  else meta.textContent = 'Planned R:R ' + (c.rr!=null ? c.rr.toFixed(2) : '-') + (r.matchedOrderId ? ' \u00b7 will close your matching order' : '');
+  else meta.innerHTML = (c.rr!=null ? 'Planned R:R ' + c.rr.toFixed(2) : 'R:R needs SL and TP') + (r.matchedOrderId ? ' \u00b7 will close your matching order' : '') + (warn ? ' <span class="warn">\u00b7 ' + escapeHtml(penaltyText(c.miss)) + '</span>' : '');
+}
+function projectedPenalty(active){
+  var extra = [];
+  active.forEach(function(r){ if(r.sl==null) extra.push('noSL'); if(r.tp==null) extra.push('noTP'); });
+  if(!extra.length) return 0;
+  return disciplineBreakdown(imp.date, extra).total - disciplineBreakdown(imp.date).total;
 }
 function refreshCommit(){
   var active = imp.rows.filter(function(r){ return !r.skip; });
@@ -696,7 +756,11 @@ function refreshCommit(){
   var btn = $('gdCommitBtn'), hint = $('gdCommitHint'); if(!btn) return;
   btn.disabled = !active.length || bad>0;
   btn.textContent = active.length ? 'Add '+active.length+' trade'+(active.length===1?'':'s') : 'Nothing to add';
-  if(hint) hint.textContent = bad ? (bad+' trade'+(bad===1?'':'s')+' still need SL / TP or a fix.') : '';
+  if(!hint) return;
+  var pen = bad ? 0 : projectedPenalty(active);
+  if(bad) hint.textContent = bad+' trade'+(bad===1?'':'s')+' still need a fix.';
+  else if(pen>0) hint.textContent = 'Missing SL / TP will lower the discipline score for ' + imp.date + ' by ' + pen + ' points' + (imp.date===todayStr() ? ' and reset your streak' : '') + '. Add them to avoid it.';
+  else hint.textContent = '';
 }
 
 /* ---------- commit ---------- */
@@ -710,6 +774,8 @@ function violations(t, isToday){
     if(rules.maxDailyLoss!=null && state.day.lossUsed > rules.maxDailyLoss) add('maxDailyLoss','Over daily loss limit');
     if(rules.maxConsecLosses!=null && state.consecutiveLosses>0 && state.consecutiveLosses >= rules.maxConsecLosses) add('maxConsecLosses','Consecutive losses at limit ('+state.consecutiveLosses+'/'+rules.maxConsecLosses+')');
   }
+  var miss = gdMissingLevelViolations(t.sl, t.tp);
+  miss.codes.forEach(function(c,i){ add(c, miss.labels[i]); });
   return v;
 }
 async function uploadShots(){
@@ -762,20 +828,23 @@ window.gdCommit = async function(){
         if(v.length && isToday){ broke = true; state.day.ruleBrokenToday = true; state.streak.count = 0; }
         state.trades.push(t); newTrades.push(t); nExec++;
       } else {
+        var om = gdMissingLevelViolations(r.sl, r.tp);
+        if(om.codes.length && isToday){ broke = true; state.day.ruleBrokenToday = true; state.streak.count = 0; }
         state.psychology.orders.push({ id:'ord_'+(Date.now()+k), date: imp.date, time: time, trader: r.trader||defTrader,
           strategy:r.strategy||null, strategyType:r.strategyType||null, style:'intraday', logics:r.logics||[],
           pair:r.pair, direction:r.dir, entry:r.entry, sl:r.sl, tp:r.tp, lot:r.lot, rrPlanned: rr!=null ? rr.toFixed(2) : null,
           notes: r.orderNotes||'Imported', status:r.status, orderType:r.orderType||'market', ticket:r.ticket,
-          account: r.account || defAcct, imported:true });
+          account: r.account || defAcct, imported:true, ruleViolations: om.codes, ruleViolationLabels: om.labels });
         if(r.status==='live') nLive++; else nPend++;
       }
     });
     if(isToday && typeof archiveDisciplineDay==='function') archiveDisciplineDay(state.day.date, computeDisciplineScore());
+    if(typeof gdRescoreDate==='function') gdRescoreDate(imp.date);
     if(newTrades.length && typeof refreshTradeScreenshotUrls==='function') { try{ await refreshTradeScreenshotUrls(newTrades); }catch(e){} }
     await saveState(); renderAll();
     gdCloseImport();
     var parts = []; if(nExec) parts.push(nExec+' executed'); if(nLive) parts.push(nLive+' live'); if(nPend) parts.push(nPend+' pending');
-    showToast('Imported ' + parts.join(', ') + (broke ? '. Rule break flagged, streak reset.' : '.'));
+    showToast('Imported ' + parts.join(', ') + (broke ? '. Rule break flagged, streak reset.' : '.') + (isToday ? ' Discipline score ' + computeDisciplineScore() + '.' : ''));
   }catch(e){
     showToast('Import failed: ' + ((e && e.message) || 'try again'));
     if(btn){ btn.disabled = false; btn.textContent = 'Add trades'; }
@@ -784,9 +853,66 @@ window.gdCommit = async function(){
 
 window.gdImportState = function(){ return imp; };
 
+/* =====================================================================
+   PART 3: SL / TP penalty hints + dashboard order-screenshot card
+   ===================================================================== */
+function penaltyHintFor(entryId, slId, tpId, outId){
+  var out = $(outId); if(!out) return;
+  var entry = $(entryId);
+  if(!entry || entry.value===''){ out.textContent = ''; return; }   // stay quiet until an order is being filled in
+  var m = gdMissingLevelViolations(($(slId)||{}).value, ($(tpId)||{}).value);
+  out.textContent = m.codes.length ? penaltyText(m.codes) + '. Add them to protect your score.' : '';
+}
+function wirePenaltyHints(){
+  var oPrev = $('orderRRPreview');
+  if(oPrev && !$('o_penalty')) oPrev.insertAdjacentHTML('beforebegin', '<div class="gd-penalty" id="o_penalty"></div>');
+  [['gd_entry','gd_sl','gd_tp','gd_penalty'],['o_entry','o_sl','o_tp','o_penalty']].forEach(function(a){
+    [a[0],a[1],a[2]].forEach(function(id){
+      var e = $(id);
+      if(e && !e.__gdPen){ e.__gdPen = true; e.addEventListener('input', function(){ penaltyHintFor(a[0],a[1],a[2],a[3]); }); }
+    });
+    penaltyHintFor(a[0],a[1],a[2],a[3]);
+  });
+}
+
+function renderDashCard(){
+  var card = $('gdDashOrders'); if(!card) return;
+  if(isDemoMode){ card.style.display = 'none'; return; }
+  var lim = imageLimit();
+  var sig = String(userTier) + '|' + lim;
+  if(card.getAttribute('data-sig')===sig && card.innerHTML){ card.style.display = ''; return; }
+  card.setAttribute('data-sig', sig);
+  var head = '<h2>Order <span class="accent">Screenshots</span><span class="eyebrow">read orders from your broker</span></h2>';
+  if(!lim){
+    card.innerHTML = head +
+      '<div class="gd-lock"><b>Upload a screenshot instead of typing</b>We read the pair, side, entry, lots and result from your broker screenshot. Pro: 2 screenshots per upload. Elite and above: 10. Each one can hold lots of trades.' +
+      '<div class="btn-row" style="margin-top:12px"><button class="btn btn-primary btn-sm" style="flex:1" onclick="gdUpgrade()">Unlock with Pro</button></div></div>';
+  } else {
+    card.innerHTML = head +
+      '<div class="gd-drop gd-dash-drop" id="gdDashDrop" role="button" tabindex="0">Drop order screenshots here or tap to choose<br><small>Up to ' + lim + ' per upload on ' + tierName() + '. Each screenshot can hold many orders.</small></div>' +
+      '<input type="file" id="gdDashInput" accept="image/*" multiple style="display:none">' +
+      '<div class="gd-dash-meta"><span class="gd-pill">' + tierName() + ' \u00b7 ' + lim + ' screenshots per upload</span><span class="gd-pill hot">Skipping SL or TP lowers your discipline score</span></div>' +
+      '<div class="gd-note">Orders land as Pending, Live or Executed. You review everything before it is saved, and the discipline score updates when you add them.</div>';
+    var drop = $('gdDashDrop'), inp = $('gdDashInput');
+    drop.addEventListener('click', function(){ inp.click(); });
+    drop.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); inp.click(); } });
+    ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function(e){ var fs = Array.prototype.slice.call(e.dataTransfer.files||[]); if(fs.length) window.gdOpenImport(fs); });
+    inp.addEventListener('change', function(e){ var fs = Array.prototype.slice.call(e.target.files||[]); e.target.value=''; if(fs.length) window.gdOpenImport(fs); });
+  }
+  card.style.display = '';
+}
+
 /* ---------- boot ---------- */
 function boot(){
-  injectCss(); injectModalFields(); wireModal();
+  injectCss(); injectModalFields(); wireModal(); wirePenaltyHints();
+  if(typeof renderAll==='function' && !renderAll.__gd){
+    var origRender = renderAll;
+    var wr = function(){ var out = origRender.apply(this, arguments); try{ renderDashCard(); wirePenaltyHints(); }catch(e){} return out; };
+    wr.__gd = true; renderAll = wr;
+  }
+  renderDashCard();
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

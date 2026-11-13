@@ -3427,6 +3427,8 @@ setTimeout(function(){
         <div class="hero-stat" id="hero_avgWinLoss"><div class="hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"></line><line x1="10" y1="20" x2="10" y2="6"></line><line x1="16" y1="20" x2="16" y2="14"></line><line x1="22" y1="20" x2="22" y2="9"></line></svg></div><div class="hero-label">Avg Win / Loss</div><div class="hero-value">—</div><div class="hero-sub">per-trade average</div></div>
       </div>
 
+      <div class="card tilt" id="gdDashOrders" style="margin-bottom:18px;display:none;"></div>
+
       <div class="card card-ai tilt" id="aiCoachCard" style="margin-bottom:18px;">
         <h2><span class="ai-orb"></span>AI <span class="accent">Coach</span><span class="ai-chip">Live</span><button class="ai-refresh-btn" onclick="window.gdAskAI && window.gdAskAI('coach')" title="Ask Claude for a fresh read">Ask AI</button></h2>
         <div class="ai-insight loading" id="aiCoachInsight">Reading your discipline data<span class="ai-cursor"></span></div>
@@ -3485,7 +3487,8 @@ setTimeout(function(){
             <div class="score-dial-info">
               <div class="score-num" id="scoreNum">—</div>
               <div class="score-tier" id="scoreTier">Log a trade to begin</div>
-              <div class="score-desc" id="scoreDesc">This score is recalculated live from your loss limits, trade caps, session window, and cooling-off rule — then imputed into the calendar as your daily discipline history.</div>
+              <div class="score-desc" id="scoreDesc">Starts at 100 and loses points for every rule you break. Each rule has its own weight, so skipping a stop loss costs more than a missed target. Recalculated live and saved to your calendar as the daily discipline history.</div>
+              <div class="score-breakdown" id="scoreBreakdown"></div>
             </div>
           </div>
         </div>
@@ -7494,14 +7497,7 @@ function formatDuration(totalMinutes){
   return rem>0 ? `${h}h ${rem}m` : `${h}h`;
 }
 function computeDisciplineScore(){
-  const r = state.rules;
-  let score = 100;
-  if(r.maxTrades) score -= Math.min(1, state.day.tradesCount / r.maxTrades) * 18;
-  if(r.maxDailyLoss) score -= Math.min(1, state.day.lossUsed / r.maxDailyLoss) * 28;
-  if(r.maxConsecLosses) score -= Math.min(1, state.consecutiveLosses / r.maxConsecLosses) * 18;
-  if(isInCooldown()) score -= 12;
-  if(state.day.ruleBrokenToday) score -= 40;
-  return Math.max(0, Math.round(score));
+  return disciplineBreakdown(state.day.date).score;
 }
 function disciplineTier(score){
   if(score>=90) return { label:'Elite', color:'var(--gold-bright)' };
@@ -7544,8 +7540,82 @@ function weekKeyFor(date){ return toIso(mondayOf(date)); }
 function monthKeyFor(date){ return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0'); }
 function monthLabel(date){ return date.toLocaleDateString(undefined,{month:'long', year:'numeric'}); }
 
-const RULE_CODE_LABELS = { minRR:'Minimum R:R', maxRiskPerTrade:'Max risk per trade', maxTrades:'Daily trade limit', maxDailyLoss:'Daily loss limit', maxConsecLosses:'Consecutive-loss limit', session:'Trading session window', coolingOff:'Cooling-off period', mood:'High-risk emotional state' };
+const RULE_CODE_LABELS = { minRR:'Minimum R:R', maxRiskPerTrade:'Max risk per trade', maxTrades:'Daily trade limit', maxDailyLoss:'Daily loss limit', maxConsecLosses:'Consecutive-loss limit', session:'Trading session window', coolingOff:'Cooling-off period', mood:'High-risk emotional state', noSL:'No stop loss logged', noTP:'No take profit logged', override:'Pre-trade check overridden', other:'Other rule break' };
 function ruleLabelFor(code){ return RULE_CODE_LABELS[code] || String(code); }
+
+/* ============ DISCIPLINE SCORE: WEIGHTED RULE BREAKS ============
+   The day starts at 100. Every rule broken takes off that rule's own weight, so the
+   score reflects HOW SERIOUS the breaks were, not just that one happened.
+   - A rule's 1st break in a day costs its full weight; each further break of the SAME
+     rule costs half, and one rule can never cost more than 2x its weight in a day.
+   - Skipping the stop loss is the heaviest single-trade break (it is the risk rule);
+     skipping the take profit costs less (some traders trail or scale out).
+   - Everything is derived from the violations stored on each trade / open order for
+     that date, so editing or deleting a trade recalculates the score automatically. */
+const RULE_WEIGHTS = { maxDailyLoss:22, noSL:20, maxRiskPerTrade:18, override:15, maxConsecLosses:14, maxTrades:12, coolingOff:12, minRR:10, other:10, noTP:8, session:8, mood:6 };
+const RULE_REPEAT_FACTOR = 0.5;
+const RULE_REPEAT_CAP = 2;
+function ruleWeightFor(code){ return RULE_WEIGHTS[code]!=null ? RULE_WEIGHTS[code] : RULE_WEIGHTS.other; }
+// Trades logged from the SciFe chat store plain-language labels instead of codes, so map both to one code.
+function gdViolationCode(v){
+  if(v==null) return null;
+  const s = String(v);
+  if(RULE_CODE_LABELS[s] && !/\s/.test(s)) return s;
+  const l = s.toLowerCase();
+  if(/no stop.?loss|missing stop/.test(l)) return 'noSL';
+  if(/no take.?profit|missing take/.test(l)) return 'noTP';
+  if(/minimum r:r|below min/.test(l)) return 'minRR';
+  if(/max per trade|risk exceeded/.test(l)) return 'maxRiskPerTrade';
+  if(/daily trade limit/.test(l)) return 'maxTrades';
+  if(/daily loss limit/.test(l)) return 'maxDailyLoss';
+  if(/consecutive loss/.test(l)) return 'maxConsecLosses';
+  if(/session window|outside session/.test(l)) return 'session';
+  if(/cooling/.test(l)) return 'coolingOff';
+  if(/emotional state|high-risk/.test(l)) return 'mood';
+  if(/overrid/.test(l)) return 'override';
+  return 'other';
+}
+function disciplineBreakdown(iso, extraCodes){
+  const byCode = {};
+  const add = v => { const c = gdViolationCode(v); if(c) byCode[c] = (byCode[c]||0) + 1; };
+  liveTrades().forEach(tr=>{ if(tr.date===iso && Array.isArray(tr.ruleViolations)) tr.ruleViolations.forEach(add); });
+  ((state.psychology && state.psychology.orders) || []).forEach(o=>{ if(o.date===iso && Array.isArray(o.ruleViolations)) o.ruleViolations.forEach(add); });
+  if(state.day && state.day.date===iso){ for(let i=0;i<(state.day.overrides||0);i++) add('override'); }
+  (extraCodes||[]).forEach(add);
+  const items = Object.keys(byCode).map(code=>{
+    const w = ruleWeightFor(code), n = byCode[code];
+    const pts = Math.min(w*RULE_REPEAT_CAP, w + (n-1)*w*RULE_REPEAT_FACTOR);
+    return { code, label: ruleLabelFor(code), count:n, weight:w, points:Math.round(pts) };
+  }).sort((a,b)=>b.points-a.points);
+  const total = items.reduce((s,i)=>s+i.points,0);
+  return { items, total, score: Math.max(0, 100-total) };
+}
+// SL / TP are risk-plan fields: leaving them out is a rule break of its own.
+function gdMissingLevelViolations(sl, tp){
+  const codes = [], labels = [];
+  const missing = v => v==null || v==='' || isNaN(Number(v)) || Number(v)===0;
+  if(missing(sl)){ codes.push('noSL'); labels.push('No stop loss logged'); }
+  if(missing(tp)){ codes.push('noTP'); labels.push('No take profit logged'); }
+  return { codes, labels };
+}
+// Marks today as broken, resets the streak and re-archives today's score.
+function gdApplyRuleBreak(){
+  state.day.ruleBrokenToday = true; state.streak.count = 0;
+  archiveDisciplineDay(state.day.date, computeDisciplineScore());
+}
+// Re-scores a date other than today (imports / back-dated trades) so the calendar history stays truthful.
+function gdRescoreDate(iso){
+  if(!iso || (state.day && iso===state.day.date)) return;
+  const hist = state.psychology.disciplineHistory;
+  const bd = disciplineBreakdown(iso);
+  const dayTrades = liveTrades().filter(tr=>tr.date===iso);
+  if(!dayTrades.length) return;
+  const rec = { date: iso, score: bd.score, ruleBroken: bd.items.length>0, trades: dayTrades.length };
+  const idx = hist.findIndex(h=>h.date===iso);
+  if(idx>=0) hist[idx] = rec; else hist.push(rec);
+  hist.sort((a,b)=>a.date<b.date?-1:1);
+  if(hist.length>365) hist.splice(0, hist.length-365);
+}
 function reviewAccountKey(t){ return t.account || 'personal'; }
 function reviewAccountInfo(key){
   if(key==='personal') return { key, name:'Personal', ccy: state.rules.currency||'USD', base: Number(state.rules.accountBalance)||null };
@@ -13067,7 +13137,21 @@ function renderDisciplineScore(){
   if(descEl){
     descEl.textContent = isDemoMode
       ? 'Trial discipline scores are capped at 50/50 — the full 0–100 scale unlocks with real access. Still recalculated live from your loss limits, trade caps, session window, and cooling-off rule.'
-      : 'This score is recalculated live from your loss limits, trade caps, session window, and cooling-off rule — then imputed into the calendar as your daily discipline history.';
+      : 'Starts at 100 and loses points for every rule you break. Each rule has its own weight, so skipping a stop loss costs more than a missed target. Recalculated live and saved to your calendar as the daily discipline history.';
+  }
+  const sbEl = document.getElementById('scoreBreakdown');
+  if(sbEl){
+    if(isDemoMode){ sbEl.innerHTML = ''; }
+    else {
+      const bd = disciplineBreakdown(state.day.date);
+      const wasOpen = !!(sbEl.querySelector('details') && sbEl.querySelector('details').open);
+      const rows = bd.items.length
+        ? bd.items.map(i=>`<div class="sb-row"><span>${escapeHtml(i.label)}${i.count>1?` <em>×${i.count}</em>`:''}</span><b>−${i.points}</b></div>`).join('') + `<div class="sb-row sb-total"><span>Total today</span><b>−${bd.total}</b></div>`
+        : `<div class="sb-clean">No rules broken today. Full marks.</div>`;
+      const weights = Object.keys(RULE_WEIGHTS).filter(c=>c!=='other').sort((a,b)=>RULE_WEIGHTS[b]-RULE_WEIGHTS[a])
+        .map(c=>`<div class="sb-row"><span>${escapeHtml(ruleLabelFor(c))}</span><b>−${RULE_WEIGHTS[c]}</b></div>`).join('');
+      sbEl.innerHTML = rows + `<details class="sb-weights"${wasOpen?' open':''}><summary>How points are weighted</summary>${weights}<div class="sb-note">Repeating the same break costs half each time, capped at double the weight per day.</div></details>`;
+    }
   }
   const eyebrowEl = document.getElementById('scoreEyebrow');
   if(eyebrowEl){
@@ -13674,11 +13758,17 @@ async function submitTrade(){
   if(RISKY_MOODS.includes(selectedMood)){
     violations.push({code:'mood', label:`Logged in a high-risk emotional state (${MOOD_LABELS[selectedMood]})`});
   }
+  // SL / TP are part of the plan: a trade logged without them costs discipline points.
+  const _miss = gdMissingLevelViolations(newTrade.sl, newTrade.tp);
+  _miss.codes.forEach((c,i)=>violations.push({code:c, label:_miss.labels[i]}));
   newTrade.ruleViolations = violations.map(v=>v.code);
   newTrade.ruleViolationLabels = violations.map(v=>v.label);
   const brokeRuleThisTrade = pendingViolation || violations.length>0;
+  // A pre-trade override that produced no recorded violation still counts once, so it is never free.
+  if(pendingViolation && violations.length===0) state.day.overrides = (state.day.overrides||0) + 1;
 
   archiveDisciplineDay(state.day.date, computeDisciplineScore());
+  if(tradeDate!==state.day.date) gdRescoreDate(tradeDate);
 
   if(closingOrderId){
     state.psychology.orders = state.psychology.orders.filter(o=>o.id!==closingOrderId);
@@ -13691,7 +13781,7 @@ async function submitTrade(){
     const vText = vLabels.length > 1
       ? `${vLabels.length} rules broken: ${vLabels.join(' · ')}`
       : (vLabels.length ? `Rule broken: ${vLabels[0]}` : 'Rule broken');
-    showToast(`${vText} — streak reset to 0`);
+    showToast(`${vText} — streak reset to 0 · discipline score ${computeDisciplineScore()}`);
   } else {
     showToast('Trade logged. Stay the course.');
     if(result==='win') fireConfetti();
@@ -14037,12 +14127,15 @@ async function placeOrder(){
   const notes = document.getElementById('o_notes').value.trim();
   const logics = getCheckedLogics('orderLogicChoices');
   const now = new Date();
+  const _miss = gdMissingLevelViolations(sl, tp);
   state.psychology.orders.push({
     id:'ord_'+Date.now(), date:todayStr(), time:now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
     trader, strategy, strategyType, style, logics, pair: pair || null, direction,
     entry: entry!=='' ? parseFloat(entry) : null, sl: sl!=='' ? parseFloat(sl) : null, tp: tp!=='' ? parseFloat(tp) : null,
-    rrPlanned: rrPlanned || null, notes, status:'pending', account: (document.getElementById('o_account').value || 'personal')
+    rrPlanned: rrPlanned || null, notes, status:'pending', account: (document.getElementById('o_account').value || 'personal'),
+    ruleViolations: _miss.codes, ruleViolationLabels: _miss.labels
   });
+  if(_miss.codes.length) gdApplyRuleBreak();
   document.getElementById('o_pair').value='';
   document.getElementById('o_entry').value='';
   document.getElementById('o_sl').value='';
@@ -14054,7 +14147,9 @@ async function placeOrder(){
   if(worthPanel){ worthPanel.style.display = 'none'; worthPanel.innerHTML=''; }
   renderLogicChoices('orderLogicChoices', stratObj ? stratObj.type : null, []);
   await saveState(); renderOrders();
-  showToast('Order placed — close it out once you know the result');
+  showToast(_miss.codes.length
+    ? `Order placed without ${_miss.codes.map(c=>c==='noSL'?'a stop loss':'a take profit').join(' or ')} — discipline score ${computeDisciplineScore()}`
+    : 'Order placed — close it out once you know the result');
 }
 let expandedOrderIds = new Set();
 function toggleOrderCard(id, ev){
@@ -17565,6 +17660,21 @@ html:not([data-theme="light"]) .card{background-color:transparent!important}
 .rb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .rb-chip{font-size:10.5px;padding:3px 9px;border-radius:999px;border:1px solid rgba(244,63,94,.35);background:rgba(244,63,94,.08);color:var(--loss-bright)}
 @media(max-width:720px){.rb-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}#view-rulebreaks .grid{grid-template-columns:1fr!important}}
+</style>
+<style id="gd-score-css">
+.score-breakdown{margin-top:12px;font-size:12px;color:var(--slate)}
+.score-breakdown .sb-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--steel)}
+.score-breakdown .sb-row b{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--loss-bright)}
+.score-breakdown .sb-row em{font-style:normal;color:var(--slate-dim)}
+.score-breakdown .sb-total{border-bottom:0;color:var(--platinum);font-weight:600}
+.score-breakdown .sb-clean{color:var(--win-bright);padding:4px 0}
+.score-breakdown .sb-weights{margin-top:8px}
+.score-breakdown .sb-weights summary{cursor:pointer;color:var(--slate);font-size:11.5px;letter-spacing:.02em;list-style:none}
+.score-breakdown .sb-weights summary::-webkit-details-marker{display:none}
+.score-breakdown .sb-weights summary::after{content:' \25BE'}
+.score-breakdown .sb-weights[open] summary::after{content:' \25B4'}
+.score-breakdown .sb-weights .sb-row b{color:var(--slate)}
+.score-breakdown .sb-note{margin-top:6px;font-size:11px;color:var(--slate-dim)}
 </style>
 <script src="gd-trade-import.js" defer></script>
 <script src="gd-fullscreen.js" defer></script>

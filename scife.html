@@ -3607,17 +3607,27 @@ async function applyTradeAction(action){
     const dir = action.direction==='sell' ? 'sell' : 'buy';
     if(entry==null || isNaN(entry)) return { ok:false, message:'I need the entry price to log that order.' };
     const rrP = (sl!=null && tp!=null && !isNaN(sl) && !isNaN(tp) && entry!==sl) ? (Math.abs(tp-entry)/Math.abs(entry-sl)).toFixed(2) : null;
+    const missLabels = [];
+    if(sl==null || isNaN(sl) || sl===0) missLabels.push('No stop loss logged');
+    if(tp==null || isNaN(tp) || tp===0) missLabels.push('No take profit logged');
     traderRow.psychology.orders.push({
       id:'ord_'+Date.now()+Math.floor(Math.random()*1000), date: todayStr(), time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
       trader:'me', strategy:null, strategyType:null, style:'intraday', logics:[], pair: action.pair||null, direction: dir,
       entry, sl: isNaN(sl) ? null : sl, tp: isNaN(tp) ? null : tp, lot: action.lot!=null ? parseFloat(action.lot) : null,
       rrPlanned: rrP, notes: action.notes||'', status: action.status, orderType: action.orderType || (action.status==='live' ? 'market' : 'limit'),
-      account: resolveActionAccount(action.account)
+      account: resolveActionAccount(action.account),
+      ruleViolations: missLabels, ruleViolationLabels: missLabels
     });
-    const { error } = await sb.from('trader_data').update({ psychology: traderRow.psychology, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+    const orderUpdate = { psychology: traderRow.psychology, updated_at: new Date().toISOString() };
+    if(missLabels.length){
+      sigRolloverDayIfNeeded();
+      traderRow.day.ruleBrokenToday = true; traderRow.streak.count = 0;
+      orderUpdate.day = traderRow.day; orderUpdate.streak = traderRow.streak;
+    }
+    const { error } = await sb.from('trader_data').update(orderUpdate).eq('user_id', currentUser.id);
     logAction('log_trade', { status: action.status, pair: action.pair, entry }, !error);
     if(error) return { ok:false, message:'Could not save that order. Try again in a moment.' };
-    return { ok:true, message:`${action.status==='live' ? 'Live trade' : 'Pending order'} saved: ${dir.toUpperCase()} ${action.pair||''} @ ${entry}.` };
+    return { ok:true, brokeRule: missLabels.length>0, message:`${action.status==='live' ? 'Live trade' : 'Pending order'} saved: ${dir.toUpperCase()} ${action.pair||''} @ ${entry}.` + (missLabels.length ? ' ' + missLabels.join(' and ') + ', so your discipline score drops and the streak resets.' : '') };
   }
   if(action.type === 'log_trade'){
     sigRolloverDayIfNeeded();
@@ -3685,6 +3695,9 @@ async function applyTradeAction(action){
     if(session.restrict && !sigIsInSession(session)){
       violations.push(`Traded outside session window (${session.start}–${session.end})`);
     }
+    // Same rule index.html applies: SL and TP are part of the plan, skipping them costs discipline points.
+    if(trade.sl==null) violations.push('No stop loss logged');
+    if(trade.tp==null) violations.push('No take profit logged');
     trade.ruleViolations = violations;
     const brokeRule = violations.length > 0;
     if(brokeRule){ traderRow.day.ruleBrokenToday = true; traderRow.streak.count = 0; }
@@ -3837,6 +3850,7 @@ To do this, end your reply with a single action block on its own line, and NOTHI
 <<<ACTION>>>{...json...}<<<END>>>
 
 For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"<a prop firm id from the list above>","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
+When the trader logs a trade without a stop loss or take profit, ask for them. If they decline, leave sl and tp out: a trade without SL or TP is a rule break that lowers their discipline score (missing SL costs more than missing TP). Include "sl" and "tp" in the action whenever you have them.
 For trades read from screenshots or pasted history: first list what you found and ask the trader for the SL and TP of any trade where they are not visible. Never guess SL or TP. Once you have them, emit ONE action: {"type":"log_trade","date":"YYYY-MM-DD","trades":[{"pair":"XAUUSD","direction":"buy"|"sell","status":"executed"|"live"|"pending","entry":2650.5,"sl":2645,"tp":2662,"lot":0.1,"pnl":120,"result":"win"|"loss"}]}. A single trade can also carry status, entry, sl, tp, lot and direction. status "live" (open position) and "pending" (unfilled order) go to the Orders book and need no pnl; omit status for a closed trade.
 For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
 For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
