@@ -13623,9 +13623,10 @@ async function submitTrade(){
   const closingOrder = closingOrderId ? state.psychology.orders.find(o=>o.id===closingOrderId) : null;
   const tAccountSel = document.getElementById('t_account');
   const tradeAccount = closingOrder ? (closingOrder.account || 'personal') : ((tAccountSel && tAccountSel.value) || 'personal');
+  const _gx = (typeof gdTradeExtra==='function') ? gdTradeExtra() : {};
   const newTrade = { id: Date.now(), date: tradeDate, time: now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), result, rr: rr || null, notes, lossAmount: result==='loss' ? lossAmount : 0, winAmount: result==='win' ? winAmount : 0, trader, strategy, strategyType, logics, mood: selectedMood,
     screenshotPath:null, screenshotUrl:null, tvLink:tvLinkRaw || null, openChartOnCalendar:openChartOnCalendar && !!tvLinkRaw,
-    pair: closingOrder ? closingOrder.pair : null, entry: closingOrder ? closingOrder.entry : null, sl: closingOrder ? closingOrder.sl : null, tp: closingOrder ? closingOrder.tp : null, style: closingOrder ? closingOrder.style : null,
+    pair: closingOrder ? closingOrder.pair : (_gx.pair||null), entry: closingOrder ? closingOrder.entry : (_gx.entry!=null?_gx.entry:null), sl: closingOrder ? closingOrder.sl : (_gx.sl!=null?_gx.sl:null), tp: closingOrder ? closingOrder.tp : (_gx.tp!=null?_gx.tp:null), direction: closingOrder ? (closingOrder.direction||null) : (_gx.direction||null), lot: closingOrder ? (closingOrder.lot!=null?closingOrder.lot:null) : (_gx.lot!=null?_gx.lot:null), exit: _gx.exit!=null?_gx.exit:null, style: closingOrder ? closingOrder.style : null,
     account: tradeAccount };
   state.trades.push(newTrade);
   state.day.tradesCount += 1;
@@ -14086,7 +14087,7 @@ function buildOrderRowsHTML(orders){
       <div class="order-row-top" role="button" tabindex="0" aria-expanded="${isExpanded?'true':'false'}" onclick="toggleOrderCard('${o.id}', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOrderCard('${o.id}', event);}">
         <div class="trade-badge pending">${o.direction==='sell'?'SELL':'BUY'}</div>
         <div class="order-row-info">
-          <span class="top">${o.pair ? escapeHtml(o.pair) : 'No pair set'}</span>
+          <span class="top">${o.pair ? escapeHtml(o.pair) : 'No pair set'}${o.status==='live' ? '<span class="gd-live-chip">LIVE</span>' : (o.orderType && o.orderType!=='market' ? '<span class="gd-live-chip" style="color:var(--slate);border-color:var(--steel)">'+escapeHtml(String(o.orderType).toUpperCase())+'</span>' : '')}</span>
         </div>
         <span class="order-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
         <button class="btn btn-sm btn-ghost order-cancel-btn" onclick="event.stopPropagation(); cancelOrder('${o.id}')" title="Cancel order">✕</button>
@@ -14113,6 +14114,7 @@ function buildOrderRowsHTML(orders){
             ${(o.logics||[]).map(id=>`<span class="tag-chip">${escapeHtml(logicLabel(id))}</span>`).join('')}
           </div>
           <div class="order-actions">
+            ${o.status==='live' ? '' : `<button class="btn btn-sm btn-ghost gd-fill-btn" onclick="event.stopPropagation(); gdMarkFilled('${o.id}')">Mark filled</button>`}
             <button class="btn btn-sm btn-win" onclick="event.stopPropagation(); closeOrder('${o.id}','win')">Won</button>
             <button class="btn btn-sm btn-loss" onclick="event.stopPropagation(); closeOrder('${o.id}','loss')">Lost</button>
           </div>
@@ -17564,6 +17566,7 @@ html:not([data-theme="light"]) .card{background-color:transparent!important}
 .rb-chip{font-size:10.5px;padding:3px 9px;border-radius:999px;border:1px solid rgba(244,63,94,.35);background:rgba(244,63,94,.08);color:var(--loss-bright)}
 @media(max-width:720px){.rb-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}#view-rulebreaks .grid{grid-template-columns:1fr!important}}
 </style>
+<script src="gd-trade-import.js" defer></script>
 <script src="gd-fullscreen.js" defer></script>
 <script src="gd-liquid-nav.js" defer></script>
 </body>

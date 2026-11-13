@@ -3587,6 +3587,38 @@ async function applyTradeAction(action){
     return {ok:true,message:`Portal color changed to ${theme}.`};
   }
   traderRow.trades = traderRow.trades || [];
+  if(action.type === 'log_trade' && Array.isArray(action.trades)){
+    // Batch from screenshots/text: one action, many trades. Apply one by one so every
+    // trade runs the same rule checks, and report a single summary.
+    const msgs = []; let okCount = 0, broke = false;
+    for(const t of action.trades.slice(0,12)){
+      const r = await applyTradeAction(Object.assign({}, t, { type:'log_trade', account: t.account || action.account, date: t.date || action.date }));
+      if(r){ if(r.ok) okCount++; if(r.brokeRule) broke = true; if(!r.ok) msgs.push(r.message); }
+    }
+    return { ok: okCount>0, brokeRule: broke, message: `Logged ${okCount} of ${action.trades.length} trades.` + (broke ? ' Some broke your rules.' : '') + (msgs.length ? ' ' + msgs.join(' ') : '') };
+  }
+  if(action.type === 'log_trade' && (action.status === 'live' || action.status === 'pending')){
+    // Open positions and pending orders go to the Orders book, not the closed-trade journal.
+    traderRow.psychology = traderRow.psychology || {};
+    traderRow.psychology.orders = traderRow.psychology.orders || [];
+    const entry = action.entry!=null ? parseFloat(action.entry) : null;
+    const sl = action.sl!=null ? parseFloat(action.sl) : null;
+    const tp = action.tp!=null ? parseFloat(action.tp) : null;
+    const dir = action.direction==='sell' ? 'sell' : 'buy';
+    if(entry==null || isNaN(entry)) return { ok:false, message:'I need the entry price to log that order.' };
+    const rrP = (sl!=null && tp!=null && !isNaN(sl) && !isNaN(tp) && entry!==sl) ? (Math.abs(tp-entry)/Math.abs(entry-sl)).toFixed(2) : null;
+    traderRow.psychology.orders.push({
+      id:'ord_'+Date.now()+Math.floor(Math.random()*1000), date: todayStr(), time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+      trader:'me', strategy:null, strategyType:null, style:'intraday', logics:[], pair: action.pair||null, direction: dir,
+      entry, sl: isNaN(sl) ? null : sl, tp: isNaN(tp) ? null : tp, lot: action.lot!=null ? parseFloat(action.lot) : null,
+      rrPlanned: rrP, notes: action.notes||'', status: action.status, orderType: action.orderType || (action.status==='live' ? 'market' : 'limit'),
+      account: resolveActionAccount(action.account)
+    });
+    const { error } = await sb.from('trader_data').update({ psychology: traderRow.psychology, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+    logAction('log_trade', { status: action.status, pair: action.pair, entry }, !error);
+    if(error) return { ok:false, message:'Could not save that order. Try again in a moment.' };
+    return { ok:true, message:`${action.status==='live' ? 'Live trade' : 'Pending order'} saved: ${dir.toUpperCase()} ${action.pair||''} @ ${entry}.` };
+  }
   if(action.type === 'log_trade'){
     sigRolloverDayIfNeeded();
     const pnl = parseFloat(action.pnl);
@@ -3609,7 +3641,12 @@ async function applyTradeAction(action){
       logics: [],
       mood: ['calm','confident','fomo','revenge','bored','anxious'].includes(action.mood) ? action.mood : null,
       pair: action.pair || null,
-      account: action.account==='propfirm' ? 'propfirm' : 'personal',
+      direction: action.direction==='sell' ? 'sell' : (action.direction==='buy' ? 'buy' : null),
+      entry: action.entry!=null && !isNaN(parseFloat(action.entry)) ? parseFloat(action.entry) : null,
+      sl: action.sl!=null && !isNaN(parseFloat(action.sl)) ? parseFloat(action.sl) : null,
+      tp: action.tp!=null && !isNaN(parseFloat(action.tp)) ? parseFloat(action.tp) : null,
+      lot: action.lot!=null && !isNaN(parseFloat(action.lot)) ? parseFloat(action.lot) : null,
+      account: resolveActionAccount(action.account),
       screenshotUrl: null, tvLink: null
     };
 
@@ -3800,6 +3837,7 @@ To do this, end your reply with a single action block on its own line, and NOTHI
 <<<ACTION>>>{...json...}<<<END>>>
 
 For a new trade: {"type":"log_trade","result":"win"|"loss","pair":"EURUSD","pnl":120,"rr":2,"account":"personal"|"<a prop firm id from the list above>","date":"YYYY-MM-DD","mood":"calm"|"confident"|"fomo"|"revenge"|"bored"|"anxious","notes":"short note","strategy":"name or omit"}
+For trades read from screenshots or pasted history: first list what you found and ask the trader for the SL and TP of any trade where they are not visible. Never guess SL or TP. Once you have them, emit ONE action: {"type":"log_trade","date":"YYYY-MM-DD","trades":[{"pair":"XAUUSD","direction":"buy"|"sell","status":"executed"|"live"|"pending","entry":2650.5,"sl":2645,"tp":2662,"lot":0.1,"pnl":120,"result":"win"|"loss"}]}. A single trade can also carry status, entry, sl, tp, lot and direction. status "live" (open position) and "pending" (unfilled order) go to the Orders book and need no pnl; omit status for a closed trade.
 For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
 For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
 For changing portal colors when explicitly requested: {"type":"set_theme","theme":"dark"}
