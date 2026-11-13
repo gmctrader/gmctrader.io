@@ -22,6 +22,31 @@ function imageLimit(){
   return 0;
 }
 function tierName(){ return userTier==='premium' ? 'Premium' : (userTier==='elite' ? 'Elite' : (userTier==='pro' ? 'Pro' : 'Free')); }
+/* ---------- accounts: the same list the Log Trade form offers ---------- */
+function acctList(){
+  var list = [{ id:'personal', label:'Personal' }];
+  if(isDemoMode) return list;
+  var pfs = (typeof activePropFirmAccounts==='function') ? activePropFirmAccounts() : (state.propFirms||[]);
+  pfs.forEach(function(pf){ list.push({ id:pf.id, label:'Prop Firm \u2014 ' + (pf.firmName || 'Unnamed account') }); });
+  return list;
+}
+function acctLabel(id){ var a = acctList().filter(function(x){ return x.id===id; })[0]; return a ? a.label : 'Personal'; }
+function acctOptionsHtml(selected){
+  var list = acctList();
+  var html = list.length>1 ? '<option value=""' + (selected ? '' : ' selected') + '>Choose account\u2026</option>' : '';
+  return html + list.map(function(a){ return '<option value="' + escapeHtml(String(a.id)) + '"' + (a.id===selected ? ' selected' : '') + '>' + escapeHtml(a.label) + '</option>'; }).join('');
+}
+function fillAccountSelects(){
+  ['gdImpAccount','gdRevAccount'].forEach(function(id){ var el = document.getElementById(id); if(el) el.innerHTML = acctOptionsHtml(imp.account); });
+  var hint = document.getElementById('gdImpAcctHint');
+  if(hint) hint.textContent = acctList().length>1 ? 'Trades, orders, drawdown and discipline all update on the account you pick.' : '';
+}
+window.gdSetAccount = function(v){
+  imp.account = acctList().some(function(a){ return a.id===v; }) ? v : '';
+  fillAccountSelects();
+  var m = $('gdImpMsg'); if(m && imp.account) m.textContent = '';
+  if(imp.rows && imp.rows.length){ imp.rows.forEach(function(r,i){ refreshRow(i); }); refreshCommit(); }
+};
 window.gdUpgrade = function(){ if(typeof packageUpgradeUrl==='function') window.location.assign(packageUpgradeUrl('pro')); };
 var FREE_IMPORTS_PER_DAY = 3;
 var imp = { images:[], rows:[], tab:'photos', text:'', fileName:'', keepShots:true, busy:false };
@@ -299,6 +324,7 @@ function buildOverlay(){
         '<button class="btn btn-sm btn-ghost" onclick="gdCloseImport()" aria-label="Close">\u2715</button>' +
       '</div>' +
       '<div id="gdImpInput">' +
+        '<div class="field" style="margin-top:12px"><label>Import into which account?</label><select id="gdImpAccount" onchange="gdSetAccount(this.value)"></select><div class="gd-note" id="gdImpAcctHint" style="margin-top:4px"></div></div>' +
         '<div class="gd-tabs">' +
           '<button type="button" data-tab="photos" class="on" onclick="gdImpTab(\'photos\')">Photos</button>' +
           '<button type="button" data-tab="text" onclick="gdImpTab(\'text\')">Paste text</button>' +
@@ -345,7 +371,8 @@ function buildOverlay(){
 window.gdOpenImport = function(files){
   if(isDemoMode){ showToast('Import is not available in demo mode'); return; }
   buildOverlay();
-  imp = { images:[], rows:[], tab:'photos', busy:false, date: todayStr() };
+  imp = { images:[], rows:[], tab:'photos', busy:false, date: todayStr(), account: (acctList().length===1 ? 'personal' : '') };
+  fillAccountSelects();
   $('gdImpInput').style.display=''; $('gdImpReview').style.display='none'; $('gdImpMsg').textContent='';
   $('gdPasteText').value=''; $('gdFileName').textContent='';
   var lim = imageLimit();
@@ -607,7 +634,7 @@ function enrich(rows){
       if(r.sl==null && m.sl!=null){ r.sl = m.sl; r.src.sl = 'from your order'; }
       if(r.tp==null && m.tp!=null){ r.tp = m.tp; r.src.tp = 'from your order'; }
       if(r.lot==null && m.lot!=null) r.lot = m.lot;
-      r.strategy = m.strategy||null; r.strategyType = m.strategyType||null; r.logics = m.logics||[]; r.trader = m.trader; r.account = m.account; r.orderNotes = m.notes||'';
+      r.strategy = m.strategy||null; r.strategyType = m.strategyType||null; r.logics = m.logics||[]; r.trader = m.trader; r.matchedAccount = m.account || 'personal'; r.orderNotes = m.notes||'';
       if(r.status!=='executed' && m.status===r.status){ r.skip = true; r.note = 'Already in your orders'; }
     }
     if(r.sl!=null && !r.src.sl) r.src.sl = 'read from image';
@@ -630,6 +657,7 @@ function dateFromRows(list){
 window.gdRunExtract = async function(){
   if(imp.busy) return;
   var msg = $('gdImpMsg'); msg.textContent = '';
+  if(!imp.account){ msg.textContent = 'Choose which account these trades belong to first.'; var as = $('gdImpAccount'); if(as) as.focus(); return; }
   var found = [], date = null;
   try{
     imp.busy = true; $('gdReadBtn').disabled = true; $('gdReadBtn').textContent = 'Reading\u2026';
@@ -708,11 +736,13 @@ function showReview(){
   var n = imp.rows.length;
   el.innerHTML =
     '<div class="gd-note" style="margin-top:10px">Found <b>'+n+'</b> trade'+(n===1?'':'s')+'. Everything else is filled in. Add <b>SL and TP</b> where highlighted. You can skip them, but that lowers your discipline score. Amber fields were hard to read, so double-check them.</div>' +
+    '<div class="field" style="max-width:320px"><label>Importing into</label><select id="gdRevAccount" onchange="gdSetAccount(this.value)"></select></div>' +
     '<div class="field" style="max-width:220px"><label>Trading day</label><input type="date" id="gdImpDate" max="'+todayStr()+'" value="'+imp.date+'" onchange="gdSetDate(this.value)"></div>' +
     '<div id="gdRows">'+imp.rows.map(rowHtml).join('')+'</div>' +
     '<div class="btn-row" style="margin-top:12px"><button class="btn btn-ghost" style="flex:1" onclick="gdBackToInput()">Back</button>' +
     '<button class="btn btn-primary" style="flex:2" id="gdCommitBtn" onclick="gdCommit()" disabled>Add trades</button></div>' +
     '<div class="gd-note" id="gdCommitHint"></div>';
+  fillAccountSelects();
   imp.rows.forEach(function(r,i){ refreshRow(i); }); refreshCommit();
 }
 window.gdBackToInput = function(){ $('gdImpReview').style.display='none'; $('gdImpInput').style.display=''; };
@@ -742,7 +772,7 @@ function refreshRow(i){
   var meta = $('gdMeta'+i); if(!meta) return;
   if(c.skipped) meta.textContent = r.note || 'Skipped';
   else if(!c.ok) meta.innerHTML = '<span class="err">'+escapeHtml(c.msg)+'</span>';
-  else meta.innerHTML = (c.rr!=null ? 'Planned R:R ' + c.rr.toFixed(2) : 'R:R needs SL and TP') + (r.matchedOrderId ? ' \u00b7 will close your matching order' : '') + (warn ? ' <span class="warn">\u00b7 ' + escapeHtml(penaltyText(c.miss)) + '</span>' : '');
+  else meta.innerHTML = (c.rr!=null ? 'Planned R:R ' + c.rr.toFixed(2) : 'R:R needs SL and TP') + (r.matchedOrderId ? ' \u00b7 will close your matching order' + ((r.matchedAccount && imp.account && r.matchedAccount!==imp.account) ? ' (it was on ' + escapeHtml(acctLabel(r.matchedAccount)) + ', trade logs to ' + escapeHtml(acctLabel(imp.account)) + ')' : '') : '') + (warn ? ' <span class="warn">\u00b7 ' + escapeHtml(penaltyText(c.miss)) + '</span>' : '');
 }
 function projectedPenalty(active){
   var extra = [];
@@ -754,11 +784,12 @@ function refreshCommit(){
   var active = imp.rows.filter(function(r){ return !r.skip; });
   var bad = active.filter(function(r){ return !rowCheck(r).ok; }).length;
   var btn = $('gdCommitBtn'), hint = $('gdCommitHint'); if(!btn) return;
-  btn.disabled = !active.length || bad>0;
+  btn.disabled = !active.length || bad>0 || !imp.account;
   btn.textContent = active.length ? 'Add '+active.length+' trade'+(active.length===1?'':'s') : 'Nothing to add';
   if(!hint) return;
   var pen = bad ? 0 : projectedPenalty(active);
-  if(bad) hint.textContent = bad+' trade'+(bad===1?'':'s')+' still need a fix.';
+  if(!imp.account) hint.textContent = 'Choose the account to import into.';
+  else if(bad) hint.textContent = bad+' trade'+(bad===1?'':'s')+' still need a fix.';
   else if(pen>0) hint.textContent = 'Missing SL / TP will lower the discipline score for ' + imp.date + ' by ' + pen + ' points' + (imp.date===todayStr() ? ' and reset your streak' : '') + '. Add them to avoid it.';
   else hint.textContent = '';
 }
@@ -795,9 +826,13 @@ window.gdCommit = async function(){
   var btn = $('gdCommitBtn'); if(btn){ btn.disabled = true; btn.textContent = 'Saving\u2026'; }
   try{
     rolloverDayIfNeeded();
+    if(!imp.account) throw new Error('Choose which account to import into');
     var shots = await uploadShots();
-    var tSel = $('t_trader'), aSel = $('t_account');
-    var defTrader = (tSel && tSel.value) || 'me', defAcct = (aSel && aSel.value) || 'personal';
+    var tSel = $('t_trader');
+    var defTrader = (tSel && tSel.value) || 'me', defAcct = imp.account;
+    if(!defAcct) throw new Error('Choose which account to import into');
+    if(defAcct!=='personal' && !(typeof getPropFirm==='function' && getPropFirm(defAcct))) throw new Error('That account is no longer available');
+    var acctPf = defAcct==='personal' ? null : getPropFirm(defAcct);
     var rows = imp.rows.filter(function(r){ return !r.skip; }).sort(function(a,b){
       return String(a.closeTime||a.openTime||'').localeCompare(String(b.closeTime||b.openTime||'')) || a.n-b.n; });
     var isToday = imp.date === todayStr(), nExec=0, nLive=0, nPend=0, broke=false, newTrades=[];
@@ -817,11 +852,19 @@ window.gdCommit = async function(){
           trader: r.trader || defTrader, strategy: r.strategy||null, strategyType: r.strategyType||null, logics: r.logics||[], mood:null,
           screenshotPath: shots[r.imageIndex]!=null ? shots[r.imageIndex] : (shots[0]||null), screenshotUrl:null, tvLink:null, openChartOnCalendar:false,
           pair:r.pair, direction:r.dir, entry:r.entry, exit:r.exit, sl:r.sl, tp:r.tp, lot:r.lot, ticket:r.ticket, style:null,
-          account: r.account || defAcct, imported:true };
+          account: defAcct, imported:true };
         if(isToday){
           state.day.tradesCount += 1;
-          if(result==='loss'){ state.day.lossUsed = +(state.day.lossUsed + amt).toFixed(2); state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now(); }
-          else state.consecutiveLosses = 0;
+          if(result==='loss'){
+            // Same currency handling as Log Trade: the daily-loss gate is priced in the personal currency.
+            var lossForGate = amt, personalCcy = state.rules.currency || 'USD';
+            var lossCcy = acctPf ? (acctPf.currency || personalCcy) : personalCcy;
+            if(lossCcy !== personalCcy && typeof getCachedFxRate==='function'){
+              var fx = getCachedFxRate(lossCcy, personalCcy);
+              if(fx!=null) lossForGate = amt*fx; else if(typeof ensureFxRatesLoaded==='function') ensureFxRatesLoaded();
+            }
+            state.day.lossUsed = +(state.day.lossUsed + lossForGate).toFixed(2); state.consecutiveLosses += 1; state.psychology.lastLossAt = Date.now();
+          } else state.consecutiveLosses = 0;
         }
         var v = violations(t, isToday);
         t.ruleViolations = v.map(function(x){ return x.code; }); t.ruleViolationLabels = v.map(function(x){ return x.label; });
@@ -830,11 +873,17 @@ window.gdCommit = async function(){
       } else {
         var om = gdMissingLevelViolations(r.sl, r.tp);
         if(om.codes.length && isToday){ broke = true; state.day.ruleBrokenToday = true; state.streak.count = 0; }
-        state.psychology.orders.push({ id:'ord_'+(Date.now()+k), date: imp.date, time: time, trader: r.trader||defTrader,
+        var money = null;
+        if(acctPf && r.lot!=null && r.entry!=null && r.sl!=null && r.tp!=null && typeof computeOrderMoney==='function'){
+          try{ money = computeOrderMoney(r.entry, r.sl, r.tp, r.pair, r.lot, state.rules.accountType||'standard', acctPf.currency||state.rules.currency||'USD'); }catch(e){}
+        }
+        state.psychology.orders.push({ id:'ord_'+(Date.now()+k), date: imp.date,
+          riskAmt: money && money.risk!=null ? +Number(money.risk).toFixed(2) : null,
+          rewardAmt: money && money.reward!=null ? +Number(money.reward).toFixed(2) : null, time: time, trader: r.trader||defTrader,
           strategy:r.strategy||null, strategyType:r.strategyType||null, style:'intraday', logics:r.logics||[],
           pair:r.pair, direction:r.dir, entry:r.entry, sl:r.sl, tp:r.tp, lot:r.lot, rrPlanned: rr!=null ? rr.toFixed(2) : null,
           notes: r.orderNotes||'Imported', status:r.status, orderType:r.orderType||'market', ticket:r.ticket,
-          account: r.account || defAcct, imported:true, ruleViolations: om.codes, ruleViolationLabels: om.labels });
+          account: defAcct, imported:true, ruleViolations: om.codes, ruleViolationLabels: om.labels });
         if(r.status==='live') nLive++; else nPend++;
       }
     });
@@ -843,8 +892,9 @@ window.gdCommit = async function(){
     if(newTrades.length && typeof refreshTradeScreenshotUrls==='function') { try{ await refreshTradeScreenshotUrls(newTrades); }catch(e){} }
     await saveState(); renderAll();
     gdCloseImport();
+    if(!broke && newTrades.some(function(t){ return t.result==='win'; }) && typeof fireConfetti==='function'){ try{ fireConfetti(); }catch(e){} }
     var parts = []; if(nExec) parts.push(nExec+' executed'); if(nLive) parts.push(nLive+' live'); if(nPend) parts.push(nPend+' pending');
-    showToast('Imported ' + parts.join(', ') + (broke ? '. Rule break flagged, streak reset.' : '.') + (isToday ? ' Discipline score ' + computeDisciplineScore() + '.' : ''));
+    showToast('Imported ' + parts.join(', ') + ' to ' + acctLabel(defAcct) + (broke ? '. Rule break flagged, streak reset.' : '.') + (isToday ? ' Discipline score ' + computeDisciplineScore() + '.' : ''));
   }catch(e){
     showToast('Import failed: ' + ((e && e.message) || 'try again'));
     if(btn){ btn.disabled = false; btn.textContent = 'Add trades'; }
