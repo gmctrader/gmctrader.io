@@ -876,6 +876,8 @@ function wirePenaltyHints(){
 }
 
 function renderDashCard(){
+  /* The Order Screenshots page (gd-order-scans.js) owns this slot now: a slim strip that opens the page. */
+  if(typeof window.gdRenderOrderStrip==='function'){ window.gdRenderOrderStrip(); return; }
   var card = $('gdDashOrders'); if(!card) return;
   if(isDemoMode){ card.style.display = 'none'; return; }
   var lim = imageLimit();

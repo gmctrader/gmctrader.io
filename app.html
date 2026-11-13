@@ -3115,6 +3115,10 @@ setTimeout(function(){
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7z"/><path d="M5 7h14l-1.2 12.2A2 2 0 0115.8 21H8.2a2 2 0 01-2-1.8z"/><path d="M9 12h6"/></svg>
         Order Book
       </button>
+      <button class="side-navbtn" data-view="orderscans">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2"/><path d="M7 12h10"/></svg>
+        Order Screenshots
+      </button>
       <div class="side-nav-label">Strategy &amp; mindset</div>
       <button class="side-navbtn" data-view="playbook">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
@@ -3244,7 +3248,7 @@ setTimeout(function(){
     if(!root||!side)return;
     var groups=[
       {direct:['dashboard','brief','journal','analytics']},
-      {label:'Markets',items:['calendar','orders','session']},
+      {label:'Markets',items:['calendar','orders','orderscans','session']},
       {label:'Trading',items:['playbook','stratnotes','backtest','psychology','rules']},
       {label:'Prop',items:['propfirm','proporders','propequity','propfirmrisk','propfirmpayout']},
       {label:'More',items:['team','elite','addfeatures','edgelab','scifeNavBtn','profile','packages','about','getAppBtn','signoutNavBtn']}
@@ -3950,6 +3954,9 @@ setTimeout(function(){
     </div>
 
     <!-- PROP ORDER BOOK: pending orders for prop firm accounts -->
+    <!-- ORDER SCREENSHOTS -->
+    <div class="view" id="view-orderscans"></div>
+
     <div class="view" id="view-proporders">
       <div class="topbar-row">
         <div>
@@ -9175,6 +9182,7 @@ document.querySelectorAll('.side-navbtn[data-view]').forEach(btn=>{
     if(btn.dataset.view==='reviewroom') renderReviewRoom();
     if(btn.dataset.view==='profile') renderProfileDetails();
     if(btn.dataset.view==='orders') renderOrders();
+    if(btn.dataset.view==='orderscans' && window.renderOrderScans) renderOrderScans();
     if(btn.dataset.view==='proporders') { populatePropOrderSelectors(); renderPropOrders(); }
     if(btn.dataset.view==='propfirm') { renderPropFirmForm(); renderPropFirmCompliance(); }
     if(btn.dataset.view==='propequity') { triggerAnalyticsOpenFeel(); renderPropEquity(); }
@@ -17677,6 +17685,7 @@ html:not([data-theme="light"]) .card{background-color:transparent!important}
 .score-breakdown .sb-note{margin-top:6px;font-size:11px;color:var(--slate-dim)}
 </style>
 <script src="gd-trade-import.js" defer></script>
+<script src="gd-order-scans.js" defer></script>
 <script src="gd-fullscreen.js" defer></script>
 <script src="gd-liquid-nav.js" defer></script>
 </body>

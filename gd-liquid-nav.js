@@ -18,7 +18,7 @@
   var TABS = [['dashboard','Overview'],['brief','Daily Brief'],['journal','Journal'],['analytics','Analytics'],['propfirm','Prop']];
   var GROUPS = [
     ['Today',   ['dashboard','brief','journal','analytics','rulebreaks']],
-    ['Markets', ['calendar','orders','session']],
+    ['Markets', ['calendar','orders','orderscans','session']],
     ['Trading', ['tradeplan','reviewroom','playbook','stratnotes','backtest','psychology','rules']],
     ['Prop',    ['propfirm','proporders','propequity','propfirmrisk','propfirmpayout']],
     ['More',    ['team','elite','addfeatures','edgelab','pipx','scifeNavBtn','profile','packages','about','getAppBtn','signoutNavBtn']]
