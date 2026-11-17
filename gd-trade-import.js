@@ -401,11 +401,11 @@ function normalizeImage(file){
     reader.onload = function(){
       var img = new Image();
       img.onload = function(){
-        var MAX = 2200, w = img.width, h = img.height;
+        var MAX = 1800, w = img.width, h = img.height;
         if(w>MAX || h>MAX){ var s = MAX/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
         var c = document.createElement('canvas'); c.width=w; c.height=h;
         var ctx = c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
-        var url = c.toDataURL('image/jpeg', 0.9);
+        var url = c.toDataURL('image/jpeg', 0.85);
         resolve({ mime:'image/jpeg', data:url.slice(url.indexOf(',')+1), previewUrl:url });
       };
       img.onerror = function(){ reject(new Error('Could not read that image')); };
@@ -454,32 +454,76 @@ function extractSystemPrompt(){
   'Also read TradingView long/short position tool boxes (entry, stop, target). Normalise symbols (Gold -> XAUUSD, US30, NAS100, EURUSD). If screenshots overlap, list each trade once. Ignore balance, deposit and withdrawal rows. ' +
   '"date" is the trading day shown (the most common close date). Today is ' + todayStr() + '. imageIndex is the zero-based index of the image the trade appears in.';
 }
+/* Google's "high demand" / 503 errors are temporary. Instead of failing the whole
+   scan on the first one, retry with a short backoff and then fall back to the next
+   model in the chain. Every model below is a current Gemini API endpoint.
+   (gemini-3.6-flash is deliberately left out: it retires on 19 Nov 2026.) */
+var AI_CHAIN_STD = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.5-flash'];
+var AI_CHAIN_PRO = ['gemini-3.1-pro-preview'].concat(AI_CHAIN_STD);
+var AI_TRIES_PER_MODEL = 2, AI_ATTEMPT_MS = 45000, AI_TOTAL_MS = 90000;
+function aiSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function aiTransient(status, msg){
+  if(status===0 || status===408 || status===429 || status===500 || status===502 || status===503 || status===504 || status===529) return true;
+  if(status===401 || status===403) return false;
+  return /high demand|overload|unavailable|try again later|temporar|capacity|\bbusy\b|rate.?limit|quota|deadline|timed? ?out/i.test(msg||'');
+}
+function aiModelProblem(status, msg){ return (status===400 || status===404) && /model/i.test(msg||''); }
+function setImpStatus(t){ var m = $('gdImpMsg'); if(m) m.textContent = t || ''; }
 async function callAI(userText, images){
   var s = await sb.auth.getSession();
   var session = s && s.data && s.data.session;
   if(!session) throw new Error('Sign in to use AI import');
   var parts = (images||[]).map(function(im){ return { inline_data:{ mime_type:im.mime, data:im.data } }; });
   parts.push({ text:userText });
-  var body = {
-    model: userTier==='premium' ? 'gemini-3.1-pro-preview' : 'gemini-3.8-flash',
-    contents:[{ role:'user', parts:parts }],
-    systemInstruction:{ role:'user', parts:[{ text:extractSystemPrompt() }] },
-    generationConfig:{ temperature:0.1, maxOutputTokens:4096 }
-  };
-  var res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY },
-    body: JSON.stringify(body)
-  });
-  if(!res.ok){
-    var err = await res.json().catch(function(){return {};});
-    throw new Error((err.error && err.error.message) || ('AI request failed ('+res.status+')'));
+  var chain = userTier==='premium' ? AI_CHAIN_PRO : AI_CHAIN_STD;
+  var started = Date.now(), lastMsg = '', lastStatus = 0, attempt = 0;
+  for(var m=0; m<chain.length; m++){
+    for(var t=0; t<AI_TRIES_PER_MODEL; t++){
+      if(Date.now() - started > AI_TOTAL_MS) break;
+      if(attempt>0) setImpStatus('The AI reader is busy. Retrying (' + (attempt+1) + ')\u2026');
+      attempt++;
+      var body = {
+        model: chain[m],
+        contents:[{ role:'user', parts:parts }],
+        systemInstruction:{ role:'user', parts:[{ text:extractSystemPrompt() }] },
+        generationConfig:{ temperature:0.1, maxOutputTokens:8192, responseMimeType:'application/json' }
+      };
+      var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, AI_ATTEMPT_MS) : null;
+      var res = null;
+      try{
+        res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY },
+          body: JSON.stringify(body),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+      }catch(e){
+        lastStatus = 0; lastMsg = (e && e.name==='AbortError') ? 'timed out' : 'network error';
+      }finally{ if(timer) clearTimeout(timer); }
+      if(res){
+        if(res.ok){
+          var data = await res.json().catch(function(){ return null; });
+          var cand = data && data.candidates && data.candidates[0];
+          var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){ return p.thought ? '' : (p.text||''); }).join('');
+          if(text && text.trim()) return text;
+          var why = (data && data.promptFeedback && data.promptFeedback.blockReason) || (cand && cand.finishReason) || '';
+          if(why==='SAFETY' || why==='PROHIBITED_CONTENT' || why==='BLOCKLIST') throw new Error('The AI blocked that image. Try a plainer screenshot of just the trade rows.');
+          lastStatus = 200; lastMsg = 'empty reply' + (why ? ' (' + why + ')' : '');
+        } else {
+          var err = await res.json().catch(function(){ return {}; });
+          lastStatus = res.status;
+          lastMsg = (err && err.error && (err.error.message || err.error)) || (err && err.message) || '';
+          if(typeof lastMsg !== 'string') lastMsg = JSON.stringify(lastMsg);
+          if(aiModelProblem(res.status, lastMsg)) break;                 // this model id is rejected: next model
+          if(!aiTransient(res.status, lastMsg)) throw new Error(lastMsg || ('AI request failed ('+res.status+')'));
+        }
+      }
+      if(t < AI_TRIES_PER_MODEL-1) await aiSleep(1200*(t+1) + Math.floor(Math.random()*500));
+    }
+    if(Date.now() - started > AI_TOTAL_MS) break;
   }
-  var data = await res.json();
-  var cand = data.candidates && data.candidates[0];
-  var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){ return p.text||''; }).join('');
-  if(!text) throw new Error('The AI returned nothing. Try a clearer screenshot.');
-  return text;
+  throw new Error('The AI reader is overloaded right now' + (lastStatus ? ' (' + lastStatus + ')' : '') + '. This scan was NOT counted against your daily limit. Wait a minute and try again, or use Paste text / CSV.');
 }
 function parseJsonLoose(text){
   var t = String(text).replace(/```json|```/gi,'').trim();
@@ -496,18 +540,27 @@ async function aiExtract(userText, images){
   if(!obj || !Array.isArray(obj.trades)) throw new Error('Could not read trades from that. Try a clearer image or paste the text.');
   return obj;
 }
-async function claimImport(){
-  // Shares SciFe's daily image allowance (trader_data.scife.usage). One import = one use.
+async function importAllowed(){
+  // Read-only check. The allowance is only spent by commitImport() AFTER the AI read succeeds,
+  // so a failed / overloaded scan never costs the trader one of their daily imports.
   try{
     var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
     var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
     if(u.isAdmin || userTier==='premium') return true;
+    var count = u.imgDayKey===utcKey() ? (u.imgCount||0) : 0;
+    return count < FREE_IMPORTS_PER_DAY;
+  }catch(e){ return true; }
+}
+async function commitImport(){
+  // Shares SciFe's daily image allowance (trader_data.scife.usage). One successful import = one use.
+  try{
+    var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
+    var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
+    if(u.isAdmin || userTier==='premium') return;
     var tk = utcKey(), count = u.imgDayKey===tk ? (u.imgCount||0) : 0;
-    if(count >= FREE_IMPORTS_PER_DAY) return false;
     u.imgDayKey = tk; u.imgCount = count+1; sc.usage = u;
     await sb.from('trader_data').update({ scife: sc, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
-    return true;
-  }catch(e){ return true; }
+  }catch(e){ /* best-effort */ }
 }
 
 /* ---------- deterministic parsers ---------- */
@@ -665,8 +718,9 @@ window.gdRunExtract = async function(){
     if(imp.tab==='photos'){
       if(!imageLimit()){ msg.textContent = 'Screenshot import is available on Pro and above.'; return; }
       if(!imp.images.length){ msg.textContent = 'Add at least one screenshot.'; return; }
-      if(!(await claimImport())){ msg.textContent = 'Daily import limit reached (resets 00:00 UTC). Paste text or upload a CSV instead, or upgrade.'; return; }
+      if(!(await importAllowed())){ msg.textContent = 'Daily import limit reached (resets 00:00 UTC). Paste text or upload a CSV instead, or upgrade.'; return; }
       var obj = await aiExtract('Extract all trades from these ' + imp.images.length + ' screenshot(s).', imp.images);
+      await commitImport();
       found = obj.trades; date = obj.date;
     } else if(imp.tab==='text'){
       var txt = $('gdPasteText').value.trim();
@@ -674,8 +728,8 @@ window.gdRunExtract = async function(){
       found = parseTextTrades(txt);
       if(!found.length){
         if(!imageLimit()){ msg.textContent = 'Could not read that text locally. AI reading is available on Pro and above, or upload a CSV / MT report.'; return; }
-        if(!(await claimImport())){ msg.textContent = 'Could not parse it locally and the daily AI limit is used up.'; return; }
-        var o2 = await aiExtract('Extract all trades from this text:\n\n' + txt, []); found = o2.trades; date = o2.date;
+        if(!(await importAllowed())){ msg.textContent = 'Could not parse it locally and the daily AI limit is used up.'; return; }
+        var o2 = await aiExtract('Extract all trades from this text:\n\n' + txt, []); await commitImport(); found = o2.trades; date = o2.date;
       }
     } else {
       if(!imp.fileText){ msg.textContent = 'Choose a file first.'; return; }
