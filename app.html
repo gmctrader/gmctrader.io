@@ -2480,20 +2480,8 @@ html[data-theme="light"] .card, html[data-theme="light"] .modal{box-shadow:0 14p
 /* ---- topbar rows: a hairline to separate the page title from the
    content below it, so dense screens get one more anchor point ---- */
 .topbar-row{padding-bottom:14px;border-bottom:1px solid var(--steel-hi);}
-.package-price .pro-launch-current{color:var(--bronze-bright)}
-.package-price .pro-launch-original{font-size:.65em;color:var(--slate)}
-.pro-launch-badge{display:inline-flex;align-items:center;margin-top:6px;padding:4px 8px;border:1px solid rgba(184,205,169,.34);border-radius:999px;background:rgba(184,205,169,.08);color:var(--bronze-bright);font:9px 'IBM Plex Mono',monospace;letter-spacing:.03em}
-.package-offer-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 20px;padding:15px 18px;border:1px solid rgba(184,205,169,.32);border-radius:14px;background:linear-gradient(105deg,rgba(184,205,169,.1),#10110f)}
-.package-offer-copy{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.package-offer-label{color:var(--bronze-bright);font:9px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
-.package-offer-price{display:flex;align-items:baseline;gap:7px;color:var(--platinum);font:500 16px 'IBM Plex Mono',monospace}
-.package-offer-price strong{color:var(--bronze-bright);font-weight:600}
-.package-offer-price del{color:var(--slate);font-size:11px}
-.package-offer-price small{color:var(--slate);font:10px 'Instrument Sans',sans-serif}
-.package-offer-savings{color:#c1c8bd;font-size:11px}
-.package-offer-banner .btn{min-height:38px;padding:0 16px;font-size:10px;white-space:nowrap}
 @media(max-width:720px){.package-card>p{font-size:12.5px!important;color:#bbc3b7!important}.package-card li{font-size:11.5px!important;color:#d0d5ce!important}.package-footnote{font-size:11px!important;color:#a3ac9f!important}}
-@media(max-width:720px){.package-offer-banner{align-items:stretch;flex-direction:column;gap:12px;padding:15px}.package-offer-copy{gap:8px 11px}.package-offer-banner .btn{width:100%}}
+
 </style>
 <style>
 /* Critical boot-scene styles live in the head so the browser never paints
@@ -4613,10 +4601,10 @@ setTimeout(function(){
     <!-- PACKAGES -->
     <div class="view" id="view-packages">
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
-      <div class="package-offer-banner"><div class="package-offer-copy"><span class="package-offer-label">Pro launch offer</span><div class="package-offer-price"><strong>R299</strong><del>R499</del><small>/ 30 days</small></div><span class="package-offer-savings">Save R200</span></div><button class="btn btn-primary" onclick="openPackageRequest('pro')">Get Pro · R299</button></div>
+      
       <div class="package-grid">
           <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">R0 <small>forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
-        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price"><span class="pro-launch-current">R299</span> <del class="pro-launch-original" aria-label="Regular price: R499">R499</del> <small>/ 30 days</small><br><span class="pro-launch-badge">Launch offer · save R200</span></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro · R299</button></article>
+        <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">R699 <small>/ 30 days</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro · R699</button></article>
         <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">R1,199 <small>/ 30 days</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li><li>Portal Studio: custom themes, accent colours, typefaces, card styles and spacing</li><li>Cinematic 3D workspace with scene and depth controls</li><li>Session clock and desk tools reserved for Elite</li><li>Weekly desk review shared with linked partners</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
         <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">R1,999 <small>/ 30 days</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li><li>PipX Ledger access: AI-read news briefs, pair direction and prediction-vs-reality history (see Additional Features)</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
       </div>
@@ -6559,7 +6547,7 @@ function showTierLockedFeatureTease(view){
   const premiumOnly = PREMIUM_LOCKED_VIEWS.includes(view);
   const eliteOnly = ELITE_LOCKED_VIEWS.includes(view);
   const requiredTier = premiumOnly ? 'premium' : (eliteOnly ? 'elite' : 'pro');
-  const tierPrice = { pro:299, elite:1199, premium:1999 }[requiredTier];
+  const tierPrice = { pro:699, elite:1199, premium:1999 }[requiredTier];
   document.getElementById('demoLockedFeatureTitle').textContent = premiumOnly ? `${label} is a Premium feature` : (eliteOnly ? `${label} is an Elite feature` : `${label} is a Pro feature`);
   document.getElementById('demoLockedFeatureCopy').textContent = premiumOnly
     ? `${label} is included in Premium. Premium also includes Elite and Pro features, plus the advanced SciFe model.`
