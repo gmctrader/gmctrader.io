@@ -457,18 +457,36 @@ function extractSystemPrompt(){
 /* Google's "high demand" / 503 errors are temporary. Instead of failing the whole
    scan on the first one, retry with a short backoff and then fall back to the next
    model in the chain. Every model below is a current Gemini API endpoint.
-   (gemini-3.6-flash is deliberately left out: it retires on 19 Nov 2026.) */
+   (gemini-3.6-flash is deliberately left out: it retires on 19 Nov 2026.)
+
+   Two transports, tried in this order:
+     1. the trader's OWN Gemini key saved in SciFe settings (called directly, free for us), then
+     2. the shared house key via the ai-proxy Edge Function. */
 var AI_CHAIN_STD = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.5-flash'];
 var AI_CHAIN_PRO = ['gemini-3.1-pro-preview'].concat(AI_CHAIN_STD);
 var AI_TRIES_PER_MODEL = 2, AI_ATTEMPT_MS = 45000, AI_TOTAL_MS = 90000;
+var lastAIVia = 'proxy';
 function aiSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function aiNotConfigured(msg){ return /not configured|GEMINI_API_KEY/i.test(msg||''); }
 function aiTransient(status, msg){
+  if(aiNotConfigured(msg)) return false;
   if(status===0 || status===408 || status===429 || status===500 || status===502 || status===503 || status===504 || status===529) return true;
   if(status===401 || status===403) return false;
   return /high demand|overload|unavailable|try again later|temporar|capacity|\bbusy\b|rate.?limit|quota|deadline|timed? ?out/i.test(msg||'');
 }
-function aiModelProblem(status, msg){ return (status===400 || status===404) && /model/i.test(msg||''); }
+function aiModelProblem(status, msg){ return (status===400 || status===404) && /model/i.test(msg||'') && !/api key/i.test(msg||''); }
+function aiKeyProblem(status, msg){ return status===401 || status===403 || (status===400 && /api key|API_KEY_INVALID|permission/i.test(msg||'')); }
 function setImpStatus(t){ var m = $('gdImpMsg'); if(m) m.textContent = t || ''; }
+// The key SciFe saved on this device (same storage SciFe settings writes to). Never sent to our database.
+function ownGeminiKey(){
+  try{
+    if(!currentUser || !currentUser.id) return '';
+    var raw = localStorage.getItem('gd_scife_provider_keys_v1_' + currentUser.id);
+    var k = raw ? JSON.parse(raw) : null;
+    var g = k && typeof k.google==='string' ? k.google.trim() : '';
+    return /^AIza[0-9A-Za-z_\-]{20,}$/.test(g) ? g : '';
+  }catch(e){ return ''; }
+}
 async function callAI(userText, images){
   var s = await sb.auth.getSession();
   var session = s && s.data && s.data.session;
@@ -476,54 +494,75 @@ async function callAI(userText, images){
   var parts = (images||[]).map(function(im){ return { inline_data:{ mime_type:im.mime, data:im.data } }; });
   parts.push({ text:userText });
   var chain = userTier==='premium' ? AI_CHAIN_PRO : AI_CHAIN_STD;
+  var own = ownGeminiKey();
+  var transports = own ? ['own','proxy'] : ['proxy'];
   var started = Date.now(), lastMsg = '', lastStatus = 0, attempt = 0;
-  for(var m=0; m<chain.length; m++){
-    for(var t=0; t<AI_TRIES_PER_MODEL; t++){
-      if(Date.now() - started > AI_TOTAL_MS) break;
-      if(attempt>0) setImpStatus('The AI reader is busy. Retrying (' + (attempt+1) + ')\u2026');
-      attempt++;
-      var body = {
-        model: chain[m],
-        contents:[{ role:'user', parts:parts }],
-        systemInstruction:{ role:'user', parts:[{ text:extractSystemPrompt() }] },
-        generationConfig:{ temperature:0.1, maxOutputTokens:8192, responseMimeType:'application/json' }
-      };
-      var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
-      var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, AI_ATTEMPT_MS) : null;
-      var res = null;
-      try{
-        res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY },
-          body: JSON.stringify(body),
-          signal: ctrl ? ctrl.signal : undefined
-        });
-      }catch(e){
-        lastStatus = 0; lastMsg = (e && e.name==='AbortError') ? 'timed out' : 'network error';
-      }finally{ if(timer) clearTimeout(timer); }
-      if(res){
-        if(res.ok){
-          var data = await res.json().catch(function(){ return null; });
-          var cand = data && data.candidates && data.candidates[0];
-          var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){ return p.thought ? '' : (p.text||''); }).join('');
-          if(text && text.trim()) return text;
-          var why = (data && data.promptFeedback && data.promptFeedback.blockReason) || (cand && cand.finishReason) || '';
-          if(why==='SAFETY' || why==='PROHIBITED_CONTENT' || why==='BLOCKLIST') throw new Error('The AI blocked that image. Try a plainer screenshot of just the trade rows.');
-          lastStatus = 200; lastMsg = 'empty reply' + (why ? ' (' + why + ')' : '');
-        } else {
-          var err = await res.json().catch(function(){ return {}; });
-          lastStatus = res.status;
-          lastMsg = (err && err.error && (err.error.message || err.error)) || (err && err.message) || '';
-          if(typeof lastMsg !== 'string') lastMsg = JSON.stringify(lastMsg);
-          if(aiModelProblem(res.status, lastMsg)) break;                 // this model id is rejected: next model
-          if(!aiTransient(res.status, lastMsg)) throw new Error(lastMsg || ('AI request failed ('+res.status+')'));
+  for(var ti=0; ti<transports.length; ti++){
+    var via = transports[ti];
+    if(via==='proxy' && own && !(await importAllowed(true))) throw new Error('Your own Gemini key could not be used and the daily shared-AI limit is used up. Check the key in SciFe settings, or paste text / upload a CSV.');
+    var abandon = false;
+    for(var m=0; m<chain.length && !abandon; m++){
+      for(var t=0; t<AI_TRIES_PER_MODEL; t++){
+        if(Date.now() - started > AI_TOTAL_MS) break;
+        if(attempt>0) setImpStatus('The AI reader is busy. Retrying (' + (attempt+1) + ')\u2026');
+        attempt++;
+        var gen = { temperature:0.1, maxOutputTokens:8192, responseMimeType:'application/json' };
+        var body = {
+          contents:[{ role:'user', parts:parts }],
+          systemInstruction:{ role:'user', parts:[{ text:extractSystemPrompt() }] },
+          generationConfig: gen
+        };
+        if(via==='proxy') body.model = chain[m];   // the proxy picks the model from this field; Google rejects it
+        var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, AI_ATTEMPT_MS) : null;
+        var res = null;
+        try{
+          if(via==='own'){
+            res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + chain[m] + ':generateContent', {
+              method:'POST',
+              headers:{ 'Content-Type':'application/json', 'x-goog-api-key': own },
+              body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined
+            });
+          } else {
+            res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
+              method:'POST',
+              headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY },
+              body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined
+            });
+          }
+        }catch(e){
+          lastStatus = 0; lastMsg = (e && e.name==='AbortError') ? 'timed out' : 'network error';
+        }finally{ if(timer) clearTimeout(timer); }
+        if(res){
+          if(res.ok){
+            var data = await res.json().catch(function(){ return null; });
+            var cand = data && data.candidates && data.candidates[0];
+            var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){ return p.thought ? '' : (p.text||''); }).join('');
+            if(text && text.trim()){ lastAIVia = via; return text; }
+            var why = (data && data.promptFeedback && data.promptFeedback.blockReason) || (cand && cand.finishReason) || '';
+            if(why==='SAFETY' || why==='PROHIBITED_CONTENT' || why==='BLOCKLIST') throw new Error('The AI blocked that image. Try a plainer screenshot of just the trade rows.');
+            lastStatus = 200; lastMsg = 'empty reply' + (why ? ' (' + why + ')' : '');
+          } else {
+            var err = await res.json().catch(function(){ return {}; });
+            lastStatus = res.status;
+            lastMsg = (err && err.error && (err.error.message || err.error)) || (err && err.message) || '';
+            if(typeof lastMsg !== 'string') lastMsg = JSON.stringify(lastMsg);
+            if(via==='own' && aiKeyProblem(res.status, lastMsg)){ abandon = true; break; }   // bad/restricted personal key: use the shared AI instead
+            if(aiModelProblem(res.status, lastMsg)) break;                                     // this model id is rejected: next model
+            if(via==='proxy' && aiNotConfigured(lastMsg)) throw new Error('The shared AI is not set up yet. Add your own Gemini key in SciFe settings and scans will work right away.');
+            if(!aiTransient(res.status, lastMsg)){
+              if(via==='own'){ abandon = true; break; }
+              throw new Error(lastMsg || ('AI request failed ('+res.status+')'));
+            }
+          }
         }
+        if(t < AI_TRIES_PER_MODEL-1) await aiSleep(1200*(t+1) + Math.floor(Math.random()*500));
       }
-      if(t < AI_TRIES_PER_MODEL-1) await aiSleep(1200*(t+1) + Math.floor(Math.random()*500));
+      if(Date.now() - started > AI_TOTAL_MS) break;
     }
     if(Date.now() - started > AI_TOTAL_MS) break;
   }
-  throw new Error('The AI reader is overloaded right now' + (lastStatus ? ' (' + lastStatus + ')' : '') + '. This scan was NOT counted against your daily limit. Wait a minute and try again, or use Paste text / CSV.');
+  throw new Error('The AI reader is overloaded right now' + (lastStatus ? ' (' + lastStatus + ')' : '') + '. This scan was NOT counted against your daily limit. Wait a minute and try again, use Paste text / CSV, or add your own free Gemini key in SciFe settings.');
 }
 function parseJsonLoose(text){
   var t = String(text).replace(/```json|```/gi,'').trim();
@@ -540,9 +579,11 @@ async function aiExtract(userText, images){
   if(!obj || !Array.isArray(obj.trades)) throw new Error('Could not read trades from that. Try a clearer image or paste the text.');
   return obj;
 }
-async function importAllowed(){
+async function importAllowed(strict){
   // Read-only check. The allowance is only spent by commitImport() AFTER the AI read succeeds,
   // so a failed / overloaded scan never costs the trader one of their daily imports.
+  // A trader scanning with their OWN Gemini key is not using the shared key, so no daily cap applies.
+  if(!strict && ownGeminiKey()) return true;
   try{
     var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
     var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
@@ -552,7 +593,8 @@ async function importAllowed(){
   }catch(e){ return true; }
 }
 async function commitImport(){
-  // Shares SciFe's daily image allowance (trader_data.scife.usage). One successful import = one use.
+  // Shares SciFe's daily image allowance (trader_data.scife.usage). One successful SHARED-key import = one use.
+  if(lastAIVia==='own') return;
   try{
     var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
     var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
