@@ -48,7 +48,6 @@ window.gdSetAccount = function(v){
   if(imp.rows && imp.rows.length){ imp.rows.forEach(function(r,i){ refreshRow(i); }); refreshCommit(); }
 };
 window.gdUpgrade = function(){ if(typeof packageUpgradeUrl==='function') window.location.assign(packageUpgradeUrl('pro')); };
-var FREE_IMPORTS_PER_DAY = 3;
 var imp = { images:[], rows:[], tab:'photos', text:'', fileName:'', keepShots:true, busy:false };
 
 /* ---------- small helpers ---------- */
@@ -118,6 +117,10 @@ function injectCss(){
   '.gd-fill-btn{background:rgba(255,255,255,.06)}',
   /* import sheet */
   '#gdImportOverlay .modal{max-width:640px;width:100%;max-height:92vh;overflow:auto}',
+  '#gdImportOverlay .gd-import-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}',
+  '#gdImportOverlay .gd-import-title{margin:0 0 3px;font-size:clamp(22px,5vw,28px);letter-spacing:-.025em}',
+  '#gdImportOverlay .gd-import-sub{margin:0;max-width:48ch;line-height:1.45}',
+  '#gdImportOverlay .gd-account-field{margin:0 0 16px}',
   '.gd-tabs{display:flex;gap:6px;margin:10px 0 12px}',
   '.gd-tabs button{flex:1;border:1px solid var(--steel);background:transparent;color:var(--slate);border-radius:10px;padding:8px;font-size:12.5px;cursor:pointer}',
   '.gd-tabs button.on{color:var(--platinum);background:rgba(255,255,255,.08)}',
@@ -143,6 +146,11 @@ function injectCss(){
   '.gd-src{font-size:10px;color:var(--slate);margin-top:2px;text-transform:none;letter-spacing:0}',
   '.gd-row[data-status="live"] .gd-exec,.gd-row[data-status="pending"] .gd-exec{display:none}',
   '.gd-note{font-size:12px;color:var(--slate);margin:6px 0}',
+  '#gdImpMsg{min-height:18px;line-height:1.45}',
+  '#gdImportOverlay .gd-import-actions{position:sticky;bottom:-1px;z-index:2;padding:12px 0 calc(2px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent 0%,var(--panel-solid,#101112) 18%)}',
+  '#gdImportOverlay .gd-drop{min-height:118px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:22px 16px;border-color:color-mix(in srgb,var(--bronze-bright) 42%,var(--steel-hi));background:linear-gradient(145deg,color-mix(in srgb,var(--bronze-bright) 7%,transparent),rgba(255,255,255,.015));line-height:1.45}',
+  '#gdImportOverlay .gd-drop small{font-size:11.5px;line-height:1.5;color:var(--slate-dim)}',
+  '#gdImportOverlay .gd-tabs button{min-height:44px;font-weight:600}',
   '.gd-penalty{font-size:11.5px;color:var(--gold-bright,#e6c36a);margin:-2px 0 10px}',
   '.gd-penalty:empty{display:none}',
   '.gd-row.warn{border-color:rgba(230,195,106,.5)}',
@@ -153,7 +161,9 @@ function injectCss(){
   '#gdDashOrders .gd-dash-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--slate)}',
   '#gdDashOrders .gd-pill{border:1px solid var(--steel);border-radius:999px;padding:3px 10px}',
   '#gdDashOrders .gd-pill.hot{color:var(--gold-bright,#e6c36a);border-color:rgba(230,195,106,.45)}',
-  '@media(max-width:560px){.gd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+  '@media(max-width:560px){.gd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}',
+  '@media(max-width:700px){#gdImportOverlay{align-items:flex-end;padding:10px 10px calc(8px + env(safe-area-inset-bottom))}#gdImportOverlay .modal{width:100%;max-width:620px;max-height:min(91dvh,900px);margin:0 auto;border-radius:22px 22px 14px 14px;padding:23px 18px calc(14px + env(safe-area-inset-bottom));overscroll-behavior:contain}#gdImportOverlay .gd-tabs{gap:6px;margin:8px 0 12px}#gdImportOverlay .gd-tabs button{min-width:0;padding:8px 5px;font-size:12px}#gdImportOverlay .gd-thumbs{max-height:130px;overflow:auto}#gdImportOverlay .gd-import-actions{padding-bottom:calc(3px + env(safe-area-inset-bottom))}}',
+  '@media(max-width:380px){#gdImportOverlay .modal{padding-inline:14px}#gdImportOverlay .gd-import-sub{font-size:12px}#gdImportOverlay .gd-tabs button{font-size:11px}}'
   ].join('\n');
   document.head.appendChild(st);
 }
@@ -318,13 +328,13 @@ function buildOverlay(){
   if($('gdImportOverlay')) return;
   var ov = document.createElement('div'); ov.className='overlay'; ov.id='gdImportOverlay';
   ov.innerHTML =
-    '<div class="modal">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
-        '<div><h3 style="margin-bottom:2px">Import trades</h3><div class="sub" style="margin-bottom:0">We read the details. You only add SL and TP.</div></div>' +
-        '<button class="btn btn-sm btn-ghost" onclick="gdCloseImport()" aria-label="Close">\u2715</button>' +
+    '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="gdImportTitle">' +
+      '<div class="gd-import-head">' +
+        '<div><h3 class="gd-import-title" id="gdImportTitle">Import trades</h3><div class="sub gd-import-sub">Choose screenshots, paste trade details, or import a report.</div></div>' +
+        '<button class="btn btn-sm btn-ghost" onclick="gdCloseImport()" aria-label="Close import">\u2715</button>' +
       '</div>' +
       '<div id="gdImpInput">' +
-        '<div class="field" style="margin-top:12px"><label>Import into which account?</label><select id="gdImpAccount" onchange="gdSetAccount(this.value)"></select><div class="gd-note" id="gdImpAcctHint" style="margin-top:4px"></div></div>' +
+        '<div class="field gd-account-field"><label for="gdImpAccount">Import to account</label><select id="gdImpAccount" onchange="gdSetAccount(this.value)"></select><div class="gd-note" id="gdImpAcctHint"></div></div>' +
         '<div class="gd-tabs">' +
           '<button type="button" data-tab="photos" class="on" onclick="gdImpTab(\'photos\')">Photos</button>' +
           '<button type="button" data-tab="text" onclick="gdImpTab(\'text\')">Paste text</button>' +
@@ -333,7 +343,7 @@ function buildOverlay(){
         '<div id="gdTabPhotos">' +
           '<div id="gdPhotoLock" class="gd-lock" style="display:none"><b>Screenshot import is on Pro and above</b>Upload screenshots of your orders and we read the trades for you. Pro: 2 screenshots per upload. Elite and above: 10.<div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" style="flex:1" onclick="gdUpgrade()">See plans</button></div></div>' +
           '<div id="gdPhotoBody">' +
-            '<div class="gd-drop" id="gdDrop" onclick="$gdPick()">Tap to add screenshots of your orders or trade history<br><small id="gdDropHint"></small></div>' +
+            '<div class="gd-drop" id="gdDrop" role="button" tabindex="0" onclick="$gdPick()" onkeydown="if(event.key===\'Enter\'||event.key===\' \')$gdPick()">Add screenshots of orders or trade history<br><small id="gdDropHint"></small></div>' +
             '<input type="file" id="gdImgInput" accept="image/*" multiple style="display:none">' +
             '<div class="gd-thumbs" id="gdThumbs"></div>' +
           '</div>' +
@@ -346,8 +356,8 @@ function buildOverlay(){
           '<input type="file" id="gdFileInput" accept=".csv,.txt,.htm,.html,text/csv,text/html" style="display:none">' +
           '<div class="gd-note" id="gdFileName"></div>' +
         '</div>' +
-        '<label class="gd-note" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="gdKeepShots" checked> Keep screenshots with these trades</label>' +
-        '<div class="btn-row" style="margin-top:10px"><button class="btn btn-ghost" style="flex:1" onclick="gdCloseImport()">Cancel</button>' +
+        '<label class="gd-note" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="gdKeepShots" checked> Save screenshots with imported trades</label>' +
+        '<div class="btn-row gd-import-actions"><button class="btn btn-ghost" style="flex:1" onclick="gdCloseImport()">Cancel</button>' +
         '<button class="btn btn-primary" style="flex:1" id="gdReadBtn" onclick="gdRunExtract()">Read trades</button></div>' +
         '<div class="gd-note" id="gdImpMsg"></div>' +
       '</div>' +
@@ -378,7 +388,7 @@ window.gdOpenImport = function(files){
   var lim = imageLimit();
   $('gdPhotoLock').style.display = lim ? 'none' : '';
   $('gdPhotoBody').style.display = lim ? '' : 'none';
-  $('gdDropHint').textContent = 'or drop / paste images. Up to ' + lim + ' per upload on ' + tierName() + (lim<10 ? ' (Elite and above: 10)' : '') + '. Each screenshot can show lots of trades. MT4, MT5, cTrader, TradingView and broker apps work.';
+  $('gdDropHint').textContent = 'Tap to choose · paste or drop images. Up to ' + lim + ' screenshots per upload.' + (lim<10 ? ' Elite: up to 10.' : '') + ' MT4/5, cTrader and broker apps supported.';
   renderThumbs(); window.gdImpTab('photos');
   closingOrderId = null;
   closeModal('tradeOverlay');
@@ -445,7 +455,7 @@ function readTextFile(f){
   r.readAsText(f);
 }
 
-/* ---------- AI (saved SciFe vision providers with shared Gemini fallback) ---------- */
+/* ---------- AI (saved SciFe image providers; no hidden Gemini fallback) ---------- */
 function extractSystemPrompt(){
   return 'You read screenshots or text of a trader\'s broker / trading-app history (MT4, MT5, cTrader, TradingView, Exness, etc.) and extract every trade or order shown.\n' +
   'Return ONLY one JSON object, no prose and no markdown:\n' +
@@ -454,39 +464,19 @@ function extractSystemPrompt(){
   'Also read TradingView long/short position tool boxes (entry, stop, target). Normalise symbols (Gold -> XAUUSD, US30, NAS100, EURUSD). If screenshots overlap, list each trade once. Ignore balance, deposit and withdrawal rows. ' +
   '"date" is the trading day shown (the most common close date). Today is ' + todayStr() + '. imageIndex is the zero-based index of the image the trade appears in.';
 }
-/* Google's "high demand" / 503 errors are temporary. Instead of failing the whole
-   scan on the first one, retry with a short backoff and then fall back to the next
-   model in the chain. Every model below is a current Gemini API endpoint.
-   (gemini-3.6-flash is deliberately left out: it retires on 19 Nov 2026.)
-
-   The order reader tries each saved image-capable SciFe provider in turn,
-   then the shared house key via the ai-proxy Edge Function. */
-var AI_CHAIN_STD = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.5-flash'];
-var AI_CHAIN_PRO = ['gemini-3.1-pro-preview'].concat(AI_CHAIN_STD);
-var AI_TRIES_PER_MODEL = 2, AI_ATTEMPT_MS = 45000, AI_TOTAL_MS = 90000;
-var lastAIVia = 'proxy';
-function aiSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
-function aiNotConfigured(msg){ return /not configured|GEMINI_API_KEY/i.test(msg||''); }
-function aiTransient(status, msg){
-  if(aiNotConfigured(msg)) return false;
-  if(status===0 || status===408 || status===429 || status===500 || status===502 || status===503 || status===504 || status===529) return true;
-  if(status===401 || status===403) return false;
-  return /high demand|overload|unavailable|try again later|temporar|capacity|\bbusy\b|rate.?limit|quota|deadline|timed? ?out/i.test(msg||'');
-}
-function aiModelProblem(status, msg){ return (status===400 || status===404) && /model/i.test(msg||'') && !/api key/i.test(msg||''); }
-function aiKeyProblem(status, msg){ return status===401 || status===403 || (status===400 && /api key|API_KEY_INVALID|permission/i.test(msg||'')); }
+var AI_TOTAL_MS = 90000;
+var lastAIVia = 'own';
 function setImpStatus(t){ var m = $('gdImpMsg'); if(m) m.textContent = t || ''; }
 // The key SciFe saved on this device (same storage SciFe settings writes to). Never sent to our database.
 async function loadScifeAiConfig(){
  var keys={},config={};
  try{if(currentUser&&currentUser.id){var row=await sb.from('trader_data').select('scife').eq('user_id',currentUser.id).maybeSingle();var saved=row&&row.data&&row.data.scife||{};config=saved;if(saved.apiKeys&&typeof saved.apiKeys==='object')keys=Object.assign(keys,saved.apiKeys);if(saved.apiKey&&!keys[saved.provider||'google'])keys[saved.provider||'google']=saved.apiKey;}}catch(e){}
  try{if(currentUser&&currentUser.id){var raw=localStorage.getItem('gd_scife_provider_keys_v1_'+currentUser.id);var local=raw?JSON.parse(raw):{};if(local&&typeof local==='object'&&!Array.isArray(local))keys=Object.assign(keys,local);if(Object.keys(keys).length)localStorage.setItem('gd_scife_provider_keys_v1_'+currentUser.id,JSON.stringify(keys));}}catch(e){}
- return{keys:keys,provider:config.provider||'google',model:config.model||''};
+ return{keys:keys,provider:config.provider||'groq',model:config.model||''};
 }
 var IMPORT_IMAGE_PROVIDERS={
- groq:{compat:'openai',url:'https://api.groq.com/openai/v1/chat/completions',models:['meta-llama/llama-4-maverick-17b-128e-instruct']},
- google:{compat:'gemini',models:['gemini-3.8-flash','gemini-3.5-flash-lite','gemini-3.1-pro-preview']},
- openrouter:{compat:'openai',url:'https://openrouter.ai/api/v1/chat/completions',models:['google/gemini-2.0-flash-exp:free','openai/gpt-4o-mini']},
+ groq:{compat:'openai',url:'https://api.groq.com/openai/v1/chat/completions',models:['qwen/qwen3.8-27b']},
+ openrouter:{compat:'openai',url:'https://openrouter.ai/api/v1/chat/completions',models:['openai/gpt-4o-mini']},
  mistral:{compat:'openai',url:'https://api.mistral.ai/v1/chat/completions',models:['pixtral-large-latest']},
  openai:{compat:'openai',url:'https://api.openai.com/v1/chat/completions',models:['gpt-4o-mini','gpt-4o']},
  together:{compat:'openai',url:'https://api.together.xyz/v1/chat/completions',models:['meta-llama/Llama-Vision-Free']},
@@ -498,7 +488,7 @@ var IMPORT_IMAGE_PROVIDERS={
  featherless:{compat:'openai',url:'https://api.featherless.ai/v1/chat/completions',models:['google/gemma-3-27b-it']},
  deepinfra:{compat:'openai',url:'https://api.deepinfra.com/v1/openai/chat/completions',models:['meta-llama/Llama-3.2-90B-Vision-Instruct']},
  hyperbolic:{compat:'openai',url:'https://api.hyperbolic.xyz/v1/chat/completions',models:['Qwen/Qwen2-VL-72B-Instruct']},
- pollinations:{compat:'openai',url:'https://gen.pollinations.ai/v1/chat/completions',models:['openai','openai-large','gemini']},
+ pollinations:{compat:'openai',url:'https://gen.pollinations.ai/v1/chat/completions',models:['openai','openai-large']},
  anthropic:{compat:'anthropic',models:['claude-sonnet-5','claude-haiku-4-5-20251001','claude-opus-4-8']}
 };
 async function savedImageProviders(){
@@ -506,15 +496,11 @@ async function savedImageProviders(){
  ids.sort(function(a,b){return a===cfg.provider?-1:b===cfg.provider?1:0;});
  return ids.map(function(id){var p=IMPORT_IMAGE_PROVIDERS[id],models=p.models.slice();if(id===cfg.provider&&cfg.model&&models.indexOf(cfg.model)>=0)models=[cfg.model].concat(models.filter(function(m){return m!==cfg.model;}));return{id:id,cfg:p,key:keys[id].trim(),models:models};});
 }
-async function ownAiKeyAvailable(){try{return(await savedImageProviders()).length>0;}catch(e){return false;}}
 function imageMessages(userText,images){return[{role:'system',content:extractSystemPrompt()},{role:'user',content:[{type:'text',text:userText}].concat((images||[]).map(function(im){return{type:'image_url',image_url:{url:'data:'+im.mime+';base64,'+im.data}};}))}];}
 async function callOwnImageProvider(provider,model,userText,images){
  var ctrl=typeof AbortController!=='undefined'?new AbortController():null,timer=ctrl?setTimeout(function(){ctrl.abort();},30000):null,res;
  try{
-  if(provider.cfg.compat==='gemini'){
-   var parts=(images||[]).map(function(im){return{inline_data:{mime_type:im.mime,data:im.data}};});parts.push({text:userText});
-   res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':provider.key},body:JSON.stringify({contents:[{role:'user',parts:parts}],systemInstruction:{role:'user',parts:[{text:extractSystemPrompt()}]},generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}}),signal:ctrl?ctrl.signal:undefined});
-  }else if(provider.cfg.compat==='anthropic'){
+  if(provider.cfg.compat==='anthropic'){
    var content=(images||[]).map(function(im){return{type:'image',source:{type:'base64',media_type:im.mime,data:im.data}};});content.push({type:'text',text:userText});
    res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':provider.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:model,max_tokens:8192,temperature:0.1,system:extractSystemPrompt(),messages:[{role:'user',content:content}]}),signal:ctrl?ctrl.signal:undefined});
   }else{
@@ -522,30 +508,24 @@ async function callOwnImageProvider(provider,model,userText,images){
   }
   var data=await res.json().catch(function(){return{};});if(!res.ok){var msg=data.error&&(data.error.message||data.error)||data.message||('HTTP '+res.status);throw new Error(String(msg));}
   var text='';
-  if(provider.cfg.compat==='gemini'){var cand=data.candidates&&data.candidates[0];text=cand&&cand.content&&cand.content.parts?cand.content.parts.map(function(p){return p.thought?'':(p.text||'');}).join(''):'';}
-  else if(provider.cfg.compat==='anthropic')text=(data.content||[]).filter(function(c){return c.type==='text';}).map(function(c){return c.text||'';}).join('');
+  if(provider.cfg.compat==='anthropic')text=(data.content||[]).filter(function(c){return c.type==='text';}).map(function(c){return c.text||'';}).join('');
   else{text=data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||'';if(Array.isArray(text))text=text.map(function(p){return p.text||'';}).join('');}
   if(!text.trim())throw new Error('Empty response');return text;
  }finally{if(timer)clearTimeout(timer);}
 }
-async function callSharedImageFallback(session,userText,images){
- var chain=userTier==='premium'?AI_CHAIN_PRO:AI_CHAIN_STD,parts=(images||[]).map(function(im){return{inline_data:{mime_type:im.mime,data:im.data}};});parts.push({text:userText});var started=Date.now(),lastStatus=0;
- for(var m=0;m<chain.length;m++)for(var t=0;t<AI_TRIES_PER_MODEL;t++){
-  if(Date.now()-started>AI_TOTAL_MS)break;
-  var body={contents:[{role:'user',parts:parts}],systemInstruction:{role:'user',parts:[{text:extractSystemPrompt()}]},generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'},model:chain[m]};
-  var ctrl=typeof AbortController!=='undefined'?new AbortController():null,timer=ctrl?setTimeout(function(){ctrl.abort();},AI_ATTEMPT_MS):null,res;
-  try{res=await fetch(SUPABASE_URL+'/functions/v1/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify(body),signal:ctrl?ctrl.signal:undefined});}catch(e){lastStatus=0;}finally{if(timer)clearTimeout(timer);}
-  if(res){var data=await res.json().catch(function(){return{};});if(res.ok){var cand=data.candidates&&data.candidates[0],text=cand&&cand.content&&cand.content.parts?cand.content.parts.map(function(p){return p.thought?'':(p.text||'');}).join(''):'';if(text.trim()){lastAIVia='proxy';return text;}}else{lastStatus=res.status;var msg=data.error&&(data.error.message||data.error)||'';if(aiNotConfigured(String(msg)))throw new Error('The shared Gemini fallback is not configured. Add an image-capable provider key in SciFe settings.');if(!aiTransient(res.status,String(msg))&&!aiModelProblem(res.status,String(msg)))throw new Error(String(msg)||('AI request failed ('+res.status+')'));}}
-  if(t<AI_TRIES_PER_MODEL-1)await aiSleep(900*(t+1));
- }
- throw new Error('All saved image-capable SciFe providers and the shared Gemini fallback are unavailable'+(lastStatus?' (HTTP '+lastStatus+')':'')+'. This scan was not counted. Check a saved provider key or paste the order text/CSV.');
-}
 async function callAI(userText,images){
- var s=await sb.auth.getSession(),session=s&&s.data&&s.data.session;if(!session)throw new Error('Sign in to use AI import');
- var providers=await savedImageProviders(),started=Date.now(),attempt=0;
- for(var i=0;i<providers.length;i++){var p=providers[i];for(var m=0;m<p.models.length;m++){if(Date.now()-started>AI_TOTAL_MS)break;if(attempt++)setImpStatus('Trying saved SciFe image provider ('+(attempt+1)+')…');try{var text=await callOwnImageProvider(p,p.models[m],userText,images);lastAIVia='own';return text;}catch(e){console.warn('Order image provider failed:',p.id,p.models[m],e&&e.message||e);}break;}}
- if(providers.length&&!(await importAllowed(true)))throw new Error('Your saved SciFe providers could not read this image and the shared-AI import limit is used up. Check a provider key in SciFe settings, or paste text / CSV.');
- return callSharedImageFallback(session,userText,images);
+ var providers=await savedImageProviders(),started=Date.now(),attempt=0,lastError='';
+ if(!providers.length)throw new Error('No saved non-Gemini image provider is available. Add an image-capable provider key in SciFe settings, or paste the order text / CSV. This import was not counted.');
+ for(var i=0;i<providers.length;i++){
+  var p=providers[i];
+  for(var m=0;m<p.models.length;m++){
+   if(Date.now()-started>AI_TOTAL_MS)break;
+   attempt++;setImpStatus('Trying '+p.id+' image model'+(attempt>1?' ('+attempt+')':'')+'…');
+   try{var text=await callOwnImageProvider(p,p.models[m],userText,images);lastAIVia='own';return text;}
+   catch(e){lastError=(p.id+' '+p.models[m]+': '+(e&&e.message||e));console.warn('Order image provider failed:',lastError);}
+  }
+ }
+ throw new Error('Saved image providers could not read this upload'+(lastError?': '+lastError:'')+'. This import was not counted. Check your saved provider keys, or paste the order text / CSV.');
 }
 function parseJsonLoose(text){
   var t = String(text).replace(/```json|```/gi,'').trim();
@@ -562,31 +542,8 @@ async function aiExtract(userText, images){
   if(!obj || !Array.isArray(obj.trades)) throw new Error('Could not read trades from that. Try a clearer image or paste the text.');
   return obj;
 }
-async function importAllowed(strict){
-  // Read-only check. The allowance is only spent by commitImport() AFTER the AI read succeeds,
-  // so a failed / overloaded scan never costs the trader one of their daily imports.
-// A trader scanning with any saved image-capable SciFe key is not using the shared key, so no daily cap applies.
-  if(!strict && await ownAiKeyAvailable()) return true;
-  try{
-    var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
-    var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
-    if(u.isAdmin || userTier==='premium') return true;
-    var count = u.imgDayKey===utcKey() ? (u.imgCount||0) : 0;
-    return count < FREE_IMPORTS_PER_DAY;
-  }catch(e){ return true; }
-}
-async function commitImport(){
-  // Shares SciFe's daily image allowance (trader_data.scife.usage). One successful SHARED-key import = one use.
-  if(lastAIVia!=='proxy') return;
-  try{
-    var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
-    var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
-    if(u.isAdmin || userTier==='premium') return;
-    var tk = utcKey(), count = u.imgDayKey===tk ? (u.imgCount||0) : 0;
-    u.imgDayKey = tk; u.imgCount = count+1; sc.usage = u;
-    await sb.from('trader_data').update({ scife: sc, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
-  }catch(e){ /* best-effort */ }
-}
+async function importAllowed(){ return true; }
+async function commitImport(){ /* personal provider keys are billed by the chosen provider */ }
 
 /* ---------- deterministic parsers ---------- */
 var HEADER_KEYS = {

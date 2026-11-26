@@ -1926,7 +1926,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let traderRow = null;               // full trader_data row (trades, psychology, streak, day, rules, prop_firm)
-let scife = { provider:'google', apiKeys:{}, model:'gemini-3.8-flash', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'', imgCount:0, imgDayKey:'' }, chartMemory:{}, sigSessions:[] };
+let scife = { provider:'groq', apiKeys:{}, model:'qwen/qwen3.8-27b', voiceOn:true, memory:[], handsFree:false, voiceURI:'', usage:{ scanCount:0, weekKey:'', isAdmin:false, chatCount:0, chatDayKey:'', imgCount:0, imgDayKey:'' }, chartMemory:{}, sigSessions:[] };
 const SCIFE_LOCAL_KEYS_PREFIX = 'gd_scife_provider_keys_v1_';
 function readLocalScifeApiKeys(userId=currentUser && currentUser.id){
   if(!userId) return {};
@@ -1945,18 +1945,8 @@ function writeLocalScifeApiKeys(apiKeys, userId=currentUser && currentUser.id){
     return true;
   }catch(e){ return false; }
 }
-/* ============ SHARED PLAN KEY ============
-   The trader running this deployment supplies one Gemini key that everyone
-   uses by default (nobody needs to go get their own to start chatting).
-   Never rendered into any input, never logged. Same honesty note as the
-   scan-limit system further down: a trader who opens devtools can read this
-   constant out of the page source same as they always could with any
-   client-side secret — what this protects against is the ordinary path
-   (running out the free daily cap, then just... not being capped). */
-const SHARED_PROVIDER = 'google';
-const SHARED_MODEL = 'gemini-3.8-flash';
-const SHARED_KEY = '__shared__';   // real key lives server-side (ai-proxy Edge Function)
-const FREE_DAILY_CHAT_LIMIT = 15;   // Free tier: chats/day on the shared key
+/* Each trader chooses a provider and supplies their own key. No hidden
+   shared Gemini key or server-side Gemini fallback is used by SciFe. */
 let userTier = 'free';              // 'free' | 'pro' | 'elite' | 'premium' — set from trader_data.tier in loadTraderRow()
 function packageUpgradeUrl(pkg){
   const tier = String(pkg || 'pro').toLowerCase();
@@ -1977,8 +1967,6 @@ function hasEliteAccess(){ return tierAtLeast('elite'); }   // elite or premium
 function isPremiumTier(){ return userTier === 'premium'; }
 // Chat-image daily cap: unchanged (3/day) for free/pro/elite, unlimited on premium.
 function chatImageDailyLimitForTier(){ return isPremiumTier() ? Infinity : 3; }
-const SHARED_MODEL_PREMIUM = 'gemini-3.1-pro-preview';   // Premium gets the stronger house model
-function sharedModelForTier(){ return isPremiumTier() ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
 function scanLimitForTier(){ return isPremiumTier() ? Infinity : SCAN_LIMIT_PER_WEEK; }
 function scanLimitLabel(){ return isPremiumTier() ? '∞' : String(SCAN_LIMIT_PER_WEEK); }
 function memoryCapForTier(){ return isPremiumTier() ? 30 : 10; }
@@ -2031,39 +2019,24 @@ let availableVoices = [];
    screen and settings modal automatically — no other UI wiring needed.
    `compat` tells chatCompletion() which request shape to use:
      'openai'    → OpenAI-style /chat/completions (works for OpenAI, Groq, OpenRouter, Mistral)
-     'anthropic' → Anthropic /v1/messages shape
-     'gemini'    → Google Generative Language API shape                                    */
+     'anthropic' → Anthropic /v1/messages shape                                            */
 const PROVIDERS = {
   groq: {
     label: 'Groq',
-    badge: 'Free', badgeClass:'free',
-    cost: 'Generous free tier · very fast open-source models',
+    badge: 'Vision', badgeClass:'paid',
+    cost: 'Fast inference · vision model usage is billed by Groq',
     keyLabel: 'Groq API key',
     keyPlaceholder: 'gsk_...',
-    keyHint: 'Free to sign up — no card required for the free tier.',
+    keyHint: 'Create a Groq API key. The Qwen vision model is billed by usage; check Groq pricing before scanning.',
     keyLink: 'https://console.groq.com/keys',
     compat: 'openai',
     baseURL: 'https://api.groq.com/openai/v1/chat/completions',
     models: [
-      { value:'meta-llama/llama-4-maverick-17b-128e-instruct', label:'Llama 4 Maverick — free & reads images ', vision:true },
-      { value:'openai/gpt-oss-120b', label:'GPT-OSS 120B — free, strong reasoning', vision:false },
-      { value:'openai/gpt-oss-20b', label:'GPT-OSS 20B — free, fastest', vision:false }
-    ]
-  },
-  google: {
-    label: 'Google Gemini',
-    badge: 'Free tier', badgeClass:'free', recommended: true,
-    cost: 'Free daily quota, then pay-as-you-go',
-    keyLabel: 'Gemini API key',
-    keyPlaceholder: 'AIza...',
-    keyHint: 'Get a key from Google AI Studio — free tier is generous for chat use.',
-    keyLink: 'https://aistudio.google.com/apikey',
-    compat: 'gemini',
-    models: [
-      { value:'gemini-3.8-flash', label:'Gemini 3.8 Flash — latest stable & free-tier', vision:true },
-      { value:'gemini-3.5-flash-lite', label:'Gemini 3.5 Flash-Lite — cheapest', vision:true },
-      { value:'gemini-3.1-pro-preview', label:'Gemini 3.1 Pro — most capable', vision:true }
-    ]
+      { value:'qwen/qwen3.8-27b', label:'Qwen 3.8 27B — vision, reasoning & JSON', vision:true },
+      { value:'openai/gpt-oss-120b', label:'GPT-OSS 120B — strong reasoning', vision:false },
+      { value:'openai/gpt-oss-20b', label:'GPT-OSS 20B — fast', vision:false }
+    ],
+    recommended:true
   },
   openrouter: {
     label: 'OpenRouter',
@@ -2077,7 +2050,6 @@ const PROVIDERS = {
     baseURL: 'https://openrouter.ai/api/v1/chat/completions',
     models: [
       { value:'meta-llama/llama-3.1-8b-instruct:free', label:'Llama 3.1 8B — free', vision:false },
-      { value:'google/gemini-2.0-flash-exp:free', label:'Gemini 2.0 Flash (exp) — free', vision:true },
       { value:'openai/gpt-4o-mini', label:'GPT-4o mini — paid, cheap', vision:true }
     ]
   },
@@ -2398,7 +2370,6 @@ const PROVIDERS = {
       { value:'openai', label:'OpenAI (routed) — free & reads images ', vision:true },
       { value:'openai-large', label:'OpenAI Large (routed) — free, stronger', vision:true },
       { value:'openai-reasoning', label:'OpenAI Reasoning (routed) — free, deep thinking', vision:false },
-      { value:'gemini', label:'Gemini (routed) — free & reads images ', vision:true },
       { value:'mistral', label:'Mistral (routed) — free, text', vision:false },
       { value:'deepseek', label:'DeepSeek (routed) — free, text', vision:false },
       { value:'qwen-coder', label:'Qwen Coder (routed) — free, code-focused', vision:false },
@@ -2459,6 +2430,24 @@ function visionCapableSummary(){
     if(names.length) parts.push(cfg.label + ' (' + names.map(m=>m.label.split(' — ')[0]).join(', ') + ')');
   });
   return parts.join('; ');
+}
+
+/* Signal scans use saved image-capable keys and never route through Gemini.
+   Other saved providers are tried if the selected provider is unavailable. */
+function imageScanProviders(){
+  const keys = scife.apiKeys || {};
+  const selected = scife.provider;
+  const ordered = [selected, ...Object.keys(PROVIDERS).filter(key=>key!==selected)];
+  const seen = new Set();
+  return ordered.flatMap(key=>{
+    if(seen.has(key) || key==='google' || !keys[key]) return [];
+    seen.add(key);
+    const cfg = PROVIDERS[key];
+    if(!cfg) return [];
+    const selectedModel = key===selected ? scife.model : '';
+    const model = cfg.models.find(m=>m.value===selectedModel && m.vision) || cfg.models.find(m=>m.vision);
+    return model ? [{ key, cfg, model, apiKey:keys[key] }] : [];
+  });
 }
 
 function populateProviderSelects(){
@@ -2580,10 +2569,10 @@ function updateScannerNote(scope){
   const modelSel = document.getElementById(scope+'ModelSelect');
   const note = document.getElementById(scope+'ScannerNote');
   if(!note || !providerSel || !modelSel) return;
-  const supported = modelSupportsVision(providerSel.value, modelSel.value);
+  const supported = providerSel.value !== 'google' && modelSupportsVision(providerSel.value, modelSel.value);
   note.textContent = supported
-    ? 'Image analysis is available for this model.'
-    : 'This model accepts text only. Choose a model with image analysis to upload a chart.';
+    ? 'Signal scans use your saved image model. SciFe never falls back to Gemini.'
+    : 'Signal scans need a saved key for a non-Gemini model with image analysis.';
   note.style.color = supported ? 'var(--bronze-bright)' : 'var(--slate-dim)';
 }
 
@@ -2756,18 +2745,22 @@ async function loadTraderRow(){
   traderRow = data || {};
   userTier = TIER_ORDER.includes(traderRow.tier) ? traderRow.tier : 'free';
   const s = traderRow.scife || {};
-  const provider = s.provider || 'google';
+  const storedProvider = s.provider || 'groq';
   // BYOK secrets are kept in this browser only. Migrate any old keys from the
   // synced row before replacing its secret-bearing SciFe object below.
   const remoteApiKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? { ...s.apiKeys } : {};
-  if(s.apiKey && !remoteApiKeys[provider]) remoteApiKeys[provider] = s.apiKey;
+  if(s.apiKey && !remoteApiKeys[storedProvider]) remoteApiKeys[storedProvider] = s.apiKey;
   const localApiKeys = readLocalScifeApiKeys(currentUser.id);
   const apiKeys = { ...remoteApiKeys, ...localApiKeys };
+  const configuredProvider = apiKeys[storedProvider] ? storedProvider :
+    (Object.keys(PROVIDERS).find(key=>apiKeys[key] && key !== 'google') || storedProvider);
+  const provider = PROVIDERS[configuredProvider] ? configuredProvider : 'groq';
   const u = (s.usage && typeof s.usage === 'object') ? s.usage : {};
   scife = {
     provider,
     apiKeys,
-    model: s.model || (PROVIDERS[provider] || PROVIDERS.openai).models[0].value,
+    model: provider === storedProvider && (PROVIDERS[provider]||{}).models.some(m=>m.value===s.model)
+      ? s.model : (PROVIDERS[provider] || PROVIDERS.groq).models[0].value,
     voiceOn: s.voiceOn !== false,
     memory: Array.isArray(s.memory) ? s.memory : [],
     handsFree: !!s.handsFree,
@@ -2912,59 +2905,14 @@ window.addEventListener('storage', (e)=>{ if(e.key==='gd_theme') applyGdTheme(e.
 applyGdTheme((function(){ try{ return localStorage.getItem('gd_theme'); }catch(e){ return 'light'; } })());
 
 
-/* ============ DAILY CHAT LIMIT (shared plan key, Free tier only) ============
-   Separate counter from the weekly Signal-scan limit above — this one
-   covers ordinary chat turns on the shared key. Pro/Elite and anyone who's
-   saved their own key for the active provider are never capped here. */
 function todayKey(){
   const d = new Date();
   return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
 }
-function rolloverChatDay(){
-  const tk = todayKey();
-  if(scife.usage.chatDayKey !== tk){ scife.usage.chatDayKey = tk; scife.usage.chatCount = 0; }
-}
-function chatsRemainingToday(){
-  if(scife.usage.isAdmin) return Infinity;
-  rolloverChatDay();
-  return Math.max(0, FREE_DAILY_CHAT_LIMIT - scife.usage.chatCount);
-}
-function usingSharedKey(){
-  return !(scife.apiKeys && scife.apiKeys[scife.provider]);
-}
-// Re-pulls usage from the synced row (same pattern as refreshUsageFromServer
-// above) right before spending it, so two tabs/devices can't both slip a
-// message through on a stale local copy — then claims one chat turn.
-async function claimDailyChat(){
-  if(userTier !== 'free') return true;
-  if(!usingSharedKey()) return true; // trader's own key — not our quota to enforce
-  if(currentUser){
-    try{
-      const { data } = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
-      const u = (data && data.scife && data.scife.usage) || {};
-      scife.usage.scanCount = u.scanCount || scife.usage.scanCount;
-      scife.usage.chatCount = u.chatCount || 0;
-      scife.usage.chatDayKey = u.chatDayKey || '';
-      scife.usage.isAdmin = !!u.isAdmin;
-    }catch(e){ /* offline — fall back to local copy */ }
-  }
-  rolloverChatDay();
-  if(scife.usage.isAdmin) return true;
-  if(scife.usage.chatCount >= FREE_DAILY_CHAT_LIMIT) return false;
-  scife.usage.chatCount += 1;
-  await saveScife();
-  updateChatQuotaBanner();
-  return true;
-}
 function updateChatQuotaBanner(){
   const el = document.getElementById('chatQuotaBanner');
   if(!el) return;
-  if(userTier !== 'free'){ el.style.display = 'none'; return; }
-  const remaining = chatsRemainingToday();
-  el.style.display = 'flex';
-  el.innerHTML = `<span>Free plan — ${remaining}/${FREE_DAILY_CHAT_LIMIT} SciFe chats left today</span><a href="${packageUpgradeUrl('Pro')}" style="color:var(--bronze-bright);font-weight:600;text-decoration:none;">Upgrade →</a>`;
-  el.style.color = remaining === 0 ? 'var(--loss)' : 'var(--slate)';
-  el.classList.toggle('empty', remaining === 0);
+  el.style.display = 'none';
 }
 
 /* ============ DAILY CHAT-IMAGE LIMIT (3/day, unlimited for admin) ============
@@ -3019,21 +2967,15 @@ function updateChatImageQuotaHint(){
   if(btn) btn.classList.toggle('capped', !scife.usage.isAdmin && remaining === 0);
 }
 
-/* The key currently in effect for chat calls — the trader's own saved key
-   for the active provider if they've set one, otherwise the shared plan key
-   (forced onto SHARED_PROVIDER/SHARED_MODEL so it's always a valid pairing). */
+/* All model calls go directly to the provider selected in SciFe settings. */
 function activeApiKey(){
-  const own = scife.apiKeys && scife.apiKeys[scife.provider];
-  if(own) return own;
-  return SHARED_KEY;
+  return (scife.apiKeys && scife.apiKeys[scife.provider]) || '';
 }
 function activeProviderCfg(){
-  const own = scife.apiKeys && scife.apiKeys[scife.provider];
-  return own ? (PROVIDERS[scife.provider] || PROVIDERS.openai) : PROVIDERS[SHARED_PROVIDER];
+  return PROVIDERS[scife.provider] || PROVIDERS.groq;
 }
 function activeModel(){
-  const own = scife.apiKeys && scife.apiKeys[scife.provider];
-  return own ? scife.model : sharedModelForTier();
+  return scife.model || activeProviderCfg().models[0].value;
 }
 
 async function saveScife(){
@@ -3221,16 +3163,7 @@ function openSettings(){
   }
   renderAdminSection();
   const banner = document.getElementById('sharedKeyBanner');
-  if(banner){
-    if(usingSharedKey()){
-      banner.style.display = 'block';
-      banner.innerHTML = userTier === 'free'
-        ? `You're chatting for free on the shared plan key — no setup needed. That's capped at ${FREE_DAILY_CHAT_LIMIT} chats/day; paste your own key below any time to remove the cap, or <a href="${packageUpgradeUrl('Pro')}" style="color:var(--bronze-bright);font-weight:600;">upgrade</a>.`
-        : `You're on the shared plan key with no daily cap on your paid plan. Paste your own key below any time if you'd rather use a different provider.`;
-    } else {
-      banner.style.display = 'none';
-    }
-  }
+  if(banner) banner.style.display = 'none';
   const search = document.getElementById('settingsProviderSearch');
   if(search){ search.value = ''; filterProviders('settings', ''); }
   switchSettingsTab('ai');
@@ -3249,7 +3182,7 @@ async function saveSettings(){
   }
   scife.provider = newProvider;
   scife.apiKeys = scife.apiKeys || {};
-  // A blank key means "use the shared plan": drop the saved key so chats go through the ai-proxy.
+  // An empty key removes this provider key; SciFe does not silently switch providers.
   if(newKey) scife.apiKeys[newProvider] = newKey; else delete scife.apiKeys[newProvider];
   if(newTavily) scife.apiKeys.tavily = newTavily;   // blank = leave the saved Tavily key alone (use Remove key to delete it)
   scife.model = document.getElementById('settingsModelSelect').value;
@@ -3260,7 +3193,7 @@ async function saveSettings(){
   scife.voiceURI = voiceSel ? voiceSel.value : scife.voiceURI;
   await saveScife();
   closeSettings();
-  showToast(newKey ? 'Saved — now talking to ' + (PROVIDERS[scife.provider]?.label || scife.provider) : 'Saved — using the shared plan');
+  showToast(newKey ? 'Saved — now using ' + (PROVIDERS[scife.provider]?.label || scife.provider) : 'Provider key removed');
 }
 async function clearMemory(){
   scife.memory = [];
@@ -4766,8 +4699,8 @@ async function analyzeSignal(){
   const desiredRR = desiredRRraw && !isNaN(parseFloat(desiredRRraw)) && parseFloat(desiredRRraw) > 0 ? parseFloat(desiredRRraw) : null;
   const desc = document.getElementById('sig_desc').value.trim();
   if(!desc && !sigChartImage){ showToast("Add a chart image or describe what you're seeing"); return; }
-  if(sigChartImage && !currentModelSupportsVision()){
-    showSigError(`${PROVIDERS[scife.provider]?.label||scife.provider} / ${scife.model} can't read images. Choose a model with image analysis in settings (${visionCapableSummary()}), or describe the setup in text instead.`, false);
+  if(sigChartImage && !imageScanProviders().length){
+    showSigError('No saved non-Gemini image provider is ready for this scan. Add a key for an image-capable provider such as Groq, OpenAI, OpenRouter, or Anthropic in Settings. Your scan was not counted.', false);
     return;
   }
   // CONSISTENCY GUARD: if this is the exact same chart image (by content
@@ -4811,14 +4744,6 @@ async function analyzeSignal(){
       return;
     }
   }
-  // Consume the scan now, before the request goes out to any provider —
-  // this is the one and only place the counter moves, regardless of which
-  // AI server ends up handling the call below.
-  if(!scife.usage.isAdmin){
-    scife.usage.scanCount += 1;
-    await saveScife();
-  }
-  updateScanBanner();
   const btn = document.getElementById('sig_analyzeBtn');
   const btnDefaultHTML = ' Analyze setup<span class="sig-cta-sub">Runs the full confluence checklist now</span>';
   btn.disabled = true; btn.innerHTML = 'Analyzing…<span class="sig-cta-sub">Reading chart(s) and checklist</span>'; btn.classList.add('btn-analyzing');
@@ -4855,31 +4780,39 @@ async function analyzeSignal(){
     const userTurn = [{ role:'user', content:userMsg }];
 
     let raw, parsed, lastErr;
-    // Up to 2 attempts total: a transient provider hiccup (rate limit/5xx) or
-    // a response that didn't come back as clean JSON both get one retry with
-    // a stricter reminder, instead of failing the whole scan on the first blip.
-    for(let attempt=1; attempt<=2; attempt++){
-      try{
-        const promptForAttempt = attempt===1 ? systemPrompt
-          : systemPrompt + '\n\nYour previous response did not come back as a single valid JSON object. This time, output ONLY the raw JSON object described above — no markdown code fences, no leading/trailing text, no explanation.';
-        raw = await chatCompletion(promptForAttempt, userTurn, opts);
-        parsed = extractJson(raw);
-        if(parsed){ lastErr = null; break; }
-        lastErr = new Error("Couldn't parse a structured signal from that response.");
-      }catch(e){
-        lastErr = e;
-        // Only retry on errors that are plausibly transient (rate limit /
-        // server overload / timeout) — don't burn a second call on something
-        // like a missing API key or an unsupported image that'll fail again.
-        const transient = /429|5\d\d|rate.?limit|overloaded|timeout|temporarily/i.test(e.message||'');
-        if(attempt===2 || !transient) break;
+    const scanProviders = sigChartImage
+      ? imageScanProviders()
+      : [{ key:scife.provider, cfg:activeProviderCfg(), model:{value:activeModel()}, apiKey:activeApiKey() }];
+    const providerErrors = [];
+    for(const provider of scanProviders){
+      for(let attempt=1; attempt<=2; attempt++){
+        try{
+          const promptForAttempt = attempt===1 ? systemPrompt
+            : systemPrompt + '\n\nYour previous response did not come back as a single valid JSON object. This time, output ONLY the raw JSON object described above — no markdown code fences, no leading/trailing text, no explanation.';
+          raw = await chatCompletion(promptForAttempt, userTurn, { ...opts, provider:provider.key, model:provider.model.value, apiKey:provider.apiKey });
+          parsed = extractJson(raw);
+          if(parsed){ lastErr = null; break; }
+          lastErr = new Error("Couldn't parse a structured signal from that response.");
+        }catch(e){
+          lastErr = e;
+          const transient = /429|5\d\d|rate.?limit|overloaded|timeout|temporarily/i.test(e.message||'');
+          if(attempt===2 || !transient) break;
+        }
       }
+      if(parsed) break;
+      providerErrors.push(`${provider.cfg.label}: ${lastErr && lastErr.message || 'no structured response'}`);
     }
+    if(!parsed && providerErrors.length>1) lastErr = new Error(`Image scan providers were unavailable. ${providerErrors.join(' · ')}`);
     if(!parsed){
       throw lastErr || new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
     }
     if(strategy.type === 'gmc') parsed = enforceGmcChecklist(parsed);
     parsed = reconcileSignalResult(parsed);
+    if(!scife.usage.isAdmin){
+      scife.usage.scanCount += 1;
+      await saveScife();
+    }
+    updateScanBanner();
     hideSkeleton();
     // If there's a prior stored read for this pair AND this is a genuinely
     // different chart (different hash, or no image this time), and the new
@@ -6243,15 +6176,6 @@ async function sendMessage(text, images){
       images = [];
     }
   }
-  if(usingSharedKey()){
-    const allowed = await claimDailyChat();
-    if(!allowed){
-      addBubble('system', `Free plan's daily SciFe limit (${FREE_DAILY_CHAT_LIMIT}/day) is used up — it resets at midnight UTC, or upgrade any time for more.`);
-      updateChatQuotaBanner();
-      return;
-    }
-    updateChatQuotaBanner();
-  }
   addBubble('user', text, { images, instant:true });
   history.push({ role:'user', content: images.length ? `${text} [attached ${images.length} image${images.length>1?'s':''}]` : text });
   addTyping();
@@ -6312,9 +6236,9 @@ async function chatCompletion(systemPrompt, turns, opts){
   opts = opts || {};
   const maxTokens = opts.maxTokens || 500; // a little headroom for the trailing trade-action JSON block
   const temperature = opts.temperature !== undefined ? opts.temperature : 0.7;
-  const cfg = activeProviderCfg();
-  const apiKey = activeApiKey();
-  const model = activeModel();
+  const cfg = (opts.provider && PROVIDERS[opts.provider]) || activeProviderCfg();
+  const apiKey = opts.apiKey || activeApiKey();
+  const model = opts.model || activeModel();
   if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
   const images = [opts.image, opts.image2, opts.image3].filter(Boolean);
   if(cfg.compat === 'tavily'){
@@ -6332,7 +6256,6 @@ async function chatCompletion(systemPrompt, turns, opts){
     return [answer || 'Tavily returned sources without a short answer.', sources ? 'Sources:\n' + sources : ''].filter(Boolean).join('\n\n');
   }
   if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
-  if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
   return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
 }
 
@@ -6441,58 +6364,6 @@ async function callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temper
   }
   if(data.stop_reason === 'max_tokens' && (!block || !block.text)) throw new Error('Anthropic cut the response off before it finished (hit the token limit) — retrying.');
   return (block && block.text) || "I didn't catch that — try again?";
-}
-
-async function callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model){
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model || scife.model}:generateContent?key=${apiKey}`;
-  const contents = turns.map((t,i)=>{
-    const parts = [];
-    if(images && images.length && t.role==='user' && i===turns.length-1){
-      images.forEach(img=>parts.push({ inline_data:{ mime_type:img.mime, data:img.data } }));
-    }
-    parts.push({ text:t.content });
-    return { role: t.role === 'assistant' ? 'model' : 'user', parts };
-  });
-  const bodyObj = {
-    contents,
-    systemInstruction: { role:'user', parts:[{ text:systemPrompt }] },
-    generationConfig: { temperature, maxOutputTokens:maxTokens }
-  };
-  // The server proxy chooses the house model from this field. Direct Gemini
-  // calls choose their model in the URL below and must not receive this field.
-  if(apiKey === SHARED_KEY) bodyObj.model = model || sharedModelForTier();
-  let res;
-  if(apiKey === SHARED_KEY){
-    const { data:{ session } } = await sb.auth.getSession();
-    if(!session) throw new Error('Sign in to use SciFe on the shared plan');
-    res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + session.access_token, 'apikey': SUPABASE_KEY },
-      body: JSON.stringify(bodyObj)
-    });
-  } else {
-    res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(bodyObj) });
-  }
-  if(!res.ok){
-    const err = await res.json().catch(()=>({}));
-    let msg = err.error?.message || ('Gemini request failed (' + res.status + ')');
-    if(!new RegExp(String(res.status)).test(msg)) msg += ` [HTTP ${res.status}]`;
-    throw new Error(msg);
-  }
-  const data = await res.json();
-  const cand = data.candidates && data.candidates[0];
-  const text = cand && cand.content && cand.content.parts && cand.content.parts.map(p=>p.text||'').join('');
-  if(!text && cand && cand.finishReason && cand.finishReason !== 'STOP'){
-    // SAFETY = the image tripped Gemini's content filter (rare, but happens on
-    // some chart screenshots with watermarks/text overlays). MAX_TOKENS = cut
-    // off before finishing. Either way, a plain "didn't catch that" would be
-    // misleading — say what actually happened.
-    const reason = cand.finishReason === 'SAFETY' ? 'Gemini blocked this image/response for safety reasons — try a plainer chart screenshot without extra overlays or text.'
-      : cand.finishReason === 'MAX_TOKENS' ? 'Gemini cut the response off before it finished (hit the token limit) — retrying.'
-      : `Gemini stopped early (${cand.finishReason}) — retrying.`;
-    throw new Error(reason);
-  }
-  return text || "I didn't catch that — try again?";
 }
 
 /* Roughly every 6 exchanges, distill a one-line memory note so future sessions have context.
@@ -8043,6 +7914,55 @@ html:not([data-theme="light"]) .center-screen{background-color:transparent!impor
   #signalPage{padding-inline:12px!important}
   #signalPage .sig-console-card{padding-inline:12px}
 }
+
+/* SciFe interface refresh: clearer hierarchy, calmer surfaces, and a scanner
+   that stays compact on phones while using the desktop canvas well. */
+html[data-theme] body:has(#app){background:radial-gradient(ellipse 72% 34% at 50% -8%,rgba(184,205,169,.095),transparent 72%),#070908!important}
+#app>.topbar{display:flex;align-items:center;gap:16px;padding:18px 0 15px;border-bottom:1px solid rgba(238,240,237,.12);background:#080a09}
+#app>.topbar .back{font-size:12px;padding:8px 11px;border-radius:10px}
+#app>.topbar .title{font-size:23px;letter-spacing:-.04em}
+#app>.topbar .topbar-icons{margin-left:auto;gap:8px}
+#app>.topbar .icon-btn{width:42px;height:42px;border-radius:12px}
+#stage{border-radius:16px;background:radial-gradient(ellipse at 70% 12%,rgba(184,205,169,.12),transparent 56%),linear-gradient(150deg,#141714,#0d0f0e);box-shadow:inset 0 1px rgba(255,255,255,.07),0 18px 34px -30px #000}
+#app .chat-wrap{border-radius:16px;background:#0d0f0e;box-shadow:inset 0 1px rgba(255,255,255,.04)}
+#app .composer-row{border-radius:15px;background:#111412;box-shadow:0 14px 34px -28px #000}
+#app .quick-chip.prompt-card{border-radius:13px;background:#101311;box-shadow:inset 0 1px rgba(255,255,255,.035)}
+#signalPage{width:min(100%,1040px)!important;max-width:1040px!important;padding:0 clamp(16px,3vw,34px) 38px!important}
+#signalPage .topbar{position:sticky;top:0;z-index:15;padding:13px 0 10px;background:#070908;border-bottom:1px solid rgba(238,240,237,.1)}
+#signalPage .sig-hero{margin:20px 0 14px;padding:25px clamp(20px,3vw,30px);border-radius:16px;background:linear-gradient(145deg,#141714,#0c0e0d);border-color:rgba(238,240,237,.13);box-shadow:inset 0 1px rgba(255,255,255,.045)}
+#signalPage .sig-hero-title{font-size:clamp(25px,3.3vw,34px);letter-spacing:-.04em}
+#signalPage .sig-hero-sub{font-size:13px;max-width:62ch;color:#a3aaa2}
+#signalPage .sig-step{margin:22px 0 10px}
+#signalPage .sig-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px;padding:20px 20px 4px;border-radius:15px;background:#0d100e;border-color:rgba(238,240,237,.12);box-shadow:inset 0 1px rgba(255,255,255,.025)}
+#signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1/-1}
+#signalPage .field label{font-size:10.5px;letter-spacing:.075em;color:#c1c7bf}
+#signalPage .field input,#signalPage .field select,#signalPage .sig-textarea{border-radius:10px;background:#090b0a;border-color:rgba(238,240,237,.15);box-shadow:none}
+#signalPage .sig-upload-zone{min-height:128px;border-radius:12px;background:#101411;border-color:rgba(184,205,169,.27);color:#d7dbd3}
+#signalPage .sig-upload-zone .icon{width:34px;height:34px;border-radius:10px}
+#signalPage #sig_analyzeBtn{width:100%;min-height:52px;margin-top:16px;border-radius:12px;background:linear-gradient(135deg,#c5d3b7,#a7bd96);color:#11140e;box-shadow:0 10px 24px -18px rgba(184,205,169,.65)}
+#signalPage #sig_analyzeBtn .sig-cta-sub{display:block;font-size:10.5px;font-weight:500;opacity:.7}
+#settingsOverlay .modal{background:#0d100e;border:1px solid rgba(238,240,237,.13);border-radius:17px;box-shadow:0 28px 70px -42px #000}
+#settingsOverlay .settings-tabs{gap:5px}
+#settingsOverlay .settings-tab{border-radius:9px}
+@media(max-width:760px){
+  #app>.topbar{padding-top:calc(12px + env(safe-area-inset-top));gap:9px}
+  #app>.topbar .back{font-size:10.5px;padding:7px 8px}
+  #app>.topbar .title{font-size:20px}
+  #app>.topbar .icon-btn{width:38px;height:38px}
+  #signalPage{padding:0 14px calc(24px + env(safe-area-inset-bottom))!important}
+  #signalPage .topbar{padding-top:calc(10px + env(safe-area-inset-top))}
+  #signalPage .sig-hero{margin-top:14px;padding:20px 17px}
+  #signalPage .sig-hero-title{font-size:27px}
+  #signalPage .sig-card{grid-template-columns:1fr;gap:0;padding:17px 15px 3px}
+  #signalPage .sig-card .field:has(#sig_desc),#signalPage .sig-card .field:has(#sig_traderBias){grid-column:1}
+  #signalPage .field{margin-bottom:15px}
+  #signalPage .sig-upload-zone{min-height:112px;padding:18px 13px}
+  #signalPage .sig-console-card{margin-top:0}
+  #settingsOverlay{align-items:flex-end;padding:9px 9px calc(7px + env(safe-area-inset-bottom))}
+  #settingsOverlay .modal{max-height:92dvh;border-radius:19px 19px 12px 12px;padding:22px 16px calc(15px + env(safe-area-inset-bottom))}
+  #settingsOverlay .settings-tabs{top:-22px;overflow-x:auto;white-space:nowrap}
+}
+@media(prefers-reduced-motion:reduce){#signalPage .sig-hero::after{animation:none!important}}
 </style>
 </body>
 </html>
