@@ -445,7 +445,7 @@ function readTextFile(f){
   r.readAsText(f);
 }
 
-/* ---------- AI (shared house model via the existing ai-proxy) ---------- */
+/* ---------- AI (saved SciFe vision providers with shared Gemini fallback) ---------- */
 function extractSystemPrompt(){
   return 'You read screenshots or text of a trader\'s broker / trading-app history (MT4, MT5, cTrader, TradingView, Exness, etc.) and extract every trade or order shown.\n' +
   'Return ONLY one JSON object, no prose and no markdown:\n' +
@@ -459,9 +459,8 @@ function extractSystemPrompt(){
    model in the chain. Every model below is a current Gemini API endpoint.
    (gemini-3.6-flash is deliberately left out: it retires on 19 Nov 2026.)
 
-   Two transports, tried in this order:
-     1. the trader's OWN Gemini key saved in SciFe settings (called directly, free for us), then
-     2. the shared house key via the ai-proxy Edge Function. */
+   The order reader tries each saved image-capable SciFe provider in turn,
+   then the shared house key via the ai-proxy Edge Function. */
 var AI_CHAIN_STD = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.5-flash'];
 var AI_CHAIN_PRO = ['gemini-3.1-pro-preview'].concat(AI_CHAIN_STD);
 var AI_TRIES_PER_MODEL = 2, AI_ATTEMPT_MS = 45000, AI_TOTAL_MS = 90000;
@@ -478,91 +477,75 @@ function aiModelProblem(status, msg){ return (status===400 || status===404) && /
 function aiKeyProblem(status, msg){ return status===401 || status===403 || (status===400 && /api key|API_KEY_INVALID|permission/i.test(msg||'')); }
 function setImpStatus(t){ var m = $('gdImpMsg'); if(m) m.textContent = t || ''; }
 // The key SciFe saved on this device (same storage SciFe settings writes to). Never sent to our database.
-function ownGeminiKey(){
-  try{
-    if(!currentUser || !currentUser.id) return '';
-    var raw = localStorage.getItem('gd_scife_provider_keys_v1_' + currentUser.id);
-    var k = raw ? JSON.parse(raw) : null;
-    var g = k && typeof k.google==='string' ? k.google.trim() : '';
-    return /^AIza[0-9A-Za-z_\-]{20,}$/.test(g) ? g : '';
-  }catch(e){ return ''; }
+async function loadScifeAiConfig(){
+ var keys={},config={};
+ try{if(currentUser&&currentUser.id){var row=await sb.from('trader_data').select('scife').eq('user_id',currentUser.id).maybeSingle();var saved=row&&row.data&&row.data.scife||{};config=saved;if(saved.apiKeys&&typeof saved.apiKeys==='object')keys=Object.assign(keys,saved.apiKeys);if(saved.apiKey&&!keys[saved.provider||'google'])keys[saved.provider||'google']=saved.apiKey;}}catch(e){}
+ try{if(currentUser&&currentUser.id){var raw=localStorage.getItem('gd_scife_provider_keys_v1_'+currentUser.id);var local=raw?JSON.parse(raw):{};if(local&&typeof local==='object'&&!Array.isArray(local))keys=Object.assign(keys,local);if(Object.keys(keys).length)localStorage.setItem('gd_scife_provider_keys_v1_'+currentUser.id,JSON.stringify(keys));}}catch(e){}
+ return{keys:keys,provider:config.provider||'google',model:config.model||''};
 }
-async function callAI(userText, images){
-  var s = await sb.auth.getSession();
-  var session = s && s.data && s.data.session;
-  if(!session) throw new Error('Sign in to use AI import');
-  var parts = (images||[]).map(function(im){ return { inline_data:{ mime_type:im.mime, data:im.data } }; });
-  parts.push({ text:userText });
-  var chain = userTier==='premium' ? AI_CHAIN_PRO : AI_CHAIN_STD;
-  var own = ownGeminiKey();
-  var transports = own ? ['own','proxy'] : ['proxy'];
-  var started = Date.now(), lastMsg = '', lastStatus = 0, attempt = 0;
-  for(var ti=0; ti<transports.length; ti++){
-    var via = transports[ti];
-    if(via==='proxy' && own && !(await importAllowed(true))) throw new Error('Your own Gemini key could not be used and the daily shared-AI limit is used up. Check the key in SciFe settings, or paste text / upload a CSV.');
-    var abandon = false;
-    for(var m=0; m<chain.length && !abandon; m++){
-      for(var t=0; t<AI_TRIES_PER_MODEL; t++){
-        if(Date.now() - started > AI_TOTAL_MS) break;
-        if(attempt>0) setImpStatus('The AI reader is busy. Retrying (' + (attempt+1) + ')\u2026');
-        attempt++;
-        var gen = { temperature:0.1, maxOutputTokens:8192, responseMimeType:'application/json' };
-        var body = {
-          contents:[{ role:'user', parts:parts }],
-          systemInstruction:{ role:'user', parts:[{ text:extractSystemPrompt() }] },
-          generationConfig: gen
-        };
-        if(via==='proxy') body.model = chain[m];   // the proxy picks the model from this field; Google rejects it
-        var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
-        var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, AI_ATTEMPT_MS) : null;
-        var res = null;
-        try{
-          if(via==='own'){
-            res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + chain[m] + ':generateContent', {
-              method:'POST',
-              headers:{ 'Content-Type':'application/json', 'x-goog-api-key': own },
-              body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined
-            });
-          } else {
-            res = await fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
-              method:'POST',
-              headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY },
-              body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined
-            });
-          }
-        }catch(e){
-          lastStatus = 0; lastMsg = (e && e.name==='AbortError') ? 'timed out' : 'network error';
-        }finally{ if(timer) clearTimeout(timer); }
-        if(res){
-          if(res.ok){
-            var data = await res.json().catch(function(){ return null; });
-            var cand = data && data.candidates && data.candidates[0];
-            var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){ return p.thought ? '' : (p.text||''); }).join('');
-            if(text && text.trim()){ lastAIVia = via; return text; }
-            var why = (data && data.promptFeedback && data.promptFeedback.blockReason) || (cand && cand.finishReason) || '';
-            if(why==='SAFETY' || why==='PROHIBITED_CONTENT' || why==='BLOCKLIST') throw new Error('The AI blocked that image. Try a plainer screenshot of just the trade rows.');
-            lastStatus = 200; lastMsg = 'empty reply' + (why ? ' (' + why + ')' : '');
-          } else {
-            var err = await res.json().catch(function(){ return {}; });
-            lastStatus = res.status;
-            lastMsg = (err && err.error && (err.error.message || err.error)) || (err && err.message) || '';
-            if(typeof lastMsg !== 'string') lastMsg = JSON.stringify(lastMsg);
-            if(via==='own' && aiKeyProblem(res.status, lastMsg)){ abandon = true; break; }   // bad/restricted personal key: use the shared AI instead
-            if(aiModelProblem(res.status, lastMsg)) break;                                     // this model id is rejected: next model
-            if(via==='proxy' && aiNotConfigured(lastMsg)) throw new Error('The shared AI is not set up yet. Add your own Gemini key in SciFe settings and scans will work right away.');
-            if(!aiTransient(res.status, lastMsg)){
-              if(via==='own'){ abandon = true; break; }
-              throw new Error(lastMsg || ('AI request failed ('+res.status+')'));
-            }
-          }
-        }
-        if(t < AI_TRIES_PER_MODEL-1) await aiSleep(1200*(t+1) + Math.floor(Math.random()*500));
-      }
-      if(Date.now() - started > AI_TOTAL_MS) break;
-    }
-    if(Date.now() - started > AI_TOTAL_MS) break;
+var IMPORT_IMAGE_PROVIDERS={
+ groq:{compat:'openai',url:'https://api.groq.com/openai/v1/chat/completions',models:['meta-llama/llama-4-maverick-17b-128e-instruct']},
+ google:{compat:'gemini',models:['gemini-3.8-flash','gemini-3.5-flash-lite','gemini-3.1-pro-preview']},
+ openrouter:{compat:'openai',url:'https://openrouter.ai/api/v1/chat/completions',models:['google/gemini-2.0-flash-exp:free','openai/gpt-4o-mini']},
+ mistral:{compat:'openai',url:'https://api.mistral.ai/v1/chat/completions',models:['pixtral-large-latest']},
+ openai:{compat:'openai',url:'https://api.openai.com/v1/chat/completions',models:['gpt-4o-mini','gpt-4o']},
+ together:{compat:'openai',url:'https://api.together.xyz/v1/chat/completions',models:['meta-llama/Llama-Vision-Free']},
+ github:{compat:'openai',url:'https://models.github.ai/inference/chat/completions',models:['openai/gpt-4o-mini','openai/gpt-4o']},
+ huggingface:{compat:'openai',url:'https://router.huggingface.co/v1/chat/completions',models:['Qwen/Qwen2.5-VL-3B-Instruct']},
+ fireworks:{compat:'openai',url:'https://api.fireworks.ai/inference/v1/chat/completions',models:['accounts/fireworks/models/llama-v3p2-11b-vision-instruct']},
+ qwen:{compat:'openai',url:'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',models:['qwen-vl-plus']},
+ llm7:{compat:'openai',url:'https://api.llm7.io/v1/chat/completions',models:['gpt-4o-mini']},
+ featherless:{compat:'openai',url:'https://api.featherless.ai/v1/chat/completions',models:['google/gemma-3-27b-it']},
+ deepinfra:{compat:'openai',url:'https://api.deepinfra.com/v1/openai/chat/completions',models:['meta-llama/Llama-3.2-90B-Vision-Instruct']},
+ hyperbolic:{compat:'openai',url:'https://api.hyperbolic.xyz/v1/chat/completions',models:['Qwen/Qwen2-VL-72B-Instruct']},
+ pollinations:{compat:'openai',url:'https://gen.pollinations.ai/v1/chat/completions',models:['openai','openai-large','gemini']},
+ anthropic:{compat:'anthropic',models:['claude-sonnet-5','claude-haiku-4-5-20251001','claude-opus-4-8']}
+};
+async function savedImageProviders(){
+ var cfg=await loadScifeAiConfig(),keys=cfg.keys||{},ids=Object.keys(IMPORT_IMAGE_PROVIDERS).filter(function(id){return typeof keys[id]==='string'&&keys[id].trim();});
+ ids.sort(function(a,b){return a===cfg.provider?-1:b===cfg.provider?1:0;});
+ return ids.map(function(id){var p=IMPORT_IMAGE_PROVIDERS[id],models=p.models.slice();if(id===cfg.provider&&cfg.model&&models.indexOf(cfg.model)>=0)models=[cfg.model].concat(models.filter(function(m){return m!==cfg.model;}));return{id:id,cfg:p,key:keys[id].trim(),models:models};});
+}
+async function ownAiKeyAvailable(){try{return(await savedImageProviders()).length>0;}catch(e){return false;}}
+function imageMessages(userText,images){return[{role:'system',content:extractSystemPrompt()},{role:'user',content:[{type:'text',text:userText}].concat((images||[]).map(function(im){return{type:'image_url',image_url:{url:'data:'+im.mime+';base64,'+im.data}};}))}];}
+async function callOwnImageProvider(provider,model,userText,images){
+ var ctrl=typeof AbortController!=='undefined'?new AbortController():null,timer=ctrl?setTimeout(function(){ctrl.abort();},30000):null,res;
+ try{
+  if(provider.cfg.compat==='gemini'){
+   var parts=(images||[]).map(function(im){return{inline_data:{mime_type:im.mime,data:im.data}};});parts.push({text:userText});
+   res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':provider.key},body:JSON.stringify({contents:[{role:'user',parts:parts}],systemInstruction:{role:'user',parts:[{text:extractSystemPrompt()}]},generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}}),signal:ctrl?ctrl.signal:undefined});
+  }else if(provider.cfg.compat==='anthropic'){
+   var content=(images||[]).map(function(im){return{type:'image',source:{type:'base64',media_type:im.mime,data:im.data}};});content.push({type:'text',text:userText});
+   res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':provider.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:model,max_tokens:8192,temperature:0.1,system:extractSystemPrompt(),messages:[{role:'user',content:content}]}),signal:ctrl?ctrl.signal:undefined});
+  }else{
+   res=await fetch(provider.cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+provider.key},body:JSON.stringify({model:model,messages:imageMessages(userText,images),temperature:0.1,max_tokens:8192}),signal:ctrl?ctrl.signal:undefined});
   }
-  throw new Error('The AI reader is overloaded right now' + (lastStatus ? ' (' + lastStatus + ')' : '') + '. This scan was NOT counted against your daily limit. Wait a minute and try again, use Paste text / CSV, or add your own free Gemini key in SciFe settings.');
+  var data=await res.json().catch(function(){return{};});if(!res.ok){var msg=data.error&&(data.error.message||data.error)||data.message||('HTTP '+res.status);throw new Error(String(msg));}
+  var text='';
+  if(provider.cfg.compat==='gemini'){var cand=data.candidates&&data.candidates[0];text=cand&&cand.content&&cand.content.parts?cand.content.parts.map(function(p){return p.thought?'':(p.text||'');}).join(''):'';}
+  else if(provider.cfg.compat==='anthropic')text=(data.content||[]).filter(function(c){return c.type==='text';}).map(function(c){return c.text||'';}).join('');
+  else{text=data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||'';if(Array.isArray(text))text=text.map(function(p){return p.text||'';}).join('');}
+  if(!text.trim())throw new Error('Empty response');return text;
+ }finally{if(timer)clearTimeout(timer);}
+}
+async function callSharedImageFallback(session,userText,images){
+ var chain=userTier==='premium'?AI_CHAIN_PRO:AI_CHAIN_STD,parts=(images||[]).map(function(im){return{inline_data:{mime_type:im.mime,data:im.data}};});parts.push({text:userText});var started=Date.now(),lastStatus=0;
+ for(var m=0;m<chain.length;m++)for(var t=0;t<AI_TRIES_PER_MODEL;t++){
+  if(Date.now()-started>AI_TOTAL_MS)break;
+  var body={contents:[{role:'user',parts:parts}],systemInstruction:{role:'user',parts:[{text:extractSystemPrompt()}]},generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'},model:chain[m]};
+  var ctrl=typeof AbortController!=='undefined'?new AbortController():null,timer=ctrl?setTimeout(function(){ctrl.abort();},AI_ATTEMPT_MS):null,res;
+  try{res=await fetch(SUPABASE_URL+'/functions/v1/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify(body),signal:ctrl?ctrl.signal:undefined});}catch(e){lastStatus=0;}finally{if(timer)clearTimeout(timer);}
+  if(res){var data=await res.json().catch(function(){return{};});if(res.ok){var cand=data.candidates&&data.candidates[0],text=cand&&cand.content&&cand.content.parts?cand.content.parts.map(function(p){return p.thought?'':(p.text||'');}).join(''):'';if(text.trim()){lastAIVia='proxy';return text;}}else{lastStatus=res.status;var msg=data.error&&(data.error.message||data.error)||'';if(aiNotConfigured(String(msg)))throw new Error('The shared Gemini fallback is not configured. Add an image-capable provider key in SciFe settings.');if(!aiTransient(res.status,String(msg))&&!aiModelProblem(res.status,String(msg)))throw new Error(String(msg)||('AI request failed ('+res.status+')'));}}
+  if(t<AI_TRIES_PER_MODEL-1)await aiSleep(900*(t+1));
+ }
+ throw new Error('All saved image-capable SciFe providers and the shared Gemini fallback are unavailable'+(lastStatus?' (HTTP '+lastStatus+')':'')+'. This scan was not counted. Check a saved provider key or paste the order text/CSV.');
+}
+async function callAI(userText,images){
+ var s=await sb.auth.getSession(),session=s&&s.data&&s.data.session;if(!session)throw new Error('Sign in to use AI import');
+ var providers=await savedImageProviders(),started=Date.now(),attempt=0;
+ for(var i=0;i<providers.length;i++){var p=providers[i];for(var m=0;m<p.models.length;m++){if(Date.now()-started>AI_TOTAL_MS)break;if(attempt++)setImpStatus('Trying saved SciFe image provider ('+(attempt+1)+')…');try{var text=await callOwnImageProvider(p,p.models[m],userText,images);lastAIVia='own';return text;}catch(e){console.warn('Order image provider failed:',p.id,p.models[m],e&&e.message||e);}break;}}
+ if(providers.length&&!(await importAllowed(true)))throw new Error('Your saved SciFe providers could not read this image and the shared-AI import limit is used up. Check a provider key in SciFe settings, or paste text / CSV.');
+ return callSharedImageFallback(session,userText,images);
 }
 function parseJsonLoose(text){
   var t = String(text).replace(/```json|```/gi,'').trim();
@@ -582,8 +565,8 @@ async function aiExtract(userText, images){
 async function importAllowed(strict){
   // Read-only check. The allowance is only spent by commitImport() AFTER the AI read succeeds,
   // so a failed / overloaded scan never costs the trader one of their daily imports.
-  // A trader scanning with their OWN Gemini key is not using the shared key, so no daily cap applies.
-  if(!strict && ownGeminiKey()) return true;
+// A trader scanning with any saved image-capable SciFe key is not using the shared key, so no daily cap applies.
+  if(!strict && await ownAiKeyAvailable()) return true;
   try{
     var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
     var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
@@ -594,7 +577,7 @@ async function importAllowed(strict){
 }
 async function commitImport(){
   // Shares SciFe's daily image allowance (trader_data.scife.usage). One successful SHARED-key import = one use.
-  if(lastAIVia==='own') return;
+  if(lastAIVia!=='proxy') return;
   try{
     var r = await sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle();
     var sc = (r.data && r.data.scife) || {}, u = sc.usage || {};
@@ -751,6 +734,7 @@ function dateFromRows(list){
 }
 window.gdRunExtract = async function(){
   if(imp.busy) return;
+  lastAIVia = 'none';
   var msg = $('gdImpMsg'); msg.textContent = '';
   if(!imp.account){ msg.textContent = 'Choose which account these trades belong to first.'; var as = $('gdImpAccount'); if(as) as.focus(); return; }
   var found = [], date = null;

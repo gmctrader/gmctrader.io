@@ -2419,6 +2419,20 @@ const PROVIDERS = {
       { value:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5 — fastest & cheap', vision:true },
       { value:'claude-opus-4-8', label:'Claude Opus 4.8 — most capable', vision:true }
     ]
+  },
+  tavily: {
+    label: 'Tavily Search',
+    badge: 'Credits', badgeClass:'paid',
+    cost: 'Live web search with sourced answers · uses Tavily credits · text only',
+    keyLabel: 'Tavily API key',
+    keyPlaceholder: 'tvly-...',
+    keyHint: 'Uses Tavily Search directly for sourced web answers. This is a search provider, not a general chat model.',
+    keyLink: 'https://app.tavily.com/home',
+    compat: 'tavily',
+    models: [
+      { value:'basic', label:'Basic search answer — lower credit use', vision:false },
+      { value:'advanced', label:'Advanced search answer — deeper results', vision:false }
+    ]
   }
 };
 
@@ -2519,6 +2533,10 @@ function onProviderChange(scope){
   if(providerHint) providerHint.textContent = cfg.keyHint;
   if(keyLink) keyLink.href = cfg.keyLink;
   const savedKey = (scife.apiKeys && scife.apiKeys[sel.value]) || '';
+  if(scope === 'settings'){
+    const tavilyField = document.getElementById('tavilyField');
+    if(tavilyField) tavilyField.style.display = sel.value === 'tavily' ? 'none' : '';
+  }
   if(keyInput) keyInput.value = savedKey;
   if(keySaved) keySaved.style.display = savedKey ? 'inline' : 'none';
   if(modelSelect){
@@ -3350,6 +3368,30 @@ function summarizeJournal(){
     recent.length ? `Recent trades (all accounts, tagged):\n${recent.join('\n')}` : 'No trades logged yet.'
   ].filter(Boolean).join('\n');
 }
+// SciFe reads the same authenticated trader_data row as the main portal.
+// Keep the useful planning, strategy, mindset and order details in its live
+// context so the companion can bridge those areas instead of seeing only a
+// journal summary. Provider secrets are deliberately excluded.
+function summarizePortalWorkspace(){
+  const row = traderRow || {};
+  const p = row.profile || {}, psych = row.psychology || {};
+  const strategies = Array.isArray(psych.strategies) ? psych.strategies.map(s=>({ name:s.name, type:s.type, notes:s.notes||'', rules:s.rules||'' })) : [];
+  const orders = Array.isArray(psych.orders) ? psych.orders.slice(-30).map(o=>({ id:o.id, status:o.status, pair:o.pair, direction:o.direction, entry:o.entry, sl:o.sl, tp:o.tp, account:o.account, strategy:o.strategy, notes:o.notes })) : [];
+  const journalTrades = Array.isArray(row.trades) ? row.trades.slice(-100).map(t=>({ id:t.id, date:t.date, result:t.result, pair:t.pair, account:t.account||'personal', strategy:t.strategy, strategyType:t.strategyType, rr:t.rr, pnl:pnlOf(t), mood:t.mood, entry:t.entry, sl:t.sl, tp:t.tp, notes:String(t.notes||'').slice(0,240) })) : [];
+  const plan = psych.dailyTradePlan || null;
+  const strategyNotes = psych.strategyNotes ? { customStrategies:(psych.strategyNotes.customStrategies||[]).slice(-20), recentCheckIns:(psych.strategyNotes.checkIns||[]).slice(-20), journal:String(psych.strategyNotes.journal||'').slice(-3000) } : null;
+  const context = {
+    profile:{ name:p.name||p.preferredName||p.preferred_name||null, style:p.style||null, timezone:p.timezone||null, tradingExperience:p.tradingExperience||p.experience||null },
+    session:row.session||null,
+    rules:row.rules||{}, strategies:strategies, dailyTradePlan:plan, strategyNotes:strategyNotes,
+    mindset:{ why:psych.why||'', monkCode:psych.monk||'', preTradeCheckins:(psych.preTradeCheckins||[]).slice(-10), tradeReviews:(psych.tradeReviews||[]).slice(-10) },
+    orders:orders, journalTrades:journalTrades,
+    portalAreas:['dashboard','daily brief','journal','analytics','calendar','daily trade plan','review room','order book','playbook','strategy notes','backtest','psychology','risk rules','prop firm accounts','session','profile']
+  };
+  let text = JSON.stringify(context);
+  if(text.length > 28000){ context.journalTrades = journalTrades.slice(-40); context.orders = orders.slice(-15); if(context.strategyNotes) context.strategyNotes.journal = context.strategyNotes.journal.slice(-1200); text = JSON.stringify(context); }
+  return text;
+}
 
 /* ============ ECONOMIC CALENDAR / NEWS (free, no-key, works regardless of LLM provider) ============
    Plain chat-completion calls to most providers have no real-time web
@@ -3981,6 +4023,9 @@ DURING A LOSING STREAK: When "Consecutive losses right now" is 2 or more, resist
 JOURNAL SNAPSHOT (Personal and each Prop Firm account are kept separate on purpose — never answer "how am I doing" by blending a challenge's numbers into personal, or vice versa; if the trader doesn't specify which account, ask or answer for Personal by default and mention the prop account(s) separately):
 ${summarizeJournal()}
 
+PORTAL WORKSPACE BRIDGE (same signed-in account and live portal record; use this context when asked about plans, setups, mindset, orders, profile, or rules):
+${summarizePortalWorkspace()}
+
 PORTAL APPEARANCE: When the trader explicitly asks you to change the portal's colors or theme, apply that preference immediately with a set_theme action. Supported themes are light, dark, red, blue, purple, gold, and slate. Match a plain color request to the closest theme (for example, green/forest → dark, navy → blue, violet → purple, silver → slate). Never change the theme unprompted.
 
 PROP FIRM ACCOUNTS ON FILE:
@@ -4031,7 +4076,7 @@ ${memNotes}`;
    Playbook — keep these in sync if either changes there, since this is what
    SciFe checks a description/chart against for a given strategy + style. */
 const SIGNAL_LOGIC_SETS = {
-  gmc: [ {id:'htf_bias',label:'HTF Structure & Bias'}, {id:'market_condition',label:'Market Condition'}, {id:'swings',label:'Swings'}, {id:'bos',label:'Break of Structure (BOS)'}, {id:'choch',label:'Change of Character (CHoCH)'}, {id:'control',label:'Order Flow Control'}, {id:'inducement',label:'Inducement'}, {id:'orderblock',label:'Order Block'}, {id:'displacement',label:'Displacement'}, {id:'hiddensupply',label:'Hidden Supply Zone'}, {id:'hiddendemand',label:'Hidden Demand Zone'}, {id:'eqhigh',label:'Equal High'}, {id:'eqlow',label:'Equal Low'}, {id:'imbalance',label:'Imbalance'}, {id:'confirmation_candle',label:'Confirmation Candle'}, {id:'magnet',label:'Magnet Area (Draw on Liquidity)'}, {id:'fibonacci',label:'Fibonacci Retracement'} ],
+  gmc: [ {id:'bos',label:'Break of Structure (BOS)'}, {id:'mss',label:'Market Structure Shift (MSS)'}, {id:'poi_entry',label:'Point of Interest (POI) Entry'} ],
   smc: [ {id:'smc_htf_bias',label:'HTF Structure & Bias'}, {id:'smc_market_condition',label:'Market Condition'}, {id:'smc_control',label:'Order Flow Control'}, {id:'smc_inducement',label:'Inducement'}, {id:'liquiditygrab',label:'Liquidity Grab'}, {id:'smc_orderblock',label:'Order Block'}, {id:'smc_displacement',label:'Displacement'}, {id:'smc_fvg',label:'Fair Value Gap (FVG)'}, {id:'smc_bos',label:'Break of Structure (BOS)'}, {id:'smc_choch',label:'Change of Character (CHoCH)'}, {id:'mitigation',label:'Mitigation Block'}, {id:'breaker',label:'Breaker Block'}, {id:'smc_confirmation_candle',label:'Confirmation Candle'}, {id:'smc_magnet',label:'Magnet Area (Draw on Liquidity)'} ],
   ict: [ {id:'ict_htf_bias',label:'HTF Structure & Bias'}, {id:'ict_market_condition',label:'Market Condition'}, {id:'ict_control',label:'Order Flow Control'}, {id:'ict_orderblock',label:'Order Block'}, {id:'ict_displacement',label:'Displacement'}, {id:'ict_fvg',label:'Fair Value Gap (FVG)'}, {id:'liquiditysweep',label:'Liquidity Sweep'}, {id:'ict_inducement',label:'Inducement'}, {id:'ote',label:'Optimal Trade Entry (OTE)'}, {id:'killzone',label:'Killzone Timing'}, {id:'breaker',label:'Breaker Block'}, {id:'mitigation',label:'Mitigation Block'}, {id:'ict_confirmation_candle',label:'Confirmation Candle'}, {id:'pdh',label:'Previous Day High (PDH)'}, {id:'pdl',label:'Previous Day Low (PDL)'}, {id:'pwh',label:'Previous Week High (PWH)'}, {id:'pwl',label:'Previous Week Low (PWL)'}, {id:'sessionhigh',label:'Session High'}, {id:'sessionlow',label:'Session Low'}, {id:'ict_magnet',label:'Magnet Area (Draw on Liquidity)'} ],
   ta: [ {id:'ta_trendbias',label:'Higher-Timeframe Trend Bias'}, {id:'ta_control',label:'Momentum / Who\u2019s in Control'}, {id:'supres',label:'Support / Resistance'}, {id:'trendline',label:'Trendline'}, {id:'ta_falsebreak',label:'False Break / Trap'}, {id:'chartpattern',label:'Chart Pattern'}, {id:'ta_confirmation_candle',label:'Confirmation Candle'}, {id:'indicator',label:'Indicator Signal'}, {id:'macross',label:'Moving Average Cross'}, {id:'volume',label:'Volume Confirmation'}, {id:'ta_target',label:'Magnet Level (Target Draw)'} ],
@@ -4074,12 +4119,15 @@ const SIGNAL_SESSIONS = {
 // against a real trading definition instead of guessing from the label alone.
 const SIGNAL_LOGIC_DEFS = {
   // --- Ghost Money Concepts (GMC) ---
+  bos: 'Break of Structure (BOS) — a candle closes beyond the prior swing in the direction of the existing move. Identify the exact swing and the candle close; a wick alone is not a confirmed break.',
+  mss: 'Market Structure Shift (MSS) — price decisively breaks the most recent opposing swing after a liquidity run or failed continuation, showing a possible change in directional control. Name the swing and closing candle; a wick alone is not enough.',
+  poi_entry: 'Point of Interest (POI) Entry — identify a clear price zone that caused meaningful displacement, then assess whether price has returned to that zone and shown a real entry reaction. State the zone and reaction from visible evidence; never invent a level.',
   htf_bias: 'Higher-Timeframe Structure & Bias — before judging anything else, zoom out from the entry chart to the higher-timeframe context (the timeframe(s) above the one you\'re trading, or the broader trend visible across the full chart if only one timeframe is given) and identify ITS most recent structure: higher highs/higher lows (bullish HTF bias) or lower highs/lower lows (bearish HTF bias). This is the directional filter everything below must be checked against — a lower-timeframe long setup fighting a bearish HTF bias is a lower-probability trade even if the LTF checklist looks clean, and that tension must be called out explicitly, not glossed over. Mark "unclear" only if no higher-timeframe context is visible or stated at all.',
   market_condition: 'Market Condition / Regime — classify what kind of environment price is actually in right now: trending (a clean, ongoing sequence of higher-highs/higher-lows or lower-highs/lower-lows), ranging (price oscillating between a fairly stable high and low with no sustained directional progress), or transitioning/choppy (structure breaking down, overlapping candles, no clean swings to read). This is not a box to tick past — it changes how much weight every other item deserves: trend-continuation concepts (BOS, an order block aligned with the trend, an OTE pullback in the trend direction) are meaningfully higher-probability inside a real trend, while reversal concepts (CHoCH, liquidity sweeps, breaker blocks) matter most at the edges of a range or at the point a trend is actually failing. A technically clean setup that fights a genuinely trending market, or a trend-continuation read taken inside real chop, deserves lower confidence — say so explicitly rather than scoring the rest of the checklist in isolation from this. Mark "unclear" only if the visible price history is too short a window to classify honestly.',
   swings: 'The most recent significant swing high and swing low that define the current structure leg — points where price clearly reversed on the visible timeframe. Minor noise wicks don\'t count; only reversals that actually shifted the short-term trend.',
   control: 'Order Flow Control — which side (buyers or sellers) is actually dictating price delivery right now. Judge this from: (1) the character of the most recent structure break — a decisive, high-momentum close through the level vs a weak poke that barely closed beyond it; (2) impulse-vs-pullback ratio — shallow pullbacks that barely retrace the prior leg mean the trend side is still firmly in control, while deep pullbacks eating back most of the prior move mean control is slipping or has already flipped; (3) which side is producing the larger, more aggressive candles. State plainly which side is in control and whether that control looks like it\'s strengthening, holding, or fading — this should directly inform confidence, since a technically-present setup traded against the side currently in control is weaker than the checklist alone suggests.',
   inducement: 'Inducement — a minor, obvious pocket of resting liquidity (a small swing high/low, or a tight cluster of equal highs/lows) sitting BEFORE the real supply/demand zone or order block, put there to trigger early, impatient entries that get swept out before price actually reacts from the real zone. On the lower timeframe, check whether this minor liquidity has already been taken out ahead of the zone you\'re using for entry: an entry taken before the inducement is swept is jumping the gun and materially more likely to get stopped out on the sweep itself. If inducement is present and already swept, that\'s a point in favor of the setup; if it\'s still sitting untaken between current price and the zone, flag that as unresolved risk.',
-  bos: 'Break of Structure — price closes beyond a prior significant swing point IN THE DIRECTION of the prevailing trend (e.g. a higher high in an uptrend), confirming continuation. Requires an actual close beyond the level, not just a wick poke.',
+  bos: 'Break of Structure (BOS) — price closes beyond a prior significant swing point in the direction of the prevailing trend. Requires an actual close beyond the level, not just a wick poke.',
   choch: 'Change of Character — price closes beyond a structure point in the OPPOSITE direction of the prevailing trend (e.g. breaking below the most recent higher low in an uptrend) — the first technical sign the trend may be reversing. Do not confuse with BOS: check what the prior trend actually was before labeling this.',
   orderblock: 'Order Block — the last opposing-colored candle (or tight cluster) immediately before the impulsive move that caused a BOS/CHoCH. Only counts as relevant if price is currently near it or has returned to test it — an order block far from current price is present-but-irrelevant, note that distinction.',
   hiddensupply: 'Hidden Supply Zone — an unmarked area ABOVE current price where prior selling pressure likely originated (e.g. near an unmitigated prior high or a rejection wick cluster), inferred from price reaction rather than an explicit drawn box.',
@@ -4415,6 +4463,7 @@ A clean entry structure against a hostile HTF bias, inside the wrong market cond
 
 Checklist to evaluate — work through EVERY item below carefully and individually using its exact definition before writing your final verdict. Do not skim past items or default to a generic answer — a wrong or lazy read on any single item undermines the whole analysis, and that includes correctly marking an item "absent" or "unclear" when it genuinely doesn't apply (a fib/OTE read forced onto a chart with no clean swing leg to anchor it is just as much a lazy read as skipping a real one):
 ${logicList}
+${strategy.type === 'gmc' ? '\nGMC CHECKLIST OVERRIDE: evaluate exactly BOS, MSS, and POI Entry above. Do not add checklist items or confluence from Fibonacci, equal highs/lows, imbalance/FVG, or other concepts. Set fib_zone to {"zone":"","note":"Not part of this GMC strategy checklist.","numeric":false}; if chart_positions is present leave fib_top_y_pct and fib_bottom_y_pct null. Only draw BOS, MSS, or POI Entry markers when that exact checklist item is present.' : ''}
 
 TRADE STYLE: ${style.label}. ${style.blurb} Minimum acceptable R:R for this style is roughly ${style.warn}R, a good target is ${style.good}R or better.
 STYLE-SPECIFIC EMPHASIS: ${style.emphasis}
@@ -4453,7 +4502,7 @@ CHART MARKERS FOR CHECKLIST ITEMS: for EVERY checklist item you marked "present"
 - Point-to-point line — drawn between two real anchor points on the chart, like a TRENDLINE tool, never a flat ray in either direction (give "x1_pct"/"y1_pct" for the first anchor point and "x2_pct"/"y2_pct" for the second): trendline, bos, choch, smc_bos, smc_choch — for BOS/CHoCH specifically, anchor point 1 at the swing high/low that got broken and point 2 at the candle that broke it (the two points can share a y value if that reads more naturally, but both x1_pct and x2_pct AND both y1_pct and y2_pct are still required fields — never leave y1_pct/y2_pct null for these ids, that silently drops the marker)
 - Arrow — a directional ARROW tool (same x1_pct/y1_pct/x2_pct/y2_pct fields as the point-to-point line above), used specifically where the DIRECTION itself is the signal, not just the structure: point 1 (x1_pct/y1_pct) is where price was swept FROM, point 2 (x2_pct/y2_pct) is where it reversed TO — the arrowhead renders at point 2, so make sure point 2 is genuinely the destination, not the origin: liquiditygrab, liquiditysweep, ta_falsebreak
 - Single horizontal level — a bounded SEGMENT, never a full-width ray (give "y_pct" for the price, plus "x1_pct"/"x2_pct" for the segment's left/right extent — anchor x1_pct at, or just before, the candle that actually set this level, and x2_pct at the current/rightmost candle): eqhigh, eqlow, supres, pdh, pdl, pwh, pwl, sessionhigh, sessionlow, inducement, smc_inducement, ict_inducement, magnet, smc_magnet, ict_magnet, ta_target
-- Price zone/box — a real RECTANGLE, bounded on all four sides (give "y_pct" as the top edge, "y2_pct" as the bottom edge, "x1_pct" anchored to the exact candle(s) that formed it on the left — but for x2_pct, EXTEND the rectangle toward the right side of the chart, close to the rightmost visible candle (x2_pct in the low-to-high 90s), the way a real trader's platform draws an untested order block/FVG forward until price returns to it — do NOT tightly hug the zone to just the candles that formed it on the right side too, that reads as a cramped decorative box rather than a real trading zone): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand, chartpattern
+- Price zone/box — a real RECTANGLE, bounded on all four sides (give "y_pct" as the top edge, "y2_pct" as the bottom edge, "x1_pct" anchored to the exact candle(s) that formed it on the left — but for x2_pct, EXTEND the rectangle toward the right side of the chart, close to the rightmost visible candle (x2_pct in the low-to-high 90s), the way a real trader's platform draws an untested order block/FVG forward until price returns to it — do NOT tightly hug the zone to just the candles that formed it on the right side too, that reads as a cramped decorative box rather than a real trading zone): orderblock, smc_orderblock, ict_orderblock, breaker, mitigation, imbalance, smc_fvg, ict_fvg, hiddensupply, hiddendemand, chartpattern, poi_entry
 - Horizontal time band (give "x1_pct" and "x2_pct" marking the left/right extent along the image; leave y fields null): killzone, volume
 - Single point marker at the exact candle it fired on (give "x1_pct" for its horizontal position and "y_pct" for its vertical position; leave other fields null): indicator, macross
 Never add a chart_markers entry for an id that isn't in one of those six groups, or for an id not marked "present" in the checklist. Every shape drawn on the chart — trendlines, segments, rectangles, bands, and points alike — must be a bounded object anchored to real candles. Do not let any line behave like an infinite ray in either direction.
@@ -4829,6 +4878,7 @@ async function analyzeSignal(){
     if(!parsed){
       throw lastErr || new Error("Couldn't parse a structured signal from that — try rephrasing what you're seeing.");
     }
+    if(strategy.type === 'gmc') parsed = enforceGmcChecklist(parsed);
     parsed = reconcileSignalResult(parsed);
     hideSkeleton();
     // If there's a prior stored read for this pair AND this is a genuinely
@@ -5246,7 +5296,9 @@ function sigOvArrowHTML(x1, y1, x2, y2, colorVar){
 // horizontal SEGMENTS; killzones/volume are vertical time BANDS; indicator/
 // MA-cross signals are POINT markers at the exact candle they fired on.
 const SIG_MARKER_STYLES = {
-  bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
+  bos:{cat:'BOS / MSS', kind:'trendline', color:'var(--amber)', horizontal:true},
+  mss:{cat:'BOS / MSS', kind:'trendline', color:'var(--amber)', horizontal:true},
+  poi_entry:{cat:'POI Entry', kind:'zone', color:'var(--bronze-bright)', bg:'rgba(18,185,136,0.16)'},
   choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
   smc_bos:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
   smc_choch:{cat:'BOS / CHoCH', kind:'trendline', color:'var(--amber)', horizontal:true},
@@ -5334,6 +5386,18 @@ function reconcileSignalResult(r){
     }
   });
   r.chart_markers = markers.filter(m => m && m.id && keepIds.has(m.id));
+  return r;
+}
+function enforceGmcChecklist(r){
+  if(!r || !Array.isArray(r.checklist)) return r;
+  const required = SIGNAL_LOGIC_SETS.gmc;
+  const old = new Map(r.checklist.filter(Boolean).map(c=>[c.id,c]));
+  r.checklist = required.map(item=>{
+    const found = old.get(item.id);
+    return { id:item.id, label:item.label, status:found && ['present','absent','unclear'].includes(found.status) ? found.status : 'unclear', note:found && typeof found.note==='string' ? found.note : 'Not clearly established from the provided chart or notes.' };
+  });
+  r.fib_zone = { zone:'', note:'Not part of this GMC strategy checklist.', numeric:false };
+  if(r.chart_positions){ r.chart_positions.fib_top_y_pct=null; r.chart_positions.fib_bottom_y_pct=null; }
   return r;
 }
 function sigOvPointHTML(xPct, yPct, colorVar){
@@ -5666,7 +5730,7 @@ function renderSignalResult(r, strategy, styleKey, pair, invalidated){
             </div>
           </div>`).join('') || '<div class="hint">No checklist returned.</div>'}
       </div>
-      ${r.fib_zone && (r.fib_zone.zone || r.fib_zone.note) ? `<div class="sig-block" style="animation-delay:.35s;"><div class="sig-block-label">Fibonacci zone (OTE)</div><div class="sig-block-text">${sigEsc(r.fib_zone.zone||'—')}${r.fib_zone.numeric===false?' <span style="font-style:italic;color:var(--slate);">(structural)</span>':''}</div>${r.fib_zone.note?`<div class="sig-check-note">${sigEsc(r.fib_zone.note)}</div>`:''}</div>` : ''}
+      ${strategy.type !== 'gmc' && r.fib_zone && (r.fib_zone.zone || r.fib_zone.note) ? `<div class="sig-block" style="animation-delay:.35s;"><div class="sig-block-label">Fibonacci zone (OTE)</div><div class="sig-block-text">${sigEsc(r.fib_zone.zone||'—')}${r.fib_zone.numeric===false?' <span style="font-style:italic;color:var(--slate);">(structural)</span>':''}</div>${r.fib_zone.note?`<div class="sig-check-note">${sigEsc(r.fib_zone.note)}</div>`:''}</div>` : ''}
       ${r.entry_idea ? `<div class="sig-block" style="animation-delay:.4s;"><div class="sig-block-label">Entry idea</div><div class="sig-block-text">${sigEsc(r.entry_idea)}</div></div>` : ''}
       ${r.strategy_update && r.strategy_update.suggested && r.strategy_update.revised_notes ? `<div class="sig-block" style="animation-delay:.42s;"><div class="sig-block-label">SciFe strategy refinement · review before saving</div><div class="sig-check-note">${sigEsc(r.strategy_update.reason||'Based on this scan only; not a performance guarantee. Edit or reject as you see fit.')}</div><textarea id="sig_strategy_update" class="field-input" rows="5" style="width:100%;margin-top:8px;">${sigEsc(r.strategy_update.revised_notes)}</textarea><button type="button" class="btn-ghost" style="margin-top:8px;" onclick="applySignalStrategyUpdate('${sigEsc(strategy.id)}')">Save revised strategy notes</button></div>` : ''}
       <div class="sig-block" style="animation-delay:.45s;"><div class="sig-block-label">Invalidation</div><div class="sig-block-text">${sigEsc(r.invalidation||'—')}</div></div>
@@ -6253,6 +6317,20 @@ async function chatCompletion(systemPrompt, turns, opts){
   const model = activeModel();
   if(!apiKey) throw new Error('No API key saved for ' + cfg.label + ' yet — add one in settings.');
   const images = [opts.image, opts.image2, opts.image3].filter(Boolean);
+  if(cfg.compat === 'tavily'){
+    if(images.length) throw new Error('Tavily Search reads text only. Choose another saved SciFe provider to analyze images.');
+    const query = turns.slice(-6).map(t=>`${t.role === 'assistant' ? 'SciFe' : 'Trader'}: ${t.content}`).join('\n').slice(-6000);
+    const res = await fetch('https://api.tavily.com/search', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + apiKey },
+      body: JSON.stringify({ query: query || 'Trading journal and market research', search_depth:model === 'advanced' ? 'advanced' : 'basic', topic:'general', max_results:5, include_answer:model === 'advanced' ? 'advanced' : 'basic' })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || data.error || ('Tavily Search request failed (' + res.status + ')'));
+    const answer = typeof data.answer === 'string' ? data.answer : '';
+    const sources = Array.isArray(data.results) ? data.results.slice(0,5).map(r=>`${r.title || r.url}\n${r.url}`).join('\n\n') : '';
+    return [answer || 'Tavily returned sources without a short answer.', sources ? 'Sources:\n' + sources : ''].filter(Boolean).join('\n\n');
+  }
   if(cfg.compat === 'anthropic') return callAnthropic(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
   if(cfg.compat === 'gemini') return callGemini(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
   return callOpenAICompatible(cfg, apiKey, systemPrompt, turns, maxTokens, temperature, images, model);
@@ -7936,6 +8014,34 @@ html:not([data-theme="light"]) .center-screen{background-color:transparent!impor
 /* ===== Speed on phones/tablets: no backdrop blur over the live canvas ===== */
 @media(max-width:960px),(hover:none){
   *,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+</style>
+<style id="scife-provider-and-viewport-refresh">
+/* Scife page: keep the provider library easy to scan on wide screens and comfortable to tap on phones. */
+@media (min-width:1100px){
+  .provider-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:min(46vh,470px);padding:4px}
+  .provider-card{min-height:76px;padding:12px 13px}
+  #settingsOverlay .modal{width:min(760px,calc(100vw - 48px))}
+  .provider-card .pc-name{font-size:13px}
+}
+@media (min-width:761px) and (max-width:1099px){
+  .provider-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:400px;gap:9px}
+}
+@media (max-width:760px){
+  .provider-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:min(38dvh,340px);overscroll-behavior:contain}
+  .provider-card{min-height:72px;padding:11px 10px}
+  #settingsOverlay{padding:10px}
+  #settingsOverlay .modal{width:100%;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain}
+  #settingsOverlay .settings-tabs{position:sticky;top:-25px;z-index:3;padding:7px 0;background:var(--panel-solid,#101210)}
+  #signalPage .sig-card{gap:14px}
+  #signalPage .sig-textarea{min-height:118px}
+  #signalPage .sig-chart-thumb img{object-fit:contain}
+}
+@media (max-width:420px){
+  .provider-grid{grid-template-columns:1fr;max-height:34dvh}
+  .provider-card{min-height:64px;padding:10px 12px}
+  #signalPage{padding-inline:12px!important}
+  #signalPage .sig-console-card{padding-inline:12px}
 }
 </style>
 </body>
