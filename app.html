@@ -4603,7 +4603,7 @@ setTimeout(function(){
       <div class="topbar-row"><div><h2 class="page-title">Packages</h2><div class="page-sub">Choose the level of structure and support that fits your practice.</div></div><span class="profile-plan-chip" id="packageCurrentTier">Free package</span></div>
       
       <div class="package-grid">
-          <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">R0 <small>forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>Shared Gemini 3.8 Flash · no personal API key · 15 chats/day</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
+          <article class="package-card"><span class="package-kicker">A considered start</span><h3>Free</h3><div class="package-price">R0 <small>forever</small></div><p>A useful workspace to build a consistent journaling habit.</p><ul><li>Journal, calendar, orders, risk rules and psychology</li><li>SciFe insights with your selected provider</li><li>5 signal scans/week and 3 image chats/day</li><li>Personalized onboarding</li></ul><button class="btn btn-ghost" onclick="showToast('You are on the Free package.')">Current foundation</button></article>
         <article class="package-card package-featured"><span class="package-kicker">Most popular</span><h3>Pro</h3><div class="package-price">R699 <small>/ 30 days</small></div><p>The full individual toolkit for measuring and improving your process.</p><ul><li>Everything in Free</li><li>Analytics, playbook, backtest and strategy notes</li><li>Prop firm compliance, orders and payout tracking</li><li>No Free daily chat cap; 5 scans/week and 3 image chats/day</li></ul><button class="btn btn-primary" onclick="openPackageRequest('pro')">Choose Pro · R699</button></article>
         <article class="package-card"><span class="package-kicker">For a trading desk</span><h3>Elite</h3><div class="package-price">R1,199 <small>/ 30 days</small></div><p>Everything in Pro, with team accountability and persistent SciFe memory.</p><ul><li>Team workspace with linked partners and weekly summaries</li><li>SciFe remembers up to 10 saved notes between sessions</li><li>Priority Telegram support</li><li>Portal Studio: custom themes, accent colours, typefaces, card styles and spacing</li><li>Cinematic 3D workspace with scene and depth controls</li><li>Session clock and desk tools reserved for Elite</li><li>Weekly desk review shared with linked partners</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('elite')">Choose Elite</button></article>
         <article class="package-card"><span class="package-kicker">Advanced analysis</span><h3>Premium</h3><div class="package-price">R1,999 <small>/ 30 days</small></div><p>Everything in Elite, plus deeper analysis and higher SciFe limits.</p><ul><li>Edge Lab: Monte Carlo and prop challenge analysis (20 closed trades required)</li><li>Stronger shared SciFe model and up to 30 saved notes</li><li>Unlimited weekly scans and image chats</li><li>Priority direct Telegram support</li><li>PipX Ledger access: AI-read news briefs, pair direction and prediction-vs-reality history (see Additional Features)</li></ul><button class="btn btn-ghost" onclick="openPackageRequest('premium')">Choose Premium</button></article>
@@ -7321,6 +7321,7 @@ function buildSavePayload(){
   });
   return {
     rules: state.rules,
+    profile: userProfile,
     prop_firm: state.propFirms,
     session: state.session,
     psychology: state.psychology,
@@ -14765,9 +14766,110 @@ function closeQuickSciFe(){
   if(overlay) overlay.classList.remove('show');
   document.getElementById('scifeFab')?.setAttribute('aria-expanded','false');
 }
+/* SciFe writes through the signed-in portal so version checks, the app's
+   normal save pipeline, and every portal view stay in sync. Its reverse
+   journal is stored on the user's own trader_data.scife record. */
+function gdScifeClone(value){ return value==null ? value : JSON.parse(JSON.stringify(value)); }
+function gdScifePortalSnapshot(){
+  const trades=gdScifeClone(state.trades||[]).map(function(trade){delete trade.screenshotUrl;return trade;});
+  return { rules:gdScifeClone(state.rules), profile:gdScifeClone(userProfile), prop_firm:gdScifeClone(state.propFirms), session:gdScifeClone(state.session),
+    psychology:gdScifeClone(state.psychology), brief:gdScifeClone(state.brief), trades:trades,
+    backtest_sessions:gdScifeClone(state.backtestSessions), streak:gdScifeClone(state.streak), day:gdScifeClone(state.day),
+    consecutive_losses:state.consecutiveLosses, rules_completed:state.rulesCompleted };
+}
+function gdScifeStableSnapshot(snapshot){ return JSON.stringify(snapshot); }
+function gdScifeApplySnapshot(snapshot){
+  const map={prop_firm:'propFirms',trades:'trades',backtest_sessions:'backtestSessions',streak:'streak',day:'day',consecutive_losses:'consecutiveLosses',rules_completed:'rulesCompleted'};
+  Object.keys(map).forEach(function(key){ if(Object.prototype.hasOwnProperty.call(snapshot,key)) state[map[key]]=gdScifeClone(snapshot[key]); });
+  if(snapshot.rules)state.rules=Object.assign({},DEFAULT_STATE.rules,state.rules,snapshot.rules);
+  if(snapshot.session)state.session=Object.assign({},DEFAULT_STATE.session,state.session,snapshot.session);
+  if(snapshot.brief)state.brief=Object.assign({},DEFAULT_STATE.brief,state.brief,snapshot.brief);
+  if(snapshot.psychology)state.psychology=normalizePsychology(Object.assign({},state.psychology,snapshot.psychology));
+  if(Object.prototype.hasOwnProperty.call(snapshot,'profile'))userProfile=gdScifeClone(snapshot.profile)||{};
+}
+async function gdScifeWaitForSave(previousVersion){
+  if(isDemoMode){ await saveState(); return true; }
+  await saveState();
+  const until=Date.now()+12000;
+  while(Date.now()<until){
+    if(conflictPending) throw new Error('The portal found a sync conflict. Resolve it in the main portal, then retry SciFe.');
+    if(!getPendingSave() && !saveInFlight && dataVersion>previousVersion) return true;
+    if(!saveInFlight && getPendingSave()) await flushPendingSave();
+    await new Promise(resolve=>setTimeout(resolve,120));
+  }
+  throw new Error('The portal has not confirmed this save. The change was not reported as complete.');
+}
+async function gdScifeSaveUndoLog(log){
+  if(!currentUser || isDemoMode) return;
+  const {data,error}=await sb.from('trader_data').select('scife').eq('user_id',currentUser.id).maybeSingle();
+  if(error) throw error;
+  const safe=Object.assign({},data&&data.scife||{});
+  delete safe.apiKeys; delete safe.apiKey;
+  safe.portalUndo=log.slice(-30);
+  const saved=await sb.from('trader_data').update({scife:safe,updated_at:new Date().toISOString()}).eq('user_id',currentUser.id);
+  if(saved.error) throw saved.error;
+}
+async function gdScifeBridgeHandle(action){
+  if(!currentUser || !state || (isDemoMode && !state)) throw new Error('Sign in to the main portal before asking SciFe to edit it.');
+  if(!action || typeof action!=='object') throw new Error('Invalid SciFe portal request.');
+  if(action.type==='read_workspace') return {ok:true,version:dataVersion,snapshot:gdScifePortalSnapshot()};
+  if(action.type==='undo_portal_change'){
+    const {data,error}=await sb.from('trader_data').select('scife').eq('user_id',currentUser.id).maybeSingle();
+    if(error) throw error;
+    const sc=Object.assign({},data&&data.scife||{}),log=Array.isArray(sc.portalUndo)?sc.portalUndo.slice():[];
+    const entry=log[log.length-1];
+    if(!entry) return {ok:false,message:'There is no saved SciFe portal change to undo.'};
+    const current=gdScifePortalSnapshot();
+    if(gdScifeStableSnapshot(current)!==gdScifeStableSnapshot(entry.after)) return {ok:false,message:'The portal changed after SciFe’s last edit, so I did not overwrite newer work. Ask me to make the correction again against the current record.'};
+    const previous=dataVersion;
+    gdScifeApplySnapshot(entry.before);
+    try{ await gdScifeWaitForSave(previous); }
+    catch(e){ gdScifeApplySnapshot(current); await saveState(); throw e; }
+    log.pop();
+    try{ await gdScifeSaveUndoLog(log); }catch(e){ try{await refreshTradeScreenshotUrls(state.trades);}catch(_){} try{renderAll();}catch(_){} return {ok:true,message:'The portal data was restored and saved, but the history cleanup failed. Do not press undo again for this change.',changeId:entry.id,version:dataVersion,snapshot:gdScifePortalSnapshot()}; }
+    try{await refreshTradeScreenshotUrls(state.trades);}catch(error){console.warn('Could not refresh screenshots after SciFe undo:',error);}
+    try{renderAll();}catch(error){console.error('Portal render after SciFe undo:',error);}
+    return {ok:true,message:'Reverted SciFe’s last portal change and confirmed the portal save.',changeId:entry.id,version:dataVersion,snapshot:gdScifePortalSnapshot()};
+  }
+  if(action.type!=='sync_snapshot' || !action.snapshot || typeof action.snapshot!=='object') throw new Error('Unsupported SciFe portal request.');
+  if(Number(action.expectedVersion)!==Number(dataVersion)) throw new Error('The portal changed since SciFe loaded it. Refresh SciFe and retry so no newer work is overwritten.');
+  const before=gdScifePortalSnapshot(),next=action.snapshot;
+  gdScifeApplySnapshot(next);
+  const after=gdScifePortalSnapshot();
+  if(JSON.stringify(before)===JSON.stringify(after)) return {ok:true,message:'No portal data changed.',version:dataVersion,noChange:true};
+  const entry={id:'scife_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),at:new Date().toISOString(),before:before,after:after,summary:String(action.summary||'SciFe updated portal data').slice(0,180)};
+  let log=[];
+  try{
+    const {data,error}=await sb.from('trader_data').select('scife').eq('user_id',currentUser.id).maybeSingle();
+    if(error) throw error;
+    log=Array.isArray(data&&data.scife&&data.scife.portalUndo)?data.scife.portalUndo.slice():[];
+    await gdScifeSaveUndoLog(log.concat(entry));
+  }catch(e){ gdScifeApplySnapshot(before); throw new Error('Could not create the undo record, so no portal change was made: '+(e.message||'storage error')); }
+  const previous=dataVersion;
+  try{ await gdScifeWaitForSave(previous); }
+  catch(e){ gdScifeApplySnapshot(before); await saveState(); try{await gdScifeSaveUndoLog(log);}catch(_){} throw e; }
+  try{await refreshTradeScreenshotUrls(state.trades);}catch(error){console.warn('Could not refresh screenshots after SciFe save:',error);}
+  try{renderAll();}catch(error){console.error('Portal render after SciFe save:',error);}
+  return {ok:true,message:entry.summary+' — saved and verified in the portal.',changeId:entry.id,version:dataVersion};
+}
+window.gdScifePortalBridge={handle:gdScifeBridgeHandle};
+let gdScifePortalChannel=null;
+try{
+  gdScifePortalChannel=new BroadcastChannel('gd-scife-portal-v1');
+  gdScifePortalChannel.onmessage=async function(event){
+    const msg=event.data||{}; if(msg.type!=='request'||!msg.id) return;
+    try{ const result=await gdScifeBridgeHandle(msg.action); gdScifePortalChannel.postMessage({type:'response',id:msg.id,result}); }
+    catch(error){ gdScifePortalChannel.postMessage({type:'response',id:msg.id,error:error.message||'Portal operation failed'}); }
+  };
+}catch(e){}
 window.addEventListener('message',function(event){
   const frame=document.getElementById('quickSciFeFrame');
-  if(frame&&event.source===frame.contentWindow&&event.data&&event.data.type==='gd-close-quick-scife') closeQuickSciFe();
+  if(!frame||event.source!==frame.contentWindow||!event.data) return;
+  if(event.data.type==='gd-close-quick-scife') closeQuickSciFe();
+  if(event.data.type==='gd-scife-portal-request'&&event.data.id){
+    gdScifeBridgeHandle(event.data.action).then(result=>frame.contentWindow.postMessage({type:'gd-scife-portal-response',id:event.data.id,result},location.origin))
+      .catch(error=>frame.contentWindow.postMessage({type:'gd-scife-portal-response',id:event.data.id,error:error.message||'Portal operation failed'},location.origin));
+  }
 });
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&document.getElementById('quickSciFeOverlay')?.classList.contains('show')) closeQuickSciFe();
@@ -15342,7 +15444,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
      layer upgrades a card to a genuinely model-generated insight using
      whichever provider + API key the trader already saved in SciFe
      (Settings inside scife.html) — same free-tier-friendly providers
-     (Groq, Gemini, OpenRouter, Cerebras, LLM7 with no key at all, etc.),
+     (Groq, OpenRouter, Cerebras, LLM7, etc.),
      same `trader_data.scife` column, no separate backend or paid Anthropic
      key required. Calls happen straight from this page to the provider,
      exactly like scife.html does it. Fails silently back to the heuristic
@@ -15359,7 +15461,6 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
   // scife.html so whatever the trader picked there resolves here too.
   var AI_PROVIDERS = {
     groq:        { compat:'openai',    baseURL:'https://api.groq.com/openai/v1/chat/completions' },
-    google:      { compat:'gemini' },
     openrouter:  { compat:'openai',    baseURL:'https://openrouter.ai/api/v1/chat/completions' },
     mistral:     { compat:'openai',    baseURL:'https://api.mistral.ai/v1/chat/completions' },
     openai:      { compat:'openai',    baseURL:'https://api.openai.com/v1/chat/completions' },
@@ -15385,17 +15486,8 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
     anthropic:   { compat:'anthropic', baseURL:'https://api.anthropic.com/v1/messages' }
   };
 
-  // ---- Shared plan key (house key, not the trader's own) ----
-  // Used automatically whenever a trader hasn't saved their own key, for
-  // every tier. Free tier shares a daily cap with the main SciFe chat
-  // (scife.html) via the same trader_data.scife.usage counter; Pro/Elite
-  // ride the shared key with no cap. Never surfaced in any input field.
-  var SHARED_PROVIDER = 'google';
-  var SHARED_MODEL = 'gemini-3.8-flash';
-  var SHARED_MODEL_PREMIUM = 'gemini-3.1-pro-preview'; // Premium gets the stronger house model
-  function sharedModelForTier(){ return (typeof isPremiumTier === 'function' && isPremiumTier()) ? SHARED_MODEL_PREMIUM : SHARED_MODEL; }
-  var SHARED_KEY = '__shared__'; // real key lives server-side (ai-proxy Edge Function)
-  var FREE_DAILY_CHAT_LIMIT = 15;
+  // Portal insight cards use the trader's selected provider key; there is no
+  // hidden shared-provider or Gemini fallback.
   var SCIFE_LOCAL_KEYS_PREFIX = 'gd_scife_provider_keys_v1_';
   function readLocalScifeApiKeys(userId){
     if(!userId) return {};
@@ -15414,34 +15506,6 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
       return true;
     }catch(e){ return false; }
   }
-  function todayKeyLocal(){ var d=new Date(); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
-  // Re-checks + increments the shared daily counter straight against the
-  // synced row (not a local cache) so it can't be reset by reloading or
-  // switching devices. Returns true if this call is allowed to proceed.
-  function claimSharedUsage(){
-    if(typeof userTier !== 'undefined' && userTier !== 'free') return Promise.resolve(true);
-    if(typeof sb === 'undefined' || typeof currentUser === 'undefined' || !currentUser) return Promise.resolve(true);
-    return sb.from('trader_data').select('scife').eq('user_id', currentUser.id).maybeSingle().then(function(res){
-      var s = (res.data && res.data.scife) || {};
-      var remoteKeys = (s.apiKeys && typeof s.apiKeys === 'object') ? s.apiKeys : {};
-      if(s.apiKey && !remoteKeys[s.provider || 'google']) remoteKeys[s.provider || 'google'] = s.apiKey;
-      var localKeys = readLocalScifeApiKeys(currentUser.id);
-      var localSaved = writeLocalScifeApiKeys(currentUser.id, Object.assign({}, remoteKeys, localKeys));
-      if((Object.keys(remoteKeys).length || s.apiKey) && localSaved){
-        delete s.apiKeys;
-        delete s.apiKey;
-      }
-      var usage = (s.usage && typeof s.usage==='object') ? s.usage : {};
-      var today = todayKeyLocal();
-      if(usage.chatDayKey !== today){ usage.chatDayKey = today; usage.chatCount = 0; }
-      if(usage.isAdmin) return true;
-      if((usage.chatCount||0) >= FREE_DAILY_CHAT_LIMIT) return false;
-      usage.chatCount = (usage.chatCount||0) + 1;
-      s.usage = usage;
-      return sb.from('trader_data').update({ scife: s }).eq('user_id', currentUser.id).then(function(){ return true; }).catch(function(){ return true; });
-    }).catch(function(){ return true; });
-  }
-
   // Short, single-purpose system prompts — mirrors the style of
   // scife.html's buildSystemPrompt, one per insight card.
   var AI_SYSTEM_PROMPTS = {
@@ -15558,39 +15622,6 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
       return (block && block.text) || '';
     });
   }
-  function gdProxyFetch(payload){
-    return sb.auth.getSession().then(function(r){
-      var tok = r.data && r.data.session && r.data.session.access_token;
-      if(!tok) throw new Error('Sign in to use the shared AI');
-      return fetch(SUPABASE_URL + '/functions/v1/ai-proxy', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok, 'apikey': SUPABASE_KEY },
-        body: JSON.stringify(payload)
-      });
-    });
-  }
-  function callGeminiSimple(apiKey, systemPrompt, userText, maxTokens){
-    var body = {
-      contents:[{ role:'user', parts:[{text:userText}] }],
-      systemInstruction:{ role:'user', parts:[{text:systemPrompt}] },
-      generationConfig:{ temperature:0.7, maxOutputTokens:maxTokens }
-    };
-    if(apiKey === '__shared__') body.model = window.__gdScifeModel;
-    var req = apiKey === '__shared__' ? gdProxyFetch(body)
-      : fetch('https://generativelanguage.googleapis.com/v1beta/models/' + window.__gdScifeModel + ':generateContent?key=' + apiKey,
-          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    return req.then(function(res){
-      if(!res.ok) return res.json().catch(function(){return{};}).then(function(err){
-        throw new Error((err.error && err.error.message) || ('Gemini request failed (' + res.status + ')'));
-      });
-      return res.json();
-    }).then(function(data){
-      var cand = data.candidates && data.candidates[0];
-      var text = cand && cand.content && cand.content.parts && cand.content.parts.map(function(p){return p.text||'';}).join('');
-      return text || '';
-    });
-  }
-
   // Fetched lazily once, then cached in-memory for the rest of the session.
   var scifeConfigPromise = null;
   function loadScifeConfig(){
@@ -15638,30 +15669,24 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
         var provider = scifeCfg && scifeCfg.provider;
         var apiKey = provider && scifeCfg.apiKeys && scifeCfg.apiKeys[provider];
         var providerCfg = provider && AI_PROVIDERS[provider];
-        var usingShared = false;
-        if(!providerCfg || !apiKey){
-          // Fall back to the shared house key rather than telling the trader
-          // to go add one — that's the whole point of the shared plan.
-          provider = SHARED_PROVIDER; providerCfg = AI_PROVIDERS[SHARED_PROVIDER]; apiKey = SHARED_KEY; usingShared = true;
-        }
+        if(!providerCfg || !apiKey){ showNoKeyPrompt(kind); return; }
 
         var btn = document.querySelector('.ai-refresh-btn[onclick*="\'' + kind + '\'"]');
         var doCall = function(){
           if(btn){ btn.disabled = true; btn.classList.add('spin'); btn.textContent = 'Thinking…'; }
 
-          window.__gdScifeModel = usingShared ? sharedModelForTier() : scifeCfg.model;
+          window.__gdScifeModel = scifeCfg.model;
           var system = AI_SYSTEM_PROMPTS[kind];
           var userText = 'Here is the trader\'s current data as JSON:\n\n' + JSON.stringify(buildContext(kind), null, 2) + '\n\nWrite the insight now.';
           var maxTokens = 300;
 
           var callPromise = providerCfg.compat === 'anthropic' ? callAnthropicSimple(apiKey, system, userText, maxTokens)
-            : providerCfg.compat === 'gemini' ? callGeminiSimple(apiKey, system, userText, maxTokens)
             : callOpenAICompatibleSimple(providerCfg, apiKey, system, userText, maxTokens);
 
           callPromise.then(function(text){
             if(!text) throw new Error('Empty response');
             writeCache(kind, text);
-            showRealInsight(kind, text, usingShared ? 'SciFe (free plan)' : provider);
+            showRealInsight(kind, text, provider);
           }).catch(function(err){
             console.warn('gdAskAI(' + kind + ') failed, keeping heuristic text:', err);
           }).finally(function(){
@@ -15669,14 +15694,7 @@ html[data-theme]:not([data-theme="light"]) .identity-trait{background:rgba(240,2
           });
         };
 
-        if(usingShared){
-          claimSharedUsage().then(function(allowed){
-            if(!allowed){ showNoKeyPrompt(kind); return; }
-            doCall();
-          });
-        } else {
-          doCall();
-        }
+        doCall();
       }catch(e){ console.warn('gdAskAI error:', e); }
     });
   };

@@ -1860,6 +1860,11 @@ setTimeout(function(){
         </div>
         <button class="btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;border-radius:9px;" id="memoryClearBtn" onclick="clearMemory()">Clear</button>
       </div>
+      <div class="field" style="margin-top:16px;">
+        <label>Portal change history</label>
+        <div class="hint" id="portalUndoHint">SciFe keeps reversible snapshots for saved portal edits.</div>
+        <button class="btn-ghost" type="button" style="width:auto;margin-top:9px;padding:8px 13px;border-radius:10px;" onclick="undoPortalChange()">Undo SciFe’s last portal change</button>
+      </div>
     </div>
 
     <!-- SCAN LIMIT / ADMIN — weekly Signal-scan cap lives on the trader's synced
@@ -2044,12 +2049,12 @@ const PROVIDERS = {
     cost: 'Many models tagged :free · pay-as-you-go for the rest',
     keyLabel: 'OpenRouter API key',
     keyPlaceholder: 'sk-or-...',
-    keyHint: 'One key, many models — pick a ":free" model below to pay nothing.',
+    keyHint: 'One key, many live models. Free options are listed first and cost $0 in model usage; free endpoints can be rate-limited. Check provider terms before sending private screenshots.',
     keyLink: 'https://openrouter.ai/keys',
     compat: 'openai',
     baseURL: 'https://openrouter.ai/api/v1/chat/completions',
     models: [
-      { value:'meta-llama/llama-3.1-8b-instruct:free', label:'Llama 3.1 8B — free', vision:false },
+      { value:'meta-llama/llama-3.1-8b-instruct:free', label:'Llama 3.1 8B — free', vision:false, free:true },
       { value:'openai/gpt-4o-mini', label:'GPT-4o mini — paid, cheap', vision:true }
     ]
   },
@@ -2064,10 +2069,8 @@ const PROVIDERS = {
     compat: 'openai',
     baseURL: 'https://api.mistral.ai/v1/chat/completions',
     models: [
-      { value:'open-mistral-nemo', label:'Mistral Nemo — free-tier friendly', vision:false },
-      { value:'mistral-small-latest', label:'Mistral Small — cheap', vision:false },
-      { value:'mistral-large-latest', label:'Mistral Large — most capable', vision:false },
-      { value:'pixtral-large-latest', label:'Pixtral Large — reads images ', vision:true }
+      { value:'mistral-small-latest', label:'Mistral Small 4 — multimodal', vision:true },
+      { value:'mistral-large', label:'Mistral Large 4 — multimodal', vision:true }
     ]
   },
   openai: {
@@ -2386,6 +2389,8 @@ const PROVIDERS = {
     keyLink: 'https://console.anthropic.com/settings/keys',
     compat: 'anthropic',
     models: [
+      { value:'claude-fable-5', label:'Claude Fable 5 — latest', vision:true },
+      { value:'claude-opus-5', label:'Claude Opus 5 — most capable', vision:true },
       { value:'claude-sonnet-5', label:'Claude Sonnet 5 — smart & fast', vision:true },
       { value:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5 — fastest & cheap', vision:true },
       { value:'claude-opus-4-8', label:'Claude Opus 4.8 — most capable', vision:true }
@@ -2420,6 +2425,63 @@ function modelSupportsVision(providerKey, modelValue){
   if(!cfg) return false;
   const m = cfg.models.find(m=>m.value===modelValue);
   return !!(m && m.vision);
+}
+let openRouterCatalogLoaded=false;
+async function refreshOpenRouterCatalog(){
+  try{
+    const key=(scife.apiKeys&&scife.apiKeys.openrouter)||'';
+    if(!key)return;
+    const res=await fetch('https://openrouter.ai/api/v1/models',{cache:'no-store',headers:{Authorization:'Bearer '+key}});
+    if(!res.ok) return;
+    const body=await res.json(),models=Array.isArray(body.data)?body.data:[];
+    const live=models.filter(m=>m&&m.id&&/^[A-Za-z0-9._:/-]+$/.test(m.id)&&!/gemini/i.test(m.id)&&Array.isArray(m.architecture&&m.architecture.input_modalities)&&m.architecture.input_modalities.includes('text')&&Array.isArray(m.architecture&&m.architecture.output_modalities)&&m.architecture.output_modalities.includes('text'))
+      .map(m=>{const p=m.pricing||{},free=Number(p.prompt)===0&&Number(p.completion)===0,vision=Array.isArray(m.architecture.input_modalities)&&m.architecture.input_modalities.includes('image'),promptUsd=(Number(p.prompt)||0)*1e6,completionUsd=(Number(p.completion)||0)*1e6,price=free?'free':('$'+promptUsd.toFixed(promptUsd<1?3:2)+' / $'+completionUsd.toFixed(completionUsd<1?3:2)+' per 1M in/out'),name=String(m.name||m.id).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));return{value:m.id,label:name+' — '+price+(vision?' · image':' · text'),vision:vision,free:free};})
+      .sort((a,b)=>Number(b.free)-Number(a.free)||Number(b.vision)-Number(a.vision)||a.label.localeCompare(b.label));
+    if(!live.length) return;
+    const fallback=(PROVIDERS.openrouter.models||[]).filter(m=>m.value.includes(':free'));
+    PROVIDERS.openrouter.models=[...live.slice(0,180),...fallback.filter(f=>!live.some(m=>m.value===f.value))];
+    openRouterCatalogLoaded=true;
+    const current=scife.model;
+    let migrated=false;
+    if(scife.provider==='openrouter'&&!PROVIDERS.openrouter.models.some(m=>m.value===current)){
+      scife.model=(PROVIDERS.openrouter.models.find(m=>m.free&&!m.vision)||PROVIDERS.openrouter.models[0]).value;
+      migrated=true;
+    }
+    ['setup','settings'].forEach(scope=>{const sel=document.getElementById(scope+'ProviderSelect');if(sel&&sel.value==='openrouter')onProviderChange(scope);});
+    if(migrated)await saveScife();
+  }catch(e){console.info('[SciFe models] OpenRouter live catalog unavailable; using saved fallback list.',e);}
+}
+async function refreshProviderModelList(providerKey,apiKey){
+  if(!apiKey||providerKey==='openrouter'||providerKey==='tavily')return;
+  const cfg=PROVIDERS[providerKey];
+  if(providerKey==='anthropic'){
+    try{
+      const response=await fetch('https://api.anthropic.com/v1/models?limit=1000',{cache:'no-store',headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}});
+      if(!response.ok)return;
+      const body=await response.json(),rows=Array.isArray(body.data)?body.data:[];
+      const next=rows.filter(m=>m&&typeof m.id==='string'&&/^claude-[A-Za-z0-9._-]+$/.test(m.id)).map(m=>({value:m.id,label:String(m.display_name||m.id).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+' · image analysis',vision:true}));
+      if(!next.length)return;
+      cfg.models=next;
+      ['setup','settings'].forEach(scope=>{const sel=document.getElementById(scope+'ProviderSelect');if(sel&&sel.value==='anthropic')onProviderChange(scope);});
+      if(scife.provider==='anthropic'&&!next.some(m=>m.value===scife.model)){scife.model=next[0].value;await saveScife();}
+    }catch(e){console.info('[SciFe models] Anthropic live catalog unavailable; using saved fallback list.',e);}
+    return;
+  }
+  if(!cfg||cfg.compat!=='openai'||!cfg.baseURL)return;
+  const endpoint=cfg.baseURL.replace(/\/chat\/completions\/?$/,'/models');
+  if(endpoint===cfg.baseURL)return;
+  try{
+    const response=await fetch(endpoint,{cache:'no-store',headers:{Authorization:'Bearer '+apiKey}});
+    if(!response.ok)return;
+    const body=await response.json(),rows=Array.isArray(body.data)?body.data:[];
+    const old=new Map((cfg.models||[]).map(m=>[m.value,m]));
+    const next=rows.filter(m=>m&&typeof m.id==='string'&&/^[A-Za-z0-9._:/-]+$/.test(m.id)&&!/embed|whisper|transcri|moderation|rerank|tts|speech|audio|guard/i.test(m.id))
+      .map(m=>{const known=old.get(m.id),name=String(m.name||m.id).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));return{value:m.id,label:known?known.label:name+(known?'':' — live'),vision:!!(known&&known.vision),free:!!(known&&known.free)};});
+    if(!next.length)return;
+    cfg.models=next;
+    ['setup','settings'].forEach(scope=>{const sel=document.getElementById(scope+'ProviderSelect');if(sel&&sel.value===providerKey)onProviderChange(scope);});
+    if(scife.provider===providerKey&&!next.some(m=>m.value===scife.model)){scife.model=next[0].value;await saveScife();}
+  }catch(e){console.info('[SciFe models] Live catalog unavailable for '+providerKey+'; using saved fallback list.',e);}
 }
 /* Plain-English list of every currently vision-capable model, for error/hint
    text — built from PROVIDERS so it never goes stale when providers change. */
@@ -2458,6 +2520,7 @@ function populateProviderSelects(){
   if(settingsSel) settingsSel.innerHTML = opts;
   buildProviderGrid('setup');
   buildProviderGrid('settings');
+  if(!openRouterCatalogLoaded) refreshOpenRouterCatalog();
 }
 
 /* Builds the visual provider-card grid for a scope ('setup' or 'settings').
@@ -2780,6 +2843,13 @@ async function loadTraderRow(){
   }
   rolloverUsageWeek();
   updateScanBanner();
+  // Pull the selected provider's current catalog when the user's own key is
+  // available. Static entries remain as a fallback when a provider has no
+  // public catalog endpoint or is temporarily unavailable.
+  if(apiKeys[provider]){
+    if(provider==='openrouter') refreshOpenRouterCatalog();
+    else refreshProviderModelList(provider,apiKeys[provider]);
+  }
 }
 
 /* ============ WEEKLY SCAN LIMIT (5/week, unlimited for admin) ============
@@ -2983,6 +3053,12 @@ async function saveScife(){
   const safeScife = { ...scife };
   delete safeScife.apiKeys;
   delete safeScife.apiKey;
+  // Preserve the main portal's reversible SciFe edit history when settings,
+  // memory, or the action log is saved from this companion.
+  try{
+    const {data}=await sb.from('trader_data').select('scife').eq('user_id',currentUser.id).maybeSingle();
+    if(Array.isArray(data&&data.scife&&data.scife.portalUndo))safeScife.portalUndo=data.scife.portalUndo;
+  }catch(e){}
   const { error } = await sb.from('trader_data')
     .upsert({ user_id: currentUser.id, scife: safeScife }, { onConflict: 'user_id' });
   if(error) showToast('Could not save SciFe settings: ' + (error.message||error.code));
@@ -3192,6 +3268,8 @@ async function saveSettings(){
   const voiceSel = document.getElementById('settingsVoiceSelect');
   scife.voiceURI = voiceSel ? voiceSel.value : scife.voiceURI;
   await saveScife();
+  if(newProvider==='openrouter'&&newKey){openRouterCatalogLoaded=false;await refreshOpenRouterCatalog();}
+  else if(newProvider!=='openrouter'&&newKey) await refreshProviderModelList(newProvider,newKey);
   closeSettings();
   showToast(newKey ? 'Saved — now using ' + (PROVIDERS[scife.provider]?.label || scife.provider) : 'Provider key removed');
 }
@@ -3308,7 +3386,7 @@ function summarizeJournal(){
 function summarizePortalWorkspace(){
   const row = traderRow || {};
   const p = row.profile || {}, psych = row.psychology || {};
-  const strategies = Array.isArray(psych.strategies) ? psych.strategies.map(s=>({ name:s.name, type:s.type, notes:s.notes||'', rules:s.rules||'' })) : [];
+  const strategies = Array.isArray(psych.strategies) ? psych.strategies.map(s=>({ id:s.id, name:s.name, type:s.type, notes:s.notes||'', rules:s.rules||'' })) : [];
   const orders = Array.isArray(psych.orders) ? psych.orders.slice(-30).map(o=>({ id:o.id, status:o.status, pair:o.pair, direction:o.direction, entry:o.entry, sl:o.sl, tp:o.tp, account:o.account, strategy:o.strategy, notes:o.notes })) : [];
   const journalTrades = Array.isArray(row.trades) ? row.trades.slice(-100).map(t=>({ id:t.id, date:t.date, result:t.result, pair:t.pair, account:t.account||'personal', strategy:t.strategy, strategyType:t.strategyType, rr:t.rr, pnl:pnlOf(t), mood:t.mood, entry:t.entry, sl:t.sl, tp:t.tp, notes:String(t.notes||'').slice(0,240) })) : [];
   const plan = psych.dailyTradePlan || null;
@@ -3650,12 +3728,7 @@ function extractSignalLevels(r){
 }
 function pnlOf(t){ return t.result==='win' ? (parseFloat(t.winAmount)||0) : -(parseFloat(t.lossAmount)||0); }
 async function saveTrades(){
-  if(!currentUser || !traderRow) return false;
-  const { error } = await sb.from('trader_data')
-    .update({ trades: traderRow.trades, updated_at: new Date().toISOString() })
-    .eq('user_id', currentUser.id);
-  if(error){ showToast('Could not save trade: ' + (error.message||error.code)); return false; }
-  return true;
+  return savePortalSnapshot('Updated trades');
 }
 // Same trades write as saveTrades(), plus the discipline fields (day, streak,
 // consecutive_losses) that a rule-checked chat log_trade also touches — kept
@@ -3663,15 +3736,76 @@ async function saveTrades(){
 // so a trade logged by talking to the AI moves the same streak/day counters
 // a manually-logged trade would.
 async function saveTradeAndDiscipline(){
+  return savePortalSnapshot('Logged or edited journal trades');
+}
+function portalSnapshotFromSciFe(){
+  traderRow.rules=traderRow.rules||{};traderRow.profile=traderRow.profile||{};traderRow.prop_firm=Array.isArray(traderRow.prop_firm)?traderRow.prop_firm:[];
+  traderRow.psychology=traderRow.psychology||{};
+  ['orders','strategies','traders','disciplineHistory','preTradeCheckins','tradeReviews'].forEach(key=>{if(!Array.isArray(traderRow.psychology[key]))traderRow.psychology[key]=[];});
+  traderRow.psychology.strategyNotes=traderRow.psychology.strategyNotes||{customStrategies:[],checkIns:[],journal:''};
+  if(!Array.isArray(traderRow.psychology.strategyNotes.customStrategies))traderRow.psychology.strategyNotes.customStrategies=[];
+  if(!Array.isArray(traderRow.psychology.strategyNotes.checkIns))traderRow.psychology.strategyNotes.checkIns=[];
+  traderRow.session=traderRow.session||{};traderRow.brief=traderRow.brief||{};traderRow.trades=Array.isArray(traderRow.trades)?traderRow.trades:[];
+  traderRow.backtest_sessions=Array.isArray(traderRow.backtest_sessions)?traderRow.backtest_sessions:[];
+  traderRow.day=traderRow.day||{};traderRow.streak=traderRow.streak||{};
+  return {rules:traderRow.rules,profile:traderRow.profile,prop_firm:traderRow.prop_firm,session:traderRow.session,psychology:traderRow.psychology,
+    brief:traderRow.brief,trades:traderRow.trades,backtest_sessions:traderRow.backtest_sessions,streak:traderRow.streak,
+    day:traderRow.day,consecutive_losses:traderRow.consecutive_losses,rules_completed:traderRow.rules_completed};
+}
+function applyPortalSnapshotToSciFe(snapshot){
+  if(!snapshot)return;
+  const map={rules:'rules',profile:'profile',prop_firm:'prop_firm',session:'session',psychology:'psychology',brief:'brief',trades:'trades',backtest_sessions:'backtest_sessions',streak:'streak',day:'day',consecutive_losses:'consecutive_losses',rules_completed:'rules_completed'};
+  Object.keys(map).forEach(key=>{if(Object.prototype.hasOwnProperty.call(snapshot,key))traderRow[map[key]]=snapshot[key];});
+}
+async function requestPortalBridge(action){
+  if(window.parent!==window && window.parent.gdScifePortalBridge && typeof window.parent.gdScifePortalBridge.handle==='function'){
+    return await window.parent.gdScifePortalBridge.handle(action);
+  }
+  const id='scife_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  if(window.parent!==window){
+    return await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('The main portal did not answer. Open SciFe from the logged-in portal and retry.'));},9000);
+      function onMessage(event){if(event.origin!==location.origin||!event.data||event.data.type!=='gd-scife-portal-response'||event.data.id!==id)return;clearTimeout(timer);window.removeEventListener('message',onMessage);event.data.error?reject(new Error(event.data.error)):resolve(event.data.result);}
+      window.addEventListener('message',onMessage);
+      window.parent.postMessage({type:'gd-scife-portal-request',id,action},location.origin);
+    });
+  }
+  if(typeof BroadcastChannel==='undefined') throw new Error('Open the main portal in another tab so SciFe can reach its verified save service.');
+  return await new Promise((resolve,reject)=>{
+    const channel=new BroadcastChannel('gd-scife-portal-v1');
+    const timer=setTimeout(()=>{channel.close();reject(new Error('No signed-in main portal answered. Open the portal in another tab, then retry.'));},9000);
+    channel.onmessage=function(event){const msg=event.data||{};if(msg.type!=='response'||msg.id!==id)return;clearTimeout(timer);channel.close();msg.error?reject(new Error(msg.error)):resolve(msg.result);};
+    channel.postMessage({type:'request',id,action});
+  });
+}
+async function savePortalSnapshot(summary){
   if(!currentUser || !traderRow) return false;
-  const { error } = await sb.from('trader_data')
-    .update({
-      trades: traderRow.trades, day: traderRow.day, streak: traderRow.streak,
-      consecutive_losses: traderRow.consecutive_losses, updated_at: new Date().toISOString()
-    })
-    .eq('user_id', currentUser.id);
-  if(error){ showToast('Could not save trade: ' + (error.message||error.code)); return false; }
-  return true;
+  try{
+    const result=await requestPortalBridge({type:'sync_snapshot',expectedVersion:traderRow.version,snapshot:portalSnapshotFromSciFe(),summary});
+    if(!result||!result.ok) throw new Error(result&&result.message||'The portal did not confirm the save.');
+    if(result.version!=null) traderRow.version=result.version;
+    return true;
+  }catch(error){
+    console.error('[SciFe portal save failed]',error);
+    showToast('Portal did not confirm the change: '+(error.message||'unknown error'));
+    return false;
+  }
+}
+async function undoPortalChange(){
+  const hint=document.getElementById('portalUndoHint');
+  if(hint)hint.textContent='Checking the latest saved portal change…';
+  try{
+    const result=await requestPortalBridge({type:'undo_portal_change'});
+    if(!result||!result.ok)throw new Error(result&&result.message||'The portal did not confirm the undo.');
+    if(result.snapshot)applyPortalSnapshotToSciFe(result.snapshot);
+    if(result.version!=null)traderRow.version=result.version;
+    logAction('undo_portal_change',{changeId:result.changeId},true);
+    if(hint)hint.textContent=result.message;
+    addBubble('system',result.message);
+  }catch(error){
+    if(hint)hint.textContent=error.message||'Undo failed.';
+    addBubble('system','Undo failed: '+(error.message||'unknown error'));
+  }
 }
 // Mirrors rolloverDayIfNeeded() in index.html: rolls yesterday's result into
 // the streak (extend it if no rule broke, zero it if one did) and opens a
@@ -3712,14 +3846,8 @@ function resolveActionAccount(rawAccount){
 async function applyTradeAction(action){
   if(!action || !action.type) return null;
   if(action.type === 'set_theme'){
-    const theme=String(action.theme||'').toLowerCase();
-    if(!GD_THEMES.includes(theme)){
-      logAction('set_theme',{theme:action.theme||null,reason:'unsupported theme'},false);
-      return {ok:false,message:'I can set the portal to light, dark, red, blue, purple, gold, or slate. Which would you like?'};
-    }
-    applyGdTheme(theme);
-    logAction('set_theme',{theme},true);
-    return {ok:true,message:`Portal color changed to ${theme}.`};
+    logAction('set_theme',{theme:action.theme||null,reason:'main portal palette is fixed'},false);
+    return {ok:false,message:'The main portal currently uses its fixed slate palette, so I did not claim a theme change.'};
   }
   traderRow.trades = traderRow.trades || [];
   if(action.type === 'log_trade' && Array.isArray(action.trades)){
@@ -3733,6 +3861,7 @@ async function applyTradeAction(action){
     return { ok: okCount>0, brokeRule: broke, message: `Logged ${okCount} of ${action.trades.length} trades.` + (broke ? ' Some broke your rules.' : '') + (msgs.length ? ' ' + msgs.join(' ') : '') };
   }
   if(action.type === 'log_trade' && (action.status === 'live' || action.status === 'pending')){
+    const before=portalSnapshotFromSciFe();
     // Open positions and pending orders go to the Orders book, not the closed-trade journal.
     traderRow.psychology = traderRow.psychology || {};
     traderRow.psychology.orders = traderRow.psychology.orders || [];
@@ -3753,18 +3882,18 @@ async function applyTradeAction(action){
       account: resolveActionAccount(action.account),
       ruleViolations: missLabels, ruleViolationLabels: missLabels
     });
-    const orderUpdate = { psychology: traderRow.psychology, updated_at: new Date().toISOString() };
     if(missLabels.length){
       sigRolloverDayIfNeeded();
       traderRow.day.ruleBrokenToday = true; traderRow.streak.count = 0;
-      orderUpdate.day = traderRow.day; orderUpdate.streak = traderRow.streak;
     }
-    const { error } = await sb.from('trader_data').update(orderUpdate).eq('user_id', currentUser.id);
-    logAction('log_trade', { status: action.status, pair: action.pair, entry }, !error);
-    if(error) return { ok:false, message:'Could not save that order. Try again in a moment.' };
+    const ok=await savePortalSnapshot('Added a live or pending order');
+    if(!ok)applyPortalSnapshotToSciFe(before);
+    logAction('log_trade', { status: action.status, pair: action.pair, entry }, ok);
+    if(!ok) return { ok:false, message:'The main portal did not confirm that order. It was not reported as saved.' };
     return { ok:true, brokeRule: missLabels.length>0, message:`${action.status==='live' ? 'Live trade' : 'Pending order'} saved: ${dir.toUpperCase()} ${action.pair||''} @ ${entry}.` + (missLabels.length ? ' ' + missLabels.join(' and ') + ', so your discipline score drops and the streak resets.' : '') };
   }
   if(action.type === 'log_trade'){
+    const before=portalSnapshotFromSciFe();
     sigRolloverDayIfNeeded();
     const pnl = parseFloat(action.pnl);
     const result = action.result==='win' || action.result==='loss' ? action.result : (isNaN(pnl) ? 'win' : (pnl < 0 ? 'loss' : 'win'));
@@ -3839,6 +3968,7 @@ async function applyTradeAction(action){
 
     traderRow.trades.push(trade);
     const ok = await saveTradeAndDiscipline();
+    if(!ok)applyPortalSnapshotToSciFe(before);
     logAction('log_trade', { id: trade.id, result: trade.result, amount, pair: trade.pair, date: trade.date, violations }, ok);
     if(!ok) return { ok:false, message:'Could not save that trade — try again in a moment.' };
     const head = `Logged: ${result==='win'?'+':'-'}${amount.toFixed(0)} ${trade.pair||''} on ${trade.date}.`;
@@ -3859,23 +3989,80 @@ async function applyTradeAction(action){
     const id = action.id!=null ? Number(action.id) : null;
     const idx = id!=null ? traderRow.trades.findIndex(t=>Number(t.id)===id) : -1;
     if(idx === -1) return { ok:false, message:'Could not find that trade to edit.' };
-    const t = traderRow.trades[idx];
+    const t = traderRow.trades[idx], original=JSON.parse(JSON.stringify(t));
     if(action.result==='win' || action.result==='loss') t.result = action.result;
     if(action.pnl!=null && !isNaN(parseFloat(action.pnl))){
       const amt = Math.abs(parseFloat(action.pnl));
       if(t.result==='win'){ t.winAmount = amt; t.lossAmount = 0; } else { t.lossAmount = amt; t.winAmount = 0; }
     }
     if(action.rr!=null) t.rr = parseFloat(action.rr);
-    if(action.notes!=null) t.notes = action.notes;
-    if(action.pair!=null) t.pair = action.pair;
+    ['notes','pair','entry','sl','tp','direction','lot','strategy','strategyType','style','exit','tvLink','trader'].forEach(key=>{if(action[key]!==undefined)t[key]=action[key];});
     if(action.date && /^\d{4}-\d{2}-\d{2}$/.test(action.date)) t.date = action.date;
-    if(action.account==='propfirm' || action.account==='personal') t.account = action.account;
+    if(action.account!=null) t.account = resolveActionAccount(action.account);
     if(['calm','confident','fomo','revenge','bored','anxious'].includes(action.mood)) t.mood = action.mood;
     const ok = await saveTrades();
+    if(!ok) traderRow.trades[idx]=original;
     logAction('edit_trade', { id: t.id, date: t.date, pair: t.pair }, ok);
     return ok ? { ok:true, message:`Updated trade ${t.date} ${t.pair||''}` } : { ok:false, message:'Could not save that edit — try again in a moment.' };
   }
+  if(action.type==='portal_data_action') return await applyPortalDataAction(action);
+  if(action.type==='undo_portal_change'){
+    try{
+      const result=await requestPortalBridge({type:'undo_portal_change'});
+      if(!result||!result.ok)return{ok:false,message:result&&result.message||'The portal could not confirm the undo.'};
+      if(result.snapshot)applyPortalSnapshotToSciFe(result.snapshot);
+      if(result.version!=null)traderRow.version=result.version;
+      logAction('undo_portal_change',{changeId:result.changeId},true);return result;
+    }catch(e){logAction('undo_portal_change',{reason:e.message},false);return{ok:false,message:'Undo did not complete: '+e.message};}
+  }
   return null;
+}
+
+const PORTAL_ARRAYS={
+  trades:()=>traderRow.trades,orders:()=>traderRow.psychology.orders,strategies:()=>traderRow.psychology.strategies,
+  traders:()=>traderRow.psychology.traders,tradeReviews:()=>traderRow.psychology.tradeReviews,
+  preTradeCheckins:()=>traderRow.psychology.preTradeCheckins,customStrategies:()=>traderRow.psychology.strategyNotes.customStrategies,
+  checkIns:()=>traderRow.psychology.strategyNotes.checkIns,propFirms:()=>traderRow.prop_firm,backtestSessions:()=>traderRow.backtest_sessions
+};
+async function applyPortalDataAction(action){
+  const area=String(action.area||''),op=String(action.operation||''),recordId=action.id;
+  const values=action.values&&typeof action.values==='object'&&!Array.isArray(action.values)?action.values:{};
+  if(!['add','update','delete','set'].includes(op))return{ok:false,message:'Choose add, update, delete, or set for that portal change.'};
+  const before=JSON.parse(JSON.stringify(portalSnapshotFromSciFe()));
+  let changedLabel='';
+  if(Object.prototype.hasOwnProperty.call(PORTAL_ARRAYS,area)){
+    const target=PORTAL_ARRAYS[area]();
+    if(!Array.isArray(target))return{ok:false,message:'That portal list is unavailable.'};
+    if(op==='add'){
+      const item=Object.assign({},values);if(item.id==null)item.id=area==='trades'?Date.now():'scife_'+Date.now().toString(36);
+      target.push(item);changedLabel='Added '+area+' item '+item.id;
+    }else{
+      const index=target.findIndex(item=>String(item&&item.id)===String(recordId));
+      if(index<0)return{ok:false,message:'Could not find '+area+' item id '+String(recordId)+'. I made no change.'};
+      if(op==='update'){target[index]=Object.assign({},target[index],values,{id:target[index].id});changedLabel='Updated '+area+' item '+recordId;}
+      else if(op==='delete'){target.splice(index,1);changedLabel='Removed '+area+' item '+recordId;}
+      else return{ok:false,message:'Use update to change a '+area+' record.'};
+    }
+  }else if(['rules','profile','session','brief','psychology','day','streak'].includes(area)){
+    if(area==='psychology')traderRow.psychology=traderRow.psychology||{};
+    else traderRow[area]=traderRow[area]||{};
+    if(op==='set'){
+      if(!Object.keys(values).length)return{ok:false,message:'The change had no fields.'};
+      if(area==='psychology')traderRow.psychology=Object.assign({},values);else traderRow[area]=Object.assign({},values);
+      changedLabel='Replaced portal '+area+' settings';
+    }else if(op==='update'){
+      const field=String(action.field||'');if(!field)return{ok:false,message:'Tell me which '+area+' field to change.'};
+      if(area==='psychology')traderRow.psychology[field]=action.value;else traderRow[area][field]=action.value;
+      changedLabel='Changed '+area+'.'+field;
+    }else return{ok:false,message:'That operation is not supported for '+area+'.'};
+  }else return{ok:false,message:'That portal area cannot be edited from SciFe.'};
+  const ok=await savePortalSnapshot(changedLabel);
+  if(!ok){
+    traderRow.rules=before.rules;traderRow.profile=before.profile;traderRow.prop_firm=before.prop_firm;traderRow.session=before.session;traderRow.psychology=before.psychology;
+    traderRow.brief=before.brief;traderRow.trades=before.trades;traderRow.backtest_sessions=before.backtest_sessions;traderRow.streak=before.streak;traderRow.day=before.day;traderRow.consecutive_losses=before.consecutive_losses;traderRow.rules_completed=before.rules_completed;
+  }
+  logAction('portal_data_action',{area,operation:op,id:recordId,label:changedLabel},ok);
+  return ok?{ok:true,message:changedLabel+' — saved and verified in the main portal.'}:{ok:false,message:'The portal did not confirm the change. It was not reported as complete.'};
 }
 
 /* ============ RULE EDITING (from conversation) ============
@@ -3897,12 +4084,7 @@ function normalizeRuleKey(k){
   return RULE_KEYS.find(rk=>rk.toLowerCase()===norm) || null;
 }
 async function saveRulesField(){
-  if(!currentUser || !traderRow) return false;
-  const { error } = await sb.from('trader_data')
-    .update({ rules: traderRow.rules, updated_at: new Date().toISOString() })
-    .eq('user_id', currentUser.id);
-  if(error){ showToast('Could not save rule change: ' + (error.message||error.code)); return false; }
-  return true;
+  return savePortalSnapshot('Changed a portal discipline rule');
 }
 async function applyRuleAction(action){
   const key = normalizeRuleKey(action.rule);
@@ -3959,7 +4141,7 @@ ${summarizeJournal()}
 PORTAL WORKSPACE BRIDGE (same signed-in account and live portal record; use this context when asked about plans, setups, mindset, orders, profile, or rules):
 ${summarizePortalWorkspace()}
 
-PORTAL APPEARANCE: When the trader explicitly asks you to change the portal's colors or theme, apply that preference immediately with a set_theme action. Supported themes are light, dark, red, blue, purple, gold, and slate. Match a plain color request to the closest theme (for example, green/forest → dark, navy → blue, violet → purple, silver → slate). Never change the theme unprompted.
+PORTAL APPEARANCE: The main portal currently uses a fixed slate palette. Do not claim a theme change or emit a theme action; explain that the palette is fixed if asked.
 
 PROP FIRM ACCOUNTS ON FILE:
 ${propFirmLines}
@@ -3982,8 +4164,10 @@ IMAGES: the trader can attach a chart/screenshot directly in this chat (not just
 Known strategy names: ${strategies}
 Today's date: ${todayStr()}
 
-TRADE LOGGING & EDITING, RULE EDITING, PLACING ORDERS, AND MT5 COMMANDS:
-You can log a new trade, edit an existing one, change one of the trader's discipline rules, place a pending order on the Order Book, or queue an MT5 command — directly from conversation. Do this when the trader actually gives you something concrete to act on (a trade they took, a real change to make, a setup they want queued as a pending order, an instruction to send something to their MT5 account) — never for hypothetical or past-tense-recap conversation, and never for an order/trade you talked yourself into against the PRECISION AND PATIENCE standard above.
+PORTAL EDITING, REVERTING, TRADE LOGGING, AND ORDERS:
+You can read and update the signed-in trader's main portal record, including historical/completed trades, open orders, discipline rules, strategies, plans, notes, psychology, session settings, prop accounts, backtests, and the other lists shown in PORTAL WORKSPACE BRIDGE. These are the actual portal records. SciFe changes are saved through the main portal and get an undo snapshot. Honor clear user instructions to add, edit, delete, or undo; completed records remain editable. Never change another account or billing/access settings. Do not say an edit is complete until code returns a confirmed save result; the UI adds the authoritative receipt after the save.
+For an update to a saved list record, use its exact id from PORTAL WORKSPACE BRIDGE. For a new list record, use the named area and values. Supported areas: trades, orders, strategies, traders, tradeReviews, preTradeCheckins, customStrategies, checkIns, propFirms, backtestSessions, rules, profile, session, brief, psychology, day, streak. The generic form is {"type":"portal_data_action","area":"trades","operation":"update|add|delete|set","id":"existing id for update/delete","values":{"field":"new value"}}. For rules/profile/session/brief/psychology/day/streak, use operation update plus field and value, or set plus a values object. Use delete for reversible removal. To undo SciFe's most recent saved portal edit use {"type":"undo_portal_change"}. If a user asks to edit a specific old trade and it is outside the listed snapshot, ask for the date/pair or refresh the portal context; never invent ids.
+You can also log a new trade, edit a completed trade, change a discipline rule, place a pending order, or queue an MT5 command — directly from conversation. Do this when the trader actually gives you something concrete to act on (a trade they took, a real change to make, a setup they want queued as a pending order, an instruction to send something to their MT5 account) — never for hypothetical or past-tense-recap conversation, and never for an order/trade you talked yourself into against the PRECISION AND PATIENCE standard above.
 To do this, end your reply with a single action block on its own line, and NOTHING else on that line. The format is exactly three '>' characters in each marker — not two, not more:
 <<<ACTION>>>{...json...}<<<END>>>
 
@@ -3992,11 +4176,10 @@ When the trader logs a trade without a stop loss or take profit, ask for them. I
 For trades read from screenshots or pasted history: first list what you found and ask the trader for the SL and TP of any trade where they are not visible. Never guess SL or TP. Once you have them, emit ONE action: {"type":"log_trade","date":"YYYY-MM-DD","trades":[{"pair":"XAUUSD","direction":"buy"|"sell","status":"executed"|"live"|"pending","entry":2650.5,"sl":2645,"tp":2662,"lot":0.1,"pnl":120,"result":"win"|"loss"}]}. A single trade can also carry status, entry, sl, tp, lot and direction. status "live" (open position) and "pending" (unfilled order) go to the Orders book and need no pnl; omit status for a closed trade.
 For editing one already logged, use its id from the snapshot above and include ONLY the fields that changed: {"type":"edit_trade","id":1731234567,"notes":"corrected note"}
 For changing a rule: {"type":"edit_rule","rule":"maxTrades","value":2}
-For changing portal colors when explicitly requested: {"type":"set_theme","theme":"dark"}
 Valid "rule" keys (use exactly one of these, spelled exactly like this — see current values in the JOURNAL SNAPSHOT above): maxDailyLoss, maxTrades, riskPerTrade, minRR, maxConsecLosses, accountBalance, coolingOffMinutes, maxRiskPerTrade, currency, accountType. "value" is a plain number for all of these except currency/accountType, which take a short string.
 For placing a pending order on the Order Book: {"type":"place_order","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"rrPlanned":2,"account":"personal"|"<a prop firm id from the list above>","strategy":"name or omit","notes":"why — the actual structure/confluence backing entry/SL/TP"}. This lands on the Order Book tagged as AI-suggested and awaiting the trader's own review — it is never itself a live trade.
 For queuing an MT5 command (only meaningful if the trader has the MT5 bridge on — see MT5 LIVE BRIDGE above; never emit this block at all if the MT5 LIVE BRIDGE line above says the feature isn't available on this account): {"type":"mt5_order","account":"<a prop firm id, or 'personal'>","action":"open"|"modify"|"close","pair":"EURUSD","direction":"long"|"short","entry":1.0850,"sl":1.0820,"tp":1.0910,"lot":0.5,"notes":"why"}. This is queued and requires the trader's own explicit approval in Settings before it ever reaches their real account — say so plainly when you queue one, don't imply it already executed.
-Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit a trade id that actually appears in the JOURNAL SNAPSHOT above, and only use a prop firm id that actually appears in PROP FIRM ACCOUNTS ON FILE above. The action block is invisible to the trader (it is stripped out before display), so still say in plain words what you just did before it — but never print the literal action block text itself as part of your visible answer, and never describe the JSON to the trader instead of emitting a real action block.
+Rules: pnl is a signed number in account currency (positive for a win, negative for a loss) — derive result from its sign if the trader doesn't say win/loss explicitly. Omit "date" to default to today, omit "account" to default to "personal". Never fabricate an id — only edit an id actually present in the journal/workspace above, and only use a prop firm id actually shown above. Never claim a portal edit, save, log, deletion, or undo succeeded in your prose; return the action block and wait for the verified portal receipt. If no valid action block is returned, no portal edit occurred.
 
 TONE WHEN LOGGING A TRADE — do not overreact: whether a rule was actually broken is checked in code against the trader's real rules after you reply, not guessed by you, so never announce "rule broken" or reset a streak yourself in your narration — that line gets appended automatically, with the exact rule(s), only when one truly tripped. Your own reply to a plain win or a plain loss that broke nothing should be the same even, matter-of-fact tone either way ("Logged." / "Got it, logged that one.") — a clean loss inside the trader's own rules is not a bad outcome and doesn't call for concern, a pep talk, or "are you okay?" energy. Save any coaching for when the trader actually asks for it or the data shows an actual pattern (see DURING A LOSING STREAK above).
 
@@ -6195,26 +6378,26 @@ async function sendMessage(text, images){
     const action = web ? null : parsed.action;
     let result = null;
     if(action) result = await applyTradeAction(action);
-    // Only surface the confirmation note when something went wrong, or when a
-    // trade log actually tripped a rule — for a clean save the model has
-    // already narrated it in plain language (see buildSystemPrompt's
-    // instructions), so bolting a second, bracket-formatted "[Updated X]"
-    // line onto every reply just reads as leaked internal state. A rule
-    // violation is different: it's computed here from the trader's actual
-    // rules, not guessed by the model, so it's appended verbatim to guarantee
-    // the trader sees the real broken rule(s) rather than the model's guess.
-    let displayReply = cleanReply;
-    if(result && !result.ok){
-      displayReply = `${cleanReply}\n\n${result.message}`;
-    } else if(result && result.ok && result.brokeRule){
-      displayReply = `${cleanReply}\n\n⚠ ${result.message}`;
+    const editIntent=/\b(edit|change|update|delete|remove|add|create|log|save|mark|close|revert|undo|rewrite)\b/i.test(text);
+    let displayReply=cleanReply;
+    if(pausedAction){
+      displayReply='No portal change was applied because this reply used web results. Ask me again without a web search if you want the change made.';
+    }else if(action&&!result){
+      displayReply='No portal change was applied because SciFe could not validate the requested action. Please restate the change.';
+    }else if(result&&!result.ok){
+      displayReply='I could not complete that portal change. '+(result.message||'The portal did not confirm the save.');
+    }else if(result&&result.ok){
+      displayReply=cleanReply+'\n\n✓ '+result.message;
+      if(result.brokeRule) displayReply='⚠ '+displayReply;
+    }else if(editIntent){
+      displayReply='I did not apply a portal change. '+cleanReply;
     }
     removeTyping();
     addBubble('assistant', displayReply);
     if(web && web.sources && web.sources.length) addBubble('system', 'Web sources: ' + web.sources.join(', '));
     if(pausedAction) addBubble('system', 'I did not log a trade from this reply because it used web results. Ask again without a search if you want it logged.');
-    history.push({ role:'assistant', content: cleanReply });
-    if(scife.voiceOn) speak(cleanReply); else setStage('idle');
+    history.push({ role:'assistant', content: displayReply });
+    if(scife.voiceOn) speak(displayReply); else setStage('idle');
     maybeUpdateMemory();
   }catch(e){
     removeTyping();
@@ -7963,6 +8146,34 @@ html[data-theme] body:has(#app){background:radial-gradient(ellipse 72% 34% at 50
   #settingsOverlay .settings-tabs{top:-22px;overflow-x:auto;white-space:nowrap}
 }
 @media(prefers-reduced-motion:reduce){#signalPage .sig-hero::after{animation:none!important}}
+</style>
+<style id="scife-desk-refinement">
+/* A quieter, clearer desk surface across chat, settings, and the scanner. */
+#app>.topbar{min-height:62px;border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.018)),#0d0f0e;border-color:rgba(231,238,229,.12)}
+#stage{border-radius:20px;background:radial-gradient(ellipse at 80% 8%,rgba(184,205,169,.1),transparent 48%),linear-gradient(150deg,#171a18,#0b0d0c 76%);border-color:rgba(231,238,229,.13)}
+#app .chat-wrap{border-radius:20px;background:linear-gradient(160deg,#101311,#0b0d0c);border-color:rgba(231,238,229,.12)}
+#app .bubble{line-height:1.65;letter-spacing:.005em}
+#app .bubble.user{background:#1a211b;border-color:rgba(180,211,171,.2)}
+#app .composer-row{border-radius:16px;background:#101311;border-color:rgba(231,238,229,.16);box-shadow:0 14px 34px -27px #000}
+#app .send-btn{background:linear-gradient(135deg,#b8d0aa,#8ca681);color:#10150f}
+.provider-card{border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.035),transparent),#101311;border-color:rgba(231,238,229,.12)}
+.provider-card.active{background:linear-gradient(145deg,rgba(184,205,169,.14),rgba(184,205,169,.035)),#111512;border-color:rgba(184,205,169,.42);box-shadow:inset 0 1px rgba(255,255,255,.055)}
+#signalPage .sig-hero{border-radius:17px;background:radial-gradient(ellipse at 94% 0%,rgba(184,205,169,.09),transparent 46%),linear-gradient(145deg,#151916,#0d100e);border-color:rgba(231,238,229,.13)}
+#signalPage .sig-console-card,#signalPage .sig-card,#signalPage .sig-result-card{border-radius:15px;background:linear-gradient(155deg,rgba(255,255,255,.025),transparent 55%),#0e110f;border-color:rgba(231,238,229,.12)}
+#signalPage .sig-result-card{padding:clamp(19px,3vw,27px)}
+#signalPage .sig-block-label{color:#b9c9ad}
+#signalPage .sig-block-text,#signalPage .sig-check-note{color:#d1d6ce;line-height:1.65}
+#signalPage .sig-bias{border-radius:10px;padding:9px 13px}
+#settingsOverlay .modal{border-radius:19px;background:linear-gradient(145deg,rgba(255,255,255,.035),transparent 42%),#0e110f;border-color:rgba(231,238,229,.14)}
+#settingsOverlay .settings-tab.active{background:#1a211b;color:#edf2e9}
+@media(max-width:760px){
+  #app>.topbar{border-radius:0 0 14px 14px}
+  #app .chat-wrap{min-height:min(54dvh,540px);border-radius:17px}
+  #app .composer-row{min-height:56px;padding-left:14px}
+  #signalPage .sig-result-card{padding:18px 15px}
+  #settingsOverlay .modal{max-height:90dvh}
+}
+@media(prefers-reduced-motion:reduce){.provider-card,#app .send-btn{transition:none!important}}
 </style>
 </body>
 </html>
