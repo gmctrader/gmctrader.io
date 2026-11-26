@@ -8175,5 +8175,86 @@ html[data-theme] body:has(#app){background:radial-gradient(ellipse 72% 34% at 50
 }
 @media(prefers-reduced-motion:reduce){.provider-card,#app .send-btn{transition:none!important}}
 </style>
+<style id="scife-visible-redesign">
+/* A clear, phone-first conversation surface with less repeated branding and
+   enough room for the first useful action to appear without a long scroll. */
+html[data-theme] body:has(#app){
+  background:radial-gradient(ellipse 78% 44% at 50% -12%,rgba(91,129,91,.22),transparent 70%),
+    radial-gradient(ellipse 55% 42% at 100% 100%,rgba(179,151,102,.08),transparent 72%),#080d09!important;
+}
+#app .welcome-hero{border:1px solid rgba(190,215,176,.19);border-left:3px solid #a9c493;background:linear-gradient(125deg,rgba(35,53,37,.9),rgba(14,21,15,.96) 62%);box-shadow:inset 0 1px rgba(255,255,255,.06),0 22px 48px -38px #000}
+#app .welcome-eyebrow{color:#c3d7ae}
+#app .welcome-copy h1{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.045em}
+#app .quick-chip.prompt-card{background:linear-gradient(135deg,#18241a,#101711);border-color:rgba(174,201,157,.2)}
+#app .quick-chip.prompt-card:hover{background:linear-gradient(135deg,#223326,#121a13);border-color:rgba(190,218,170,.45)}
+#app .prompt-index{background:rgba(169,196,145,.12);border-color:rgba(169,196,145,.2)}
+#app .chat-wrap{background:linear-gradient(155deg,#101811,#0b100c);border-color:rgba(183,208,166,.18)}
+#app .session-heading{border-color:rgba(183,208,166,.14)}
+#app .composer-row{background:#111a13;border-color:rgba(183,208,166,.2)}
+#app .send-btn{background:linear-gradient(135deg,#d2dfbf,#a8c492);color:#182016}
+#signalPage .sig-hero{border-left:3px solid #a9c493;background:linear-gradient(130deg,#1b281d,#0e1510 70%);box-shadow:inset 0 1px rgba(255,255,255,.06),0 22px 48px -38px #000}
+#signalPage .sig-step{color:#c0d2b1}
+#signalPage .sig-card,#signalPage .sig-console-card,#signalPage .sig-result-card{background:linear-gradient(145deg,#131d15,#0d130f);border-color:rgba(183,208,166,.17)}
+#signalPage .field input:focus,#signalPage .field select:focus,#signalPage .sig-textarea:focus{border-color:#a9c493;box-shadow:0 0 0 3px rgba(169,196,147,.13)}
+#signalPage .sig-upload-zone{border:1px dashed rgba(184,211,163,.48);background:linear-gradient(145deg,rgba(32,50,34,.72),rgba(12,19,14,.92));color:#e3eadc}
+#signalPage #sig_analyzeBtn{background:linear-gradient(130deg,#d2dfbf,#a8c492);color:#172015;box-shadow:0 12px 30px -18px rgba(169,196,147,.54)}
+@media(max-width:760px){
+  #app{grid-template-rows:auto auto 72px auto auto minmax(270px,1fr) auto;padding:0 14px calc(14px + env(safe-area-inset-bottom))}
+  #app>.topbar{min-height:55px;padding:5px 0}
+  #app>.topbar .back{min-height:34px;border-radius:10px;background:rgba(255,255,255,.055)}
+  #app>.topbar .title{font-size:16px;letter-spacing:-.025em}
+  #app>.topbar .icon-btn{width:36px;height:36px;border-radius:11px}
+  #stage3dWrap{height:64px;margin:0 0 8px}
+  #stage{min-height:64px;height:64px;padding:8px 12px;border-radius:14px;background:linear-gradient(105deg,#1b2a1c,#101811 68%);border-color:rgba(190,215,176,.2)}
+  #stage::after{left:12px;width:28px}
+  .companion-monogram{width:34px;height:34px;border-radius:10px}
+  .companion-brand h2{font-size:15px}
+  .stage-status{padding:5px 8px;border:1px solid rgba(176,203,158,.17);border-radius:999px;background:rgba(8,14,9,.58)}
+  .welcome-hero{padding:13px 14px!important;margin:0 0 5px;border-radius:14px!important;gap:0}
+  .welcome-eyebrow{font-size:8px;margin-bottom:5px}
+  #app .welcome-copy h1{max-width:20ch;font-size:clamp(25px,7.1vw,31px);line-height:1.07}
+  #app .welcome-copy p{max-width:38ch;margin-top:6px;font-size:11px;line-height:1.45}
+  .quick-row-wrap{padding:8px 0 9px;border-top-color:rgba(183,208,166,.13)}
+  .prompt-heading{margin-bottom:6px;font-size:8px}
+  .prompt-heading span:last-child{font-size:9px}
+  #quickRow{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  #app .quick-chip.prompt-card{min-height:60px;padding:8px;gap:7px;border-radius:10px}
+  .prompt-index{width:22px;height:22px;border-radius:7px;font-size:8px}
+  .prompt-card-copy{gap:2px}
+  .prompt-card-copy strong{font-size:10px;line-height:1.2}
+  .prompt-card-copy small{font-size:8px;line-height:1.25}
+  .prompt-arrow{width:15px;height:15px}
+  .prompt-extras{margin-top:6px;gap:5px}
+  .quick-chip.prompt-link{min-height:26px;padding:5px 7px;font-size:8px}
+  .chat-wrap{min-height:270px;border-radius:14px!important}
+  .session-heading{min-height:34px;padding:0 10px}
+  .session-heading>span:first-child{font-size:8px;letter-spacing:.1em}
+  .session-heading>span:last-child{font-size:8px}
+  .chat{min-height:230px;padding:12px 10px}
+  .composer{padding-top:8px}
+  #app .composer-row{min-height:50px;padding:5px 6px 5px 12px;border-radius:13px}
+  #app .composer-row input{font-size:13px}
+  #signalPage{padding:0 13px calc(20px + env(safe-area-inset-bottom))!important}
+  #signalPage .topbar{padding:8px 0}
+  #signalPage .sig-hero{margin:12px 0;padding:17px 15px;border-radius:14px}
+  #signalPage .sig-hero-title{font-size:25px;line-height:1.08}
+  #signalPage .sig-hero-sub{font-size:11px;line-height:1.45}
+  #signalPage .sig-step{margin:15px 0 7px;font-size:9px;letter-spacing:.1em}
+  #signalPage .sig-card{padding:14px 12px 2px;border-radius:13px}
+  #signalPage .field{margin-bottom:12px}
+  #signalPage .field label{font-size:9px;margin-bottom:5px}
+  #signalPage .field input,#signalPage .field select,#signalPage .sig-textarea{min-height:44px;padding:10px 11px;font-size:13px;border-radius:9px}
+  #signalPage .sig-upload-zone{min-height:100px;padding:14px 11px;border-radius:11px}
+  #signalPage #sig_analyzeBtn{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:12;min-height:49px;margin-top:10px;border:1px solid rgba(236,244,225,.55);border-radius:12px;box-shadow:0 12px 30px -16px #000,0 0 0 5px rgba(8,13,9,.72)}
+  #signalPage .sig-result-card{padding:16px 13px;border-radius:13px}
+}
+@media(max-width:380px){
+  #app{padding-inline:11px}
+  #app .welcome-copy h1{font-size:25px}
+  #app .quick-chip.prompt-card{gap:5px;padding:7px}
+  .prompt-card-copy small{font-size:7.5px}
+}
+@media(prefers-reduced-motion:reduce){#app .quick-chip.prompt-card{transition:none!important}}
+</style>
 </body>
 </html>
